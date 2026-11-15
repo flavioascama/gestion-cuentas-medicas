@@ -165,3 +165,35 @@ export function IconoLuna(props: SVGProps<SVGSVGElement>) {
     </IconoBase>
   );
 }
+
+// Pantallas de la administracion (rediseno 2026-11-15); "Parametros" usa
+// IconoAdministracion (engranaje).
+export function IconoUsuarios(props: SVGProps<SVGSVGElement>) {
+  return (
+    <IconoBase {...props}>
+      <circle cx="9" cy="8" r="3.5" />
+      <path d="M3 20a6 6 0 0 1 12 0" />
+      <circle cx="17" cy="9" r="2.5" />
+      <path d="M16 14.2a5 5 0 0 1 5 5.8" />
+    </IconoBase>
+  );
+}
+
+export function IconoAseguradoras(props: SVGProps<SVGSVGElement>) {
+  return (
+    <IconoBase {...props}>
+      <path d="M12 3l7 3v5c0 4.5-3 8.2-7 10-4-1.8-7-5.5-7-10V6l7-3Z" />
+      <path d="M9 12l2 2 4-4" />
+    </IconoBase>
+  );
+}
+
+export function IconoCatalogos(props: SVGProps<SVGSVGElement>) {
+  return (
+    <IconoBase {...props}>
+      <path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2V5Z" />
+      <path d="M4 19a2 2 0 0 1 2-2h13" />
+      <path d="M9 7h6" />
+    </IconoBase>
+  );
+}

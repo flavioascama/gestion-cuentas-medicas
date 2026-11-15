@@ -3,6 +3,7 @@ import { useState } from "react";
 import type { DetalleCuenta } from "../../api/cuentas";
 import { quitar_producto } from "../../api/farmacia";
 import { Boton } from "../../componentes_base/boton";
+import { etiqueta_tipo_producto } from "../../componentes_base/mapa_tipos_producto";
 import { MensajeErrorMutacion } from "../../componentes_base/mensaje_error_mutacion";
 import { TablaDatos, type ColumnaTabla } from "../../componentes_base/tabla_datos";
 import { usar_sesion } from "../../sesion/contexto_sesion";
@@ -20,7 +21,11 @@ const _COLUMNAS: ColumnaTabla<Producto>[] = [
   { clave: "correlativo", encabezado: "N.°", alinear_centro: true },
   { clave: "nombre", encabezado: "Producto", formatear: (fila) => fila.nombre ?? "—" },
   { clave: "codigo_producto", encabezado: "Código" },
-  { clave: "tipo_producto", encabezado: "Tipo", alinear_centro: true },
+  {
+    clave: "tipo_producto",
+    encabezado: "Tipo",
+    formatear: (fila) => etiqueta_tipo_producto(fila.tipo_producto),
+  },
   { clave: "cantidad_venta", encabezado: "Cantidad", alinear_derecha: true },
   {
     clave: "fecha_dispensacion",

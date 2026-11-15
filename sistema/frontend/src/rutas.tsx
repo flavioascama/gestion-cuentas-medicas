@@ -2,7 +2,10 @@ import type { ReactNode } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { CONFIGURACION_RUTAS, primera_ruta_permitida } from "./configuracion_rutas";
 import { DisenioPrincipal } from "./disenio_principal";
-import { Administracion } from "./modulos/administracion/administracion";
+import { AdministracionAseguradoras } from "./modulos/administracion/aseguradoras";
+import { AdministracionCatalogos } from "./modulos/administracion/catalogos";
+import { AdministracionParametros } from "./modulos/administracion/parametros_sistema";
+import { AdministracionUsuarios } from "./modulos/administracion/usuarios";
 import { Ingreso } from "./modulos/acceso/ingreso";
 import { BandejaAvisos } from "./modulos/avisos/bandeja_avisos";
 import { BandejaAnulaciones } from "./modulos/cierre/bandeja_anulaciones";
@@ -30,7 +33,11 @@ const _ELEMENTOS = new Map<string, ReactNode>([
   ["/anulaciones", <BandejaAnulaciones />],
   ["/contingencias", <BandejaContingencias />],
   ["/indicadores", <PanelIndicadores />],
-  ["/administracion", <Administracion />],
+  ["/administracion/usuarios", <AdministracionUsuarios />],
+  ["/administracion/aseguradoras", <AdministracionAseguradoras />],
+  ["/administracion/parametros", <AdministracionParametros />],
+  ["/administracion/catalogos", <AdministracionCatalogos />],
+  ["/administracion", <Navigate to="/administracion/usuarios" replace />],
   ["/avisos", <BandejaAvisos />],
 ]);
 

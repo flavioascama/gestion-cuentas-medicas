@@ -67,3 +67,14 @@
   align-items: center;
   gap: var(--espacio_2);
 }
+
+.dato_secundario {
+  display: block;
+  font-size: var(--tamano_metadato);
+  color: var(--color_texto_secundario);
+}
+
+.subtitulo {
+  font-weight: var(--peso_enfasis);
+  margin: var(--espacio_6) 0 var(--espacio_3);
+}

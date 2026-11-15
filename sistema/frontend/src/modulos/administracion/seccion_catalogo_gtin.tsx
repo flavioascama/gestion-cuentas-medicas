@@ -7,6 +7,7 @@ import {
   type VersionCatalogoGtin,
 } from "../../api/farmacia";
 import { Boton } from "../../componentes_base/boton";
+import { etiqueta_tipo_producto } from "../../componentes_base/mapa_tipos_producto";
 import { MensajeErrorMutacion } from "../../componentes_base/mensaje_error_mutacion";
 import { TablaDatos, type ColumnaTabla } from "../../componentes_base/tabla_datos";
 import { formatear_fecha_hora } from "../../utilidades/formato";
@@ -19,18 +20,42 @@ const _COLUMNAS_VERSIONES: ColumnaTabla<VersionCatalogoGtin>[] = [
   { clave: "conteo", encabezado: "Productos", alinear_derecha: true },
   {
     clave: "cargado_en",
-    encabezado: "Cargado",
+    encabezado: "Cargada",
     formatear: (fila) => formatear_fecha_hora(fila.cargado_en),
   },
 ];
 
 const _COLUMNAS_PRODUCTOS: ColumnaTabla<ProductoCatalogo>[] = [
-  { clave: "codigo", encabezado: "GTIN" },
+  { clave: "codigo", encabezado: "Código GTIN" },
   { clave: "nombre", encabezado: "Nombre" },
   { clave: "denominacion_comun", encabezado: "Denominación común" },
   { clave: "concentracion", encabezado: "Concentración", formatear: (f) => f.concentracion ?? "—" },
-  { clave: "tipo_producto_tedef", encabezado: "Tipo", alinear_centro: true },
+  {
+    clave: "tipo_producto_tedef",
+    encabezado: "Tipo",
+    formatear: (f) => etiqueta_tipo_producto(f.tipo_producto_tedef),
+  },
 ];
+
+function ProductosVigentes({ version_id }: { version_id: number }) {
+  const productos = useQuery({
+    queryKey: ["administracion", "gtin", version_id, "productos"],
+    queryFn: () => listar_productos_version_gtin(version_id),
+  });
+  return (
+    <>
+      <div className={estilos.subtitulo}>Productos de la versión vigente</div>
+      <TablaDatos
+        columnas={_COLUMNAS_PRODUCTOS}
+        filas={productos.data ?? []}
+        obtener_clave={(fila) => fila.codigo}
+        cargando={productos.isPending}
+        error={productos.error}
+        mensaje_vacio="La versión vigente no tiene productos."
+      />
+    </>
+  );
+}
 
 export function SeccionCatalogoGtin() {
   const cliente_consultas = useQueryClient();
@@ -39,11 +64,6 @@ export function SeccionCatalogoGtin() {
     queryFn: listar_versiones_gtin,
   });
   const vigente = versiones.data?.[0]?.id;
-  const productos = useQuery({
-    queryKey: ["administracion", "gtin", vigente, "productos"],
-    queryFn: () => listar_productos_version_gtin(vigente ?? 0),
-    enabled: vigente !== undefined,
-  });
   const cargar = useMutation({
     mutationFn: cargar_catalogo_gtin,
     onSuccess: () =>
@@ -52,32 +72,25 @@ export function SeccionCatalogoGtin() {
 
   return (
     <div className={estilos.seccion}>
-      <div className={estilos.titulo_seccion}>Catálogo GTIN</div>
+      <div className={estilos.cabecera_seccion}>
+        <div className={estilos.titulo_seccion}>Productos farmacéuticos (GTIN)</div>
+        <Boton variante="secundario" onClick={() => cargar.mutate()} disabled={cargar.isPending}>
+          Cargar nueva versión
+        </Boton>
+      </div>
       <MensajeErrorMutacion
         error={cargar.error}
         texto_por_defecto="No se pudo cargar el catálogo."
       />
-      <Boton variante="secundario" onClick={() => cargar.mutate()} disabled={cargar.isPending}>
-        Cargar nueva versión
-      </Boton>
       <TablaDatos
         columnas={_COLUMNAS_VERSIONES}
         filas={versiones.data ?? []}
         obtener_clave={(fila) => fila.id}
         cargando={versiones.isPending}
         error={versiones.error}
-        mensaje_vacio="No hay versiones del catálogo GTIN cargadas."
+        mensaje_vacio="No hay versiones del catálogo de productos."
       />
-      {vigente !== undefined ? (
-        <TablaDatos
-          columnas={_COLUMNAS_PRODUCTOS}
-          filas={productos.data ?? []}
-          obtener_clave={(fila) => fila.codigo}
-          cargando={productos.isPending}
-          error={productos.error}
-          mensaje_vacio="La versión vigente no tiene productos."
-        />
-      ) : null}
+      {vigente !== undefined ? <ProductosVigentes version_id={vigente} /> : null}
     </div>
   );
 }

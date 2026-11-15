@@ -6,26 +6,25 @@ import { TablaDatos, type ColumnaTabla } from "../../componentes_base/tabla_dato
 import { TituloPagina } from "../../componentes_base/titulo_pagina";
 import { formatear_fecha_hora } from "../../utilidades/formato";
 import { SeccionCatalogoGtin } from "./seccion_catalogo_gtin";
-import { SeccionParametros } from "./seccion_parametros";
-import { SeccionUsuarios } from "./seccion_usuarios";
 import { usar_versiones_cpms } from "./usar_administracion";
 import estilos from "./administracion.module.css";
 
+// CU-18: catalogos versionados (procedimientos CPMS y productos GTIN) en su
+// propia pantalla (rediseno de la administracion, 2026-11-15).
 const _COLUMNAS_CPMS: ColumnaTabla<VersionCpms>[] = [
   { clave: "etiqueta", encabezado: "Versión" },
   { clave: "conteo", encabezado: "Procedimientos", alinear_derecha: true },
   {
     clave: "creado_en",
-    encabezado: "Cargado",
+    encabezado: "Cargada",
     formatear: (fila) => formatear_fecha_hora(fila.creado_en),
   },
 ];
 
 function SeccionCatalogoCpms() {
   const cliente_consultas = useQueryClient();
-  const consulta_cpms = usar_versiones_cpms();
-
-  const mutacion_cargar_cpms = useMutation({
+  const consulta = usar_versiones_cpms();
+  const cargar = useMutation({
     mutationFn: () => cargar_catalogo_cpms(),
     onSuccess: () =>
       void cliente_consultas.invalidateQueries({ queryKey: ["administracion", "cpms"] }),
@@ -33,36 +32,32 @@ function SeccionCatalogoCpms() {
 
   return (
     <div className={estilos.seccion}>
-      <div className={estilos.titulo_seccion}>Catálogo CPMS</div>
+      <div className={estilos.cabecera_seccion}>
+        <div className={estilos.titulo_seccion}>Procedimientos médicos (CPMS)</div>
+        <Boton variante="secundario" onClick={() => cargar.mutate()} disabled={cargar.isPending}>
+          Cargar nueva versión
+        </Boton>
+      </div>
       <MensajeErrorMutacion
-        error={mutacion_cargar_cpms.error}
+        error={cargar.error}
         texto_por_defecto="No se pudo cargar el catálogo."
       />
-      <Boton
-        variante="secundario"
-        onClick={() => mutacion_cargar_cpms.mutate()}
-        disabled={mutacion_cargar_cpms.isPending}
-      >
-        Cargar nueva versión desde docs/fuentes
-      </Boton>
       <TablaDatos
         columnas={_COLUMNAS_CPMS}
-        filas={consulta_cpms.data ?? []}
+        filas={consulta.data ?? []}
         obtener_clave={(fila) => fila.id}
-        cargando={consulta_cpms.isPending}
-        error={consulta_cpms.error}
-        mensaje_vacio="No hay versiones del catálogo CPMS cargadas."
+        cargando={consulta.isPending}
+        error={consulta.error}
+        mensaje_vacio="No hay versiones del catálogo de procedimientos."
       />
     </div>
   );
 }
 
-export function Administracion() {
+export function AdministracionCatalogos() {
   return (
     <div>
-      <TituloPagina titulo="Administración" />
-      <SeccionUsuarios />
-      <SeccionParametros />
+      <TituloPagina titulo="Catálogos" />
       <SeccionCatalogoCpms />
       <SeccionCatalogoGtin />
     </div>

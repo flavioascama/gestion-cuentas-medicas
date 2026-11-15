@@ -32,7 +32,15 @@ export const CONFIGURACION_RUTAS: DefinicionRuta[] = [
   { ruta: "/contingencias", etiqueta: "Contingencias", roles: ["jefe"] },
   // CU-15 (Fase 29, 31): panel de control gerencial.
   { ruta: "/indicadores", etiqueta: "Panel gerencial", roles: ["jefe", "gerente"] },
-  { ruta: "/administracion", etiqueta: "Administración", roles: ["administrador"] },
+  // Administracion dividida por tarea (rediseno 2026-11-15): usuarios,
+  // aseguradoras, parametros y catalogos, cada uno en su propia pantalla
+  // en vez de apilados en una sola. "/administracion" queda sin etiqueta
+  // y redirige a usuarios.
+  { ruta: "/administracion/usuarios", etiqueta: "Usuarios", roles: ["administrador"] },
+  { ruta: "/administracion/aseguradoras", etiqueta: "Aseguradoras", roles: ["administrador"] },
+  { ruta: "/administracion/parametros", etiqueta: "Parámetros", roles: ["administrador"] },
+  { ruta: "/administracion/catalogos", etiqueta: "Catálogos", roles: ["administrador"] },
+  { ruta: "/administracion", roles: ["administrador"] },
   // Bandeja de avisos (verificacion de cumplimiento, 2026-11-12): sin
   // etiqueta, se abre desde la campana de la cabecera. Mismos roles que
   // ROLES_CON_AVISOS (modulos/avisos/usar_avisos.ts).

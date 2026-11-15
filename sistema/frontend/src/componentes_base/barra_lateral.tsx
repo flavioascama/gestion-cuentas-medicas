@@ -12,10 +12,13 @@ import { usar_sesion } from "../sesion/contexto_sesion";
 import {
   IconoAdministracion,
   IconoAnulaciones,
+  IconoAseguradoras,
+  IconoCatalogos,
   IconoContingencias,
   IconoCuentas,
   IconoIndicadores,
   IconoLotes,
+  IconoUsuarios,
 } from "./iconos_navegacion";
 import estilos from "./barra_lateral.module.css";
 
@@ -31,8 +34,14 @@ function icono_de_ruta(ruta: string) {
       return IconoContingencias;
     case "/indicadores":
       return IconoIndicadores;
-    case "/administracion":
+    case "/administracion/usuarios":
+      return IconoUsuarios;
+    case "/administracion/aseguradoras":
+      return IconoAseguradoras;
+    case "/administracion/parametros":
       return IconoAdministracion;
+    case "/administracion/catalogos":
+      return IconoCatalogos;
     default:
       return null;
   }

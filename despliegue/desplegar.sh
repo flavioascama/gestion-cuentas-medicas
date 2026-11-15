@@ -114,6 +114,7 @@ fi
 
 echo "== 6/6 Servicios"
 "${COMPOSE[@]}" up -d
+bash despliegue/limpiar_imagenes.sh
 "${COMPOSE[@]}" ps
 
 echo

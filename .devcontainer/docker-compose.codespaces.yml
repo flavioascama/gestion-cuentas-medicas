@@ -1,0 +1,17 @@
+# Ajustes para GitHub Codespaces: la aplicacion y los portales de los
+# simuladores se publican por el reenvio de puertos de Codespaces, sin proxy.
+services:
+  proxy:
+    profiles: ["servidor"]
+  frontend:
+    ports:
+      - "8443:443"
+  acredita-salud:
+    ports:
+      - "8100:8000"
+  receptor-iafas:
+    ports:
+      - "8101:8000"
+  tedef-web:
+    ports:
+      - "8102:8000"

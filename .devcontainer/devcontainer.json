@@ -1,0 +1,21 @@
+{
+  "name": "Gestión de cuentas médicas",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
+  "hostRequirements": {
+    "cpus": 2,
+    "memory": "8gb",
+    "storage": "32gb"
+  },
+  "forwardPorts": [8443, 8100, 8101, 8102],
+  "portsAttributes": {
+    "8443": { "label": "Aplicación", "protocol": "https", "onAutoForward": "silent" },
+    "8100": { "label": "ACREDITA SALUD", "onAutoForward": "silent" },
+    "8101": { "label": "IAFAS", "onAutoForward": "silent" },
+    "8102": { "label": "TEDEF Web", "onAutoForward": "silent" }
+  },
+  "otherPortsAttributes": { "onAutoForward": "ignore" },
+  "postStartCommand": "bash .devcontainer/iniciar.sh"
+}

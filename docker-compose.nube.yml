@@ -133,7 +133,7 @@ services:
       context: ./sistema/frontend
       args:
         VITE_URL_BASE_API: /api
-        VITE_URL_PORTAL_ACREDITA_SALUD: https://acredita.${DOMINIO:?Falta DOMINIO en .env}
+        VITE_URL_PORTAL_ACREDITA_SALUD: ${URL_PORTAL_ACREDITA:?Falta URL_PORTAL_ACREDITA en .env}
         VITE_INTERVALO_REFRESCO_PANEL_SEGUNDOS: ${VITE_INTERVALO_REFRESCO_PANEL_SEGUNDOS:-60}
     environment:
       PUERTO_HTTPS: "443"

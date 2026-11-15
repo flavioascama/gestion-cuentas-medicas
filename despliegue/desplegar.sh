@@ -16,11 +16,13 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 if [ "$(id -u)" -ne 0 ]; then
-  echo "Ejecutar con sudo: sudo bash despliegue/desplegar.sh" >&2
-  exit 1
+  exec sudo -E bash "$(pwd)/despliegue/desplegar.sh" "$@"
 fi
 
-COMPOSE=(docker compose -f docker-compose.nube.yml)
+# Archivos de Compose: el del servidor y, si se indica, ajustes del entorno
+# (por ejemplo, .devcontainer/docker-compose.codespaces.yml).
+export COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.nube.yml}"
+COMPOSE=(docker compose)
 
 aleatoria() {
   local valor
@@ -76,6 +78,8 @@ if [ ! -f .env ]; then
   done
   fijar DURACION_SESION_MINUTOS 60
   fijar DOMINIO "$DOMINIO"
+  fijar URL_PORTAL_ACREDITA "${URL_PORTAL_ACREDITA:-https://acredita.$DOMINIO}"
+  fijar COMPOSE_FILE "$COMPOSE_FILE"
 fi
 if [ ! -f despliegue/usuarios_simuladores.caddy ]; then
   clave_simuladores="$(aleatoria 20)"
@@ -113,6 +117,8 @@ echo "== 6/6 Servicios"
 "${COMPOSE[@]}" ps
 
 echo
-echo "Aplicacion:  https://$DOMINIO"
-echo "Simuladores: https://acredita.$DOMINIO  https://iafas.$DOMINIO  https://tedef.$DOMINIO"
-echo "Acceso a los simuladores: despliegue/acceso_simuladores.txt (solo en este servidor)"
+echo "Aplicacion: https://$DOMINIO"
+if [ -z "${CODESPACE_NAME:-}" ]; then
+  echo "Simuladores: https://acredita.$DOMINIO  https://iafas.$DOMINIO  https://tedef.$DOMINIO"
+  echo "Acceso a los simuladores: despliegue/acceso_simuladores.txt (solo en este servidor)"
+fi

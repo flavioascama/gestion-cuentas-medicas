@@ -8,7 +8,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-COMPOSE=(docker compose -f docker-compose.nube.yml)
+COMPOSE=(docker compose)
 
 git pull --ff-only
 "${COMPOSE[@]}" build

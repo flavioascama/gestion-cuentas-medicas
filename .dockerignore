@@ -1,0 +1,14 @@
+# Contexto de construccion del trabajador (docker-compose: context .).
+# Solo necesita sistema/backend y sistema/automatizacion; nunca las claves.
+.git
+.env
+**/.env
+despliegue/
+docs/
+simuladores/
+reportes/
+artefactos_s01/
+respaldos/
+**/node_modules
+**/.venv
+**/__pycache__

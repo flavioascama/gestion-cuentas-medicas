@@ -1,0 +1,151 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import type { Aviso } from "../../api/avisos";
+import { ControlSegmentado, type OpcionSegmento } from "../../componentes_base/control_segmentado";
+import { IconoCampana } from "../../componentes_base/iconos_navegacion";
+import { Mensaje } from "../../componentes_base/mensaje";
+import { MigasPan } from "../../componentes_base/migas_pan";
+import { Paginacion } from "../../componentes_base/paginacion";
+import { usar_pagina_cliente } from "../../componentes_base/paginar";
+import { usar_ahora } from "../../utilidades/usar_ahora";
+import { describir_aviso } from "./catalogo_avisos";
+import { FilaAviso } from "./fila_aviso";
+import { pendientes, recorrido_de_avisos, usar_avisos } from "./usar_avisos";
+import estilos from "./bandeja_avisos.module.css";
+
+// Bandeja de avisos (CU-08, CU-09, CU-11, CU-14, RNF-20), rediseñada el
+// 2026-11-12: encabezado propio con icono (antes se confundia con la
+// pantalla anterior), un aviso por hito en una fila entera clicable,
+// pendientes separados de atendidos, y al abrir uno se puede volver o
+// pasar al siguiente desde el detalle.
+
+type Estado = "pendientes" | "atendidos" | "todos";
+type Tipo = "todos" | "critico" | "escalamiento" | "aviso";
+
+function contar(avisos: Aviso[], severidad: string): number {
+  return avisos.filter((aviso) => aviso.severidad === severidad).length;
+}
+
+function filtrar(avisos: Aviso[], estado: Estado, tipo: Tipo): Aviso[] {
+  const por_estado =
+    estado === "todos"
+      ? avisos
+      : avisos.filter((aviso) => aviso.atendido === (estado === "atendidos"));
+  return tipo === "todos" ? por_estado : por_estado.filter((aviso) => aviso.severidad === tipo);
+}
+
+function Encabezado() {
+  return (
+    <>
+      <MigasPan migas={[{ etiqueta: "Inicio", ruta: "/" }, { etiqueta: "Avisos" }]} />
+      <div className={estilos.encabezado}>
+        <span className={estilos.icono_titulo}>
+          <IconoCampana />
+        </span>
+        <h1 className={estilos.titulo}>Avisos</h1>
+      </div>
+    </>
+  );
+}
+
+function Filtros({
+  avisos,
+  estado,
+  tipo,
+  al_cambiar,
+}: {
+  avisos: Aviso[];
+  estado: Estado;
+  tipo: Tipo;
+  al_cambiar: (estado: Estado, tipo: Tipo) => void;
+}) {
+  const sin_atender = pendientes(avisos);
+  const opciones_estado: OpcionSegmento<Estado>[] = [
+    { valor: "pendientes", etiqueta: `Pendientes (${sin_atender.length})` },
+    { valor: "atendidos", etiqueta: `Atendidos (${avisos.length - sin_atender.length})` },
+    { valor: "todos", etiqueta: "Todos" },
+  ];
+  const base = filtrar(avisos, estado, "todos");
+  const opciones_tipo: OpcionSegmento<Tipo>[] = [
+    { valor: "todos", etiqueta: "Todos los tipos" },
+    { valor: "critico", etiqueta: `Críticos (${contar(base, "critico")})` },
+    { valor: "escalamiento", etiqueta: `Vencidos (${contar(base, "escalamiento")})` },
+    { valor: "aviso", etiqueta: `Por vencer (${contar(base, "aviso")})` },
+  ];
+  return (
+    <div className={estilos.filtros}>
+      <ControlSegmentado
+        opciones={opciones_estado}
+        valor={estado}
+        al_cambiar={(valor) => al_cambiar(valor, tipo)}
+        etiqueta_accesible="Filtrar por atención"
+      />
+      <ControlSegmentado
+        opciones={opciones_tipo}
+        valor={tipo}
+        al_cambiar={(valor) => al_cambiar(estado, valor)}
+        etiqueta_accesible="Filtrar por tipo de aviso"
+      />
+    </div>
+  );
+}
+
+function ListaAvisos({ avisos, al_abrir }: { avisos: Aviso[]; al_abrir: (aviso: Aviso) => void }) {
+  const ahora = usar_ahora();
+  const { pagina_actual, total_paginas, filas_pagina, set_pagina } = usar_pagina_cliente(avisos);
+  if (avisos.length === 0) {
+    return <p className={estilos.vacio}>No hay avisos con este filtro.</p>;
+  }
+  return (
+    <>
+      <div className={estilos.lista}>
+        {filas_pagina.map((aviso) => (
+          <FilaAviso key={aviso.evento_id} aviso={aviso} ahora={ahora} al_abrir={al_abrir} />
+        ))}
+      </div>
+      <Paginacion
+        pagina={pagina_actual}
+        total_paginas={total_paginas}
+        total_registros={avisos.length}
+        al_cambiar_pagina={set_pagina}
+        etiqueta_entidad="avisos"
+      />
+    </>
+  );
+}
+
+export function BandejaAvisos() {
+  const navegar = useNavigate();
+  const consulta = usar_avisos(true);
+  const [estado, set_estado] = useState<Estado>("pendientes");
+  const [tipo, set_tipo] = useState<Tipo>("todos");
+  const avisos = consulta.data ?? [];
+  const visibles = filtrar(avisos, estado, tipo);
+
+  const abrir = (aviso: Aviso) => {
+    const destino = describir_aviso(aviso).destino;
+    if (destino)
+      void navegar(destino, { state: { recorrido: recorrido_de_avisos(visibles, aviso) } });
+  };
+
+  return (
+    <div>
+      <Encabezado />
+      <Filtros
+        avisos={avisos}
+        estado={estado}
+        tipo={tipo}
+        al_cambiar={(nuevo_estado, nuevo_tipo) => {
+          set_estado(nuevo_estado);
+          set_tipo(nuevo_tipo);
+        }}
+      />
+      {consulta.isError ? <Mensaje tipo="error" texto="No se pudo obtener los avisos." /> : null}
+      {consulta.isPending ? (
+        <p className={estilos.vacio}>Cargando avisos…</p>
+      ) : (
+        <ListaAvisos key={`${estado}-${tipo}`} avisos={visibles} al_abrir={abrir} />
+      )}
+    </div>
+  );
+}

@@ -1,0 +1,58 @@
+# Selectores del robot del validador TEDEF Web (Seccion 8.1: 'selectores
+# en configuracion/selectores/, nunca en el codigo'; Fase 15 para
+# `ingreso`, Fase 16 para el resto).
+#
+# Apuntan a los atributos data-testid del simulador (Fase 14, Seccion
+# 9.2, `simuladores/tedef_web/plantillas/*.html`), no a clases CSS ni a
+# texto visible. Donde el id interno del lote en el simulador no se
+# conoce de antemano (una fila cualquiera de una tabla), se usa el
+# selector de atributo "empieza con" (`^=`) sobre el prefijo comun del
+# data-testid, acotado a la fila ya encontrada por su numero de lote y
+# periodo -- nunca una busqueda global por ese prefijo.
+
+ingreso:
+  campo_usuario: '[data-testid="campo-usuario"]'
+  campo_clave: '[data-testid="campo-clave"]'
+  imagen_captcha: '[data-testid="imagen-captcha"]'
+  campo_captcha: '[data-testid="campo-captcha"]'
+  boton_refrescar_captcha: '[data-testid="enlace-refrescar-captcha"]'
+  boton_ingresar: '[data-testid="boton-ingresar"]'
+  # Seccion 9.2, punto 1: a diferencia de ACREDITA SALUD (Fase 15), TEDEF
+  # Web no distingue "usuario o clave incorrectos" de "CAPTCHA
+  # incorrecto" -- un solo mensaje combinado. error_usuario/error_clave
+  # se omiten a proposito: AdaptadorSesionPlataforma trata una clave de
+  # selector ausente como "esta plataforma no expone esa distincion", no
+  # como un error de configuracion (ver docs/DECISIONES.md, Fase 16).
+  error_captcha: '[data-testid="error-ingreso"]'
+
+perfil:
+  # Seccion 9.2, punto 2: dos perfiles posibles: se usa siempre
+  # TEDEF-Validador-IPRESS (el que corresponde a este flujo), nunca el
+  # que el formulario marca por defecto (TEDEF-Supervisor-IPRESS).
+  opcion_validador: '[data-testid="opcion-perfil-TEDEF-Validador-IPRESS"]'
+  boton_seleccionar: '[data-testid="boton-seleccionar-perfil"]'
+
+entidad:
+  boton_seleccionar: '[data-testid="boton-seleccionar-entidad"]'
+
+lotes_por_validar:
+  ruta: /lotes-por-validar
+  ruta_nuevo: /lotes-por-validar/nuevo
+  campo_archivos: '[data-testid="campo-archivos"]'
+  boton_registrar_archivos: '[data-testid="boton-registrar-archivos"]'
+  resultado_conforme: '[data-testid="resultado-conforme"]'
+  resultado_observado: '[data-testid="resultado-observado"]'
+  descargar_observaciones: '[data-testid="descargar-observaciones"]'
+  tabla_observaciones_forma: '[data-testid="tabla-observaciones-forma"]'
+  fila_lote: '[data-testid="fila-lote"]'
+  checkbox_lote: '[data-testid^="seleccionar-lote-"]'
+  estado_lote: '[data-testid^="estado-lote-"]'
+  descargar_error_validacion: '[data-testid^="descargar-error-validacion-"]'
+  boton_validar_lotes: '[data-testid="boton-validar-lotes"]'
+
+lotes_por_enviar:
+  ruta: /lotes-por-enviar
+  fila_lote: '[data-testid="fila-lote"]'
+  checkbox_lote: '[data-testid^="seleccionar-lote-"]'
+  descargar_s01: '[data-testid^="descargar-s01-"]'
+  boton_enviar_lotes: '[data-testid="boton-enviar-lotes"]'

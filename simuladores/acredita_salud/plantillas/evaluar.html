@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block titulo %}Acreditación - Simulador ACREDITA SALUD{% endblock %}
+{% block contenido %}
+  <h1>Acreditación</h1>
+  <div class="tarjeta" data-testid="evaluacion-acreditacion">
+    <table>
+      <tr><th>Asegurado</th><td>{{ asegurado.nombre_completo }}</td></tr>
+      <tr><th>Documento</th><td>{{ asegurado.tipo_documento }} {{ asegurado.numero_documento }}</td></tr>
+      <tr><th>IAFAS</th><td>{{ nombre_iafas }}</td></tr>
+      <tr><th>Condición de cobertura</th>
+          <td data-testid="condicion-cobertura">{{ condicion_cobertura }}</td></tr>
+      <tr><th>Tipo de copago</th><td data-testid="tipo-copago">{{ copago.tipo or "Sin copago" }}</td></tr>
+      {% if copago.monto_fijo is not none %}
+      <tr><th>Monto de copago fijo</th><td data-testid="monto-copago-fijo">S/ {{ "%.2f"|format(copago.monto_fijo) }}</td></tr>
+      {% endif %}
+      {% if copago.porcentaje_coaseguro is not none %}
+      <tr><th>Porcentaje de coaseguro</th><td data-testid="porcentaje-coaseguro">{{ copago.porcentaje_coaseguro }}%</td></tr>
+      {% endif %}
+    </table>
+    <form method="post" action="/acreditacion/generar" style="margin-top:1rem;" data-testid="formulario-generar">
+      <input type="hidden" name="tipo_documento" value="{{ asegurado.tipo_documento }}">
+      <input type="hidden" name="numero_documento" value="{{ asegurado.numero_documento }}">
+      <button type="submit" data-testid="boton-generar-autorizacion">Generar código de autorización</button>
+    </form>
+  </div>
+{% endblock %}

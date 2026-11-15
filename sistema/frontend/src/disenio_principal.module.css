@@ -1,0 +1,51 @@
+.envoltorio {
+  display: flex;
+  height: 100vh;
+}
+
+.rincon {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 20;
+  width: var(--ancho_rincon);
+  height: var(--alto_cabecera);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color_superficie);
+  border-right: 1px solid var(--color_borde);
+  border-bottom: 1px solid var(--color_borde);
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.boton_menu {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: var(--radio_borde);
+  background: none;
+  color: var(--color_texto_secundario);
+  cursor: pointer;
+}
+
+.boton_menu:hover {
+  background-color: var(--color_fondo);
+  color: var(--color_primario);
+}
+
+.columna {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.contenido {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--espacio_6);
+}

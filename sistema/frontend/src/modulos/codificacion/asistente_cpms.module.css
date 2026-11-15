@@ -1,0 +1,33 @@
+.busqueda {
+  display: flex;
+  gap: var(--espacio_4);
+  align-items: flex-end;
+  margin-bottom: var(--espacio_4);
+}
+
+.campo_descripcion {
+  flex: 1;
+}
+
+.buscando {
+  font-size: var(--tamano_metadato);
+  color: var(--color_texto_secundario);
+  padding-bottom: var(--espacio_2);
+}
+
+.version {
+  font-size: var(--tamano_metadato);
+  color: var(--color_texto_secundario);
+  margin-bottom: var(--espacio_3);
+}
+
+.jerarquia {
+  font-size: var(--tamano_metadato);
+  color: var(--color_texto_secundario);
+}
+
+.formulario_confirmacion {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio_3);
+}

@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block titulo %}Lotes por Enviar - Validador de facturación electrónica{% endblock %}
+{% block contenido %}
+  <h1>Lotes por Enviar</h1>
+  <div class="tarjeta">
+    <form method="get" action="/lotes-por-enviar" data-testid="formulario-filtros">
+      <label>Fecha de <input type="date" name="desde" data-testid="campo-desde"></label>
+      <label>Fecha hasta <input type="date" name="hasta" data-testid="campo-hasta"></label>
+      <label>Nro Lote <input type="text" name="numero_lote" data-testid="campo-numero-lote"></label>
+      <label>Periodo <input type="text" name="periodo" data-testid="campo-periodo"></label>
+      <button type="submit" data-testid="boton-buscar">Buscar</button>
+    </form>
+  </div>
+
+  <div class="tarjeta">
+    <form method="post" action="/lotes-por-enviar/enviar" data-testid="formulario-enviar-lotes">
+      <table data-testid="tabla-lotes-por-enviar">
+        <thead>
+          <tr><th></th><th>Nro. de Lote</th><th>Periodo</th><th>Estado</th><th>Acciones</th></tr>
+        </thead>
+        <tbody>
+          {% for lote in lotes %}
+          <tr data-testid="fila-lote">
+            <td><input type="checkbox" name="lote_ids" value="{{ lote.id }}" data-testid="seleccionar-lote-{{ lote.id }}"></td>
+            <td>{{ lote.identidad.numero_lote }}</td>
+            <td>{{ lote.identidad.periodo }}</td>
+            <td class="{{ lote.estado }}">{{ lote.estado }}</td>
+            <td>
+              <a href="/lotes-por-enviar/{{ lote.id }}/detalle" data-testid="ver-detalle-{{ lote.id }}">Ver detalle</a>
+              <a href="/lotes-por-enviar/{{ lote.id }}/descargar" data-testid="descargar-s01-{{ lote.id }}">Descargar</a>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5">No hay lotes validados pendientes de envío.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <button type="submit" data-testid="boton-enviar-lotes">Enviar Lotes</button>
+    </form>
+  </div>
+{% endblock %}

@@ -1,0 +1,27 @@
+# Servidor de correo de prueba (GreenMail: SMTP e IMAP), simulador
+# independiente como los demas (Regla 0.5). Representa el correo por el que
+# la IAFAS comunica glosas, liquidaciones y pagos a la clinica (Tabla 42 de
+# la tesis). Se levanta por separado:
+#   cd simuladores/correo
+#   cp .env.ejemplo .env      (y definir las claves)
+#   docker compose up -d
+#
+# SMTP 3025 e IMAP 3143 solo en la red `red_oe1_simuladores`: los alcanzan
+# el simulador de la IAFAS (envia) y el trabajador de la clinica (lee).
+
+services:
+  correo:
+    image: greenmail/standalone:2.1.2
+    environment:
+      GREENMAIL_OPTS: >-
+        -Dgreenmail.setup.test.smtp -Dgreenmail.setup.test.imap
+        -Dgreenmail.hostname=0.0.0.0
+        -Dgreenmail.users.login=email
+        -Dgreenmail.users=cuentasmedicas:${CLAVE_BUZON_CLINICA:?Falta CLAVE_BUZON_CLINICA en .env}@clinica.test,auditoria:${CLAVE_BUZON_IAFAS:?Falta CLAVE_BUZON_IAFAS en .env}@iafas.test
+    networks:
+      - red_oe1_simuladores
+    restart: unless-stopped
+
+networks:
+  red_oe1_simuladores:
+    external: true

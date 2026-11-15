@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block titulo %}Carga masiva - Simulador ACREDITA SALUD{% endblock %}
+{% block contenido %}
+  <h1>Carga masiva de acreditaciones</h1>
+  <p>Perfil habilitado para IPRESS de alta demanda (Sección 9.1). Sube un
+     archivo <code>.xlsx</code> con dos columnas: <code>tipo_documento</code>,
+     <code>numero_documento</code>.</p>
+  <div class="tarjeta">
+    <form method="post" action="/carga-masiva" enctype="multipart/form-data" data-testid="formulario-carga-masiva">
+      <input type="file" name="archivo" accept=".xlsx" data-testid="campo-archivo" required>
+      <button type="submit" data-testid="boton-procesar-carga-masiva">Procesar</button>
+    </form>
+  </div>
+
+  {% if resultados is defined %}
+  <div class="tarjeta">
+    <h2>Resultados ({{ resultados|length }})</h2>
+    <table data-testid="tabla-resultados-carga-masiva">
+      <thead>
+        <tr><th>Documento</th><th>Resultado</th><th>Código de autorización</th></tr>
+      </thead>
+      <tbody>
+        {% for fila in resultados %}
+        <tr data-testid="fila-resultado-carga-masiva">
+          <td>{{ fila.tipo_documento }} {{ fila.numero_documento }}</td>
+          <td class="{{ 'exito' if fila.exito else 'error' }}">{{ fila.mensaje }}</td>
+          <td>{{ fila.codigo_autorizacion or "-" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+{% endblock %}

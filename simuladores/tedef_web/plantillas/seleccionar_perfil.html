@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block titulo %}Seleccionar perfil - Validador de facturación electrónica{% endblock %}
+{% block contenido %}
+  <div class="tarjeta" style="max-width:420px; margin: 2rem auto;">
+    <h1>Seleccionar perfil</h1>
+    <form method="post" action="/seleccionar-perfil" data-testid="formulario-perfil">
+      {% for p in perfiles %}
+      <label>
+        <input type="radio" name="perfil" value="{{ p }}" data-testid="opcion-perfil-{{ p }}" {% if loop.first %}checked{% endif %}>
+        {{ p }}
+      </label>
+      {% endfor %}
+      <button type="submit" data-testid="boton-seleccionar-perfil">Seleccionar</button>
+    </form>
+  </div>
+{% endblock %}

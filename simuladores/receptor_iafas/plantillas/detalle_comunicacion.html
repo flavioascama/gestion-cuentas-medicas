@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block titulo %}{{ c.codigo }} - Simulador receptor IAFAS{% endblock %}
+{% block contenido %}
+  <h1>Comunicación {{ c.codigo }}</h1>
+  <p><a href="/comunicaciones">Comunicaciones</a></p>
+  <dl data-testid="detalle-comunicacion"
+      data-codigo="{{ c.codigo }}" data-tipo="{{ c.tipo }}" data-documento="{{ c.documento }}"
+      data-iafas="{{ c.codigo_iafas }}" data-ipress="{{ c.codigo_ipress }}"
+      data-emitida="{{ c.emitida_en }}">
+    <dt>Tipo</dt><dd>{{ c.tipo }}</dd>
+    <dt>Comprobante</dt><dd>{{ c.documento }}</dd>
+    <dt>Emitida</dt><dd>{{ c.emitida_en }}</dd>
+    {% for clave, valor in c.datos.items() %}
+    <dt>{{ clave }}</dt><dd data-testid="dato-{{ clave }}">{{ valor }}</dd>
+    {% endfor %}
+  </dl>
+  <script type="application/json" data-testid="datos-comunicacion">{{ datos_json | safe }}</script>
+  {% if c.tipo == "OBSERVACION" %}
+    {% if c.respondida_en %}
+    <p data-testid="respuesta-registrada">Respondida el {{ c.respondida_en }}: {{ c.respuesta_texto }}</p>
+    {% else %}
+    <form method="post" action="/comunicaciones/{{ c.codigo }}/respuesta" data-testid="formulario-respuesta">
+      <input type="hidden" name="codigo_ipress" value="{{ c.codigo_ipress }}">
+      <textarea name="respuesta" required></textarea>
+      <input name="sustento" placeholder="Sustento">
+      <button type="submit">Enviar respuesta</button>
+    </form>
+    {% endif %}
+  {% endif %}
+{% endblock %}

@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block titulo %}Menú principal - Simulador ACREDITA SALUD{% endblock %}
+{% block contenido %}
+  <h1>Menú principal</h1>
+  <div class="tarjeta">
+    <h2>Módulo de Acreditación</h2>
+    <ul>
+      <li><a href="/acreditacion/raaus" data-testid="enlace-raaus">Consulta RAAUS</a></li>
+      <li><a href="/acreditacion/iafas" data-testid="enlace-consulta-iafas">Consulta directa por IAFAS</a></li>
+      <li><a href="/atencion-accidental" data-testid="enlace-atencion-accidental">Atenciones accidentales</a></li>
+      <li><a href="/derivacion" data-testid="enlace-derivacion">Derivación de atenciones</a></li>
+      <li><a href="/cartas-garantia" data-testid="enlace-cartas-garantia">Cartas de garantía</a></li>
+      <li><a href="/historial" data-testid="enlace-historial">Historial de acreditaciones</a></li>
+      {% if perfil_carga_masiva %}
+      <li><a href="/carga-masiva" data-testid="enlace-carga-masiva">Carga masiva</a></li>
+      {% endif %}
+    </ul>
+  </div>
+{% endblock %}

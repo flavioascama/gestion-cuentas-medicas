@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block titulo %}Seleccionar entidad - Validador de facturación electrónica{% endblock %}
+{% block contenido %}
+  <div class="tarjeta" style="max-width:420px; margin: 2rem auto;">
+    <h1>Seleccionar entidad</h1>
+    <p data-testid="entidad-ipress">{{ ipress.razon_social }} — RUC {{ ipress.ruc }} — IPRESS {{ ipress.codigo_ipress }}</p>
+    <form method="post" action="/seleccionar-entidad" data-testid="formulario-entidad">
+      <button type="submit" data-testid="boton-seleccionar-entidad">Seleccionar</button>
+    </form>
+  </div>
+{% endblock %}

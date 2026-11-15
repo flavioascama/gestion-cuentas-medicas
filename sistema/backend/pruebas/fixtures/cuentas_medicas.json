@@ -1,0 +1,1712 @@
+{
+  "metadatos": {
+    "ficticio": true,
+    "semilla": 20250601,
+    "generado_en": "2026-09-15T23:57:29.502978+00:00",
+    "descripcion": "Cuentas medicas sinteticas por tamano de lote (Seccion 3.3)"
+  },
+  "lotes": {
+    "pequeno": [
+      {
+        "id_interno": "CTA-000001",
+        "asegurado_documento": {
+          "tipo": "1",
+          "numero": "84804479"
+        },
+        "iafas_codigo": "19395",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "84300",
+            "denominacion": "Sodio; orina",
+            "cantidad": 2,
+            "monto_unitario": 198.68
+          }
+        ],
+        "productos": [
+          {
+            "codigo_producto": "008400001344",
+            "tipo_producto": "M",
+            "catalogo": "1",
+            "cantidad_venta": 1,
+            "tipo_unidad_dispensacion": "1",
+            "monto_unitario": 15.5,
+            "monto_no_cubierto": 0.0
+          }
+        ],
+        "ficticio": true
+      },
+      {
+        "id_interno": "CTA-000002",
+        "asegurado_documento": {
+          "tipo": "1",
+          "numero": "21396432"
+        },
+        "iafas_codigo": "99553",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "50945",
+            "denominacion": "Ureterolitotomía por laparoscopía",
+            "cantidad": 3,
+            "monto_unitario": 395.15
+          },
+          {
+            "codigo_cpms": "D2140",
+            "denominacion": "Restauracion de una superficie con amalgama en piezas dentarias, primarias o permanentes",
+            "cantidad": 1,
+            "monto_unitario": 85.97
+          }
+        ],
+        "productos": [
+          {
+            "codigo_producto": "0380652555906",
+            "tipo_producto": "I",
+            "catalogo": "1",
+            "cantidad_venta": 1,
+            "tipo_unidad_dispensacion": "1",
+            "monto_unitario": 380.0,
+            "monto_no_cubierto": 0.0
+          }
+        ],
+        "ficticio": true
+      }
+    ],
+    "mediano": [
+      {
+        "id_interno": "CTA-000003",
+        "asegurado_documento": {
+          "tipo": "1",
+          "numero": "81953443"
+        },
+        "iafas_codigo": "99553",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "28465",
+            "denominacion": "Tratamiento abierto de fractura de hueso tarsiano (excepto astrágalo y calcáneo), incluye Fijación interna, cuando se realice, cada una",
+            "cantidad": 3,
+            "monto_unitario": 108.16
+          },
+          {
+            "codigo_cpms": "53460",
+            "denominacion": "Uretromeatoplastía con excision parcial del segmento distal uretral (procedimiento tipo Richardson)",
+            "cantidad": 3,
+            "monto_unitario": 473.9
+          },
+          {
+            "codigo_cpms": "25248",
+            "denominacion": "Exploración con Extirpación de cuerpo extraño, antebrazo o muñeca",
+            "cantidad": 2,
+            "monto_unitario": 242.63
+          }
+        ],
+        "productos": [
+          {
+            "codigo_producto": "044677100403",
+            "tipo_producto": "B",
+            "catalogo": "1",
+            "cantidad_venta": 2,
+            "tipo_unidad_dispensacion": "2",
+            "monto_unitario": 22.0,
+            "monto_no_cubierto": 0.0
+          }
+        ],
+        "ficticio": true
+      },
+      {
+        "id_interno": "CTA-000004",
+        "asegurado_documento": {
+          "tipo": "1",
+          "numero": "88490756"
+        },
+        "iafas_codigo": "19395",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "74176.01",
+            "denominacion": "Urotomografía, sin contraste",
+            "cantidad": 1,
+            "monto_unitario": 96.32
+          }
+        ],
+        "productos": [
+          {
+            "codigo_producto": "070074114323",
+            "tipo_producto": "A",
+            "catalogo": "1",
+            "cantidad_venta": 3,
+            "tipo_unidad_dispensacion": "1",
+            "monto_unitario": 28.5,
+            "monto_no_cubierto": 25.65
+          }
+        ],
+        "ficticio": true
+      },
+      {
+        "id_interno": "CTA-000005",
+        "asegurado_documento": {
+          "tipo": "1",
+          "numero": "32970220"
+        },
+        "iafas_codigo": "19395",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "27327",
+            "denominacion": "Escisión, tumor, tejido blando de región del muslo o la rodilla; subcutánea; menos de 3.0 cm",
+            "cantidad": 3,
+            "monto_unitario": 380.18
+          },
+          {
+            "codigo_cpms": "10081",
+            "denominacion": "Incisión y drenaje de quiste pilonidal complicado",
+            "cantidad": 3,
+            "monto_unitario": 380.14
+          },
+          {
+            "codigo_cpms": "68335",
+            "denominacion": "Reparación de simbléfaron; con injerto libre de membrana mucosa conjuntival o bucal (incluye obtención de injerto)",
+            "cantidad": 1,
+            "monto_unitario": 174.86
+          }
+        ],
+        "ficticio": true
+      },
+      {
+        "id_interno": "CTA-000006",
+        "asegurado_documento": {
+          "tipo": "3",
+          "numero": "PA925287"
+        },
+        "iafas_codigo": "05292",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "84526",
+            "denominacion": "Urea en sangre capilar (dispositivo portátil)",
+            "cantidad": 2,
+            "monto_unitario": 421.86
+          }
+        ],
+        "ficticio": true
+      },
+      {
+        "id_interno": "CTA-000007",
+        "asegurado_documento": {
+          "tipo": "3",
+          "numero": "PA170512"
+        },
+        "iafas_codigo": "99553",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "67332",
+            "denominacion": "Cirugía para estrabismo en usuario de salud con cicatrizacion de músculos extra oculares (p ej lesión ocular previa, cirugía para estrabismo o desprendimiento de retina) o miopatía restrictiva (p ej Oftalmopatía distiroidea) Registrar por separado adicionalmente al código del procedimiento primario)",
+            "cantidad": 3,
+            "monto_unitario": 444.37
+          },
+          {
+            "codigo_cpms": "22325",
+            "denominacion": "Tratamiento abierto y/o reducción de fracturas o dislocaciones vertebrales, abordaje posterior, fractura de una sola vértebra, o dislocacion de un solo segmento; lumbar",
+            "cantidad": 2,
+            "monto_unitario": 398.54
+          },
+          {
+            "codigo_cpms": "00872",
+            "denominacion": "Anestesia para litotripsia, onda de choque extracorporea; con baño de agua",
+            "cantidad": 2,
+            "monto_unitario": 73.66
+          }
+        ],
+        "ficticio": true
+      },
+      {
+        "id_interno": "CTA-000008",
+        "asegurado_documento": {
+          "tipo": "1",
+          "numero": "84804479"
+        },
+        "iafas_codigo": "19395",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "75665",
+            "denominacion": "Angiografía de carotida cerebral, unilateral",
+            "cantidad": 3,
+            "monto_unitario": 195.33
+          },
+          {
+            "codigo_cpms": "46317",
+            "denominacion": "Con control de sangrado, culaquier método",
+            "cantidad": 2,
+            "monto_unitario": 308.71
+          },
+          {
+            "codigo_cpms": "43247",
+            "denominacion": "Esofagogastroduodenoscopía flexible; con Extirpación de cuerpo extraño Realizado con Videoendoscopía",
+            "cantidad": 3,
+            "monto_unitario": 381.45
+          },
+          {
+            "codigo_cpms": "88348.03",
+            "denominacion": "Microscopia electronica; diagnóstica - Pieza Recuperada",
+            "cantidad": 1,
+            "monto_unitario": 404.59
+          }
+        ],
+        "ficticio": true
+      },
+      {
+        "id_interno": "CTA-000009",
+        "asegurado_documento": {
+          "tipo": "1",
+          "numero": "64262860"
+        },
+        "iafas_codigo": "19395",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "46945",
+            "denominacion": "Hemorroidectomía, interna, mediante mecanismo diferente de banda de caucho; columna/grupo hemorroidal único",
+            "cantidad": 3,
+            "monto_unitario": 379.15
+          }
+        ],
+        "ficticio": true
+      },
+      {
+        "id_interno": "CTA-000010",
+        "asegurado_documento": {
+          "tipo": "3",
+          "numero": "PA925287"
+        },
+        "iafas_codigo": "05292",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "77011",
+            "denominacion": "Guía tomográfica para localización estereotáctica",
+            "cantidad": 3,
+            "monto_unitario": 497.51
+          }
+        ],
+        "ficticio": true
+      },
+      {
+        "id_interno": "CTA-000011",
+        "asegurado_documento": {
+          "tipo": "1",
+          "numero": "81953443"
+        },
+        "iafas_codigo": "99553",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "27332",
+            "denominacion": "Artrotomía, con Escisión de cartílago semilunar (meniscectomía), rodilla; medial o lateral",
+            "cantidad": 2,
+            "monto_unitario": 263.32
+          },
+          {
+            "codigo_cpms": "43825",
+            "denominacion": "Gastroyeyunostomía con vagotomía, cualquier tipo",
+            "cantidad": 2,
+            "monto_unitario": 494.75
+          },
+          {
+            "codigo_cpms": "57320",
+            "denominacion": "Cierre de fístula vesicovaginal, abordaje vaginal",
+            "cantidad": 2,
+            "monto_unitario": 484.9
+          }
+        ],
+        "ficticio": true
+      },
+      {
+        "id_interno": "CTA-000012",
+        "asegurado_documento": {
+          "tipo": "1",
+          "numero": "32970220"
+        },
+        "iafas_codigo": "19395",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "E2399",
+            "denominacion": "Restauracion autocurable con ionomero de vidrio en dos superficies dentarias (primarias o permanentes)",
+            "cantidad": 3,
+            "monto_unitario": 151.47
+          },
+          {
+            "codigo_cpms": "19084",
+            "denominacion": "Biopsia de mama, con colocación de dispositivo(s) de localización (p ej clip, perla metálica), cuando esta se realiza, e imagen de la muestra de biopsia, cuando se realiza; percutánea, cada lesión adicional, incluyendo guía ultrasonográfica (registrar además del código para el procedimiento principal)",
+            "cantidad": 2,
+            "monto_unitario": 52.06
+          }
+        ],
+        "ficticio": true
+      }
+    ],
+    "grande": [
+      {
+        "id_interno": "CTA-000013",
+        "asegurado_documento": {
+          "tipo": "1",
+          "numero": "53679371"
+        },
+        "iafas_codigo": "05292",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "61598",
+            "denominacion": "Abordaje transpetroso a la fosa posterior, clivus o foramen magnum, incluyendo ligadura de seno petroso superior y/o de seno sigmoide",
+            "cantidad": 1,
+            "monto_unitario": 283.35
+          }
+        ],
+        "ficticio": true
+      },
+      {
+        "id_interno": "CTA-000014",
+        "asegurado_documento": {
+          "tipo": "1",
+          "numero": "88490756"
+        },
+        "iafas_codigo": "19395",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "99404.01",
+            "denominacion": "Consejería en prácticas saludables de higiene y ambiente (vivienda y entorno)",
+            "cantidad": 2,
+            "monto_unitario": 411.87
+          }
+        ],
+        "ficticio": true
+      },
+      {
+        "id_interno": "CTA-000015",
+        "asegurado_documento": {
+          "tipo": "2",
+          "numero": "CE050531"
+        },
+        "iafas_codigo": "05292",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "86985",
+            "denominacion": "Fracciónamiento de productos de la sangre, por unidad",
+            "cantidad": 1,
+            "monto_unitario": 100.21
+          },
+          {
+            "codigo_cpms": "61609",
+            "denominacion": "Transección o ligadura, arteria carotida en el seno cavernoso; sin reparación (registrar por separado adicionalmente al código de procedimiento primario)",
+            "cantidad": 3,
+            "monto_unitario": 71.6
+          }
+        ],
+        "ficticio": true
+      },
+      {
+        "id_interno": "CTA-000016",
+        "asegurado_documento": {
+          "tipo": "2",
+          "numero": "CE204107"
+        },
+        "iafas_codigo": "05292",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "78586",
+            "denominacion": "Obtención de imagen en proyeccion única sobre ventilacion pulmonar con aerosol",
+            "cantidad": 1,
+            "monto_unitario": 207.2
+          }
+        ],
+        "ficticio": true
+      },
+      {
+        "id_interno": "CTA-000017",
+        "asegurado_documento": {
+          "tipo": "1",
+          "numero": "84804479"
+        },
+        "iafas_codigo": "19395",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "93510",
+            "denominacion": "Catéterismo corazon izquierdo, retrogrado, desde la arteria braquial, arteria axilar o arteria femoral",
+            "cantidad": 1,
+            "monto_unitario": 277.1
+          },
+          {
+            "codigo_cpms": "86635",
+            "denominacion": "Anticuerpos; Coccidioides",
+            "cantidad": 2,
+            "monto_unitario": 492.23
+          },
+          {
+            "codigo_cpms": "67975",
+            "denominacion": "Reconstrucción de párpado, espesor total mediante transferencia de colgajo tarsoconjuntival del párpado opuesto; segundo estadio",
+            "cantidad": 1,
+            "monto_unitario": 37.56
+          }
+        ],
+        "ficticio": true
+      },
+      {
+        "id_interno": "CTA-000018",
+        "asegurado_documento": {
+          "tipo": "2",
+          "numero": "CE504312"
+        },
+        "iafas_codigo": "96969",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "27760",
+            "denominacion": "Tratamiento cerrado de fractura del maléolo medial; sin manipulacion",
+            "cantidad": 3,
+            "monto_unitario": 484.48
+          },
+          {
+            "codigo_cpms": "32484",
+            "denominacion": "Segmentectomía pulmonar",
+            "cantidad": 2,
+            "monto_unitario": 197.33
+          },
+          {
+            "codigo_cpms": "00550",
+            "denominacion": "Anestesia para debridación esternal",
+            "cantidad": 2,
+            "monto_unitario": 99.42
+          }
+        ],
+        "ficticio": true
+      },
+      {
+        "id_interno": "CTA-000019",
+        "asegurado_documento": {
+          "tipo": "1",
+          "numero": "84804479"
+        },
+        "iafas_codigo": "19395",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "01730",
+            "denominacion": "Anestesia para todos los procedimientos a cielo cerrado en el húmero y el codo",
+            "cantidad": 1,
+            "monto_unitario": 396.2
+          },
+          {
+            "codigo_cpms": "63005",
+            "denominacion": "Laminectomía con exploración y/o descompresión de médula espinal o cola de caballo, sin facetectomía, foraminotomía o discotomia (p ej estenosis espinal) en uno o dos segmentos vertebrales a nivel lumbar, excepto para espondilolistesis",
+            "cantidad": 2,
+            "monto_unitario": 87.1
+          }
+        ],
+        "ficticio": true
+      },
+      {
+        "id_interno": "CTA-000020",
+        "asegurado_documento": {
+          "tipo": "1",
+          "numero": "81953443"
+        },
+        "iafas_codigo": "99553",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "99450.01",
+            "denominacion": "Servicio de evaluación, calificacion y certificacion de la discapacidad",
+            "cantidad": 1,
+            "monto_unitario": 44.0
+          }
+        ],
+        "ficticio": true
+      },
+      {
+        "id_interno": "CTA-000021",
+        "asegurado_documento": {
+          "tipo": "2",
+          "numero": "CE050531"
+        },
+        "iafas_codigo": "05292",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "93542.02",
+            "denominacion": "Curación de cáteter implantable Port-A-Cath",
+            "cantidad": 2,
+            "monto_unitario": 332.68
+          }
+        ],
+        "ficticio": true
+      },
+      {
+        "id_interno": "CTA-000022",
+        "asegurado_documento": {
+          "tipo": "1",
+          "numero": "53679371"
+        },
+        "iafas_codigo": "05292",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "12015",
+            "denominacion": "Sutura simple de heridas superficiales en cara, oídos, párpados, nariz, labios y/o mucosas; 7.6 a 12.5 cm",
+            "cantidad": 1,
+            "monto_unitario": 267.59
+          },
+          {
+            "codigo_cpms": "84430",
+            "denominacion": "Tiocianato",
+            "cantidad": 3,
+            "monto_unitario": 196.85
+          },
+          {
+            "codigo_cpms": "97526",
+            "denominacion": "Prueba de evaluación de antropometría (cineantropometría)",
+            "cantidad": 3,
+            "monto_unitario": 102.27
+          }
+        ],
+        "ficticio": true
+      },
+      {
+        "id_interno": "CTA-000023",
+        "asegurado_documento": {
+          "tipo": "2",
+          "numero": "CE504312"
+        },
+        "iafas_codigo": "96969",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "43881",
+            "denominacion": "Implantación o remplazo de electrodos gástricos neuroestimuladores en el antro mediante cirugía abierta",
+            "cantidad": 1,
+            "monto_unitario": 352.21
+          }
+        ],
+        "ficticio": true
+      },
+      {
+        "id_interno": "CTA-000024",
+        "asegurado_documento": {
+          "tipo": "1",
+          "numero": "21396432"
+        },
+        "iafas_codigo": "99553",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "77012",
+            "denominacion": "Guía tomográfica para localización de aguja (p ej biopsia, aspiración, Inyección, localización de dispositivo), Supervisión e interpretación radiológicas",
+            "cantidad": 1,
+            "monto_unitario": 409.31
+          }
+        ],
+        "ficticio": true
+      },
+      {
+        "id_interno": "CTA-000025",
+        "asegurado_documento": {
+          "tipo": "1",
+          "numero": "54560177"
+        },
+        "iafas_codigo": "99553",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "44206",
+            "denominacion": "Laparoscopía quirúrgica, colectomía parcial con colostomia terminal y cierre de segmento distal (procedimiento tipo Hartmann)",
+            "cantidad": 3,
+            "monto_unitario": 103.71
+          },
+          {
+            "codigo_cpms": "76880.03",
+            "denominacion": "Ecografía de rodilla",
+            "cantidad": 1,
+            "monto_unitario": 139.14
+          },
+          {
+            "codigo_cpms": "51840",
+            "denominacion": "Vesicouretropexia anterior o uretropexia simple (procedimientos de Marshall-Marchetti-Krantz, Burch)",
+            "cantidad": 1,
+            "monto_unitario": 241.03
+          }
+        ],
+        "ficticio": true
+      },
+      {
+        "id_interno": "CTA-000026",
+        "asegurado_documento": {
+          "tipo": "1",
+          "numero": "62799687"
+        },
+        "iafas_codigo": "05292",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "35241",
+            "denominacion": "Reparación de vaso sanguíneo intratorácico con injerto venoso con derivación",
+            "cantidad": 3,
+            "monto_unitario": 32.74
+          }
+        ],
+        "ficticio": true
+      },
+      {
+        "id_interno": "CTA-000027",
+        "asegurado_documento": {
+          "tipo": "2",
+          "numero": "CE931347"
+        },
+        "iafas_codigo": "19395",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "40510",
+            "denominacion": "Escisión de labio, en cuña, con cierre primario",
+            "cantidad": 1,
+            "monto_unitario": 161.72
+          },
+          {
+            "codigo_cpms": "96523",
+            "denominacion": "Irrigación del dispositivo de acceso venoso implantado para los sistemás de administración de fármacos",
+            "cantidad": 2,
+            "monto_unitario": 374.07
+          },
+          {
+            "codigo_cpms": "10081",
+            "denominacion": "Incisión y drenaje de quiste pilonidal complicado",
+            "cantidad": 2,
+            "monto_unitario": 394.29
+          }
+        ],
+        "ficticio": true
+      },
+      {
+        "id_interno": "CTA-000028",
+        "asegurado_documento": {
+          "tipo": "2",
+          "numero": "CE204107"
+        },
+        "iafas_codigo": "05292",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "75968",
+            "denominacion": "Angioplastía transluminal de balón, cada arteria visceral adicional, Supervisión e interpretación radiológicas (anotar separadamente además del código para el procedimiento primario)",
+            "cantidad": 1,
+            "monto_unitario": 360.02
+          },
+          {
+            "codigo_cpms": "60254",
+            "denominacion": "Tiroidectomía, total o subtotal por malignidad; con disección radical del cuello",
+            "cantidad": 3,
+            "monto_unitario": 122.68
+          },
+          {
+            "codigo_cpms": "86880",
+            "denominacion": "Prueba de antiglobulina humana (prueba de Coombs); directa, cada antisuero",
+            "cantidad": 1,
+            "monto_unitario": 145.19
+          }
+        ],
+        "ficticio": true
+      },
+      {
+        "id_interno": "CTA-000029",
+        "asegurado_documento": {
+          "tipo": "1",
+          "numero": "81953443"
+        },
+        "iafas_codigo": "99553",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "E2341",
+            "denominacion": "Restauraciones autocurables de dos superficies con resina en piezas dentarias posteriores (primarias o permanentes)",
+            "cantidad": 1,
+            "monto_unitario": 83.28
+          },
+          {
+            "codigo_cpms": "66984",
+            "denominacion": "Extracción extracapsular de catarata con implante de lente intraocular (en una sola etapa) con técnica manual o mecánica (p ej Irrigación y aspiración o facoemulsificacion)",
+            "cantidad": 2,
+            "monto_unitario": 217.6
+          }
+        ],
+        "ficticio": true
+      },
+      {
+        "id_interno": "CTA-000030",
+        "asegurado_documento": {
+          "tipo": "1",
+          "numero": "32970220"
+        },
+        "iafas_codigo": "19395",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "82679",
+            "denominacion": "Dosaje de Estrona",
+            "cantidad": 3,
+            "monto_unitario": 343.02
+          }
+        ],
+        "ficticio": true
+      },
+      {
+        "id_interno": "CTA-000031",
+        "asegurado_documento": {
+          "tipo": "1",
+          "numero": "81953443"
+        },
+        "iafas_codigo": "99553",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "27704",
+            "denominacion": "Remoción de implante de tobillo",
+            "cantidad": 3,
+            "monto_unitario": 228.48
+          },
+          {
+            "codigo_cpms": "47122.02",
+            "denominacion": "Ligadura porta y Transección hepática previo a hepatectomía (ALPPS)",
+            "cantidad": 2,
+            "monto_unitario": 305.35
+          },
+          {
+            "codigo_cpms": "74485",
+            "denominacion": "Dilatación de nefrostomía, uréteres o uretra, Supervisión e interpretación radiológica",
+            "cantidad": 3,
+            "monto_unitario": 90.02
+          },
+          {
+            "codigo_cpms": "D2644",
+            "denominacion": "Onlay de cerámica de porcelana de cuatro a más superficies",
+            "cantidad": 2,
+            "monto_unitario": 128.56
+          }
+        ],
+        "ficticio": true
+      },
+      {
+        "id_interno": "CTA-000032",
+        "asegurado_documento": {
+          "tipo": "1",
+          "numero": "81953443"
+        },
+        "iafas_codigo": "99553",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "33249",
+            "denominacion": "Inserción o reposicionamiento de sistema permanente de marcapasos cardioversor-defibrilador con terminal transvenoso(s), cámara única o dual",
+            "cantidad": 3,
+            "monto_unitario": 64.89
+          },
+          {
+            "codigo_cpms": "44316",
+            "denominacion": "Ileostomía continente (procedimiento de Kock) (procedimiento separado)",
+            "cantidad": 2,
+            "monto_unitario": 208.51
+          },
+          {
+            "codigo_cpms": "67938",
+            "denominacion": "Extirpación de cuerpo extraño internalizado, párpado",
+            "cantidad": 1,
+            "monto_unitario": 92.75
+          }
+        ],
+        "ficticio": true
+      },
+      {
+        "id_interno": "CTA-000033",
+        "asegurado_documento": {
+          "tipo": "3",
+          "numero": "PA869178"
+        },
+        "iafas_codigo": "05292",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "50930",
+            "denominacion": "Cierre de fístula ureterovisceral (incluyendo Reparación visceral)",
+            "cantidad": 1,
+            "monto_unitario": 75.02
+          },
+          {
+            "codigo_cpms": "22862",
+            "denominacion": "Revisión incluyendo reemplazo total de disco, artroplastía (disco artificial) aproximación anterior, interespacio lumbar",
+            "cantidad": 1,
+            "monto_unitario": 99.24
+          }
+        ],
+        "ficticio": true
+      },
+      {
+        "id_interno": "CTA-000034",
+        "asegurado_documento": {
+          "tipo": "2",
+          "numero": "CE931347"
+        },
+        "iafas_codigo": "19395",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "55400",
+            "denominacion": "Vasovasostomía, vasovasorrafia",
+            "cantidad": 3,
+            "monto_unitario": 236.84
+          },
+          {
+            "codigo_cpms": "26474",
+            "denominacion": "Tenodesis; de articulación distal, cada articulación",
+            "cantidad": 1,
+            "monto_unitario": 198.84
+          },
+          {
+            "codigo_cpms": "45135",
+            "denominacion": "Escisión de prolapso rectal, con anastomosis; abordaje perineal y abdominal",
+            "cantidad": 3,
+            "monto_unitario": 35.81
+          }
+        ],
+        "ficticio": true
+      },
+      {
+        "id_interno": "CTA-000035",
+        "asegurado_documento": {
+          "tipo": "3",
+          "numero": "PA869178"
+        },
+        "iafas_codigo": "05292",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "44156",
+            "denominacion": "Colectomía total abdominal, con proctectomía, con ileostomía continente",
+            "cantidad": 3,
+            "monto_unitario": 105.93
+          },
+          {
+            "codigo_cpms": "99295.05",
+            "denominacion": "Atención en unidad de cuidados intensivos usuario de salud quemado, día usuario de salud",
+            "cantidad": 3,
+            "monto_unitario": 297.88
+          },
+          {
+            "codigo_cpms": "D5954",
+            "denominacion": "Aumento de prótesis palatal",
+            "cantidad": 1,
+            "monto_unitario": 181.08
+          }
+        ],
+        "ficticio": true
+      },
+      {
+        "id_interno": "CTA-000036",
+        "asegurado_documento": {
+          "tipo": "1",
+          "numero": "88490756"
+        },
+        "iafas_codigo": "19395",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "99404",
+            "denominacion": "Consejería en medicina preventiva y/o provision de intervenciones de reducción de factores de riesgo, proporciónados a individuo, durante aproximadamente 60 minutos",
+            "cantidad": 1,
+            "monto_unitario": 123.69
+          },
+          {
+            "codigo_cpms": "70030",
+            "denominacion": "Examen radiológico de ojo, para detección de cuerpo extraño",
+            "cantidad": 3,
+            "monto_unitario": 432.34
+          }
+        ],
+        "ficticio": true
+      },
+      {
+        "id_interno": "CTA-000037",
+        "asegurado_documento": {
+          "tipo": "3",
+          "numero": "PA869178"
+        },
+        "iafas_codigo": "05292",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "35103",
+            "denominacion": "Corrección directa de aneurisma, pseudoaneurisma, o Escisión (parcial o total) e Inserción de injerto (con o sin injerto de parche) en arteria aortica abdominal que involucra arterias iliacas (comun, hipogastrica, externa) por ruptura de aneurisma",
+            "cantidad": 2,
+            "monto_unitario": 38.37
+          },
+          {
+            "codigo_cpms": "86611",
+            "denominacion": "Anticuerpos; Bartonella",
+            "cantidad": 3,
+            "monto_unitario": 317.71
+          }
+        ],
+        "ficticio": true
+      },
+      {
+        "id_interno": "CTA-000038",
+        "asegurado_documento": {
+          "tipo": "1",
+          "numero": "88490756"
+        },
+        "iafas_codigo": "19395",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "95829",
+            "denominacion": "Electrocorticograma durante la cirugía (procedimiento separado)",
+            "cantidad": 3,
+            "monto_unitario": 83.08
+          },
+          {
+            "codigo_cpms": "93000",
+            "denominacion": "Electrocardiograma, ECG de rutina con por lo menos 12 derivaciones; con interpretación e informe",
+            "cantidad": 2,
+            "monto_unitario": 459.41
+          },
+          {
+            "codigo_cpms": "83701",
+            "denominacion": "Dosaje de Lipoproteína sanguínea con fracciónamiento de alta resolución y cuantificacion de lipoproteinas incluyendo subclases de lipoproteína cuando es realizada (p ej electroforesis, ultracentrifugacion)",
+            "cantidad": 3,
+            "monto_unitario": 390.3
+          },
+          {
+            "codigo_cpms": "D7971",
+            "denominacion": "Escisión de encía pericoronal",
+            "cantidad": 3,
+            "monto_unitario": 426.92
+          }
+        ],
+        "ficticio": true
+      },
+      {
+        "id_interno": "CTA-000039",
+        "asegurado_documento": {
+          "tipo": "2",
+          "numero": "CE050531"
+        },
+        "iafas_codigo": "05292",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "86361",
+            "denominacion": "Linfocitos T; recuento absoluto de CD4",
+            "cantidad": 1,
+            "monto_unitario": 294.43
+          }
+        ],
+        "ficticio": true
+      },
+      {
+        "id_interno": "CTA-000040",
+        "asegurado_documento": {
+          "tipo": "3",
+          "numero": "PA925287"
+        },
+        "iafas_codigo": "05292",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "83898",
+            "denominacion": "Reaccion en cadena de la polimerasa (PCR)",
+            "cantidad": 2,
+            "monto_unitario": 163.85
+          }
+        ],
+        "ficticio": true
+      },
+      {
+        "id_interno": "CTA-000041",
+        "asegurado_documento": {
+          "tipo": "1",
+          "numero": "81953443"
+        },
+        "iafas_codigo": "99553",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "83925",
+            "denominacion": "Dosaje de Opiáceos (p ej droga y metabolitos, cada procedimiento",
+            "cantidad": 3,
+            "monto_unitario": 235.09
+          }
+        ],
+        "ficticio": true
+      },
+      {
+        "id_interno": "CTA-000042",
+        "asegurado_documento": {
+          "tipo": "2",
+          "numero": "CE696883"
+        },
+        "iafas_codigo": "99553",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "95925.01",
+            "denominacion": "Potenciales Evocados Somatosensoriales de Latencia Corta 1 Miembro",
+            "cantidad": 3,
+            "monto_unitario": 369.4
+          },
+          {
+            "codigo_cpms": "61796",
+            "denominacion": "Radiocirugía estereotáctica (haz de partículas, rayos gamma o acelerador lineal), una lesión craneal simple",
+            "cantidad": 2,
+            "monto_unitario": 157.68
+          },
+          {
+            "codigo_cpms": "01780",
+            "denominacion": "Anestesia para procedimientos en venas del brazo y codo; no especificados de otra forma",
+            "cantidad": 1,
+            "monto_unitario": 443.98
+          },
+          {
+            "codigo_cpms": "78521",
+            "denominacion": "Gammagrafia cerebral",
+            "cantidad": 1,
+            "monto_unitario": 145.64
+          }
+        ],
+        "ficticio": true
+      },
+      {
+        "id_interno": "CTA-000043",
+        "asegurado_documento": {
+          "tipo": "3",
+          "numero": "PA768093"
+        },
+        "iafas_codigo": "99553",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "26255",
+            "denominacion": "Resección radical, metacarpo; con injerto autólogo (incluye obtención del injerto)",
+            "cantidad": 3,
+            "monto_unitario": 358.42
+          }
+        ],
+        "ficticio": true
+      },
+      {
+        "id_interno": "CTA-000044",
+        "asegurado_documento": {
+          "tipo": "1",
+          "numero": "84804479"
+        },
+        "iafas_codigo": "19395",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "71010",
+            "denominacion": "Examen radiológico de torax; incidencia frontal",
+            "cantidad": 2,
+            "monto_unitario": 146.42
+          },
+          {
+            "codigo_cpms": "64570",
+            "denominacion": "Retiro de dispositivo de electrodo estimulador y generador de pulsos para nervio craneal (p ej nervio vago)",
+            "cantidad": 3,
+            "monto_unitario": 333.6
+          },
+          {
+            "codigo_cpms": "11423",
+            "denominacion": "Escisión de lesión benigna, incluyendo márgenes, que no sea verruga blanda, de cuero cabelludo, cuello, manos, pies o genitales, de 2.1 a 3.0 cm de diámetro",
+            "cantidad": 2,
+            "monto_unitario": 357.49
+          },
+          {
+            "codigo_cpms": "27033",
+            "denominacion": "Artrotomía, cadera, incluyendo Exploración o Extirpación de cuerpo suelto o de cuerpo extraño",
+            "cantidad": 3,
+            "monto_unitario": 374.92
+          }
+        ],
+        "ficticio": true
+      },
+      {
+        "id_interno": "CTA-000045",
+        "asegurado_documento": {
+          "tipo": "2",
+          "numero": "CE267554"
+        },
+        "iafas_codigo": "19395",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "25447",
+            "denominacion": "Artroplastía, interposicion, articulaciónes intercarpal o carpometacarpiana",
+            "cantidad": 1,
+            "monto_unitario": 438.66
+          },
+          {
+            "codigo_cpms": "47144",
+            "denominacion": "Reparación estándar de injerto de hígado completo de un donante cadavérico antes del transplante, incluyendo coleCistectomía si es necesaria, y la disección y Remoción de tejidos blandos circundantes para acondicionar la vena cava, la vena porta, la arteria hepática, y conducto biliar común para transplante; con separacion trisegmentaria de hígado en 2 injertos parciales (p ej segmento laterial izquierdo [segmentos II y III] y trisegmento derecho [segmentos I y IV a través de VIII]",
+            "cantidad": 3,
+            "monto_unitario": 323.24
+          },
+          {
+            "codigo_cpms": "33963",
+            "denominacion": "Reposición de cánula central por esternotomía o toracotomía, recién nacidos hasta los 5 años de edad (incluye guía fluoroscopica, cuando se realice)",
+            "cantidad": 3,
+            "monto_unitario": 191.66
+          }
+        ],
+        "ficticio": true
+      },
+      {
+        "id_interno": "CTA-000046",
+        "asegurado_documento": {
+          "tipo": "1",
+          "numero": "82022313"
+        },
+        "iafas_codigo": "99553",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "28490",
+            "denominacion": "Tratamiento cerrado de fractura de dedo gordo, falange o falanges; sin manipulacion",
+            "cantidad": 3,
+            "monto_unitario": 292.16
+          },
+          {
+            "codigo_cpms": "26123",
+            "denominacion": "Fasciectomía, palmar parcial con Liberación de un único dedo incluyendo la articulación interfalángica proximal, con o sin Z-plastia, otra reorganizacion de tejido local, o injerto cutáneo (incluye obtención del injerto)",
+            "cantidad": 3,
+            "monto_unitario": 188.07
+          },
+          {
+            "codigo_cpms": "43410",
+            "denominacion": "Sutura de herida o lesión esofágica por abordaje cervical",
+            "cantidad": 3,
+            "monto_unitario": 414.45
+          },
+          {
+            "codigo_cpms": "87073",
+            "denominacion": "Cultivo bacterial, cuantitativo, anaerobico, con aislamiento e Identificación presuntativa de cepas, cualquier fuente excepto orina, sangre o heces",
+            "cantidad": 2,
+            "monto_unitario": 153.2
+          }
+        ],
+        "ficticio": true
+      },
+      {
+        "id_interno": "CTA-000047",
+        "asegurado_documento": {
+          "tipo": "2",
+          "numero": "CE267554"
+        },
+        "iafas_codigo": "19395",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "93316",
+            "denominacion": "Ecocardiografía transesofágica para anomalías cardíacas congénitas; Colocación de la sonda transesofágica solamente",
+            "cantidad": 1,
+            "monto_unitario": 43.02
+          },
+          {
+            "codigo_cpms": "22848",
+            "denominacion": "Fijación pélvica (unión del extremo caudal de la instrumentacion a estructuras óseas de la pelvis)que no sea el sacro (registrar separadamente además del código del procedimiento primario)",
+            "cantidad": 3,
+            "monto_unitario": 472.92
+          },
+          {
+            "codigo_cpms": "80200",
+            "denominacion": "Dosaje de Tobramicina",
+            "cantidad": 1,
+            "monto_unitario": 466.2
+          },
+          {
+            "codigo_cpms": "72157",
+            "denominacion": "Imágenes por resonancia magnética (p ej de protones), canal espinal y su contenido, sin material de contraste seguidas de materiales de contraste y secuencias adicionales; torácica",
+            "cantidad": 2,
+            "monto_unitario": 341.74
+          }
+        ],
+        "ficticio": true
+      },
+      {
+        "id_interno": "CTA-000048",
+        "asegurado_documento": {
+          "tipo": "2",
+          "numero": "CE050531"
+        },
+        "iafas_codigo": "05292",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "21480",
+            "denominacion": "Tratamiento cerrado de la luxación témporomandibular, inicial o subsiguiente",
+            "cantidad": 2,
+            "monto_unitario": 461.61
+          },
+          {
+            "codigo_cpms": "01971.01",
+            "denominacion": "Anestesia general inhalatoria con mascarilla facial",
+            "cantidad": 1,
+            "monto_unitario": 246.79
+          },
+          {
+            "codigo_cpms": "80061",
+            "denominacion": "Perfil lipídico: colesterol, suero total (82465), medicion directa de lipoproteína, colesterol de alta densidad (HDL) (83718) y triglicéridos (84478)",
+            "cantidad": 2,
+            "monto_unitario": 299.93
+          },
+          {
+            "codigo_cpms": "90648",
+            "denominacion": "Vacuna contra hemophilus influenzae tipo B (HiB), conjugada PRP-T (esquema de 4 dosis), para uso intramuscular",
+            "cantidad": 3,
+            "monto_unitario": 215.56
+          }
+        ],
+        "ficticio": true
+      },
+      {
+        "id_interno": "CTA-000049",
+        "asegurado_documento": {
+          "tipo": "2",
+          "numero": "CE050531"
+        },
+        "iafas_codigo": "05292",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "24340",
+            "denominacion": "Tenodesis del tendón del bíceps a nivel del codo (procedimiento separado)",
+            "cantidad": 2,
+            "monto_unitario": 139.25
+          },
+          {
+            "codigo_cpms": "78360",
+            "denominacion": "Gammagrafía de médula ósea",
+            "cantidad": 1,
+            "monto_unitario": 268.12
+          },
+          {
+            "codigo_cpms": "19396",
+            "denominacion": "Reparación de molde para implante personalizado de seno",
+            "cantidad": 2,
+            "monto_unitario": 169.17
+          }
+        ],
+        "ficticio": true
+      },
+      {
+        "id_interno": "CTA-000050",
+        "asegurado_documento": {
+          "tipo": "2",
+          "numero": "CE696883"
+        },
+        "iafas_codigo": "99553",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "77326",
+            "denominacion": "Cálculo de isodosis de braquiterapia; sencillo (cálculo a partir de un solo plano, una a cuatro fuentes/Aplicación en cinta, braquiterapia remota posterior, 1 a 8 fuentes)",
+            "cantidad": 2,
+            "monto_unitario": 453.52
+          },
+          {
+            "codigo_cpms": "26180",
+            "denominacion": "Escisión de tendón, dedo, flexor o extensor, cada tendón",
+            "cantidad": 1,
+            "monto_unitario": 223.43
+          }
+        ],
+        "ficticio": true
+      },
+      {
+        "id_interno": "CTA-000051",
+        "asegurado_documento": {
+          "tipo": "1",
+          "numero": "84804479"
+        },
+        "iafas_codigo": "19395",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "27788",
+            "denominacion": "Tratamiento cerrado de fractura del peroné distal (maléolo lateral); con manipulacion",
+            "cantidad": 2,
+            "monto_unitario": 47.78
+          },
+          {
+            "codigo_cpms": "42340",
+            "denominacion": "Sialolitomía; parotida, extraoral o intraoral complicada",
+            "cantidad": 2,
+            "monto_unitario": 358.37
+          },
+          {
+            "codigo_cpms": "71551.01",
+            "denominacion": "Resonancia magnética de mediastino con material de contraste",
+            "cantidad": 2,
+            "monto_unitario": 354.23
+          },
+          {
+            "codigo_cpms": "61512",
+            "denominacion": "Craniectomía, trepanación, craneotomía con colgajo óseo; para escisión de meningioma, supratentorial",
+            "cantidad": 1,
+            "monto_unitario": 456.57
+          }
+        ],
+        "ficticio": true
+      },
+      {
+        "id_interno": "CTA-000052",
+        "asegurado_documento": {
+          "tipo": "2",
+          "numero": "CE367863"
+        },
+        "iafas_codigo": "05292",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "90876",
+            "denominacion": "Terapia individual psicofisiologica que incorpora la biorretroalimentacion bajo cualquier modalidad (cara a cara con el usuario de salud) con la psicoterapia (pej: orientado a introspeccion, modificacion de comportamiento o psicoterapia de soporte); 45 minutos",
+            "cantidad": 2,
+            "monto_unitario": 252.8
+          },
+          {
+            "codigo_cpms": "33774",
+            "denominacion": "Corrección de transposición de grandes arterias mediante procedimiento de bafles auriculares (p ej tipo Mustard o Senning), con derivación cardiopulmonar",
+            "cantidad": 3,
+            "monto_unitario": 274.73
+          },
+          {
+            "codigo_cpms": "33881",
+            "denominacion": "Reparación endovascular de aorta torácica descendente (p ej aneurisma, pseudoaneurisma, diseccion, úlcera penetrante, hematoma intramural o disrupcion traumática) que no involucra el recubrimiento del origen de la arteria subclavia izquierda, endoprótesis inicial mas extension(es) de aorta torácica descendente, si se requiriera, hasta nivel de origen de la arteria celiaca",
+            "cantidad": 3,
+            "monto_unitario": 266.07
+          }
+        ],
+        "ficticio": true
+      },
+      {
+        "id_interno": "CTA-000053",
+        "asegurado_documento": {
+          "tipo": "1",
+          "numero": "53679371"
+        },
+        "iafas_codigo": "05292",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "C6103",
+            "denominacion": "Vigilancia periodica de la calidad de los alimentos",
+            "cantidad": 2,
+            "monto_unitario": 177.1
+          }
+        ],
+        "ficticio": true
+      },
+      {
+        "id_interno": "CTA-000054",
+        "asegurado_documento": {
+          "tipo": "2",
+          "numero": "CE504312"
+        },
+        "iafas_codigo": "96969",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "33822",
+            "denominacion": "Sección de conducto arterioso persistente en menores de 18 años, por división",
+            "cantidad": 2,
+            "monto_unitario": 418.73
+          }
+        ],
+        "ficticio": true
+      },
+      {
+        "id_interno": "CTA-000055",
+        "asegurado_documento": {
+          "tipo": "2",
+          "numero": "CE885244"
+        },
+        "iafas_codigo": "19395",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "88299.34",
+            "denominacion": "Detección del gen de fusion DEK/CAN",
+            "cantidad": 2,
+            "monto_unitario": 312.39
+          },
+          {
+            "codigo_cpms": "50955",
+            "denominacion": "Endoscopía ureteral a través de ureterostomía ya establecida, con o sin Irrigación, instilacion o ureteropielografía, excluyendo servicio radiológico; con biopsia",
+            "cantidad": 1,
+            "monto_unitario": 126.84
+          },
+          {
+            "codigo_cpms": "54326",
+            "denominacion": "Reparación de hipospadias distal en etapa única (con o sin encordamiento o Circuncisión); con uretroplastía mediante colgajos de piel local y movilización de uretra",
+            "cantidad": 3,
+            "monto_unitario": 259.65
+          }
+        ],
+        "ficticio": true
+      },
+      {
+        "id_interno": "CTA-000056",
+        "asegurado_documento": {
+          "tipo": "1",
+          "numero": "84804479"
+        },
+        "iafas_codigo": "19395",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "E5011",
+            "denominacion": "Colgajo desplazado con injerto de tejido conectivo",
+            "cantidad": 1,
+            "monto_unitario": 429.27
+          }
+        ],
+        "ficticio": true
+      },
+      {
+        "id_interno": "CTA-000057",
+        "asegurado_documento": {
+          "tipo": "3",
+          "numero": "PA768093"
+        },
+        "iafas_codigo": "99553",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "58180",
+            "denominacion": "Histerectomía abdominal supracervical o subtotal, con o sin extirpación de trompa(s), con o sin extirpación de ovario(s)",
+            "cantidad": 2,
+            "monto_unitario": 241.45
+          },
+          {
+            "codigo_cpms": "27334",
+            "denominacion": "Artrotomía, con sinovectomía, rodilla; anterior o posterior",
+            "cantidad": 1,
+            "monto_unitario": 437.42
+          }
+        ],
+        "ficticio": true
+      },
+      {
+        "id_interno": "CTA-000058",
+        "asegurado_documento": {
+          "tipo": "1",
+          "numero": "82022313"
+        },
+        "iafas_codigo": "99553",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "31579",
+            "denominacion": "Laringoscopía, fibra óptica flexible o rígida, con estroboscopia",
+            "cantidad": 3,
+            "monto_unitario": 416.33
+          }
+        ],
+        "ficticio": true
+      },
+      {
+        "id_interno": "CTA-000059",
+        "asegurado_documento": {
+          "tipo": "3",
+          "numero": "PA925287"
+        },
+        "iafas_codigo": "05292",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "70130",
+            "denominacion": "Examen radiológico, mastoides; completo, mínimo de de tres incidencias por lado",
+            "cantidad": 2,
+            "monto_unitario": 225.98
+          }
+        ],
+        "ficticio": true
+      },
+      {
+        "id_interno": "CTA-000060",
+        "asegurado_documento": {
+          "tipo": "2",
+          "numero": "CE931347"
+        },
+        "iafas_codigo": "19395",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "37221",
+            "denominacion": "Revascularizacion, endovascular, abierta o percutánea, arteria iliaca, unilateral, vaso inicial; con Colocación(es) de stent(s) transluminal(es), incluye la angioplastía al interior del mismo vaso, cuando se realice",
+            "cantidad": 1,
+            "monto_unitario": 243.28
+          },
+          {
+            "codigo_cpms": "30540",
+            "denominacion": "Corrección de atresia de coana; vía intranasal",
+            "cantidad": 1,
+            "monto_unitario": 278.09
+          },
+          {
+            "codigo_cpms": "99199.18",
+            "denominacion": "Suplementación de ácido fólico",
+            "cantidad": 1,
+            "monto_unitario": 70.02
+          },
+          {
+            "codigo_cpms": "00842",
+            "denominacion": "Anestesia para procedimientos intraperitoneales en el abdomen bajo, incluyendo laparoscopía; amniocentesis",
+            "cantidad": 3,
+            "monto_unitario": 296.54
+          }
+        ],
+        "ficticio": true
+      },
+      {
+        "id_interno": "CTA-000061",
+        "asegurado_documento": {
+          "tipo": "1",
+          "numero": "88490756"
+        },
+        "iafas_codigo": "19395",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "91038",
+            "denominacion": "Prueba de funcion esofágica, prueba de reflujo gastroesofágico con Colocación de electrodo de impedancia mediante catéter nasal intraluminal, grabación, análisis e interpretación; prolongado (más de 1 hora, hasta 24 horas)",
+            "cantidad": 3,
+            "monto_unitario": 325.75
+          },
+          {
+            "codigo_cpms": "96904.02",
+            "denominacion": "Detección y búsqueda activa, de cáncer de piel mediante dermatoscopia digital (mapeo digital)",
+            "cantidad": 1,
+            "monto_unitario": 47.67
+          },
+          {
+            "codigo_cpms": "D5850",
+            "denominacion": "Acondicionamiento del tejido maxilar",
+            "cantidad": 1,
+            "monto_unitario": 412.83
+          },
+          {
+            "codigo_cpms": "12007",
+            "denominacion": "Sutura simple de heridas superficiales en cuero cabelludo, cuello, axila, genitales externos, tronco y/o extremidades (incluyendo manos y pies); mayor de 30.0 cm",
+            "cantidad": 1,
+            "monto_unitario": 163.34
+          }
+        ],
+        "ficticio": true
+      },
+      {
+        "id_interno": "CTA-000062",
+        "asegurado_documento": {
+          "tipo": "3",
+          "numero": "PA703322"
+        },
+        "iafas_codigo": "96969",
+        "ipress_codigo": "15995250",
+        "fecha_prestacion": "20260915",
+        "procedimientos": [
+          {
+            "codigo_cpms": "96416",
+            "denominacion": "Administración de quimioterapia, técnica de infusión intravenosa; inicio de infusión prolongada de quimioterapia (más de 8 horas) que requiere el uso de una bomba portatil o implantable",
+            "cantidad": 1,
+            "monto_unitario": 354.54
+          },
+          {
+            "codigo_cpms": "D8670",
+            "denominacion": "Controles periodicos de tratamiento ortodoncico",
+            "cantidad": 1,
+            "monto_unitario": 404.67
+          },
+          {
+            "codigo_cpms": "99215.32",
+            "denominacion": "Consulta ambulatoria especializada para la evaluación y manejo de un paciente continuador de pediatría",
+            "cantidad": 2,
+            "monto_unitario": 101.49
+          }
+        ],
+        "ficticio": true
+      }
+    ]
+  }
+}

@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block titulo %}{{ dominio.nombre }} - Validador de facturación electrónica{% endblock %}
+{% block contenido %}
+  <div class="tarjeta">
+    <h1>{{ dominio.tabla }} — {{ dominio.nombre }}</h1>
+    <table data-testid="tabla-valores-dominio">
+      <thead><tr><th>Valor</th></tr></thead>
+      <tbody>
+        {% for valor in dominio.valores|sort %}
+        <tr><td>{{ valor }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <p><a class="boton secundario" href="/tablas-validacion" data-testid="volver-tablas-validacion">Volver</a></p>
+  </div>
+{% endblock %}

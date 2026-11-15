@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block titulo %}Ventana principal - Validador de facturación electrónica{% endblock %}
+{% block contenido %}
+  <div class="tarjeta">
+    <h1>Ventana principal</h1>
+    <p data-testid="datos-usuario">Usuario: {{ usuario }} — Perfil: {{ perfil }}</p>
+    <p data-testid="datos-ipress">IPRESS: {{ ipress.razon_social }} ({{ ipress.codigo_ipress }})</p>
+    <p>Use el menú superior para Monitoreo de Lotes, Tablas de Validación y Herramientas.</p>
+  </div>
+{% endblock %}

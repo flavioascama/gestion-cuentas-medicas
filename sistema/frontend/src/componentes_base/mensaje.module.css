@@ -1,0 +1,24 @@
+.mensaje {
+  padding: var(--espacio_3) var(--espacio_4);
+  border-radius: var(--radio_borde);
+  border-left: 4px solid transparent;
+  margin-bottom: var(--espacio_4);
+}
+
+.exito {
+  background-color: var(--color_primario_suave);
+  border-left-color: var(--color_exito);
+  color: var(--color_texto);
+}
+
+.advertencia {
+  background-color: var(--color_advertencia_suave);
+  border-left-color: var(--color_advertencia);
+  color: var(--color_texto);
+}
+
+.error {
+  background-color: var(--color_error_suave);
+  border-left-color: var(--color_error);
+  color: var(--color_texto);
+}

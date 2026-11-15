@@ -1,0 +1,12 @@
+.migas {
+  display: flex;
+  gap: var(--espacio_2);
+  font-size: var(--tamano_metadato);
+  color: var(--color_texto_secundario);
+  margin-bottom: var(--espacio_2);
+}
+
+.migas a {
+  color: var(--color_texto_secundario);
+  text-decoration: underline;
+}

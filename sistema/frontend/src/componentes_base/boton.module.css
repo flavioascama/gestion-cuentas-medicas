@@ -1,0 +1,42 @@
+.boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--espacio_2);
+  height: 36px;
+  padding: 0 var(--espacio_4);
+  border-radius: var(--radio_borde);
+  font-size: var(--tamano_base);
+  font-weight: var(--peso_enfasis);
+  cursor: pointer;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.boton:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.primario {
+  background-color: var(--color_primario);
+  color: var(--color_superficie);
+}
+
+.secundario {
+  background-color: var(--color_superficie);
+  color: var(--color_primario);
+  border-color: var(--color_primario);
+}
+
+.terciario {
+  background-color: transparent;
+  color: var(--color_primario);
+  height: auto;
+  padding: 0;
+}
+
+.destructivo {
+  background-color: var(--color_error);
+  color: var(--color_superficie);
+}

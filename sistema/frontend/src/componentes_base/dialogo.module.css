@@ -1,0 +1,52 @@
+.fondo {
+  position: fixed;
+  inset: 0;
+  background-color: var(--color_superposicion);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.caja {
+  background-color: var(--color_superficie);
+  border-radius: var(--radio_borde);
+  box-shadow: var(--sombra_dialogo);
+  padding: var(--espacio_6);
+  min-width: 320px;
+  max-width: 480px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Para dialogos con contenido variable (listas de resultados, tablas): el
+   confirmar-procedimiento y el captcha nunca lo necesitan, pero el
+   asistente CPMS si, y sin este ancho la columna "Jerarquia" queda
+   ilegible y la tabla de candidatos empuja al dialogo fuera de la
+   pantalla en vez de scrollear dentro de el. */
+.grande {
+  max-width: 900px;
+  width: 90vw;
+}
+
+.titulo {
+  font-size: var(--tamano_titulo_seccion);
+  font-weight: var(--peso_enfasis);
+  padding-bottom: var(--espacio_4);
+  margin-bottom: var(--espacio_4);
+  border-bottom: 1px solid var(--color_borde);
+  flex-shrink: 0;
+}
+
+.contenido {
+  margin-bottom: var(--espacio_6);
+  overflow-y: auto;
+}
+
+.acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--espacio_2);
+  flex-shrink: 0;
+}

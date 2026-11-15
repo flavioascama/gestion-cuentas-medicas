@@ -1,0 +1,30 @@
+.plazo {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 1px;
+  line-height: 1.25;
+}
+
+.fecha {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.hito {
+  font-size: var(--tamano_metadato);
+  color: var(--color_texto_secundario);
+}
+
+.sin_plazo {
+  color: var(--color_texto_secundario);
+}
+
+.vencido .fecha {
+  color: var(--color_error);
+  font-weight: var(--peso_enfasis);
+}
+
+.por_vencer .fecha {
+  color: var(--color_advertencia);
+  font-weight: var(--peso_enfasis);
+}

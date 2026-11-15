@@ -1,0 +1,48 @@
+.tarjeta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: var(--espacio_6);
+  background-color: var(--color_superficie);
+  border: 1px solid var(--color_borde);
+  border-radius: var(--radio_borde);
+}
+
+.cabecera {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--espacio_3);
+  margin-bottom: var(--espacio_4);
+}
+
+.textos {
+  min-width: 0;
+}
+
+/* El alternador Grafico/Tabla nunca se encoge: con un titulo largo,
+   es el texto el que pasa a la linea siguiente, no los dos botones. */
+.vista {
+  flex-shrink: 0;
+}
+
+.titulo {
+  margin: 0;
+  font-size: var(--tamano_titulo_seccion);
+  font-weight: var(--peso_enfasis);
+  color: var(--color_texto);
+}
+
+.subtitulo {
+  margin: var(--espacio_1) 0 0;
+  font-size: var(--tamano_metadato);
+  color: var(--color_texto_secundario);
+}
+
+.controles {
+  margin-bottom: var(--espacio_4);
+}
+
+.cuerpo {
+  min-width: 0;
+}

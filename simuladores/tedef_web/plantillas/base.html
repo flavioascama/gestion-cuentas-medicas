@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>{% block titulo %}Validador de facturación electrónica{% endblock %}</title>
+  <style>
+    body { font-family: sans-serif; margin: 0; color: #1a1a1a; background: #f7f7f7; }
+    .aviso { background: #fff3cd; border-bottom: 1px solid #d1a441; padding: 0.6rem 1rem; font-weight: bold; font-size: 0.85rem; text-align: center; }
+    header.barra { background: #2c4f6b; color: white; padding: 0.75rem 1.5rem; display: flex; justify-content: space-between; align-items: center; }
+    header.barra a { color: white; text-decoration: none; }
+    nav.modulos { display: flex; gap: 0.75rem; flex-wrap: wrap; padding: 0.75rem 1.5rem; background: #eef2f6; border-bottom: 1px solid #ccc; }
+    nav.modulos a, nav.modulos span { padding: 0.35rem 0.7rem; border-radius: 4px; font-size: 0.85rem; text-decoration: none; }
+    nav.modulos a { background: #2c4f6b; color: white; }
+    nav.modulos span.deshabilitado { background: #ddd; color: #888; }
+    main { padding: 1.5rem; max-width: 1000px; margin: 0 auto; }
+    .tarjeta { background: white; border: 1px solid #ddd; border-radius: 6px; padding: 1.25rem; margin-bottom: 1.25rem; }
+    table { border-collapse: collapse; width: 100%; margin-top: 0.5rem; }
+    th, td { border: 1px solid #ccc; padding: 0.45rem 0.6rem; text-align: left; font-size: 0.85rem; }
+    th { background: #f0f0f0; }
+    label { display: block; margin-bottom: 0.75rem; font-size: 0.9rem; }
+    input, select { padding: 0.35rem; width: 100%; max-width: 320px; box-sizing: border-box; }
+    button, .boton { padding: 0.5rem 1rem; background: #2c4f6b; color: white; border: none; border-radius: 4px; cursor: pointer; text-decoration: none; display: inline-block; font-size: 0.9rem; }
+    button.secundario, .boton.secundario { background: #6b7c8a; }
+    .error { color: #a11212; font-weight: bold; }
+    .exito { color: #146c2e; font-weight: bold; }
+    .REGISTRADO, .VALIDADO, .ENVIADO { color: #146c2e; font-weight: bold; }
+    .OBSERVADO_DETALLADA, .RECHAZADO_FORMA { color: #a11212; font-weight: bold; }
+    .VALIDANDO { color: #8a6d00; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div class="aviso" id="aviso-simulacion" data-testid="aviso-simulacion">
+    ENTORNO DE SIMULACIÓN. NO CORRESPONDE A UN SISTEMA OFICIAL.
+  </div>
+  <header class="barra">
+    <a href="/menu" data-testid="enlace-inicio"><strong>Validador de facturación electrónica</strong> (simulador)</a>
+    {% if usuario %}
+    <form method="post" action="/salir">
+      <span style="margin-right:0.75rem;">{{ usuario }} — {{ perfil }}</span>
+      <button type="submit" data-testid="boton-salir">Salir</button>
+    </form>
+    {% endif %}
+  </header>
+  {% if usuario %}
+  <nav class="modulos">
+    <a href="/lotes-por-validar" data-testid="menu-lotes-por-validar">Lotes por Validar</a>
+    <a href="/lotes-por-enviar" data-testid="menu-lotes-por-enviar">Lotes por Enviar</a>
+    <a href="/lotes-enviados" data-testid="menu-lotes-enviados">Lotes Enviados a SUSALUD</a>
+    <a href="/lotes-eliminados" data-testid="menu-lotes-eliminados">Lotes Eliminados</a>
+    <span class="deshabilitado" data-testid="menu-declaracion-jurada" title="Fuera de alcance de este simulador">Declaración Jurada</span>
+    <a href="/tablas-validacion" data-testid="menu-tablas-validacion">Tablas de Validación</a>
+    <a href="/herramientas" data-testid="menu-herramientas">Herramientas</a>
+  </nav>
+  {% endif %}
+  <main>
+    {% block contenido %}{% endblock %}
+  </main>
+</body>
+</html>

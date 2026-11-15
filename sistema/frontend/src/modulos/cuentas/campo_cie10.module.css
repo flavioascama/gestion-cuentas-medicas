@@ -1,0 +1,64 @@
+.contenedor {
+  position: relative;
+}
+
+.buscando {
+  display: block;
+  font-size: var(--tamano_metadato);
+  color: var(--color_texto_secundario);
+  margin-top: var(--espacio_1);
+}
+
+/* En flujo normal (no absoluto): el dialogo que lo contiene tiene
+   overflow-y: auto, y una lista flotante quedaria recortada dentro de el. */
+.lista {
+  margin-top: var(--espacio_1);
+  max-height: 220px;
+  overflow-y: auto;
+  background-color: var(--color_superficie);
+  border: 1px solid var(--color_borde);
+  border-radius: var(--radio_borde);
+  box-shadow: var(--sombra_dialogo);
+  list-style: none;
+  padding: var(--espacio_1) 0;
+}
+
+.opcion {
+  display: flex;
+  gap: var(--espacio_3);
+  width: 100%;
+  padding: var(--espacio_2) var(--espacio_3);
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: var(--color_texto);
+}
+
+.opcion:hover,
+.opcion:focus {
+  background-color: var(--color_fondo);
+}
+
+.codigo {
+  flex-shrink: 0;
+  font-weight: var(--peso_enfasis);
+  color: var(--color_primario);
+}
+
+.descripcion {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sin_resultados {
+  margin-top: var(--espacio_1);
+  padding: var(--espacio_2) var(--espacio_3);
+  background-color: var(--color_superficie);
+  border: 1px solid var(--color_borde);
+  border-radius: var(--radio_borde);
+  font-size: var(--tamano_metadato);
+  color: var(--color_texto_secundario);
+}

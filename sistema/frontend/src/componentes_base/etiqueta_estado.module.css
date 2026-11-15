@@ -1,0 +1,39 @@
+.etiqueta {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--espacio_2);
+  border-radius: 999px;
+  font-size: var(--tamano_metadato);
+  font-weight: var(--peso_medio);
+  white-space: nowrap;
+}
+
+.gris {
+  /* border, a diferencia de las otras cuatro: --color_fondo es casi
+     igual a --color_superficie (la tarjeta blanca donde vive la
+     pildora), sin un borde quedaria casi invisible. */
+  background-color: var(--color_fondo);
+  color: var(--color_texto_secundario);
+  border: 1px solid var(--color_borde);
+  padding: 1px var(--espacio_2);
+}
+
+.azul {
+  background-color: var(--color_primario_suave);
+  color: var(--color_primario);
+}
+
+.ambar {
+  background-color: var(--color_advertencia_suave);
+  color: var(--color_advertencia);
+}
+
+.verde {
+  background-color: var(--color_exito_suave);
+  color: var(--color_exito);
+}
+
+.rojo {
+  background-color: var(--color_error_suave);
+  color: var(--color_error);
+}

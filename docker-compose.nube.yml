@@ -1,0 +1,276 @@
+# Despliegue en un servidor con Docker: el sistema y sus simuladores en un
+# solo proyecto de Compose, con las imagenes construidas desde el codigo
+# (sin montar el codigo fuente) y un unico punto de entrada publico, el
+# proxy Caddy (HTTPS en los puertos 80 y 443). Ni la base de datos ni los
+# simuladores publican puertos: solo se alcanzan por la red interna.
+#
+# Lo prepara y levanta despliegue/desplegar.sh, que genera el .env con
+# claves aleatorias. Uso manual:
+#   docker compose -f docker-compose.nube.yml up -d --build
+#
+# Los simuladores no ofrecen TLS en la red interna, por eso ENTORNO queda en
+# "desarrollo"; todo el trafico publico pasa por HTTPS y la base de datos
+# solo acepta conexiones cifradas.
+
+x-reinicio: &reinicio
+  restart: unless-stopped
+
+services:
+  postgres:
+    <<: *reinicio
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-gestion_cuentas}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Falta POSTGRES_PASSWORD en .env}
+      POSTGRES_DB: ${POSTGRES_DB:-gestion_cuentas}
+    command:
+      - bash
+      - -c
+      - >-
+        if [ ! -f /var/lib/postgresql/tls/server.key ]; then
+        mkdir -p /var/lib/postgresql/tls &&
+        openssl req -new -x509 -days 825 -nodes -subj /CN=postgres
+        -out /var/lib/postgresql/tls/server.crt -keyout /var/lib/postgresql/tls/server.key &&
+        chown -R postgres:postgres /var/lib/postgresql/tls &&
+        chmod 600 /var/lib/postgresql/tls/server.key; fi;
+        exec docker-entrypoint.sh postgres -c ssl=on
+        -c ssl_cert_file=/var/lib/postgresql/tls/server.crt
+        -c ssl_key_file=/var/lib/postgresql/tls/server.key
+        -c ssl_min_protocol_version=TLSv1.2
+    volumes:
+      - datos_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-gestion_cuentas} -d ${POSTGRES_DB:-gestion_cuentas}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    <<: *reinicio
+    build:
+      context: ./sistema/backend
+    env_file:
+      - .env
+    environment:
+      UV_NO_SYNC: "1"
+      URL_BASE_DATOS: postgresql+asyncpg://${USUARIO_APLICACION_BD:-gestion_cuentas_app}:${CLAVE_USUARIO_APLICACION_BD:?Falta CLAVE_USUARIO_APLICACION_BD en .env}@postgres:5432/${POSTGRES_DB:-gestion_cuentas}?ssl=require
+      URL_BASE_DATOS_MIGRACIONES: postgresql+asyncpg://${POSTGRES_USER:-gestion_cuentas}:${POSTGRES_PASSWORD:?Falta POSTGRES_PASSWORD en .env}@postgres:5432/${POSTGRES_DB:-gestion_cuentas}?ssl=require
+      RUTA_DOCS_FUENTES: /docs_fuentes
+      RUTA_SIMULADORES_DATOS_SEMILLA: /simuladores_datos_semilla
+      RUTA_REPORTES: /reportes
+      RUTA_ARTEFACTOS_S01: /artefactos_s01
+      ORIGENES_CORS: https://${DOMINIO:?Falta DOMINIO en .env}
+      FTP_RECEPTOR_IAFAS_HOST: receptor-iafas
+      FTP_RECEPTOR_IAFAS_PUERTO: "21"
+      RECEPTOR_IAFAS_URL_BASE: http://receptor-iafas:8000
+      ACREDITA_SALUD_URL_BASE: http://acredita-salud:8000
+      TEDEF_WEB_URL_BASE: http://tedef-web:8000
+      PSE_URL_BASE: http://pse:8000
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./docs/fuentes:/docs_fuentes:ro
+      - ./simuladores/datos_semilla:/simuladores_datos_semilla:ro
+      - reportes:/reportes
+      - artefactos_s01:/artefactos_s01
+
+  trabajador:
+    <<: *reinicio
+    build:
+      context: .
+      dockerfile: sistema/automatizacion/Dockerfile
+    env_file:
+      - .env
+    environment:
+      UV_NO_SYNC: "1"
+      URL_BASE_DATOS: postgresql+asyncpg://${USUARIO_APLICACION_BD:-gestion_cuentas_app}:${CLAVE_USUARIO_APLICACION_BD:?Falta CLAVE_USUARIO_APLICACION_BD en .env}@postgres:5432/${POSTGRES_DB:-gestion_cuentas}?ssl=require
+      RUTA_REPORTES: /reportes
+      RUTA_SESIONES_PLATAFORMAS: /sesiones_plataformas
+      RUTA_ARTEFACTOS_S01: /artefactos_s01
+      CLAVE_CIFRADO_SESIONES: ${CLAVE_CIFRADO_SESIONES:?Falta CLAVE_CIFRADO_SESIONES en .env}
+      ACREDITA_SALUD_URL_BASE: http://acredita-salud:8000
+      RECEPTOR_IAFAS_URL_BASE: http://receptor-iafas:8000
+      TEDEF_WEB_URL_BASE: http://tedef-web:8000
+      TEDEF_WEB_USUARIO: ${TEDEF_WEB_USUARIO:-validador_ipress_demo}
+      TEDEF_WEB_CLAVE: ${TEDEF_WEB_CLAVE:?Falta TEDEF_WEB_CLAVE en .env}
+      CORREO_IMAP_HOST: correo
+      CORREO_IMAP_PUERTO: "3143"
+      CORREO_IMAP_USUARIO: ${CORREO_USUARIO:-cuentasmedicas@clinica.test}
+      CORREO_IMAP_CLAVE: ${CORREO_CLAVE:?Falta CORREO_CLAVE en .env}
+      CORREO_IMAP_TLS: "false"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - reportes:/reportes
+      - datos_trabajador:/datos
+      - sesiones_plataformas:/sesiones_plataformas
+      - artefactos_s01:/artefactos_s01
+
+  temporizador:
+    <<: *reinicio
+    build:
+      context: ./sistema/backend
+    env_file:
+      - .env
+    environment:
+      URL_BASE_DATOS: postgresql+asyncpg://${USUARIO_APLICACION_BD:-gestion_cuentas_app}:${CLAVE_USUARIO_APLICACION_BD:?Falta CLAVE_USUARIO_APLICACION_BD en .env}@postgres:5432/${POSTGRES_DB:-gestion_cuentas}?ssl=require
+      RUTA_REPORTES: /reportes
+      TEMPORIZADOR_INTERVALO_VENCIMIENTOS_MINUTOS: ${TEMPORIZADOR_INTERVALO_VENCIMIENTOS_MINUTOS:-60}
+      TEMPORIZADOR_INTERVALO_CADENA_HORAS: ${TEMPORIZADOR_INTERVALO_CADENA_HORAS:-24}
+      TEMPORIZADOR_INTERVALO_COMUNICACIONES_MINUTOS: ${TEMPORIZADOR_INTERVALO_COMUNICACIONES_MINUTOS:-15}
+    command: ["uv", "run", "--no-sync", "python", "-m", "herramientas.temporizador"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - reportes:/reportes
+
+  frontend:
+    <<: *reinicio
+    build:
+      context: ./sistema/frontend
+      args:
+        VITE_URL_BASE_API: /api
+        VITE_URL_PORTAL_ACREDITA_SALUD: https://acredita.${DOMINIO:?Falta DOMINIO en .env}
+        VITE_INTERVALO_REFRESCO_PANEL_SEGUNDOS: ${VITE_INTERVALO_REFRESCO_PANEL_SEGUNDOS:-60}
+    environment:
+      PUERTO_HTTPS: "443"
+    depends_on:
+      - backend
+
+  respaldo:
+    <<: *reinicio
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-gestion_cuentas}
+      POSTGRES_DB: ${POSTGRES_DB:-gestion_cuentas}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?Falta POSTGRES_PASSWORD en .env}
+      PGSSLMODE: require
+      CLAVE_RESPALDOS: ${CLAVE_RESPALDOS:?Falta CLAVE_RESPALDOS en .env}
+      RESPALDO_INTERVALO_HORAS: ${RESPALDO_INTERVALO_HORAS:-24}
+      RESPALDO_RETENCION_DIAS: ${RESPALDO_RETENCION_DIAS:-30}
+    entrypoint: ["bash", "/scripts/respaldar.sh"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./sistema/respaldo:/scripts:ro
+      - respaldos:/respaldos
+
+  # --- Simuladores de las plataformas externas (datos sinteticos) ---
+  # La configuracion no secreta sale de su .env.ejemplo; las credenciales,
+  # del .env de la raiz, para que coincidan con las que usa el sistema.
+
+  acredita-salud:
+    <<: *reinicio
+    build:
+      context: ./simuladores/acredita_salud
+    env_file:
+      - ./simuladores/acredita_salud/.env.ejemplo
+    environment:
+      UV_NO_SYNC: "1"
+      ACREDITA_SALUD_USUARIO: ${ACREDITA_SALUD_USUARIO:-ipress_demo}
+      ACREDITA_SALUD_CLAVE: ${ACREDITA_SALUD_CLAVE:?Falta ACREDITA_SALUD_CLAVE en .env}
+      RUTA_SIMULADORES_DATOS_SEMILLA: /datos_semilla
+      BASE_DATOS: /datos/acredita_salud.sqlite3
+    volumes:
+      - ./simuladores/datos_semilla:/datos_semilla:ro
+      - datos_acredita_salud:/datos
+
+  receptor-iafas:
+    <<: *reinicio
+    build:
+      context: ./simuladores/receptor_iafas
+    env_file:
+      - ./simuladores/receptor_iafas/.env.ejemplo
+    environment:
+      UV_NO_SYNC: "1"
+      FTP_USUARIO: ${FTP_RECEPTOR_IAFAS_USUARIO:-ipress_local}
+      FTP_CLAVE: ${FTP_RECEPTOR_IAFAS_CLAVE:?Falta FTP_RECEPTOR_IAFAS_CLAVE en .env}
+      BANDEJA_ENTRADA: /datos/bandeja_entrada
+      BASE_DATOS: /datos/receptor_iafas.sqlite3
+      RUTA_SIMULADORES_DATOS_SEMILLA: /datos_semilla
+      SMTP_HOST: correo
+      SMTP_PUERTO: "3025"
+    volumes:
+      - ./simuladores/datos_semilla:/datos_semilla:ro
+      - datos_receptor_iafas:/datos
+
+  tedef-web:
+    <<: *reinicio
+    build:
+      context: ./simuladores/tedef_web
+    env_file:
+      - ./simuladores/tedef_web/.env.ejemplo
+    environment:
+      UV_NO_SYNC: "1"
+      TEDEF_WEB_USUARIO: ${TEDEF_WEB_USUARIO:-validador_ipress_demo}
+      TEDEF_WEB_CLAVE: ${TEDEF_WEB_CLAVE:?Falta TEDEF_WEB_CLAVE en .env}
+      RUTA_SIMULADORES_DATOS_SEMILLA: /datos_semilla
+      RUTA_DOCS_FUENTES: /docs_fuentes
+      RUTA_MAESTROS_SINTETICOS: /maestros_sinteticos
+      BASE_DATOS: /datos/tedef_web.sqlite3
+      DIRECTORIO_LOTES: /datos/lotes
+    volumes:
+      - ./simuladores/datos_semilla:/datos_semilla:ro
+      - ./docs/fuentes:/docs_fuentes:ro
+      - ./sistema/backend/pruebas/fixtures:/maestros_sinteticos:ro
+      - datos_tedef_web:/datos
+
+  pse:
+    <<: *reinicio
+    build:
+      context: ./simuladores/pse
+    env_file:
+      - ./simuladores/pse/.env.ejemplo
+    environment:
+      UV_NO_SYNC: "1"
+      BASE_DATOS: /datos/pse.sqlite3
+    volumes:
+      - datos_pse:/datos
+
+  correo:
+    <<: *reinicio
+    image: greenmail/standalone:2.1.2
+    environment:
+      GREENMAIL_OPTS: >-
+        -Dgreenmail.setup.test.smtp -Dgreenmail.setup.test.imap
+        -Dgreenmail.hostname=0.0.0.0
+        -Dgreenmail.users.login=email
+        -Dgreenmail.users=cuentasmedicas:${CORREO_CLAVE:?Falta CORREO_CLAVE en .env}@clinica.test,auditoria:${CLAVE_BUZON_IAFAS:?Falta CLAVE_BUZON_IAFAS en .env}@iafas.test
+
+  # --- Punto de entrada publico ---
+  proxy:
+    <<: *reinicio
+    image: caddy:2.8
+    environment:
+      DOMINIO: ${DOMINIO:?Falta DOMINIO en .env}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./despliegue/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./despliegue/usuarios_simuladores.caddy:/etc/caddy/usuarios_simuladores.caddy:ro
+      - datos_caddy:/data
+      - configuracion_caddy:/config
+    depends_on:
+      - frontend
+      - acredita-salud
+      - receptor-iafas
+      - tedef-web
+
+volumes:
+  datos_postgres:
+  reportes:
+  artefactos_s01:
+  respaldos:
+  datos_trabajador:
+  sesiones_plataformas:
+  datos_acredita_salud:
+  datos_receptor_iafas:
+  datos_tedef_web:
+  datos_pse:
+  datos_caddy:
+  configuracion_caddy:

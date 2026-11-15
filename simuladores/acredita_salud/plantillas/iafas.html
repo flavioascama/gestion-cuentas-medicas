@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block titulo %}Consulta directa por IAFAS - Simulador ACREDITA SALUD{% endblock %}
+{% block contenido %}
+  <h1>Consulta directa por IAFAS</h1>
+  <div class="tarjeta">
+    <form method="post" action="/acreditacion/iafas" data-testid="formulario-iafas">
+      <label>Tipo de documento
+        <select name="tipo_documento" data-testid="campo-tipo-documento">
+          <option value="1" {% if tipo_documento == "1" %}selected{% endif %}>DNI</option>
+          <option value="2" {% if tipo_documento == "2" %}selected{% endif %}>Carné de extranjería</option>
+          <option value="3" {% if tipo_documento == "3" %}selected{% endif %}>Pasaporte</option>
+        </select>
+      </label>
+      <label>Número de documento
+        <input type="text" name="numero_documento" data-testid="campo-numero-documento"
+               value="{{ numero_documento or '' }}" required>
+      </label>
+      <button type="submit" data-testid="boton-buscar-iafas">Consultar</button>
+    </form>
+  </div>
+
+  {% if buscado %}
+  <div class="tarjeta" data-testid="resultado-iafas">
+    <h2>Resultado</h2>
+    {% if asegurado %}
+    <table>
+      <tr><th>Nombre</th><td>{{ asegurado.nombre_completo }}</td></tr>
+      <tr><th>IAFAS</th><td>{{ nombre_iafas }}</td></tr>
+      <tr><th>Estado de afiliación</th>
+          <td class="{{ asegurado.estado_afiliacion }}" data-testid="iafas-estado">{{ asegurado.estado_afiliacion }}</td></tr>
+      {% for etiqueta, valor in detalle %}
+      <tr><th>{{ etiqueta }}</th><td data-testid="iafas-detalle-{{ loop.index }}">{{ valor }}</td></tr>
+      {% endfor %}
+    </table>
+    <!--
+      Campos con clave fija (Fase 11): el robot los lee por su propio
+      data-testid, sin depender de la posicion que ocupan arriba, que
+      cambia segun el escenario. Ocultos a la vista (ya estan mostrados,
+      con su etiqueta, en la tabla de arriba); solo existen para que el
+      robot los pueda ubicar sin ambiguedad.
+    -->
+    <dl hidden>
+      <dd data-testid="iafas-plan">{{ campos.plan or "" }}</dd>
+      <dd data-testid="iafas-vigente-desde">{{ campos.vigente_desde or "" }}</dd>
+      <dd data-testid="iafas-vigente-hasta">{{ campos.vigente_hasta or "" }}</dd>
+      <dd data-testid="iafas-preexistencias">{{ campos.preexistencias or "" }}</dd>
+    </dl>
+    <p>
+      <a href="/acreditacion/evaluar?tipo_documento={{ asegurado.tipo_documento }}&numero_documento={{ asegurado.numero_documento }}"
+         data-testid="enlace-acreditar">Continuar a acreditación</a>
+    </p>
+    {% else %}
+    <p class="error" data-testid="iafas-no-encontrado">No se encontró un asegurado con ese documento en ninguna IAFAS.</p>
+    {% endif %}
+  </div>
+  {% endif %}
+{% endblock %}

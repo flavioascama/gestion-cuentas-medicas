@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block titulo %}Cartas de garantía - Simulador ACREDITA SALUD{% endblock %}
+{% block contenido %}
+  <h1>Búsqueda de cartas de garantía</h1>
+  <div class="tarjeta">
+    <form method="get" action="/cartas-garantia" data-testid="formulario-cartas-garantia">
+      <label>Número de documento
+        <input type="text" name="numero_documento" data-testid="campo-numero-documento" value="{{ numero_documento or '' }}">
+      </label>
+      <label>Número de carta
+        <input type="text" name="numero_carta" data-testid="campo-numero-carta" value="{{ numero_carta or '' }}">
+      </label>
+      <button type="submit" data-testid="boton-buscar-cartas">Buscar</button>
+    </form>
+  </div>
+
+  <div class="tarjeta">
+    <table data-testid="tabla-cartas-garantia">
+      <thead>
+        <tr><th>N° carta</th><th>Asegurado</th><th>Documento</th><th>Monto</th><th>Estado</th><th>Emisión</th><th>Vencimiento</th><th>Motivo</th></tr>
+      </thead>
+      <tbody>
+        {% for carta in cartas %}
+        <tr data-testid="fila-carta-garantia">
+          <td>{{ carta.numero_carta }}</td>
+          <td>{{ carta.nombre_asegurado }}</td>
+          <td>{{ carta.tipo_documento }} {{ carta.numero_documento }}</td>
+          <td>S/ {{ "%.2f"|format(carta.monto) }}</td>
+          <td class="{{ carta.estado }}">{{ carta.estado }}</td>
+          <td>{{ carta.fecha_emision }}</td>
+          <td>{{ carta.fecha_vencimiento }}</td>
+          <td>{{ carta.motivo }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="8">No se encontraron cartas de garantía.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}

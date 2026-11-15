@@ -1,0 +1,976 @@
+# Diccionario de mapeo TEDEF (Seccion 7.2 del plan).
+#
+# Entregable obligatorio y explicito: no existe en la tesis ni en los
+# anexos. Una entrada por cada uno de los 104 campos de T1, T2 y T3 (las
+# unicas tablas que este prototipo genera, Seccion 1.2). El generador de
+# lotes (Fase 7) falla al arrancar si falta una entrada para algun campo
+# de estas tres tablas.
+#
+# origen: columna (viene del modelo relacional) | constante (config. de la
+# IPRESS o valor fijo del dominio del anexo) | calculado (formula citada
+# de un criterio del Anexo 1) | blanco (no aplica al alcance del
+# prototipo, con justificacion).
+#
+# PENDIENTE DE REVISION: la Seccion 7.2 exige que este diccionario "se
+# revise con el asesor antes de la fase 6". Esa revision humana no se ha
+# hecho todavia. Doce entradas llevan una nota que menciona "asesor",
+# "pendiente", "bloqueado" o "provisional" porque el Anexo 1 no da una
+# formula explicita, o el modelo de datos necesario (profesional
+# responsable, subtipo de cobertura, codigo rubro) no esta definido en
+# ninguna fuente de la Seccion 2, o el valor usado (T2 campo 18, CIE-10)
+# no viene del catalogo oficial. Buscar esas notas antes de dar por
+# cerrado el prototipo. Ver tambien docs/DECISIONES.md y
+# docs/PENDIENTES.md.
+- tabla: T1
+  campo: 1
+  nombre: Fecha de envío
+  origen: columna
+  expresion: lote.generado_en
+  transformacion: fecha(AAAAMMDD)
+  nota: Parte de fecha del instante en que se genera el lote (GenerarLote, Sección 7.6), no de la remisión
+    posterior (7.8).
+- tabla: T1
+  campo: 2
+  nombre: Hora de Envío
+  origen: columna
+  expresion: lote.generado_en
+  transformacion: hora(HHMMSS)
+  nota: Parte de hora del mismo instante que el campo 1.
+- tabla: T1
+  campo: 3
+  nombre: Número de Lote
+  origen: columna
+  expresion: lote.numero
+  transformacion: rellenar_ceros_izquierda(7)
+  nota: Asignado de forma transaccional y único por IAFAS (Sección 7.6, punto 2).
+- tabla: T1
+  campo: 4
+  nombre: Código del Fondo de Aseguramiento en Salud (IAFAS)
+  origen: columna
+  expresion: lote.iafas.codigo
+  transformacion: rellenar_ceros_izquierda(5)
+  nota: Ejemplo literal de la Sección 7.2 del plan.
+- tabla: T1
+  campo: 5
+  nombre: Ruc del prestador o IPRESS
+  origen: constante
+  expresion: configuracion_ipress.ruc
+  transformacion: ninguna(11)
+  nota: RUC propio de la clínica que opera el sistema (Sección 6.1, tabla ipress).
+- tabla: T1
+  campo: 6
+  nombre: Código IPRESS
+  origen: constante
+  expresion: configuracion_ipress.codigo_ipress
+  transformacion: ninguna(8)
+  nota: Código IPRESS propio de la clínica.
+- tabla: T1
+  campo: 7
+  nombre: Tipo Documento de Pago
+  origen: columna
+  expresion: documento.tipo_documento_pago
+  transformacion: rellenar_ceros_izquierda(2)
+  nota: ''
+- tabla: T1
+  campo: 8
+  nombre: Número de Documento de Pago
+  origen: columna
+  expresion: documento.serie + documento.numero
+  transformacion: formato_serie_numero()
+  nota: Formato serie+número según los criterios C1 y C2 del propio campo (serie alfanumérica si el comprobante
+    es electrónico; cuarto carácter '0' si no).
+- tabla: T1
+  campo: 9
+  nombre: Fecha de Emisión
+  origen: columna
+  expresion: documento.fecha_emision
+  transformacion: fecha(AAAAMMDD)
+  nota: ''
+- tabla: T1
+  campo: 10
+  nombre: Producto
+  origen: constante
+  expresion: '''99999'''
+  transformacion: ninguna(5)
+  nota: El prototipo no gestiona el catálogo de productos por IAFAS; se usa el valor de relleno que el
+    propio criterio C1 define para ese caso.
+- tabla: T1
+  campo: 11
+  nombre: Cantidad de prestaciones de salud del documento facturador
+  origen: calculado
+  expresion: contar(prestaciones_T2_del_documento)
+  transformacion: rellenar_ceros_izquierda(5)
+  nota: Conteo de filas T2 asociadas al mismo documento facturador (Sección 7.5); no es una suma monetaria,
+    sino la definición literal del propio campo.
+- tabla: T1
+  campo: 12
+  nombre: Mecanismo de Pago
+  origen: constante
+  expresion: '''01'''
+  transformacion: ninguna(2)
+  nota: El prototipo solo modela facturación por servicio prestado (pago por servicio); no se modelan
+    mecanismos capitados ni paquetes (fuera del alcance de la Sección 1.2). Declarar como limitación en
+    el Anexo A de la tesis.
+- tabla: T1
+  campo: 13
+  nombre: Sub Tipo de Mecanismo de Pago
+  origen: constante
+  expresion: '''999'''
+  transformacion: ninguna(3)
+  nota: El catálogo de subtipos no está entre las fuentes de la Sección 2; se usa el valor de relleno
+    que el propio criterio C1 define para ese caso.
+- tabla: T1
+  campo: 14
+  nombre: Monto Pre Pactado
+  origen: constante
+  expresion: Decimal('0.00')
+  transformacion: monto(12,2)
+  nota: 'Mecanismo de pago fijo en ''01''; no aplica monto pre pactado (criterio C1: ''De no corresponder
+    se consignará 0.00'').'
+- tabla: T1
+  campo: 15
+  nombre: Fecha de inicio del Periodo Pre Pactado
+  origen: blanco
+  expresion: ''
+  transformacion: ''
+  nota: 'Mecanismo de pago fijo en ''01'' (criterio C2: en blanco si el mecanismo es distinto de 02, 04
+    o 06).'
+- tabla: T1
+  campo: 16
+  nombre: Tipo de moneda
+  origen: constante
+  expresion: '''1'''
+  transformacion: ninguna(1)
+  nota: 'Supuesto documentado: el prototipo opera únicamente en soles.'
+- tabla: T1
+  campo: 17
+  nombre: Monto exonerado de IGV
+  origen: calculado
+  expresion: sumar(prestaciones_T2.gasto_exonerado_igv)
+  transformacion: monto(12,2)
+  nota: 'Criterio C2: sumatoria del campo ''Gasto en productos, servicios o medicamentos exonerados de
+    IGV'' (T2 campo 42) de todas las prestaciones del documento.'
+- tabla: T1
+  campo: 18
+  nombre: Total Copago Fijo Afecto a IGV sin IGV
+  origen: calculado
+  expresion: sumar(prestaciones_T2.copago_fijo_afecto_igv)
+  transformacion: monto(12,2)
+  nota: 'Criterio C2: sumatoria del campo ''Copago Fijo afecto a IGV sin IGV'' (T2 campo 44).'
+- tabla: T1
+  campo: 19
+  nombre: Total Copago Fijo Exonerado de IGV
+  origen: calculado
+  expresion: sumar(prestaciones_T2.copago_fijo_exonerado_igv)
+  transformacion: monto(12,2)
+  nota: 'Criterio C2: sumatoria del campo ''Copago Fijo exonerado de IGV'' (T2 campo 45).'
+- tabla: T1
+  campo: 20
+  nombre: Total Copago Variable afecto a IGV sin IGV
+  origen: calculado
+  expresion: sumar(prestaciones_T2.copago_variable_afecto_igv)
+  transformacion: monto(12,2)
+  nota: 'Criterio C2: sumatoria del campo ''Copago Variable afecto a IGV sin IGV'' (T2 campo 46).'
+- tabla: T1
+  campo: 21
+  nombre: Total Copago Variable Exonerado de IGV
+  origen: calculado
+  expresion: sumar(prestaciones_T2.copago_variable_exonerado_igv)
+  transformacion: monto(12,2)
+  nota: 'Criterio C2: sumatoria del campo ''Copago Variable exonerado de IGV'' (T2 campo 47).'
+- tabla: T1
+  campo: 22
+  nombre: Base imponible
+  origen: calculado
+  expresion: formula_base_imponible(lote, mecanismo_pago)
+  transformacion: monto(12,2)
+  nota: 'Fórmula tomada del criterio C5 del campo 22 del Anexo 1 (rama ''01-Pago por Servicios'', la única
+    que aplica dado el campo 12 constante). Criterio C6: ''0.00'' si el tipo de documento de pago es 10
+    u 11.'
+- tabla: T1
+  campo: 23
+  nombre: IGV del Monto Facturado
+  origen: calculado
+  expresion: base_imponible * configuracion_ipress.tasa_igv
+  transformacion: monto(12,2)
+  nota: 'El criterio del anexo (C1-C4) solo exige ''0.00'' si la IPRESS está exonerada; no da una fórmula
+    de multiplicación. Se aplica la tasa de IGV vigente en el Perú (18 %, Ley del IGV) como parámetro
+    de configuración de la IPRESS: es un dato tributario público, no una fórmula TEDEF, y se documenta
+    como supuesto distinto de los demás ''calculado'' de este diccionario. Ver docs/DECISIONES.md.'
+- tabla: T1
+  campo: 24
+  nombre: Monto Total Facturado
+  origen: calculado
+  expresion: formula_monto_total_facturado(lote, mecanismo_pago)
+  transformacion: monto(12,2)
+  nota: 'Fórmula tomada del criterio C5 del campo 24 del Anexo 1 (rama ''01-Pago por Servicios''). Criterio
+    C6: ''0.00'' si el tipo de documento de pago es 10 u 11.'
+- tabla: T1
+  campo: 25
+  nombre: Tipo de identificación de la Nota
+  origen: columna
+  expresion: nota_documento.tipo si el comprobante tiene nota, si no 'N'
+  transformacion: ninguna(1)
+  nota: RI-11 (2026-11-13). Una nota por comprobante, porque la Tabla 1 tiene un solo espacio de nota
+    por documento. Sin nota, 'N' (Ningún documento de referencia).
+- tabla: T1
+  campo: 26
+  nombre: Número de la Nota
+  origen: columna
+  expresion: nota_documento.serie + nota_documento.numero
+  transformacion: ninguna(12)
+  nota: Serie de cuatro caracteres y número de ocho dígitos (formato XXXX99999999). En blanco sin nota
+    (criterio C2 del campo 25).
+- tabla: T1
+  campo: 27
+  nombre: Monto de la Nota
+  origen: columna
+  expresion: nota_documento.monto
+  transformacion: monto(12,2)
+  nota: Sin IGV. En blanco sin nota (criterio C2 del propio campo).
+- tabla: T1
+  campo: 28
+  nombre: Fecha de la Nota
+  origen: columna
+  expresion: nota_documento.fecha
+  transformacion: fecha(AAAAMMDD)
+  nota: No posterior al registro (criterio C1). En blanco sin nota (criterio C2).
+- tabla: T1
+  campo: 29
+  nombre: Motivo de la Nota
+  origen: columna
+  expresion: nota_documento.motivo
+  transformacion: ninguna(1)
+  nota: R reingreso, A anulación, D descuento parcial. En blanco sin nota (criterio C2).
+- tabla: T1
+  campo: 30
+  nombre: Fecha del primer envio del documento facturador
+  origen: columna
+  expresion: documento.fecha_primer_envio
+  transformacion: fecha_o_blanco(AAAAMMDD)
+  nota: 'Sección 6.2: protegida por disparador que impide su sobrescritura; RF-06.'
+- tabla: T1
+  campo: 31
+  nombre: Indicador de Factura Global
+  origen: constante
+  expresion: '''N'''
+  transformacion: ninguna(1)
+  nota: El prototipo factura documento por documento, nunca de forma global.
+- tabla: T2
+  campo: 1
+  nombre: RUC del prestador o IPRESS
+  origen: constante
+  expresion: configuracion_ipress.ruc
+  transformacion: ninguna(11)
+  nota: ''
+- tabla: T2
+  campo: 2
+  nombre: Código IPRESS
+  origen: constante
+  expresion: configuracion_ipress.codigo_ipress
+  transformacion: ninguna(8)
+  nota: ''
+- tabla: T2
+  campo: 3
+  nombre: Tipo Documento de Pago
+  origen: columna
+  expresion: documento.tipo_documento_pago
+  transformacion: rellenar_ceros_izquierda(2)
+  nota: ''
+- tabla: T2
+  campo: 4
+  nombre: Número de Documento de Pago
+  origen: columna
+  expresion: documento.serie + documento.numero
+  transformacion: formato_serie_numero()
+  nota: ''
+- tabla: T2
+  campo: 5
+  nombre: Correlativo de la prestación
+  origen: calculado
+  expresion: asignar_correlativo_ascendente(prestaciones_del_documento)
+  transformacion: rellenar_ceros_izquierda(5)
+  nota: 'Criterios C2 y C3: debe coincidir con la cantidad declarada en T1 campo 11 y quedar ordenado
+    de forma ascendente.'
+- tabla: T2
+  campo: 6
+  nombre: Código de prestación Interno de la IPRESS
+  origen: columna
+  expresion: cuenta.identificacion_interna
+  transformacion: ninguna(10)
+  nota: 'Sección 6.1, tabla cuenta_medica: ''Identificación interna''.'
+- tabla: T2
+  campo: 7
+  nombre: Tipo de Afiliación del Paciente
+  origen: columna
+  expresion: acreditacion.tipo_afiliacion
+  transformacion: valor_en_dominio()
+  nota: La Sección 6.1 no enumera este atributo explícitamente dentro de 'acreditacion'; se agrega en
+    la Fase 7 al construir el modelo real, junto con la respuesta del simulador ACREDITA SALUD. Marcar
+    para revisión del asesor.
+- tabla: T2
+  campo: 8
+  nombre: Código de Asegurado del Paciente
+  origen: columna
+  expresion: acreditacion.codigo_asegurado
+  transformacion: alinear_derecha(20)
+  nota: Código único que devuelve la consulta de cobertura (Sección 8.1). Mismo comentario que el campo
+    7 sobre el modelo de 'acreditacion' en la Fase 7.
+- tabla: T2
+  campo: 9
+  nombre: Tipo de documento de identidad
+  origen: columna
+  expresion: cuenta.asegurado.tipo_documento
+  transformacion: ninguna(1)
+  nota: Dominio del Anexo 1 (T2 campo 9), ya usado en Fase 4 para los datos sintéticos.
+- tabla: T2
+  campo: 10
+  nombre: Número del documento de identidad
+  origen: columna
+  expresion: cuenta.asegurado.numero_documento
+  transformacion: alinear_derecha(15)
+  nota: ''
+- tabla: T2
+  campo: 11
+  nombre: Número de Historia Clínica
+  origen: columna
+  expresion: cuenta.numero_historia_clinica
+  transformacion: ninguna(8)
+  nota: Atributo no enumerado explícitamente en la Sección 6.1; se agrega a cuenta_medica en la Fase 7
+    porque la historia clínica es propia de cada atención.
+- tabla: T2
+  campo: 12
+  nombre: Documento de autorización de la prestación
+  origen: columna
+  expresion: acreditacion.tipo_documento_autorizacion
+  transformacion: rellenar_ceros_izquierda(2)
+  nota: Clasificación del documento cuyo código está en 'acreditacion.codigo_autorizacion' (Sección 6.1).
+    Típicamente '03' (Carta de Garantía) para el flujo de la Sección 9.1.
+- tabla: T2
+  campo: 13
+  nombre: Número del documento de autorización
+  origen: columna
+  expresion: acreditacion.codigo_autorizacion
+  transformacion: alinear_derecha(20)
+  nota: 'Sección 6.1, tabla acreditacion: ''código de autorización''.'
+- tabla: T2
+  campo: 14
+  nombre: Segundo Documento de autorización de la prestación
+  origen: constante
+  expresion: '''99'''
+  transformacion: ninguna(2)
+  nota: El prototipo registra una sola autorización por prestación.
+- tabla: T2
+  campo: 15
+  nombre: Número del segundo documento de autorización
+  origen: blanco
+  expresion: ''
+  transformacion: ''
+  nota: Consecuencia del campo 14 constante en '99' (criterio C1 del propio campo).
+- tabla: T2
+  campo: 16
+  nombre: Tipo de Cobertura o Tipo de Prestación
+  origen: constante
+  expresion: '''4'''
+  transformacion: ninguna(1)
+  nota: El prototipo no modela atenciones hospitalarias (Sección 1.2 no las contempla); se usa '4 = Ambulatorio'.
+    Los campos 30 a 34, condicionados a Hospitalaria, quedan en blanco en consecuencia.
+- tabla: T2
+  campo: 17
+  nombre: Subtipo de Cobertura
+  origen: constante
+  expresion: '''0000'''
+  transformacion: ninguna(4)
+  nota: El catálogo de SUSALUD para este campo no está entre las fuentes de la Sección 2 (no hay archivo
+    en docs/fuentes/ que lo enumere). Valor de relleno documentado como no verificado; ver docs/PENDIENTES.md.
+- tabla: T2
+  campo: 18
+  nombre: Primer Diagnóstico (CIE10)
+  origen: columna
+  expresion: cuenta.diagnostico_principal_cie10
+  transformacion: ninguna(5)
+  nota: 'Desde la Fase 17, se puebla con un código real del catálogo oficial CIE-10 del MINSA
+    (herramientas/cargar_cie10.py, 12963 códigos a nivel de subcategoría cargados desde
+    docs/fuentes/CIE10_MINSA_OFICIAL.xlsx). El validador de campo todavía no comprueba este
+    valor contra ese catálogo (criterio C1, no implementado).'
+- tabla: T2
+  campo: 19
+  nombre: Segundo Diagnóstico (CIE10)
+  origen: blanco
+  expresion: ''
+  transformacion: ''
+  nota: 'Opcional (criterio C4: en blanco si no hay segundo diagnóstico); el prototipo no registra más
+    de un diagnóstico por prestación.'
+- tabla: T2
+  campo: 20
+  nombre: Tercer diagnóstico (CIE10)
+  origen: blanco
+  expresion: ''
+  transformacion: ''
+  nota: 'Opcional (criterio C4: en blanco si no hay tercer diagnóstico).'
+- tabla: T2
+  campo: 21
+  nombre: Fecha de Prestación
+  origen: columna
+  expresion: cuenta.fecha_prestacion
+  transformacion: fecha(AAAAMMDD)
+  nota: ''
+- tabla: T2
+  campo: 22
+  nombre: Hora de Inicio de la Prestación
+  origen: columna
+  expresion: cuenta.hora_prestacion
+  transformacion: hora(HHMMSS)
+  nota: Atributo no enumerado explícitamente en la Sección 6.1; se agrega a cuenta_medica en la Fase 7.
+- tabla: T2
+  campo: 23
+  nombre: Tipo del Profesional Responsable de la Prestación
+  origen: constante
+  expresion: '''00'''
+  transformacion: ninguna(2)
+  nota: 'El prototipo no modela la identidad ni la colegiatura del profesional tratante: ninguna sección
+    del plan define esa entidad. Se usa ''00: Profesional sin colegiatura'', el valor del propio dominio
+    para ese caso. Marcar para revisión del asesor: ¿corresponde modelar esto en una fase futura?'
+- tabla: T2
+  campo: 24
+  nombre: Número de Colegiatura del Profesional Responsable de la Prestación
+  origen: blanco
+  expresion: ''
+  transformacion: ''
+  nota: Consecuencia del campo 23 constante en '00' (criterio C2 del propio campo).
+- tabla: T2
+  campo: 25
+  nombre: Tipo de documento de identidad del Profesional Responsable de la Prestación
+  origen: blanco
+  expresion: ''
+  transformacion: ''
+  nota: Consecuencia del campo 23 constante en '00' (criterio C2).
+- tabla: T2
+  campo: 26
+  nombre: Número del documento de identidad del profesional responsable
+  origen: blanco
+  expresion: ''
+  transformacion: ''
+  nota: Consecuencia del campo 23 constante en '00' (criterio C4 del propio campo).
+- tabla: T2
+  campo: 27
+  nombre: RUC de Entidad de Referencia
+  origen: calculado
+  expresion: cuenta.derivacion.ipress_ruc si existe, si no configuracion_ipress.ruc
+  transformacion: ninguna(11)
+  nota: 'Criterio C1: por defecto, el RUC propio; solo cambia cuando la cuenta corresponde al escenario
+    ''paciente derivado'' (Sección 3.3, asegurados.json).'
+- tabla: T2
+  campo: 28
+  nombre: Fecha de la Transferencia
+  origen: columna
+  expresion: cuenta.derivacion.fecha (nulo si no hay derivación)
+  transformacion: fecha_o_blanco(AAAAMMDD)
+  nota: 'Criterios C1/C2: en blanco cuando el RUC de referencia es el propio.'
+- tabla: T2
+  campo: 29
+  nombre: Hora de transferencia
+  origen: columna
+  expresion: cuenta.derivacion.hora (nulo si no hay derivación)
+  transformacion: hora_o_blanco(HHMMSS)
+  nota: Mismos criterios que el campo 28.
+- tabla: T2
+  campo: 30
+  nombre: Tipo de Hospitalización
+  origen: blanco
+  expresion: ''
+  transformacion: ''
+  nota: 'Criterio C3: en blanco cuando el tipo de cobertura es distinto de 5=Hospitalaria (constante en
+    el campo 16).'
+- tabla: T2
+  campo: 31
+  nombre: Fecha Ingreso Hospitalario
+  origen: blanco
+  expresion: ''
+  transformacion: ''
+  nota: 'Criterio C2: idem campo 30.'
+- tabla: T2
+  campo: 32
+  nombre: Fecha de Egreso Hospitalario
+  origen: blanco
+  expresion: ''
+  transformacion: ''
+  nota: 'Criterio C2: idem campo 30.'
+- tabla: T2
+  campo: 33
+  nombre: Tipo de Egreso Hospitalario
+  origen: blanco
+  expresion: ''
+  transformacion: ''
+  nota: 'Criterio C2: idem campo 30.'
+- tabla: T2
+  campo: 34
+  nombre: Días de Estancia Facturable
+  origen: blanco
+  expresion: ''
+  transformacion: ''
+  nota: 'Criterio C2: idem campo 30.'
+- tabla: T2
+  campo: 35
+  nombre: Gasto por Honorarios y procedimientos sin IGV
+  origen: calculado
+  expresion: formula_gasto_por_rubro(prestacion, grupo=1)
+  transformacion: monto(12,2)
+  nota: 'Criterio C3: suma en T3 de (Monto Presentado - Monto No Cubierto) con Servicio Exento de Impuestos=''A'',
+    para el ''grupo contable (1)''. El prototipo fija el Código Rubro de T3 en ''02'' (ver nota de T3
+    campo 23), por lo que en la práctica este es el único de los campos 35 a 43 con valores distintos
+    de 0.00.'
+- tabla: T2
+  campo: 36
+  nombre: Gasto por Procedimientos Odontológicos sin IGV
+  origen: calculado
+  expresion: formula_gasto_por_rubro(prestacion, grupo=2)
+  transformacion: monto(12,2)
+  nota: Criterio C3, grupo contable (2) = Código Rubro 13 (odontológico). Fuera del alcance funcional
+    del prototipo (Sección 1.2); da 0.00 porque ninguna prestación usa ese rubro.
+- tabla: T2
+  campo: 37
+  nombre: Gasto presentado por Hotelería, Servicio Clínico y Tópico sin IGV
+  origen: calculado
+  expresion: formula_gasto_por_rubro(prestacion, grupo=3)
+  transformacion: monto(12,2)
+  nota: Criterio C3, grupo contable (3). Da 0.00 con el Código Rubro fijo en '02' (ver T3 campo 23).
+- tabla: T2
+  campo: 38
+  nombre: Gasto por Exámenes auxiliares de laboratorio sin IGV
+  origen: calculado
+  expresion: formula_gasto_por_rubro(prestacion, grupo=4)
+  transformacion: monto(12,2)
+  nota: Criterio C3, grupo contable (4). Da 0.00 con el Código Rubro fijo en '02'.
+- tabla: T2
+  campo: 39
+  nombre: Gasto por Exámenes auxiliares por imágenes sin IGV
+  origen: calculado
+  expresion: formula_gasto_por_rubro(prestacion, grupo=5)
+  transformacion: monto(12,2)
+  nota: Criterio C3, grupo contable (5). Da 0.00 con el Código Rubro fijo en '02'.
+- tabla: T2
+  campo: 40
+  nombre: Gasto por Farmacia e insumos sin IGV
+  origen: blanco
+  expresion: ''
+  transformacion: ''
+  nota: 'Criterio C3: suma sobre la Tabla T4 (Productos de Farmacia), que el prototipo no genera (Sección
+    1.2). Se consigna ''0.00'' por definición del propio criterio (''de no corresponder'').'
+- tabla: T2
+  campo: 41
+  nombre: Gasto en protesis sin IGV
+  origen: calculado
+  expresion: formula_gasto_por_rubro(prestacion, grupo=7)
+  transformacion: monto(12,2)
+  nota: Criterio C3, grupo contable (7) = Código Rubro 14 (Prótesis). Da 0.00 con el Código Rubro fijo
+    en '02'.
+- tabla: T2
+  campo: 42
+  nombre: Gasto en productos, servicios o medicamentos exonerados de IGV
+  origen: calculado
+  expresion: formula_gasto_exonerado(prestacion)
+  transformacion: monto(12,2)
+  nota: 'Criterio C3: suma en T4 (Producto Exento=''D'', no generado) más T3 (Servicio Exento de Impuestos=''D'')
+    de todos los rubros. El prototipo fija Servicio Exento en ''A'' (T3 campo 22), por lo que da 0.00.'
+- tabla: T2
+  campo: 43
+  nombre: Otros gastos por prestaciones de salud sin IGV
+  origen: calculado
+  expresion: formula_gasto_por_rubro(prestacion, grupo=9)
+  transformacion: monto(12,2)
+  nota: Criterio C3, grupo contable (9) = Código Rubro 15 (Otros). Da 0.00 con el Código Rubro fijo en
+    '02'.
+- tabla: T2
+  campo: 44
+  nombre: Copago Fijo afecto a IGV sin IGV
+  origen: calculado
+  expresion: sumar(procedimientos_T3.copago_fijo) cuando Servicio Exento='A'
+  transformacion: monto(12,2)
+  nota: 'El anexo no da una sumatoria explícita para este campo (a diferencia de los campos 35 a 43, que
+    sí la citan). Se infiere por el mismo patrón: suma del copago fijo por procedimiento (T3 campo 18)
+    de la prestación. Marcar para confirmación del asesor.'
+- tabla: T2
+  campo: 45
+  nombre: Copago Fijo exonerado de IGV
+  origen: calculado
+  expresion: sumar(procedimientos_T3.copago_fijo) cuando Servicio Exento='D'
+  transformacion: monto(12,2)
+  nota: Misma inferencia que el campo 44; da 0.00 porque el prototipo fija Servicio Exento en 'A' (T3
+    campo 22). Marcar para confirmación del asesor.
+- tabla: T2
+  campo: 46
+  nombre: Copago Variable afecto a IGV sin IGV
+  origen: calculado
+  expresion: sumar(procedimientos_T3.copago_variable) cuando Servicio Exento='A'
+  transformacion: monto(12,2)
+  nota: Misma inferencia que el campo 44, sobre el copago variable (T3 campo 17). Marcar para confirmación
+    del asesor.
+- tabla: T2
+  campo: 47
+  nombre: Copago Variable exonerado de IGV
+  origen: calculado
+  expresion: sumar(procedimientos_T3.copago_variable) cuando Servicio Exento='D'
+  transformacion: monto(12,2)
+  nota: Misma inferencia que el campo 45; da 0.00 con Servicio Exento fijo en 'A'.
+- tabla: T2
+  campo: 48
+  nombre: Total de Gastos Cubiertos sin IGV
+  origen: calculado
+  expresion: campo35 + campo36 + campo37 + campo38 + campo39 + campo40 + campo41 + campo42 + campo43
+  transformacion: monto(12,2)
+  nota: 'Criterio C1: suma literal de los campos 35 a 43 de esta misma tabla.'
+- tabla: T3
+  campo: 1
+  nombre: RUC del prestador o IPRESS
+  origen: constante
+  expresion: configuracion_ipress.ruc
+  transformacion: ninguna(11)
+  nota: ''
+- tabla: T3
+  campo: 2
+  nombre: Código IPRESS
+  origen: constante
+  expresion: configuracion_ipress.codigo_ipress
+  transformacion: ninguna(8)
+  nota: ''
+- tabla: T3
+  campo: 3
+  nombre: Tipo Documento de Pago
+  origen: columna
+  expresion: documento.tipo_documento_pago
+  transformacion: rellenar_ceros_izquierda(2)
+  nota: ''
+- tabla: T3
+  campo: 4
+  nombre: Número de Documento de Pago
+  origen: columna
+  expresion: documento.serie + documento.numero
+  transformacion: formato_serie_numero()
+  nota: ''
+- tabla: T3
+  campo: 5
+  nombre: Correlativo de la prestación
+  origen: columna
+  expresion: prestacion.correlativo (el mismo asignado en T2 campo 5)
+  transformacion: rellenar_ceros_izquierda(5)
+  nota: ''
+- tabla: T3
+  campo: 6
+  nombre: Correlativo del Servicios o Procedimiento de la Prestación
+  origen: calculado
+  expresion: asignar_correlativo_ascendente(procedimientos_de_la_prestacion)
+  transformacion: rellenar_ceros_izquierda(4)
+  nota: 'Criterio C2: se reinicia por cada prestación y queda ordenado de forma ascendente (Sección 7.5).'
+- tabla: T3
+  campo: 7
+  nombre: Tipo Clasificación de Procedimiento y/o Servicio
+  origen: constante
+  expresion: '''01'''
+  transformacion: ninguna(2)
+  nota: El prototipo codifica exclusivamente con el catálogo CPMS (IEDS), Sección 8.2.
+- tabla: T3
+  campo: 8
+  nombre: Código de Clasificación de Procedimiento y/o Servicio
+  origen: columna
+  expresion: procedimiento.codigo_cpms
+  transformacion: rellenar_ceros_izquierda(10)
+  nota: Código confirmado por el auditor médico (CU-02, Sección 8.2); solo códigos existentes en la versión
+    de catálogo cargada (cpms_version).
+- tabla: T3
+  campo: 9
+  nombre: Descripción del Procedimiento y/o Servicio
+  origen: columna
+  expresion: procedimiento.descripcion_registrada
+  transformacion: alinear_izquierda(70)
+  nota: 'Sección 6.1, tabla procedimiento_facturado: ''descripción registrada''.'
+- tabla: T3
+  campo: 10
+  nombre: Fecha del procedimiento o servicio complementario
+  origen: columna
+  expresion: procedimiento.fecha (por defecto, cuenta.fecha_prestacion)
+  transformacion: fecha(AAAAMMDD)
+  nota: ''
+- tabla: T3
+  campo: 11
+  nombre: Tipo del Profesional Responsable de la Prestación
+  origen: constante
+  expresion: '''00'''
+  transformacion: ninguna(2)
+  nota: Mismo supuesto que T2 campo 23.
+- tabla: T3
+  campo: 12
+  nombre: Número de Colegiatura del Profesional Responsable de la Prestación
+  origen: blanco
+  expresion: ''
+  transformacion: ''
+  nota: Consecuencia del campo 11 constante en '00'.
+- tabla: T3
+  campo: 13
+  nombre: Tipo de documento de identidad del Profesional Responsable de la Prestación
+  origen: blanco
+  expresion: ''
+  transformacion: ''
+  nota: Consecuencia del campo 11 constante en '00'.
+- tabla: T3
+  campo: 14
+  nombre: Número del documento de identidad del profesional responsable
+  origen: blanco
+  expresion: ''
+  transformacion: ''
+  nota: Consecuencia del campo 11 constante en '00'.
+- tabla: T3
+  campo: 15
+  nombre: Número de veces que se brindó el procedimiento o servicio complementario
+  origen: columna
+  expresion: procedimiento.cantidad
+  transformacion: rellenar_ceros_izquierda(5)
+  nota: 'Ya presente en los datos sintéticos de la Fase 4 (cuentas_medicas.json: ''cantidad'').'
+- tabla: T3
+  campo: 16
+  nombre: Monto unitario sin impuestos
+  origen: columna
+  expresion: procedimiento.monto_unitario
+  transformacion: monto(12,2)
+  nota: 'Ya presente en los datos sintéticos de la Fase 4 (cuentas_medicas.json: ''monto_unitario'').'
+- tabla: T3
+  campo: 17
+  nombre: Copago variable por procedimiento o servicio complementario
+  origen: calculado
+  expresion: monto_presentado * acreditacion.copago.porcentaje / 100 si copago.tipo='coaseguro', si no
+    0.00
+  transformacion: monto(12,2)
+  nota: El anexo no da una fórmula explícita para este campo (solo formato); se infiere del resultado
+    de la acreditación (Sección 9.1, escenario 'coaseguro_variable' de la Fase 4). Marcar para confirmación
+    del asesor.
+- tabla: T3
+  campo: 18
+  nombre: Copago fijo por procedimiento o servicio complementario
+  origen: calculado
+  expresion: acreditacion.copago.monto si copago.tipo='fijo', si no 0.00
+  transformacion: monto(12,2)
+  nota: Misma situación que el campo 17, para el escenario 'copago_fijo' de la Fase 4. Marcar para confirmación
+    del asesor.
+- tabla: T3
+  campo: 19
+  nombre: Monto Presentado de (los) procedimiento(s) o servicio(s) complementario(s)
+  origen: calculado
+  expresion: procedimiento.cantidad * procedimiento.monto_unitario
+  transformacion: monto(12,2)
+  nota: 'Fórmula literal del propio campo: ''Corresponderá a la multiplicación de los campos Número de
+    Veces que se brindó el procedimiento por Monto Unitario sin impuestos'' (criterio de la descripción),
+    con tolerancia +/-0.25 (criterio C3).'
+- tabla: T3
+  campo: 20
+  nombre: Monto No Cubierto de (los) procedimiento(s) o servicio(s) complementario(s)
+  origen: calculado
+  expresion: copago_variable + copago_fijo
+  transformacion: monto(12,2)
+  nota: 'El anexo no da una fórmula explícita (solo formato); se infiere de la definición del campo:
+    lo no cubierto por la IAFAS es exactamente lo que asume el paciente vía copagos. CORREGIDO
+    2026-09-16: la versión anterior de esta entrada decía "monto_presentado - copago_variable -
+    copago_fijo", que calcula lo CUBIERTO, no lo no cubierto (ese error se arrastraba también a la
+    nota de los campos 35 a 43 de T2, que restan justamente este campo). Marcar para confirmación
+    del asesor.'
+- tabla: T3
+  campo: 21
+  nombre: Diagnóstico Asociado
+  origen: blanco
+  expresion: ''
+  transformacion: ''
+  nota: 'La propia definición del campo admite blanco cuando no se tiene diagnóstico asociado (''De no
+    tenerse se consignará el diagnóstico principal o en blanco''), a diferencia de T2 campo 18: no depende
+    del catálogo CIE-10 pendiente.'
+- tabla: T3
+  campo: 22
+  nombre: Servicio Exento de Impuestos
+  origen: constante
+  expresion: '''A'''
+  transformacion: ninguna(1)
+  nota: 'Supuesto documentado: el prototipo no maneja exoneraciones especiales por tipo de servicio; todos
+    los procedimientos se consideran afectos a impuestos.'
+- tabla: T3
+  campo: 23
+  nombre: Código Rubro
+  origen: constante
+  expresion: '''02'''
+  transformacion: ninguna(2)
+  nota: 'El catálogo CPMS (Sección 2.3) no incluye un ''Código Rubro'' TEDEF: son catálogos distintos
+    y el anexo no da una tabla de equivalencia. Se fija ''02 = Consultas/Honorarios'' para todos los procedimientos,
+    el rubro más general para el alcance de procedimientos y servicios (Sección 1.2). Esto simplifica
+    los campos 35 a 43 y 44 a 47 de T2 (ver sus notas). Marcar para confirmación del asesor y declarar
+    como limitación en el Anexo A de la tesis.'
+- tabla: T3
+  campo: 24
+  nombre: Cantidad prescrita del procedimiento o servicio
+  origen: blanco
+  expresion: ''
+  transformacion: ''
+  nota: Opcional; el prototipo no distingue cantidad prescrita de cantidad brindada (campo 15).
+- tabla: T3
+  campo: 25
+  nombre: Resultado del procedimiento o servicio
+  origen: blanco
+  expresion: ''
+  transformacion: ''
+  nota: Opcional; el prototipo no registra resultados clínicos por procedimiento (pertenece a la historia
+    clínica, fuera de alcance).
+- tabla: T4
+  campo: 1
+  nombre: RUC del prestador o IPRESS
+  origen: constante
+  expresion: configuracion_ipress.ruc
+  transformacion: ninguna(11)
+  nota: RUC propio de la clínica que opera el sistema (igual que T1 campo 5 y T3 campo 1).
+- tabla: T4
+  campo: 2
+  nombre: Código IPRESS
+  origen: constante
+  expresion: configuracion_ipress.codigo_ipress
+  transformacion: ninguna(8)
+  nota: Código IPRESS propio de la clínica (igual que T1 campo 6 y T3 campo 2).
+- tabla: T4
+  campo: 3
+  nombre: Tipo Documento de Pago
+  origen: columna
+  expresion: documento.tipo_documento_pago
+  transformacion: rellenar_ceros_izquierda(2)
+  nota: ''
+- tabla: T4
+  campo: 4
+  nombre: Número de Documento de Pago
+  origen: columna
+  expresion: documento.serie + documento.numero
+  transformacion: formato_serie_numero()
+  nota: Mismo criterio que T1 campo 8 y T3 campo 4.
+- tabla: T4
+  campo: 5
+  nombre: Correlativo de la prestación
+  origen: constante
+  expresion: '''1'''
+  transformacion: rellenar_ceros_izquierda(5)
+  nota: 'Simplificación de esta fase (docs/DECISIONES.md, Fase 7): una sola prestación por documento
+    facturador.'
+- tabla: T4
+  campo: 6
+  nombre: Correlativo de los Productos de Farmacia de la atención
+  origen: columna
+  expresion: producto.correlativo
+  transformacion: rellenar_ceros_izquierda(4)
+  nota: Ascendente desde 1 por prestación (Sección 8.1 del plan v3), verificado en la consistencia
+    entre tablas (Sección 7.5), no en el validador de campo.
+- tabla: T4
+  campo: 7
+  nombre: Tipo de producto
+  origen: columna
+  expresion: producto.tipo_producto
+  transformacion: alfanumerico(1)
+  nota: 'M/P/I/R/B/A (Sección 4 del plan v3): DISPOSITIVO MEDICO -> I, COSMETICO -> B, ALIMENTO -> A
+    siempre; PRODUCTO FARMACEUTICO -> M solo cuando la denominación común nombra un principio activo
+    específico. Ya resuelto por el generador de datos sintéticos al elegir el producto del catálogo
+    GTIN transcrito; este campo solo copia el valor.'
+- tabla: T4
+  campo: 8
+  nombre: Catálogo
+  origen: columna
+  expresion: producto.catalogo
+  transformacion: rellenar_ceros_izquierda(1)
+  nota: 'Siempre ''1'' (GTIN) en este prototipo (Sección 16, supuesto 5 del plan v3: único catálogo
+    con productos transcritos).'
+- tabla: T4
+  campo: 9
+  nombre: Código de producto
+  origen: columna
+  expresion: producto.codigo_producto
+  transformacion: rellenar_ceros_izquierda(13)
+  nota: 'El Anexo 1 no da una regla propia de relleno para un GTIN-8 o GTIN-12 en un campo de 13 caracteres
+    (Sección 8.1 del plan v3, señalado como pendiente de verificar). Se aplica la misma convención
+    que usa el propio estándar GS1 para normalizar un GTIN a un ancho mayor: ceros a la izquierda
+    (idéntica a la regla general de alineación numérica del Anexo 3 para el resto de campos). Decisión
+    documentada en docs/DECISIONES.md, Fase 17; no requirió registrarse en PENDIENTES.md porque el
+    propio estándar GTIN ya define esa convención.'
+- tabla: T4
+  campo: 10
+  nombre: Fecha de Dispensación de Farmacia
+  origen: columna
+  expresion: producto.fecha_dispensacion
+  transformacion: fecha(AAAAMMDD)
+  nota: Dato sintético del generador de datos (Sección 4 del plan v3).
+- tabla: T4
+  campo: 11
+  nombre: Cantidad de Venta del Producto
+  origen: columna
+  expresion: producto.cantidad_venta
+  transformacion: monto(7,2)
+  nota: Dato sintético. El esquema declara 2 decimales para este campo (a diferencia de T3 campo 15,
+    cantidad sin decimales), de ahí el formateador de monto en vez de ceros a la izquierda.
+- tabla: T4
+  campo: 12
+  nombre: Tipo de unidad de dispensación
+  origen: columna
+  expresion: producto.tipo_unidad_dispensacion
+  transformacion: rellenar_ceros_izquierda(1)
+  nota: '1 = por empaque, 2 = por fracción (dominio del propio campo). Dato sintético.'
+- tabla: T4
+  campo: 13
+  nombre: Monto Unitario sin Impuesto
+  origen: columna
+  expresion: producto.monto_unitario_sin_impuesto
+  transformacion: monto(12,2)
+  nota: Dato sintético.
+- tabla: T4
+  campo: 14
+  nombre: Copago del Producto de Farmacia
+  origen: columna
+  expresion: producto.copago
+  transformacion: monto(12,2)
+  nota: Dato sintético; no se modela reparto entre productos de una misma prestación (a diferencia
+    de T3 campos 17/18, marcado igual para confirmación del asesor).
+- tabla: T4
+  campo: 15
+  nombre: Monto(s) Presentado(s) de (los) Producto(s) de Farmacia
+  origen: calculado
+  expresion: producto.cantidad_venta * producto.monto_unitario_sin_impuesto
+  transformacion: monto(12,2)
+  nota: 'Fórmula literal de la descripción del campo, igual que T3 campo 19: cantidad de venta por
+    monto unitario, con tolerancia +/-0.25 (criterio C4).'
+- tabla: T4
+  campo: 16
+  nombre: Monto(s) No Cubierto(s) de (los) Producto(s) de Farmacia
+  origen: columna
+  expresion: producto.monto_no_cubierto
+  transformacion: monto(12,2)
+  nota: 'Dato sintético (a diferencia de T3 campo 20, que se calcula desde los copagos: T4 no modela
+    copago variable por producto, así que se guarda directo).'
+- tabla: T4
+  campo: 17
+  nombre: Diagnóstico Asociado al Producto de Farmacia
+  origen: calculado
+  expresion: producto.diagnostico_asociado_cie10 or prestacion.diagnostico_principal_cie10
+  transformacion: alfanumerico(5)
+  nota: 'Fórmula literal del propio campo: ''de no tenerse se consignará el diagnóstico principal''
+    (Sección 8.1 del plan v3). Mismo catálogo CIE-10 provisional que T2 campo 18 (docs/PENDIENTES.md).'
+- tabla: T4
+  campo: 18
+  nombre: Productos Exento de IGV
+  origen: columna
+  expresion: producto.exento_igv
+  transformacion: alfanumerico(1)
+  nota: 'Dato sintético, valores ''A''/''D'' del propio dominio (a diferencia de T3 campo 22, que
+    el prototipo fija siempre en ''A'').'
+- tabla: T4
+  campo: 19
+  nombre: Guía de farmacia
+  origen: columna
+  expresion: producto.guia_farmacia
+  transformacion: alfanumerico(12)
+  nota: '''XXXXXXXXXXXX'' si no corresponde (criterio C1 del propio campo); el generador de datos
+    sintéticos no asigna guía real.'
+- tabla: T4
+  campo: 20
+  nombre: Cantidad prescrita del Producto
+  origen: blanco
+  expresion: ''
+  transformacion: ''
+  nota: Opcional (igual que T3 campo 24); el prototipo no distingue cantidad prescrita de cantidad
+    vendida (campo 11).

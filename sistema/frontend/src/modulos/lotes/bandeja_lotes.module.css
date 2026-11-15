@@ -1,0 +1,57 @@
+.panel {
+  background-color: var(--color_superficie);
+  border: 1px solid var(--color_borde);
+  border-radius: var(--radio_borde);
+  padding: var(--espacio_6);
+}
+
+.tarjeta_filtros {
+  margin-bottom: var(--espacio_4);
+  padding: var(--espacio_4);
+  background-color: var(--color_fondo);
+  border: 1px solid var(--color_borde);
+  border-radius: var(--radio_borde);
+}
+
+/* flex-start, no flex-end: con align-items:flex-end cada campo se
+   alinea por el fondo de su propia caja, y esa caja no mide lo mismo
+   para un CampoTexto/Selector con texto de ayuda que para uno sin el
+   (o incluso entre un <input> y un <select> nativos) -- los controles
+   quedaban a distinta altura en la misma fila (bug real, encontrado
+   con getBoundingClientRect en vivo). Con flex-start alinean por la
+   etiqueta, que siempre mide igual.
+*/
+.filtros {
+  display: flex;
+  gap: var(--espacio_4);
+  align-items: flex-start;
+}
+
+.filtro {
+  width: 200px;
+}
+
+.busqueda {
+  width: 260px;
+}
+
+.envio_susalud {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio_3);
+  margin-bottom: var(--espacio_4);
+}
+
+.enlace_lote {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espacio_1);
+  color: var(--color_primario);
+  font-weight: var(--peso_enfasis);
+}
+
+.estados {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--espacio_1);
+}

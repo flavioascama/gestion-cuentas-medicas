@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block titulo %}Detalle de lote - Validador de facturación electrónica{% endblock %}
+{% block contenido %}
+  {% if lote %}
+  <div class="tarjeta">
+    <h1>Detalle del lote {{ lote.identidad.numero_lote }}</h1>
+    <p data-testid="detalle-estado">Estado: {{ lote.estado }}</p>
+    <p data-testid="detalle-periodo">Periodo: {{ lote.identidad.periodo }}</p>
+    <p data-testid="detalle-tamano">Tamaño total: {{ lote.tamano_total_bytes }} bytes</p>
+    <p data-testid="detalle-total-registros">Total de registros: {{ lote.total_registros }}</p>
+    <table data-testid="tabla-archivos-lote">
+      <thead><tr><th>Tabla</th><th>Nombre de archivo</th><th>Tamaño (bytes)</th></tr></thead>
+      <tbody>
+        {% for tabla, nombre, contenido in archivos %}
+        <tr><td>{{ tabla }}</td><td>{{ nombre }}</td><td>{{ contenido|length }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="error">Lote no encontrado.</p>
+  {% endif %}
+  <p><a class="boton secundario" href="{{ volver }}" data-testid="volver-detalle">Volver</a></p>
+{% endblock %}

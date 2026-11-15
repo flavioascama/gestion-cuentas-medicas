@@ -1,0 +1,166 @@
+/* Fila de aviso: una sola linea de columnas en la bandeja (icono, titulo y
+   hecho, cuenta o lote, severidad, tiempo, chevron), toda clicable, con
+   borde izquierdo de color por severidad (nunca solo el color: la
+   etiqueta escrita dice lo mismo). */
+.fila {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) 140px 110px 96px 14px;
+  align-items: center;
+  gap: var(--espacio_4);
+  width: 100%;
+  padding: var(--espacio_3) var(--espacio_4);
+  border: none;
+  border-left: 4px solid transparent;
+  border-bottom: 1px solid var(--color_borde);
+  background-color: var(--color_superficie);
+  color: var(--color_texto);
+  font: inherit;
+  text-align: left;
+}
+
+.fila:last-child {
+  border-bottom: none;
+}
+
+.navegable {
+  cursor: pointer;
+}
+
+.navegable:hover {
+  background-color: var(--color_primario_suave);
+}
+
+.navegable:focus-visible {
+  outline: var(--foco_ancho, 2px) solid var(--color_primario);
+  outline-offset: -2px;
+}
+
+.compacta {
+  grid-template-columns: 20px minmax(0, 1fr) 14px;
+  align-items: start;
+  gap: var(--espacio_3);
+}
+
+.icono {
+  display: flex;
+}
+
+.principal {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.titulo {
+  font-weight: var(--peso_enfasis);
+  color: var(--color_texto);
+}
+
+.que_paso,
+.meta {
+  font-size: var(--tamano_metadato);
+  color: var(--color_texto_secundario);
+  overflow-wrap: anywhere;
+}
+
+.referencia {
+  font-weight: var(--peso_medio);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.columna_etiqueta {
+  display: flex;
+}
+
+.etiqueta {
+  padding: 1px var(--espacio_2);
+  border-radius: 999px;
+  font-size: var(--tamano_metadato);
+  font-weight: var(--peso_medio);
+  white-space: nowrap;
+}
+
+.tiempo {
+  font-size: var(--tamano_metadato);
+  color: var(--color_texto_secundario);
+  white-space: nowrap;
+  text-align: right;
+}
+
+.chevron {
+  color: var(--color_texto_secundario);
+  font-size: var(--tamano_titulo_seccion);
+  line-height: 1;
+}
+
+.critico {
+  border-left-color: var(--color_error);
+}
+
+.critico .icono {
+  color: var(--color_error);
+}
+
+.critico .etiqueta {
+  background-color: var(--color_error_suave);
+  color: var(--color_error);
+}
+
+.escalamiento {
+  border-left-color: var(--color_advertencia);
+}
+
+.escalamiento .icono {
+  color: var(--color_advertencia);
+}
+
+.escalamiento .etiqueta {
+  background-color: var(--color_advertencia_suave);
+  color: var(--color_advertencia);
+}
+
+.aviso {
+  border-left-color: var(--color_primario);
+}
+
+.aviso .icono {
+  color: var(--color_primario);
+}
+
+.aviso .etiqueta {
+  background-color: var(--color_primario_suave);
+  color: var(--color_primario);
+}
+
+.atendido {
+  border-left-color: var(--color_exito);
+}
+
+.atendido .icono {
+  color: var(--color_exito);
+}
+
+.atendido .etiqueta {
+  background-color: var(--color_exito_suave);
+  color: var(--color_exito);
+}
+
+.atendido .titulo {
+  color: var(--color_texto_secundario);
+}
+
+@media (max-width: 900px) {
+  .fila:not(.compacta) {
+    grid-template-columns: 20px minmax(0, 1fr) 14px;
+    align-items: start;
+  }
+
+  .fila:not(.compacta) .referencia,
+  .fila:not(.compacta) .columna_etiqueta,
+  .fila:not(.compacta) .tiempo {
+    grid-column: 2;
+  }
+}

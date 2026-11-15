@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block titulo %}Resultado del registro - Validador de facturación electrónica{% endblock %}
+{% block contenido %}
+  <div class="tarjeta">
+    {% if conforme %}
+    <p class="exito" data-testid="resultado-conforme">El lote se registró correctamente. Estado: Registrado, Errores: Ninguno.</p>
+    {% else %}
+    <p class="error" data-testid="resultado-observado">El lote no se registró: tiene observaciones de forma.</p>
+    {% if lote_id %}
+    <p><a class="boton" href="/lotes-por-validar/{{ lote_id }}/observaciones-forma.xlsx" data-testid="descargar-observaciones">Observaciones</a></p>
+    {% endif %}
+    <table data-testid="tabla-observaciones-forma">
+      <thead><tr><th>Tabla</th><th>Código de error</th><th>Descripción</th></tr></thead>
+      <tbody>
+        {% for obs in observaciones %}
+        <tr><td>{{ obs.tabla or "-" }}</td><td>{{ obs.codigo_error }}</td><td>{{ obs.descripcion }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+    <p><a class="boton secundario" href="/lotes-por-validar" data-testid="volver-lotes-por-validar">Volver a Lotes por Validar</a></p>
+  </div>
+{% endblock %}

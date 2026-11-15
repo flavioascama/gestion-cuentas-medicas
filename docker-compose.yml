@@ -1,0 +1,254 @@
+# Orquestacion del sistema (AD-08: cada unidad de ejecucion en contenedor).
+# Los simuladores viven en su propio arbol y NO se incluyen aqui: se levantan
+# por separado (ver simuladores/) y solo se conectan por una URL/host
+# configurado por variable de entorno (Regla 0.5) -- nunca importando su
+# codigo. Para que ese host+puerto sea resoluble entre dos "docker compose"
+# independientes, ambos se unen a la red externa `red_oe1_simuladores`
+# (creada una vez con `docker network create red_oe1_simuladores`; ver
+# README.md). Este archivo crece por fase: Fase 1 agrega postgres y backend;
+# fases posteriores agregan trabajador, frontend.
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-gestion_cuentas}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Falta POSTGRES_PASSWORD en .env}
+      POSTGRES_DB: ${POSTGRES_DB:-gestion_cuentas}
+    # C-04 y RNF-15: conexiones con TLS 1.2 o superior. El certificado se
+    # genera al arrancar (fuera del volumen de datos) si no existe.
+    command:
+      - bash
+      - -c
+      - >-
+        if [ ! -f /var/lib/postgresql/tls/server.key ]; then
+        mkdir -p /var/lib/postgresql/tls &&
+        openssl req -new -x509 -days 825 -nodes -subj /CN=postgres
+        -out /var/lib/postgresql/tls/server.crt -keyout /var/lib/postgresql/tls/server.key &&
+        chown -R postgres:postgres /var/lib/postgresql/tls &&
+        chmod 600 /var/lib/postgresql/tls/server.key; fi;
+        exec docker-entrypoint.sh postgres -c ssl=on
+        -c ssl_cert_file=/var/lib/postgresql/tls/server.crt
+        -c ssl_key_file=/var/lib/postgresql/tls/server.key
+        -c ssl_min_protocol_version=TLSv1.2
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - datos_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-gestion_cuentas} -d ${POSTGRES_DB:-gestion_cuentas}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./sistema/backend
+    env_file:
+      - .env
+    environment:
+      URL_BASE_DATOS: postgresql+asyncpg://${USUARIO_APLICACION_BD:-gestion_cuentas_app}:${CLAVE_USUARIO_APLICACION_BD:?Falta CLAVE_USUARIO_APLICACION_BD en .env}@postgres:5432/${POSTGRES_DB:-gestion_cuentas}?ssl=require
+      # C-10 y RAS-11: solo las migraciones usan el superusuario.
+      URL_BASE_DATOS_MIGRACIONES: postgresql+asyncpg://${POSTGRES_USER:-gestion_cuentas}:${POSTGRES_PASSWORD:?Falta POSTGRES_PASSWORD en .env}@postgres:5432/${POSTGRES_DB:-gestion_cuentas}?ssl=require
+      # El contenedor solo trae sistema/backend/ (contexto de build), no la
+      # raiz del repositorio: docs/fuentes/ no esta en la misma posicion
+      # relativa que en desarrollo local. Ver app/compartido/rutas.py.
+      RUTA_DOCS_FUENTES: /docs_fuentes
+      RUTA_SIMULADORES_DATOS_SEMILLA: /simuladores_datos_semilla
+      RUTA_REPORTES: /reportes
+      # Fase 19, Seccion 12: la aplicacion web (Vite, `npm run dev`) corre
+      # en otro origen que el backend, incluso en desarrollo local.
+      ORIGENES_CORS: http://localhost:5173,http://127.0.0.1:5173,http://localhost:8080,http://127.0.0.1:8080
+      # Seccion 11 (Fase 18): herramientas/exportar_openapi.py escribe el
+      # esquema aqui para el futuro cliente del frontend.
+      RUTA_FRONTEND: /frontend
+      # Seccion 8.3 (Fase 16): RemitirLote lee aqui el `.S01` que
+      # CargarLoteEnValidador (trabajador) escribio en el mismo volumen.
+      RUTA_ARTEFACTOS_S01: /artefactos_s01
+      # Simulador receptor IAFAS (Fase 8): vive en su propio docker-compose
+      # (simuladores/receptor_iafas/), alcanzable por el nombre de su
+      # servicio en la red externa compartida `red_oe1_simuladores`, con su
+      # puerto interno de contenedor (no el publicado en el host).
+      FTP_RECEPTOR_IAFAS_HOST: ${FTP_RECEPTOR_IAFAS_HOST:-receptor-iafas}
+      FTP_RECEPTOR_IAFAS_PUERTO: ${FTP_RECEPTOR_IAFAS_PUERTO:-21}
+      # Portal de respuestas del mismo simulador (Fase 12), puerto HTTP
+      # interno de contenedor (no el FTP de arriba).
+      RECEPTOR_IAFAS_URL_BASE: ${RECEPTOR_IAFAS_URL_BASE:-http://receptor-iafas:8000}
+      # Fase 20: las herramientas de generacion de evidencia (Seccion 13)
+      # leen "GET /admin/configuracion" de los otros dos simuladores para
+      # declarar en la cabecera la latencia artificial realmente vigente
+      # en cada ejecucion. Mismo patron que RECEPTOR_IAFAS_URL_BASE arriba.
+      ACREDITA_SALUD_URL_BASE: ${ACREDITA_SALUD_URL_BASE:-http://acredita-salud:8000}
+      TEDEF_WEB_URL_BASE: ${TEDEF_WEB_URL_BASE:-http://tedef-web:8000}
+      # Simulador PSE (adenda de ingesta y completitud): el backend lo
+      # llama directo desde la ruta HTTP (sincrono, sin sesion asistida) --
+      # el trabajador no lo necesita, por eso no esta en su bloque de abajo.
+      PSE_URL_BASE: ${PSE_URL_BASE:-http://pse:8000}
+    ports:
+      - "8000:8000"
+    networks:
+      - default
+      - red_oe1_simuladores
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./sistema/backend:/app
+      # El .venv del contenedor es Linux; el bind mount de arriba no debe
+      # dejar que un .venv de Windows generado en el host lo tape.
+      - venv_backend:/app/.venv
+      # Solo lectura (Regla 0.5: docs/fuentes/ es de solo lectura).
+      - ./docs/fuentes:/docs_fuentes:ro
+      # Lectura-escritura: herramientas/generar_datos_sinteticos.py escribe
+      # asegurados.json aqui.
+      - ./simuladores/datos_semilla:/simuladores_datos_semilla
+      # Lectura-escritura: los reportes de evidencia (Seccion 11) se
+      # escriben aqui, fuera de sistema/backend/.
+      - ./reportes:/reportes
+      # Lectura: el `.S01` que el trabajador descarga del validador
+      # TEDEF Web (Fase 16, Seccion 8.3).
+      - ./artefactos_s01:/artefactos_s01
+      # Lectura-escritura: herramientas/exportar_openapi.py escribe el
+      # esquema OpenAPI para el futuro cliente del frontend (Seccion 11).
+      - ./sistema/frontend:/frontend
+
+  trabajador:
+    # Contexto = raiz del repo (no ./sistema/automatizacion): el Dockerfile
+    # copia tanto sistema/backend/ como sistema/automatizacion/, porque el
+    # trabajador importa el paquete del backend como dependencia de ruta
+    # editable (AD-02: proceso aparte, no codigo aparte -- ver
+    # sistema/automatizacion/pyproject.toml).
+    build:
+      context: .
+      dockerfile: sistema/automatizacion/Dockerfile
+    env_file:
+      - .env
+    environment:
+      URL_BASE_DATOS: postgresql+asyncpg://${USUARIO_APLICACION_BD:-gestion_cuentas_app}:${CLAVE_USUARIO_APLICACION_BD:?Falta CLAVE_USUARIO_APLICACION_BD en .env}@postgres:5432/${POSTGRES_DB:-gestion_cuentas}?ssl=require
+      RUTA_REPORTES: /reportes
+      # Seccion 8.4 (Fase 15): volumen propio para el storage_state
+      # cifrado por portal ("sesiones_plataformas" en el plan).
+      RUTA_SESIONES_PLATAFORMAS: /sesiones_plataformas
+      CLAVE_CIFRADO_SESIONES: ${CLAVE_CIFRADO_SESIONES:?Falta CLAVE_CIFRADO_SESIONES en .env}
+      # Simulador ACREDITA SALUD (Fase 10): mismo patron que
+      # FTP_RECEPTOR_IAFAS_HOST arriba -- nombre de servicio en la red
+      # externa compartida, puerto interno de contenedor.
+      ACREDITA_SALUD_URL_BASE: ${ACREDITA_SALUD_URL_BASE:-http://acredita-salud:8000}
+      # Portal de respuestas del simulador receptor IAFAS (Fase 12): mismo
+      # patron, puerto HTTP interno (no el FTP de FTP_RECEPTOR_IAFAS_PUERTO).
+      RECEPTOR_IAFAS_URL_BASE: ${RECEPTOR_IAFAS_URL_BASE:-http://receptor-iafas:8000}
+      # Validador TEDEF Web (Fase 14/16): mismo patron, puerto interno de
+      # contenedor (no el publicado en el host del simulador).
+      TEDEF_WEB_URL_BASE: ${TEDEF_WEB_URL_BASE:-http://tedef-web:8000}
+      TEDEF_WEB_USUARIO: ${TEDEF_WEB_USUARIO:-validador_ipress_demo}
+      TEDEF_WEB_CLAVE: ${TEDEF_WEB_CLAVE:?Falta TEDEF_WEB_CLAVE en .env}
+      # Seccion 8.3 (Fase 16): mismo volumen que RUTA_ARTEFACTOS_S01 del
+      # backend -- aqui CargarLoteEnValidador escribe el `.S01` obtenido.
+      RUTA_ARTEFACTOS_S01: /artefactos_s01
+      # Comunicaciones de la IAFAS (2026-11-13): bandeja de la clinica en
+      # el simulador de correo (simuladores/correo), IMAP sin TLS solo en
+      # desarrollo.
+      CORREO_IMAP_HOST: ${CORREO_IMAP_HOST:-correo}
+      CORREO_IMAP_PUERTO: ${CORREO_IMAP_PUERTO:-3143}
+      CORREO_IMAP_USUARIO: ${CORREO_USUARIO:-cuentasmedicas@clinica.test}
+      CORREO_IMAP_CLAVE: ${CORREO_CLAVE:?Falta CORREO_CLAVE en .env}
+      CORREO_IMAP_TLS: ${CORREO_IMAP_TLS:-false}
+    networks:
+      - default
+      - red_oe1_simuladores
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./sistema/backend:/app/backend
+      - ./sistema/automatizacion:/app/automatizacion
+      - venv_trabajador:/app/automatizacion/.venv
+      - ./reportes:/reportes
+      - datos_trabajador:/datos
+      - sesiones_plataformas:/sesiones_plataformas
+      - ./artefactos_s01:/artefactos_s01
+
+  temporizador:
+    # Actor "temporizador del sistema" de CU-05/CU-11 (Tabla 51) y el
+    # anclaje/verificacion diarios de la cadena de eventos (RNF-18, C-10):
+    # antes eran herramientas de invocacion manual. Misma imagen y codigo
+    # que el backend (son sus herramientas), proceso aparte (AD-08), sin
+    # puertos: solo habla con la base de datos y escribe reportes.
+    build:
+      context: ./sistema/backend
+    env_file:
+      - .env
+    environment:
+      URL_BASE_DATOS: postgresql+asyncpg://${USUARIO_APLICACION_BD:-gestion_cuentas_app}:${CLAVE_USUARIO_APLICACION_BD:?Falta CLAVE_USUARIO_APLICACION_BD en .env}@postgres:5432/${POSTGRES_DB:-gestion_cuentas}?ssl=require
+      RUTA_REPORTES: /reportes
+      TEMPORIZADOR_INTERVALO_VENCIMIENTOS_MINUTOS: ${TEMPORIZADOR_INTERVALO_VENCIMIENTOS_MINUTOS:-60}
+      TEMPORIZADOR_INTERVALO_CADENA_HORAS: ${TEMPORIZADOR_INTERVALO_CADENA_HORAS:-24}
+      TEMPORIZADOR_INTERVALO_COMUNICACIONES_MINUTOS: ${TEMPORIZADOR_INTERVALO_COMUNICACIONES_MINUTOS:-15}
+    # --no-sync: comparte el .venv del backend; solo el backend lo sincroniza.
+    command: ["uv", "run", "--no-sync", "python", "-m", "herramientas.temporizador"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    volumes:
+      - ./sistema/backend:/app
+      - venv_backend:/app/.venv
+      - ./reportes:/reportes
+
+  frontend:
+    # RNF-14 y AD-08: la aplicacion web en su propio contenedor (compilada
+    # con Vite y servida por nginx). Perfil "web": no se construye con un
+    # "docker compose up" comun, que sigue usando "npm run dev" en 5173.
+    #   docker compose --profile web up -d --build frontend   # https://localhost:8443
+    profiles: ["web"]
+    build:
+      context: ./sistema/frontend
+      args:
+        # La API se alcanza por el mismo origen cifrado (nginx la reenvia).
+        VITE_URL_BASE_API: ${VITE_URL_BASE_API:-/api}
+        VITE_URL_PORTAL_ACREDITA_SALUD: ${VITE_URL_PORTAL_ACREDITA_SALUD:-http://localhost:8100}
+        VITE_INTERVALO_REFRESCO_PANEL_SEGUNDOS: ${VITE_INTERVALO_REFRESCO_PANEL_SEGUNDOS:-60}
+    environment:
+      PUERTO_HTTPS: ${PUERTO_FRONTEND_HTTPS:-8443}
+    ports:
+      - "${PUERTO_FRONTEND:-8080}:80"
+      - "${PUERTO_FRONTEND_HTTPS:-8443}:443"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  respaldo:
+    # RNF-19, C-14, AD-13, RAS-12: respaldo diario cifrado de la base, con
+    # retencion. Prueba de restauracion:
+    #   docker compose exec respaldo bash /scripts/verificar_restauracion.sh
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-gestion_cuentas}
+      POSTGRES_DB: ${POSTGRES_DB:-gestion_cuentas}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?Falta POSTGRES_PASSWORD en .env}
+      PGSSLMODE: require
+      CLAVE_RESPALDOS: ${CLAVE_RESPALDOS:?Falta CLAVE_RESPALDOS en .env}
+      RESPALDO_INTERVALO_HORAS: ${RESPALDO_INTERVALO_HORAS:-24}
+      RESPALDO_RETENCION_DIAS: ${RESPALDO_RETENCION_DIAS:-30}
+    entrypoint: ["bash", "/scripts/respaldar.sh"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    volumes:
+      - ./sistema/respaldo:/scripts:ro
+      - ./respaldos:/respaldos
+
+networks:
+  # Externa: no la crea este archivo (evita que "docker compose down" de un
+  # stack se la lleve por delante mientras el otro stack la sigue usando).
+  # Creacion unica: `docker network create red_oe1_simuladores`.
+  red_oe1_simuladores:
+    external: true
+
+volumes:
+  datos_postgres:
+  venv_backend:
+  venv_trabajador:
+  datos_trabajador:
+  sesiones_plataformas:

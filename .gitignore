@@ -1,0 +1,47 @@
+# Entornos y dependencias
+.venv/
+venv/
+__pycache__/
+*.pyc
+node_modules/
+.uv-cache/
+
+# Variables de entorno reales: solo los .env.ejemplo se versionan
+.env
+*.env.local
+
+# Archivos generados por el despliegue (claves y accesos del servidor)
+despliegue/usuarios_simuladores.caddy
+despliegue/acceso_simuladores.txt
+despliegue/.inicializado
+
+# Artefactos generados en ejecucion
+respaldos/
+reportes/*
+!reportes/.gitkeep
+artefactos_s01/*
+!artefactos_s01/.gitkeep
+.tmp_reportes/
+
+# Datos de sesion de Playwright (contienen cookies)
+**/storage_state*.json
+
+# Editor / SO
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
+
+# Cobertura y cache de pruebas
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+
+# Indice del motor de sugerencia CPMS: se reconstruye desde PostgreSQL
+.cache/
+
+# Frontend
+dist/
+build/

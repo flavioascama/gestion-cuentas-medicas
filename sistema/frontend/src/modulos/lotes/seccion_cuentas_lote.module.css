@@ -1,0 +1,36 @@
+.ayuda {
+  margin: 0 0 var(--espacio_4);
+  font-size: var(--tamano_metadato);
+  color: var(--color_texto_secundario);
+}
+
+/* Mismo enlace que el numero de lote en la bandeja de lotes: azul, en
+   negrita y con chevron, para que se vea que la fila se abre. */
+.enlace_cuenta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espacio_1);
+  color: var(--color_primario);
+  font-weight: var(--peso_enfasis);
+  white-space: nowrap;
+}
+
+/* Mismo boton de ojo que la bandeja de cuentas. */
+.boton_ver {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin: 0 auto;
+  border: none;
+  background: none;
+  color: var(--color_texto_secundario);
+  border-radius: var(--radio_borde);
+  cursor: pointer;
+}
+
+.boton_ver:hover {
+  background-color: var(--color_primario_suave);
+  color: var(--color_primario);
+}

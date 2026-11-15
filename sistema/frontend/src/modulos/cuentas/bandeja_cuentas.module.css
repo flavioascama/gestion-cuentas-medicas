@@ -1,0 +1,88 @@
+.panel {
+  background-color: var(--color_superficie);
+  border: 1px solid var(--color_borde);
+  border-radius: var(--radio_borde);
+  padding: var(--espacio_6);
+}
+
+.tarjeta_filtros {
+  margin-bottom: var(--espacio_4);
+  padding: var(--espacio_4);
+  background-color: var(--color_fondo);
+  border: 1px solid var(--color_borde);
+  border-radius: var(--radio_borde);
+}
+
+/* flex-start, no flex-end: con align-items:flex-end cada campo se
+   alinea por el fondo de su propia caja, y esa caja no mide lo mismo
+   para un CampoTexto/Selector con texto de ayuda que para uno sin el
+   (o incluso entre un <input> y un <select> nativos) -- los controles
+   quedaban a distinta altura en la misma fila (bug real, encontrado
+   con getBoundingClientRect en vivo). Con flex-start alinean por la
+   etiqueta, que siempre mide igual. El boton "Limpiar filtros" resuelve
+   su propia alineacion con el mismo espaciador de etiqueta oculto que
+   usa cada campo (.acciones_filtro_espaciador), no con este flex.
+*/
+.filtros {
+  display: flex;
+  gap: var(--espacio_4);
+  align-items: flex-start;
+}
+
+.filtro {
+  width: 200px;
+}
+
+.busqueda {
+  width: 260px;
+}
+
+.acciones_filtro {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio_1);
+}
+
+.acciones_filtro_espaciador {
+  font-size: var(--tamano_metadato);
+  line-height: 1;
+  visibility: hidden;
+}
+
+.fila_boton_limpiar {
+  display: flex;
+  align-items: center;
+  height: 36px;
+}
+
+.boton_ver {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin: 0 auto;
+  border: none;
+  background: none;
+  color: var(--color_texto_secundario);
+  border-radius: var(--radio_borde);
+  cursor: pointer;
+}
+
+.boton_ver:hover {
+  background-color: var(--color_primario_suave);
+  color: var(--color_primario);
+}
+
+/* Filtro por estado exacto que llega desde el panel gerencial (?estado=):
+   una etiqueta debajo del selector de etapa, que se quita con un clic. */
+.etiqueta_filtro {
+  margin-top: var(--espacio_1);
+  padding: 2px var(--espacio_2);
+  border: 1px solid var(--color_borde);
+  border-radius: 999px;
+  background-color: var(--color_primario_suave);
+  color: var(--color_primario);
+  font-size: var(--tamano_metadato);
+  cursor: pointer;
+}

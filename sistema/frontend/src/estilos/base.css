@@ -1,0 +1,51 @@
+@import "./tokens.css";
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#raiz {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color_fondo);
+  color: var(--color_texto);
+  font-family: var(--fuente);
+  font-size: var(--tamano_base);
+  font-weight: var(--peso_normal);
+  line-height: 1.5;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+table {
+  font-variant-numeric: tabular-nums;
+}
+
+button,
+input,
+select {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+a {
+  color: var(--color_primario);
+}
+
+:focus-visible {
+  outline: var(--foco_ancho) solid var(--color_primario);
+  outline-offset: 1px;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-weight: var(--peso_enfasis);
+}

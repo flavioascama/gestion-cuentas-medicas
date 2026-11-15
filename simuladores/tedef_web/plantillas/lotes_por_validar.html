@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block titulo %}Lotes por Validar - Validador de facturación electrónica{% endblock %}
+{% block contenido %}
+  <h1>Lotes por Validar</h1>
+  <div class="tarjeta">
+    <form method="get" action="/lotes-por-validar" data-testid="formulario-filtros">
+      <label>Fecha de <input type="date" name="desde" data-testid="campo-desde"></label>
+      <label>Fecha hasta <input type="date" name="hasta" data-testid="campo-hasta"></label>
+      <label>Nro. de Lote <input type="text" name="numero_lote" data-testid="campo-numero-lote"></label>
+      <label>Periodo <input type="text" name="periodo" data-testid="campo-periodo"></label>
+      <button type="submit" data-testid="boton-buscar">Buscar</button>
+    </form>
+    <p><a class="boton" href="/lotes-por-validar/nuevo" data-testid="boton-nuevo-registro">Nuevo registro</a></p>
+  </div>
+
+  <div class="tarjeta">
+    <form method="post" action="/lotes-por-validar/validar" data-testid="formulario-validar-lotes">
+      <table data-testid="tabla-lotes-por-validar">
+        <thead>
+          <tr><th></th><th>Fecha Registro</th><th>Nro. de Lote</th><th>Nro. Periodo</th><th>Estado</th><th>Errores</th><th>Usuario de Registro</th><th>Acciones</th></tr>
+        </thead>
+        <tbody>
+          {% for lote in lotes %}
+          <tr data-testid="fila-lote">
+            <td>
+              {% if lote.estado == "REGISTRADO" %}
+              <input type="checkbox" name="lote_ids" value="{{ lote.id }}" data-testid="seleccionar-lote-{{ lote.id }}">
+              {% endif %}
+            </td>
+            <td>{{ lote.registrado_en }}</td>
+            <td>{{ lote.identidad.numero_lote }}</td>
+            <td>{{ lote.identidad.periodo }}</td>
+            <td class="{{ lote.estado }}" data-testid="estado-lote-{{ lote.id }}">{{ lote.estado }}</td>
+            <td>
+              {% if lote.estado == "OBSERVADO_DETALLADA" %}
+              <a href="/lotes-por-validar/{{ lote.id }}/error-validacion.xlsx" data-testid="descargar-error-validacion-{{ lote.id }}">Error de Validación-XLS</a>
+              {% else %}
+              Ninguno
+              {% endif %}
+            </td>
+            <td>{{ lote.usuario_registro }}</td>
+            <td>
+              <a href="/lotes-por-validar/{{ lote.id }}/detalle" data-testid="detalles-lote-{{ lote.id }}">Detalles</a>
+              <form method="post" action="/lotes-por-validar/{{ lote.id }}/eliminar" style="display:inline">
+                <button type="submit" data-testid="eliminar-lote-{{ lote.id }}">Eliminar</button>
+              </form>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="8">No hay lotes registrados con esos filtros.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <button type="submit" data-testid="boton-validar-lotes">Validar lotes</button>
+    </form>
+    <form method="get" action="/lotes-por-validar">
+      <button type="submit" class="secundario" data-testid="boton-refrescar-tabla">Refrescar tabla</button>
+    </form>
+  </div>
+{% endblock %}

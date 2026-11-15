@@ -1,0 +1,104 @@
+.leyenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espacio_1) var(--espacio_3);
+  margin-bottom: var(--espacio_3);
+}
+
+.item_leyenda {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espacio_2);
+  padding: var(--espacio_1) var(--espacio_2);
+  border: none;
+  border-radius: var(--radio_borde);
+  background: none;
+  font-size: var(--tamano_metadato);
+  color: var(--color_texto);
+  cursor: pointer;
+}
+
+.item_leyenda:hover,
+.item_leyenda:focus-visible {
+  background-color: var(--color_primario_suave);
+}
+
+/* Categoria oculta: la muestra queda tenue y el texto tachado, pero el
+   boton sigue en su sitio para volver a mostrarla. Las demas series no
+   cambian de color (el color sigue a la categoria, no a su posicion). */
+.item_oculto {
+  color: var(--color_texto_secundario);
+  text-decoration: line-through;
+}
+
+.item_oculto .muestra {
+  opacity: 0.3;
+}
+
+.muestra {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+.lienzo {
+  position: relative;
+  width: 100%;
+}
+
+.svg {
+  display: block;
+  overflow: visible;
+}
+
+.rejilla {
+  stroke: var(--color_grafico_rejilla);
+  stroke-width: 1;
+}
+
+.etiqueta_eje {
+  fill: var(--color_texto_secundario);
+  font-size: var(--tamano_metadato);
+  font-variant-numeric: tabular-nums;
+}
+
+.etiqueta_tapa {
+  fill: var(--color_texto);
+  font-size: var(--tamano_metadato);
+  font-weight: var(--peso_enfasis);
+  font-variant-numeric: tabular-nums;
+}
+
+.columna_normal,
+.columna_activa,
+.columna_atenuada {
+  transition: opacity 0.15s ease;
+}
+
+/* La columna bajo el cursor (o con foco) se aclara un poco: responde
+   antes de pulsarla. Las no elegidas, con un periodo ya filtrado, se
+   atenuan para que la elegida destaque sin repintar ninguna serie. */
+.columna_activa {
+  filter: brightness(1.12);
+}
+
+.columna_atenuada {
+  opacity: 0.35;
+}
+
+/* Area de pulsacion de toda la banda (mas grande que la columna). */
+.objetivo {
+  fill: transparent;
+  cursor: pointer;
+  outline: none;
+}
+
+.objetivo:focus-visible {
+  stroke: var(--color_primario);
+  stroke-width: 2;
+}
+
+.vacio {
+  color: var(--color_texto_secundario);
+  font-size: var(--tamano_base);
+}

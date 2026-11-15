@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block titulo %}Solicitud de Atención Médica {{ acreditacion.codigo_autorizacion }}{% endblock %}
+{% block contenido %}
+  <div class="tarjeta" data-testid="documento-solicitud">
+    <h1>Solicitud de Atención Médica</h1>
+    {% if reimpresion %}<p class="error" data-testid="etiqueta-reimpresion">REIMPRESIÓN</p>{% endif %}
+    <table>
+      <tr><th>Código de autorización</th><td data-testid="documento-codigo">{{ acreditacion.codigo_autorizacion }}</td></tr>
+      <tr><th>Documento del asegurado</th><td>{{ acreditacion.tipo_documento }} {{ acreditacion.numero_documento }}</td></tr>
+      <tr><th>Asegurado</th><td>{{ acreditacion.nombre_asegurado }}</td></tr>
+      <tr><th>IAFAS</th><td>{{ nombre_iafas }}</td></tr>
+      <tr><th>Condición de cobertura</th><td>{{ acreditacion.condicion_cobertura }}</td></tr>
+      <tr><th>Tipo de copago</th><td>{{ acreditacion.tipo_copago or "Sin copago" }}</td></tr>
+      {% if acreditacion.monto_copago_fijo is not none %}
+      <tr><th>Monto de copago fijo</th><td>S/ {{ "%.2f"|format(acreditacion.monto_copago_fijo) }}</td></tr>
+      {% endif %}
+      {% if acreditacion.porcentaje_coaseguro is not none %}
+      <tr><th>Porcentaje de coaseguro</th><td>{{ acreditacion.porcentaje_coaseguro }}%</td></tr>
+      {% endif %}
+      <tr><th>Generado el</th><td>{{ acreditacion.generado_en }}</td></tr>
+    </table>
+    <p class="no-imprimir" style="margin-top:1rem;">
+      <button onclick="window.print()" data-testid="boton-imprimir">Imprimir</button>
+      <a href="/acreditacion/{{ acreditacion.codigo_autorizacion }}/documento.pdf?reimpresion={{ 'true' if reimpresion else 'false' }}"
+         data-testid="enlace-descargar-pdf">Descargar PDF</a>
+      {% if not reimpresion %}
+      <a href="/acreditacion/{{ acreditacion.codigo_autorizacion }}/documento?reimpresion=true"
+         data-testid="enlace-reimprimir">Reimprimir</a>
+      {% endif %}
+    </p>
+  </div>
+{% endblock %}

@@ -1,0 +1,62 @@
+[project]
+name = "simulador-acredita-salud"
+version = "0.1.0"
+description = "Simulador local del Modelo ACREDITA SALUD (Fase 10, Seccion 9.1). NO es el sistema oficial de SUSALUD."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "jinja2>=3.1",
+    "python-multipart>=0.0.12",
+    "openpyxl>=3.1",
+    "fpdf2>=2.7",
+    # CAPTCHA de la pantalla de ingreso (Seccion 9.1, 8.4).
+    "pillow>=11.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+    "httpx>=0.27",
+    "ruff>=0.7",
+    "mypy>=1.13",
+    "types-openpyxl>=3.1",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "N"]
+ignore = [
+    "N999", # nombres de modulo en espanol
+    "N818", # convencion propia: prefijo "Error", no sufijo (Regla 9, identificadores en espanol)
+]
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = ["fastapi.Depends", "fastapi.params.Depends", "fastapi.Form"]
+
+[tool.mypy]
+python_version = "3.12"
+warn_unused_configs = true
+no_implicit_optional = true
+
+[[tool.mypy.overrides]]
+# fpdf2 no publica un paquete types-* en PyPI.
+module = "fpdf.*"
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["pruebas"]
+python_files = ["prueba_*.py"]
+python_functions = ["prueba_*"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]

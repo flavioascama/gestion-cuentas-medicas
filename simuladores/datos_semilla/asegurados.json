@@ -1,0 +1,514 @@
+{
+  "metadatos": {
+    "ficticio": true,
+    "semilla": 20250601,
+    "generado_en": "2026-09-15T23:57:28.669643+00:00",
+    "descripcion": "Asegurados sinteticos, 8 escenarios (Seccion 3.3)"
+  },
+  "asegurados": [
+    {
+      "documento": {
+        "tipo": "1",
+        "numero": "81953443"
+      },
+      "nombres": "Elvira",
+      "apellidos": "Ochoa Cañas",
+      "iafas_codigo": "99553",
+      "escenario": "cobertura_vigente",
+      "ficticio": true,
+      "estado_afiliacion": "ACTIVO",
+      "plan": "PLAN SALUD PREFERENTE",
+      "vigente_desde": "2025-09-15",
+      "vigente_hasta": "2027-09-15"
+    },
+    {
+      "documento": {
+        "tipo": "1",
+        "numero": "53679371"
+      },
+      "nombres": "Nydia",
+      "apellidos": "Sarmiento Acosta",
+      "iafas_codigo": "05292",
+      "escenario": "cobertura_vigente",
+      "ficticio": true,
+      "estado_afiliacion": "ACTIVO",
+      "plan": "PLAN SALUD PREFERENTE",
+      "vigente_desde": "2025-09-15",
+      "vigente_hasta": "2027-09-15"
+    },
+    {
+      "documento": {
+        "tipo": "1",
+        "numero": "21396432"
+      },
+      "nombres": "Matilde",
+      "apellidos": "Iniesta Cánovas",
+      "iafas_codigo": "99553",
+      "escenario": "cobertura_vigente",
+      "ficticio": true,
+      "estado_afiliacion": "ACTIVO",
+      "plan": "PLAN SALUD PREFERENTE",
+      "vigente_desde": "2025-09-15",
+      "vigente_hasta": "2027-09-15"
+    },
+    {
+      "documento": {
+        "tipo": "2",
+        "numero": "CE931347"
+      },
+      "nombres": "Atilio",
+      "apellidos": "Salinas Plaza",
+      "iafas_codigo": "19395",
+      "escenario": "cobertura_vigente",
+      "ficticio": true,
+      "estado_afiliacion": "ACTIVO",
+      "plan": "PLAN SALUD PREFERENTE",
+      "vigente_desde": "2025-09-15",
+      "vigente_hasta": "2027-09-15"
+    },
+    {
+      "documento": {
+        "tipo": "3",
+        "numero": "PA379301"
+      },
+      "nombres": "Lupe",
+      "apellidos": "Guardiola Pozuelo",
+      "iafas_codigo": "96969",
+      "escenario": "cobertura_cancelada",
+      "ficticio": true,
+      "estado_afiliacion": "CANCELADO",
+      "fecha_cancelacion": "2026-01-15",
+      "motivo": "Termino de vinculo laboral del titular"
+    },
+    {
+      "documento": {
+        "tipo": "1",
+        "numero": "33084625"
+      },
+      "nombres": "Jafet",
+      "apellidos": "Figueras Marqués",
+      "iafas_codigo": "19395",
+      "escenario": "cobertura_cancelada",
+      "ficticio": true,
+      "estado_afiliacion": "CANCELADO",
+      "fecha_cancelacion": "2026-01-15",
+      "motivo": "Termino de vinculo laboral del titular"
+    },
+    {
+      "documento": {
+        "tipo": "2",
+        "numero": "CE636407"
+      },
+      "nombres": "Pascual",
+      "apellidos": "Pazos Badía",
+      "iafas_codigo": "99553",
+      "escenario": "cobertura_cancelada",
+      "ficticio": true,
+      "estado_afiliacion": "CANCELADO",
+      "fecha_cancelacion": "2026-01-15",
+      "motivo": "Termino de vinculo laboral del titular"
+    },
+    {
+      "documento": {
+        "tipo": "2",
+        "numero": "CE746024"
+      },
+      "nombres": "Brunilda",
+      "apellidos": "Echevarría Aguilar",
+      "iafas_codigo": "96969",
+      "escenario": "cobertura_cancelada",
+      "ficticio": true,
+      "estado_afiliacion": "CANCELADO",
+      "fecha_cancelacion": "2026-01-15",
+      "motivo": "Termino de vinculo laboral del titular"
+    },
+    {
+      "documento": {
+        "tipo": "1",
+        "numero": "84804479"
+      },
+      "nombres": "Loreto",
+      "apellidos": "Terrón Gallardo",
+      "iafas_codigo": "19395",
+      "escenario": "preexistencia_declarada",
+      "ficticio": true,
+      "estado_afiliacion": "ACTIVO",
+      "preexistencias_declaradas": [
+        "Diabetes mellitus tipo 2"
+      ]
+    },
+    {
+      "documento": {
+        "tipo": "1",
+        "numero": "64262860"
+      },
+      "nombres": "Constanza",
+      "apellidos": "Bru Tenorio",
+      "iafas_codigo": "19395",
+      "escenario": "preexistencia_declarada",
+      "ficticio": true,
+      "estado_afiliacion": "ACTIVO",
+      "preexistencias_declaradas": [
+        "Diabetes mellitus tipo 2"
+      ]
+    },
+    {
+      "documento": {
+        "tipo": "3",
+        "numero": "PA703322"
+      },
+      "nombres": "Lázaro",
+      "apellidos": "Querol Parejo",
+      "iafas_codigo": "96969",
+      "escenario": "preexistencia_declarada",
+      "ficticio": true,
+      "estado_afiliacion": "ACTIVO",
+      "preexistencias_declaradas": [
+        "Hipertension arterial"
+      ]
+    },
+    {
+      "documento": {
+        "tipo": "2",
+        "numero": "CE885244"
+      },
+      "nombres": "Herminia",
+      "apellidos": "Martorell Checa",
+      "iafas_codigo": "19395",
+      "escenario": "preexistencia_declarada",
+      "ficticio": true,
+      "estado_afiliacion": "ACTIVO",
+      "preexistencias_declaradas": [
+        "Hipertension arterial"
+      ]
+    },
+    {
+      "documento": {
+        "tipo": "1",
+        "numero": "62799687"
+      },
+      "nombres": "Eli",
+      "apellidos": "Delgado Bellido",
+      "iafas_codigo": "05292",
+      "escenario": "diagnostico_en_carencia",
+      "ficticio": true,
+      "estado_afiliacion": "ACTIVO",
+      "diagnostico_en_carencia": {
+        "codigo_cie10": null,
+        "descripcion": "PENDIENTE: requiere el catalogo CIE-10 (ver docs/PENDIENTES.md, Fase 4)",
+        "dias_restantes_carencia": 65
+      }
+    },
+    {
+      "documento": {
+        "tipo": "3",
+        "numero": "PA569875"
+      },
+      "nombres": "Víctor",
+      "apellidos": "Borrás Sanmiguel",
+      "iafas_codigo": "99553",
+      "escenario": "diagnostico_en_carencia",
+      "ficticio": true,
+      "estado_afiliacion": "ACTIVO",
+      "diagnostico_en_carencia": {
+        "codigo_cie10": null,
+        "descripcion": "PENDIENTE: requiere el catalogo CIE-10 (ver docs/PENDIENTES.md, Fase 4)",
+        "dias_restantes_carencia": 42
+      }
+    },
+    {
+      "documento": {
+        "tipo": "3",
+        "numero": "PA170512"
+      },
+      "nombres": "Epifanio",
+      "apellidos": "Pagès Carpio",
+      "iafas_codigo": "99553",
+      "escenario": "diagnostico_en_carencia",
+      "ficticio": true,
+      "estado_afiliacion": "ACTIVO",
+      "diagnostico_en_carencia": {
+        "codigo_cie10": null,
+        "descripcion": "PENDIENTE: requiere el catalogo CIE-10 (ver docs/PENDIENTES.md, Fase 4)",
+        "dias_restantes_carencia": 16
+      }
+    },
+    {
+      "documento": {
+        "tipo": "2",
+        "numero": "CE050531"
+      },
+      "nombres": "Rosendo",
+      "apellidos": "Carlos Mendez",
+      "iafas_codigo": "05292",
+      "escenario": "diagnostico_en_carencia",
+      "ficticio": true,
+      "estado_afiliacion": "ACTIVO",
+      "diagnostico_en_carencia": {
+        "codigo_cie10": null,
+        "descripcion": "PENDIENTE: requiere el catalogo CIE-10 (ver docs/PENDIENTES.md, Fase 4)",
+        "dias_restantes_carencia": 67
+      }
+    },
+    {
+      "documento": {
+        "tipo": "2",
+        "numero": "CE367863"
+      },
+      "nombres": "Benigno",
+      "apellidos": "Macías Oliveras",
+      "iafas_codigo": "05292",
+      "escenario": "copago_fijo",
+      "ficticio": true,
+      "estado_afiliacion": "ACTIVO",
+      "copago": {
+        "tipo": "fijo",
+        "monto": 53.99
+      }
+    },
+    {
+      "documento": {
+        "tipo": "2",
+        "numero": "CE766003"
+      },
+      "nombres": "Buenaventura",
+      "apellidos": "Aguilera Zamorano",
+      "iafas_codigo": "05292",
+      "escenario": "copago_fijo",
+      "ficticio": true,
+      "estado_afiliacion": "ACTIVO",
+      "copago": {
+        "tipo": "fijo",
+        "monto": 74.09
+      }
+    },
+    {
+      "documento": {
+        "tipo": "2",
+        "numero": "CE204107"
+      },
+      "nombres": "Plácido",
+      "apellidos": "Sánchez Buendía",
+      "iafas_codigo": "05292",
+      "escenario": "copago_fijo",
+      "ficticio": true,
+      "estado_afiliacion": "ACTIVO",
+      "copago": {
+        "tipo": "fijo",
+        "monto": 33.5
+      }
+    },
+    {
+      "documento": {
+        "tipo": "1",
+        "numero": "88490756"
+      },
+      "nombres": "Zacarías",
+      "apellidos": "Larrea Heredia",
+      "iafas_codigo": "19395",
+      "escenario": "copago_fijo",
+      "ficticio": true,
+      "estado_afiliacion": "ACTIVO",
+      "copago": {
+        "tipo": "fijo",
+        "monto": 57.02
+      }
+    },
+    {
+      "documento": {
+        "tipo": "2",
+        "numero": "CE267554"
+      },
+      "nombres": "Timoteo",
+      "apellidos": "Tomás Cañizares",
+      "iafas_codigo": "19395",
+      "escenario": "coaseguro_variable",
+      "ficticio": true,
+      "estado_afiliacion": "ACTIVO",
+      "copago": {
+        "tipo": "coaseguro",
+        "porcentaje": 20
+      }
+    },
+    {
+      "documento": {
+        "tipo": "2",
+        "numero": "CE696883"
+      },
+      "nombres": "Amado",
+      "apellidos": "Blasco Leon",
+      "iafas_codigo": "99553",
+      "escenario": "coaseguro_variable",
+      "ficticio": true,
+      "estado_afiliacion": "ACTIVO",
+      "copago": {
+        "tipo": "coaseguro",
+        "porcentaje": 10
+      }
+    },
+    {
+      "documento": {
+        "tipo": "1",
+        "numero": "82022313"
+      },
+      "nombres": "Agustina",
+      "apellidos": "Prats Mir",
+      "iafas_codigo": "99553",
+      "escenario": "coaseguro_variable",
+      "ficticio": true,
+      "estado_afiliacion": "ACTIVO",
+      "copago": {
+        "tipo": "coaseguro",
+        "porcentaje": 30
+      }
+    },
+    {
+      "documento": {
+        "tipo": "3",
+        "numero": "PA184172"
+      },
+      "nombres": "Pía",
+      "apellidos": "Hurtado Montes",
+      "iafas_codigo": "05292",
+      "escenario": "coaseguro_variable",
+      "ficticio": true,
+      "estado_afiliacion": "ACTIVO",
+      "copago": {
+        "tipo": "coaseguro",
+        "porcentaje": 30
+      }
+    },
+    {
+      "documento": {
+        "tipo": "3",
+        "numero": "PA869178"
+      },
+      "nombres": "Anabel",
+      "apellidos": "Milla Cabello",
+      "iafas_codigo": "05292",
+      "escenario": "atencion_accidental",
+      "ficticio": true,
+      "estado_afiliacion": "ACTIVO",
+      "atencion_accidental": {
+        "declaracion_siniestro": true,
+        "fecha_siniestro": "2026-03-10",
+        "descripcion": "Caida accidental en via publica"
+      }
+    },
+    {
+      "documento": {
+        "tipo": "3",
+        "numero": "PA768093"
+      },
+      "nombres": "Yolanda",
+      "apellidos": "Chaparro Ropero",
+      "iafas_codigo": "99553",
+      "escenario": "atencion_accidental",
+      "ficticio": true,
+      "estado_afiliacion": "ACTIVO",
+      "atencion_accidental": {
+        "declaracion_siniestro": true,
+        "fecha_siniestro": "2026-03-10",
+        "descripcion": "Caida accidental en via publica"
+      }
+    },
+    {
+      "documento": {
+        "tipo": "3",
+        "numero": "PA641515"
+      },
+      "nombres": "Julia",
+      "apellidos": "Jordán Figuerola",
+      "iafas_codigo": "05292",
+      "escenario": "atencion_accidental",
+      "ficticio": true,
+      "estado_afiliacion": "ACTIVO",
+      "atencion_accidental": {
+        "declaracion_siniestro": true,
+        "fecha_siniestro": "2026-03-10",
+        "descripcion": "Caida accidental en via publica"
+      }
+    },
+    {
+      "documento": {
+        "tipo": "1",
+        "numero": "32970220"
+      },
+      "nombres": "Asdrubal",
+      "apellidos": "Manjón Cabrera",
+      "iafas_codigo": "19395",
+      "escenario": "atencion_accidental",
+      "ficticio": true,
+      "estado_afiliacion": "ACTIVO",
+      "atencion_accidental": {
+        "declaracion_siniestro": true,
+        "fecha_siniestro": "2026-03-10",
+        "descripcion": "Caida accidental en via publica"
+      }
+    },
+    {
+      "documento": {
+        "tipo": "2",
+        "numero": "CE504312"
+      },
+      "nombres": "Edmundo",
+      "apellidos": "Batlle Tejada",
+      "iafas_codigo": "96969",
+      "escenario": "paciente_derivado",
+      "ficticio": true,
+      "estado_afiliacion": "ACTIVO",
+      "derivacion": {
+        "ipress_origen": "42432526",
+        "motivo": "Referencia por mayor capacidad resolutiva"
+      }
+    },
+    {
+      "documento": {
+        "tipo": "1",
+        "numero": "54560177"
+      },
+      "nombres": "Cristian",
+      "apellidos": "Company Vidal",
+      "iafas_codigo": "99553",
+      "escenario": "paciente_derivado",
+      "ficticio": true,
+      "estado_afiliacion": "ACTIVO",
+      "derivacion": {
+        "ipress_origen": "42432526",
+        "motivo": "Referencia por mayor capacidad resolutiva"
+      }
+    },
+    {
+      "documento": {
+        "tipo": "3",
+        "numero": "PA925287"
+      },
+      "nombres": "Angelino",
+      "apellidos": "Trujillo Angulo",
+      "iafas_codigo": "05292",
+      "escenario": "paciente_derivado",
+      "ficticio": true,
+      "estado_afiliacion": "ACTIVO",
+      "derivacion": {
+        "ipress_origen": "15995250",
+        "motivo": "Referencia por mayor capacidad resolutiva"
+      }
+    },
+    {
+      "documento": {
+        "tipo": "1",
+        "numero": "86930989"
+      },
+      "nombres": "Roberta",
+      "apellidos": "Luque Portero",
+      "iafas_codigo": "99553",
+      "escenario": "paciente_derivado",
+      "ficticio": true,
+      "estado_afiliacion": "ACTIVO",
+      "derivacion": {
+        "ipress_origen": "42432526",
+        "motivo": "Referencia por mayor capacidad resolutiva"
+      }
+    }
+  ]
+}

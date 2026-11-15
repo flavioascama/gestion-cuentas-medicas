@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block titulo %}Lotes Enviados a SUSALUD - Validador de facturación electrónica{% endblock %}
+{% block contenido %}
+  <h1>Lotes Enviados a SUSALUD</h1>
+  <div class="tarjeta">
+    <form method="get" action="/lotes-enviados" data-testid="formulario-filtros">
+      <label>Fecha de <input type="date" name="desde" data-testid="campo-desde"></label>
+      <label>Fecha hasta <input type="date" name="hasta" data-testid="campo-hasta"></label>
+      <label>Nro Lote <input type="text" name="numero_lote" data-testid="campo-numero-lote"></label>
+      <label>Periodo <input type="text" name="periodo" data-testid="campo-periodo"></label>
+      <button type="submit" data-testid="boton-buscar">Buscar</button>
+    </form>
+  </div>
+  <div class="tarjeta">
+    <table data-testid="tabla-lotes-enviados">
+      <thead><tr><th>Nro. de Lote</th><th>Periodo</th><th>Estado</th></tr></thead>
+      <tbody>
+        {% for lote in lotes %}
+        <tr data-testid="fila-lote">
+          <td>{{ lote.identidad.numero_lote }}</td>
+          <td>{{ lote.identidad.periodo }}</td>
+          <td class="{{ lote.estado }}">{{ lote.estado }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="3">No hay lotes enviados con esos filtros.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}

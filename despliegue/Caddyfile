@@ -1,0 +1,37 @@
+# Punto de entrada publico del servidor: HTTPS con certificados automaticos
+# (Let's Encrypt) para la aplicacion y los portales de los simuladores.
+# DOMINIO viene del archivo .env (por ejemplo, 20-30-40-50.sslip.io).
+
+{$DOMINIO} {
+	encode gzip
+	header X-Robots-Tag "noindex, nofollow"
+	# El contenedor frontend sirve HTTPS con un certificado autofirmado en
+	# la red interna de Docker; el certificado publico lo presenta Caddy.
+	reverse_proxy https://frontend:443 {
+		transport http {
+			tls_insecure_skip_verify
+		}
+	}
+}
+
+# Los portales de los simuladores quedan protegidos con usuario y clave
+# (generados por despliegue/desplegar.sh, fuera del repositorio).
+(simulador) {
+	import /etc/caddy/usuarios_simuladores.caddy
+	header X-Robots-Tag "noindex, nofollow"
+}
+
+acredita.{$DOMINIO} {
+	import simulador
+	reverse_proxy acredita-salud:8000
+}
+
+iafas.{$DOMINIO} {
+	import simulador
+	reverse_proxy receptor-iafas:8000
+}
+
+tedef.{$DOMINIO} {
+	import simulador
+	reverse_proxy tedef-web:8000
+}

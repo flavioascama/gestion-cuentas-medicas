@@ -1,0 +1,84 @@
+/* Misma tarjeta que los graficos del panel (tarjeta_grafico.module.css),
+   a ancho completo debajo de la cuadricula de 2 x 2. */
+.tarjeta {
+  min-width: 0;
+  margin-top: var(--espacio_4);
+  padding: var(--espacio_6);
+  background-color: var(--color_superficie);
+  border: 1px solid var(--color_borde);
+  border-radius: var(--radio_borde);
+}
+
+.titulo {
+  margin: 0;
+  font-size: var(--tamano_titulo_seccion);
+  font-weight: var(--peso_enfasis);
+  color: var(--color_texto);
+}
+
+.subtitulo {
+  margin: var(--espacio_1) 0 var(--espacio_4);
+  font-size: var(--tamano_metadato);
+  color: var(--color_texto_secundario);
+}
+
+.cuerpo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: var(--espacio_6);
+}
+
+.cifras {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio_4);
+}
+
+.cifra {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio_1);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.etiqueta {
+  font-size: var(--tamano_metadato);
+  font-weight: var(--peso_medio);
+  color: var(--color_texto_secundario);
+}
+
+.valor {
+  font-size: var(--tamano_titulo_destacado);
+  font-weight: var(--peso_enfasis);
+  letter-spacing: var(--interletraje_titulo);
+  line-height: 1.15;
+  color: var(--color_texto);
+}
+
+.contexto {
+  font-size: var(--tamano_metadato);
+  color: var(--color_texto_secundario);
+}
+
+.tabla {
+  min-width: 0;
+}
+
+.titulo_tabla {
+  margin: 0 0 var(--espacio_3);
+  font-size: var(--tamano_base);
+  font-weight: var(--peso_enfasis);
+  color: var(--color_texto);
+}
+
+.cuenta {
+  color: var(--color_primario);
+  font-weight: var(--peso_enfasis);
+}
+
+@media (max-width: 900px) {
+  .cuerpo {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

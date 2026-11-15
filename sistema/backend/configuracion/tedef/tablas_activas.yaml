@@ -1,0 +1,9 @@
+# Tablas que GenerarLote incluye en cada lote (Seccion 8.1 del plan v3).
+# T4 (productos de farmacia, Fase 17): se genera solo para las
+# prestaciones que tengan productos registrados (Anexo 3); su ausencia en
+# un lote sin productos no es un error. La lista nunca se escribe en el
+# codigo de GenerarLote.
+- T1
+- T2
+- T3
+- T4

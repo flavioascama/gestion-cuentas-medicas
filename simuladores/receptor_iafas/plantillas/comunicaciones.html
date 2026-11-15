@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block titulo %}Comunicaciones - Simulador receptor IAFAS{% endblock %}
+{% block contenido %}
+  <h1>Comunicaciones a la IPRESS</h1>
+  <p><a href="/">Lotes</a> · <a href="/auditoria">Auditoría</a></p>
+  <table data-testid="tabla-comunicaciones">
+    <thead>
+      <tr><th>Código</th><th>Tipo</th><th>Comprobante</th><th>IAFAS</th><th>IPRESS</th><th>Canal</th><th>Emitida</th><th>Respondida</th></tr>
+    </thead>
+    <tbody>
+      {% for c in comunicaciones %}
+      <tr data-testid="fila-comunicacion" data-codigo="{{ c.codigo }}">
+        <td><a href="/comunicaciones/{{ c.codigo }}" data-testid="enlace-comunicacion">{{ c.codigo }}</a></td>
+        <td data-testid="tipo-comunicacion">{{ c.tipo }}</td>
+        <td>{{ c.documento }}</td>
+        <td>{{ c.codigo_iafas }}</td>
+        <td>{{ c.codigo_ipress }}</td>
+        <td>{{ c.canal }}</td>
+        <td>{{ c.emitida_en }}</td>
+        <td>{{ c.respondida_en or "-" }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="8">No hay comunicaciones.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}

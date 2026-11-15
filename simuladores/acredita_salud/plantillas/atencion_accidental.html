@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block titulo %}Atenciones accidentales - Simulador ACREDITA SALUD{% endblock %}
+{% block contenido %}
+  <h1>Atenciones accidentales</h1>
+  {% if registrado %}<p class="exito" data-testid="siniestro-registrado">Declaración de siniestro registrada.</p>{% endif %}
+  <div class="tarjeta">
+    <form method="post" action="/atencion-accidental" data-testid="formulario-siniestro">
+      <label>Tipo de documento
+        <select name="tipo_documento" data-testid="campo-tipo-documento">
+          <option value="1">DNI</option>
+          <option value="2">Carné de extranjería</option>
+          <option value="3">Pasaporte</option>
+        </select>
+      </label>
+      <label>Número de documento
+        <input type="text" name="numero_documento" data-testid="campo-numero-documento" required>
+      </label>
+      <label>Fecha del siniestro
+        <input type="date" name="fecha_siniestro" data-testid="campo-fecha-siniestro" required>
+      </label>
+      <label>Descripción
+        <input type="text" name="descripcion" data-testid="campo-descripcion" required>
+      </label>
+      <button type="submit" data-testid="boton-registrar-siniestro">Registrar declaración</button>
+    </form>
+  </div>
+{% endblock %}

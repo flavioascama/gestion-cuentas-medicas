@@ -1,0 +1,122 @@
+[project]
+name = "sistema-backend"
+version = "0.1.0"
+description = "Backend de Gestion de cuentas medicas: acceso, TEDEF, CPMS, acreditacion, cola de trabajos."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "pydantic>=2.9",
+    "pydantic-settings>=2.6",
+    "sqlalchemy[asyncio]>=2.0",
+    "alembic>=1.14",
+    "asyncpg>=0.30",
+    "structlog>=24.4",
+    "pyyaml>=6.0",
+    "xlrd>=2.0",
+    "openpyxl>=3.1",
+    "pandas>=2.2",
+    "faker>=30.0",
+    "bcrypt>=4.1",
+    "pyjwt>=2.9",
+    # Motor de sugerencia CPMS (Fase 9, Seccion 8.2): TF-IDF + similitud de
+    # coseno es exactamente lo que scikit-learn implementa; joblib (su
+    # propia dependencia) persiste el indice en disco.
+    "scikit-learn>=1.5",
+    # Consultor del portal del receptor IAFAS (Fase 12, Seccion 8.3): ese
+    # portal no tiene sesion ni pasos interactivos, asi que una lectura
+    # HTTP simple alcanza -- no hace falta Playwright para esto. httpx ya
+    # era dependencia de desarrollo (pruebas de la API); ahora tambien es
+    # de produccion.
+    "httpx>=0.27",
+    "beautifulsoup4>=4.12",
+    "cryptography>=50.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+    "ruff>=0.7",
+    "mypy>=1.13",
+    "aiosqlite>=0.20",
+    "types-pyyaml>=6.0",
+    "types-xlrd>=2.0",
+    "types-openpyxl>=3.1",
+    "types-beautifulsoup4>=4.12",
+    # Solo para probar TransmisorFtp (Fase 8) contra un servidor FTP real y
+    # efimero en el propio proceso de pruebas: el backend nunca corre un
+    # servidor FTP, solo se conecta como cliente con ftplib (stdlib).
+    "pyftpdlib>=1.5",
+    # Seccion 13 (Fase 20): generan reportes/reporte_pruebas.html y
+    # reportes/cobertura.xml -- "resultado de la suite" de la tabla de
+    # evidencia. No estan en addopts (correrian en cada guardado sin
+    # necesidad); se invocan explicitamente en la ejecucion de cierre.
+    "pytest-html>=4.1",
+    "pytest-cov>=6.0",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+# GUIA_ESTILO_CODIGO.md, Seccion 5: E, F, W, I, N, B, C90, UP, SIM, mas
+# PLR0913 (limite de parametros, Seccion 3) de la familia PL -- se elige
+# esa regla puntual y no toda la familia PL (que agrega cientos de reglas
+# de estilo sin relacion con los cinco limites de complejidad de la
+# Seccion 3) para no introducir hallazgos ajenos a lo que esta guia mide;
+# decision registrada en docs/DECISIONES.md, Fase 13.
+select = ["E", "F", "W", "I", "N", "B", "C90", "UP", "SIM", "PLR0913"]
+ignore = [
+    "N999", # nombres de modulo en espanol
+    "N818", # convencion propia: prefijo "Error", no sufijo (Regla 9, identificadores en espanol)
+]
+
+[tool.ruff.lint.mccabe]
+# GUIA_ESTILO_CODIGO.md, Seccion 3: complejidad ciclomatica maxima 10.
+max-complexity = 10
+
+[tool.ruff.lint.flake8-bugbear]
+# Patron estandar de FastAPI: Depends(...) como valor por defecto de un
+# parametro. B008 lo marca porque en general llamar una funcion en un
+# default es un error, pero aqui es el mecanismo de inyeccion de FastAPI.
+extend-immutable-calls = ["fastapi.Depends", "fastapi.params.Depends"]
+
+[tool.mypy]
+python_version = "3.12"
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+no_implicit_optional = true
+
+[[tool.mypy.overrides]]
+# scikit-learn, scipy y joblib (Fase 9) no publican anotaciones de tipos
+# compatibles ni un paquete types-* completo en PyPI.
+module = ["sklearn.*", "scipy.*", "joblib.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "app.dominio.*"
+strict = true
+disallow_untyped_defs = true
+disallow_any_generics = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["pruebas"]
+python_files = ["prueba_*.py"]
+python_classes = ["Prueba*"]
+python_functions = ["prueba_*"]
+
+[tool.coverage.run]
+# Seccion 13 (Fase 20): "app/" es el codigo de produccion; pruebas/ y
+# herramientas/ no se miden a si mismas.
+source = ["app"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]

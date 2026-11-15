@@ -1,0 +1,64 @@
+.contenedor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio_1);
+}
+
+.etiqueta {
+  font-size: var(--tamano_metadato);
+  font-weight: var(--peso_medio);
+  color: var(--color_texto_secundario);
+}
+
+.envoltorio_entrada {
+  position: relative;
+  display: flex;
+}
+
+.icono_entrada {
+  position: absolute;
+  left: var(--espacio_3);
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  color: var(--color_texto_secundario);
+  pointer-events: none;
+}
+
+.entrada {
+  flex: 1;
+  width: 100%;
+  height: 36px;
+  padding: 0 var(--espacio_3);
+  border: 1px solid var(--color_borde);
+  border-radius: var(--radio_borde);
+  background-color: var(--color_superficie);
+  color: var(--color_texto);
+}
+
+/* Sin esta regla, el placeholder usa el gris por defecto del navegador
+   (no un token), que en el tema oscuro casi no se distingue de un
+   valor real escrito -- un placeholder ilustrativo (ej. "202609")
+   se podia confundir con un filtro ya aplicado. */
+.entrada::placeholder {
+  color: var(--color_texto_secundario);
+  opacity: 1;
+}
+
+.entrada_con_icono {
+  padding-left: var(--espacio_8);
+}
+
+.entrada_con_error {
+  border-color: var(--color_error);
+}
+
+.ayuda {
+  font-size: var(--tamano_metadato);
+  color: var(--color_texto_secundario);
+}
+
+.error {
+  font-size: var(--tamano_metadato);
+  color: var(--color_error);
+}

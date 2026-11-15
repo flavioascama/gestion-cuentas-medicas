@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block titulo %}Auditoría - Simulador receptor IAFAS{% endblock %}
+{% block contenido %}
+  <h1>Auditoría de comprobantes</h1>
+  <p><a href="/">Lotes</a> · <a href="/comunicaciones">Comunicaciones</a></p>
+  <table data-testid="tabla-auditoria">
+    <thead>
+      <tr><th>Comprobante</th><th>IAFAS</th><th>IPRESS</th><th>Monto facturado</th><th>Estado</th><th>Decisión del auditor</th></tr>
+    </thead>
+    <tbody>
+      {% for d in documentos %}
+      <tr data-testid="fila-documento" data-documento="{{ d.documento }}">
+        <td>{{ d.documento }}</td>
+        <td>{{ d.codigo_iafas }}</td>
+        <td>{{ d.codigo_ipress }}</td>
+        <td>{{ d.monto_facturado }}</td>
+        <td data-testid="estado-documento">{{ d.estado }}</td>
+        <td>
+          {% if d.estado == "PENDIENTE" %}
+          <form method="post" action="/admin/documentos/{{ d.documento }}/auditoria">
+            <select name="resultado">
+              <option value="CONFORME">Conforme</option>
+              <option value="GLOSA">Glosa total</option>
+              <option value="GLOSA_PARCIAL">Glosa parcial</option>
+            </select>
+            <input name="motivo_codigo" placeholder="Motivo (OBS-01…)">
+            <input name="monto_glosado" placeholder="Monto glosado">
+            <input name="detalle" placeholder="Detalle">
+            <select name="canal"><option value="PORTAL">Portal</option><option value="CORREO">Correo</option></select>
+            <select name="decision_respuesta"><option value="ACEPTAR">Aceptar la respuesta</option><option value="MANTENER">Mantener una vez</option></select>
+            <button type="submit">Registrar</button>
+          </form>
+          {% else %}-{% endif %}
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6">No hay comprobantes de lotes aceptados.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}

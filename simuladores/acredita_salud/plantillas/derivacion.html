@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block titulo %}Derivación de atenciones - Simulador ACREDITA SALUD{% endblock %}
+{% block contenido %}
+  <h1>Derivación de atenciones entre IPRESS</h1>
+  {% if error %}<p class="error" data-testid="error-derivacion">{{ error }}</p>{% endif %}
+  {% if registrado %}<p class="exito" data-testid="derivacion-registrada">Derivación registrada: convenio verificado con la IAFAS.</p>{% endif %}
+  <div class="tarjeta">
+    <form method="post" action="/derivacion" data-testid="formulario-derivacion">
+      <label>Tipo de documento
+        <select name="tipo_documento" data-testid="campo-tipo-documento">
+          <option value="1">DNI</option>
+          <option value="2">Carné de extranjería</option>
+          <option value="3">Pasaporte</option>
+        </select>
+      </label>
+      <label>Número de documento
+        <input type="text" name="numero_documento" data-testid="campo-numero-documento" required>
+      </label>
+      <label>IPRESS de origen (código RENIPRESS, 8 caracteres)
+        <input type="text" name="ipress_origen" data-testid="campo-ipress-origen" maxlength="8" required>
+      </label>
+      <label>IPRESS de destino (código RENIPRESS, 8 caracteres)
+        <input type="text" name="ipress_destino" data-testid="campo-ipress-destino" maxlength="8" required>
+      </label>
+      <label>Motivo
+        <input type="text" name="motivo" data-testid="campo-motivo" required>
+      </label>
+      <button type="submit" data-testid="boton-registrar-derivacion">Registrar derivación</button>
+    </form>
+  </div>
+{% endblock %}

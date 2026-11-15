@@ -1,0 +1,2973 @@
+version: 2025-10
+origen: Anexo-1_tedef-ipress-iafas_octubre_2025.xls
+huella_sha256: df1633da6a0c83448f6990335854c4d0ab1e1de8bed1c72cc4670fcdc18109ab
+tablas:
+- id: T1
+  nombre: Cabecera del documento facturador
+  prefijo: dfac
+  obligatoria: true
+  condicional: false
+  longitud_registro: 242
+  campos:
+  - numero: 1
+    nombre: Fecha de envío
+    obligatorio: true
+    longitud: 8
+    decimales: null
+    posicion_inicial: 1
+    descripcion: 'Fecha de envio electrónico de la IPRESS a la IAFAS.
+
+      Formato AAAAMMDD'
+    criterios_texto: C1. La fecha debe ser válida.
+  - numero: 2
+    nombre: Hora de Envío
+    obligatorio: true
+    longitud: 6
+    decimales: null
+    posicion_inicial: 9
+    descripcion: 'Hora, minuto y segundo del envío electrónico de la IPRESS a las IAFAS.
+
+      Formato: HHMMSS (donde HH esta entre 00 hasta 23.)'
+    criterios_texto: C1. La hora debe ser válida.
+  - numero: 3
+    nombre: Número de Lote
+    obligatorio: true
+    longitud: 7
+    decimales: null
+    posicion_inicial: 15
+    descripcion: Número de Lote asignado por la IPRESS.
+    criterios_texto: C1. Solo contiene caracteres entre el rango [0 al 9]
+  - numero: 4
+    nombre: Código del Fondo de Aseguramiento en Salud (IAFAS) asignado por  SUSALUD
+    obligatorio: true
+    longitud: 5
+    decimales: null
+    posicion_inicial: 22
+    descripcion: Código de la IAFAS registrado en el Registro de IAFAS (RIAFAS) administrado por SUSALUD.
+    criterios_texto: 'C1. Debe ser un Código de IAFAS válido. La lista actualizada se encuentra disponible
+      en la página web institucional de SUSALUD.
+
+      C2: El listado de IAFAS se actualizará de acuerdo al Registro que administra la Intendencia de Normas
+      y Autorizaciones (INA)'
+  - numero: 5
+    nombre: Ruc del prestador o IPRESS
+    obligatorio: true
+    longitud: 11
+    decimales: null
+    posicion_inicial: 27
+    descripcion: Ruc de la IPRESS asignado por SUNAT
+    criterios_texto: C1. Debe ser un RUC válido.
+  - numero: 6
+    nombre: Código IPRESS
+    obligatorio: true
+    longitud: 8
+    decimales: null
+    posicion_inicial: 38
+    descripcion: Código único del Registro Nacional de IPRESS asignado por SUSALUD.
+    criterios_texto: C1. Solo debe contener uno de los valores definidos según el RENIPRESS.
+  - numero: 7
+    nombre: Tipo Documento de Pago
+    obligatorio: true
+    longitud: 2
+    decimales: null
+    posicion_inicial: 46
+    descripcion: "01. Factura. \n02. Recibo por honorarios. \n03. Boleta de venta. \n04. Liquidación de\
+      \ compra. \n05. Boleto de aviación comercial para transporte de pasajeros.\n09. Ticket o cinta emitido\
+      \ por máquina registradora\n10. Formato Único de Atención - FUA\n11. Código Único de Atención (asignado\
+      \ por IAFAS pública)\n99. Otros documentos autorizados por la SUNAT"
+    criterios_texto: 'C1. Solo debe contener uno de los valores definidos
+
+      C2. Tipo de Documento = 11, aplica cuando la IAFAS es pública y el modelo de pago es Prospectivo.'
+  - numero: 8
+    nombre: Número de Documento de Pago
+    obligatorio: true
+    longitud: 12
+    decimales: null
+    posicion_inicial: 48
+    descripcion: "Número del Documento de Pago emitido para facturar  \nEn formato: XXXX99999999 (serienúmero)."
+    criterios_texto: 'C1: En caso el documento de pago sea electrónico, los primeros cuatro caracteres
+      correspondientes a la serie  podrán ser alfanuméricos (Ejem: F00200025654).
+
+      C2: En caso el documento de pago NO sea electrónico y la serie corresponda a tres caracteres, se
+      deberá completar el cuarto carácter con el cero (Ejem: 000100021452).
+
+      C3: El número contiene caracteres entre [0 al 9].
+
+      C4: En caso que el Tipo de Documento de Pago es igual a 11, el código debe ser único y asignado
+      por la IAFAS según el formato [año (4 dígitos) seguido del número correlativo de la atención (completado
+      con ceros a la izquierda a 8 dígitos)] (Ejem: 202200001234)'
+  - numero: 9
+    nombre: Fecha de Emisión
+    obligatorio: true
+    longitud: 8
+    decimales: null
+    posicion_inicial: 60
+    descripcion: "Fecha de emisión del documento facturador. \nEn formato: AAAAMMDD"
+    criterios_texto: 'C1. La fecha debe ser válida.
+
+      C2. La fecha es igual o previa a la fecha de envío.'
+  - numero: 10
+    nombre: Producto
+    obligatorio: true
+    longitud: 5
+    decimales: null
+    posicion_inicial: 68
+    descripcion: Código del Producto de la IAFAS.
+    criterios_texto: C1. El campo no debe estar en blanco o nulo. En caso la IAFAS no defina la obligatoriedad
+      del campo, este se consignará con '99999'. La existencia del código será validada
+  - numero: 11
+    nombre: Cantidad de prestaciones de salud del documento facturador
+    obligatorio: true
+    longitud: 5
+    decimales: null
+    posicion_inicial: 73
+    descripcion: Cantidad total de prestaciones de salud incluidas en el presente documento facturador.
+    criterios_texto: C1. Solo contiene caracteres entre el rango [0 al 9].
+  - numero: 12
+    nombre: Mecanismo de Pago
+    obligatorio: true
+    longitud: 2
+    decimales: null
+    posicion_inicial: 78
+    descripcion: '01 = Pago por servicio (Pago según lo gastado en la atención y bajo la condición de
+      que se trate de gastos cubiertos en el plan de salud del paciente)
+
+      02 = Pacientes mes (Asignación de un monto mensual convenido entre la IAFAS e IPRESS para la atención
+      ambulatoria del paciente en el mes, activado si se da la demanda de servicios)
+
+      03 = Paquete quirúrgico (Asignación de un monto fijo convenido entre IAFAS e IPRESS por tipo de
+      intervención quirúrgica y que cubre los gastos convenidos)
+
+      04 = Capitación (Pago en el cual los proveedores reciben una cantidad fija acordada de antemano
+      por cada asegurado que se inscriba con ellos. El financiamiento no depende de la utilización que
+      haga el asegurado de los servicios de salud)
+
+      06 = Pago fijo por atención (Pago en el cual los proveedores reciben una cantidad fija acordada
+      de antemano por cada prestación realizada)
+
+      99 = Otros mecanismos de pago'
+    criterios_texto: C1. Solo debe contener uno de los valores definidos
+  - numero: 13
+    nombre: Sub Tipo de Mecanismo de Pago
+    obligatorio: true
+    longitud: 3
+    decimales: null
+    posicion_inicial: 80
+    descripcion: Corresponde a los subtipos de mecanismo de pago empleado por la IAFAS
+    criterios_texto: C1. Solo debe contener uno de los valores definidos en la el catálogo de Sub Tipo
+      de Mecanismo Pago, caso contrario si la IPRESS o IAFAS no cuenta con el valor se consignará '999'.
+  - numero: 14
+    nombre: Monto Pre Pactado (en los casos que aplica)
+    obligatorio: true
+    longitud: 12
+    decimales: 2
+    posicion_inicial: 83
+    descripcion: 'Monto acordado entre la IAFAS y la IPRESS, no incluye el IGV.
+
+      (La moneda en la que deberá ser expresada es de acuerdo con lo notificado en el campo: ''Tipo de
+      Moneda''.)
+
+      En formato: ''999999999.99'''
+    criterios_texto: C1. Debe consignar un valor numérico con 2 decimales. De no corresponder se consignará
+      '0.00'. Alinear a la derecha.
+  - numero: 15
+    nombre: Fecha de inicio del Periodo Pre Pactado
+    obligatorio: false
+    longitud: 8
+    decimales: null
+    posicion_inicial: 95
+    descripcion: "Fecha en que se abre la cuenta a la que se cargan los gastos por las prestaciones de\
+      \ salud brindadas al paciente durante el periodo facturado. \nEn formato: AAAAMMDD"
+    criterios_texto: 'C1. Si el código del campo 12 (mecanismo de pago) es igual a ''02 ó ''04'' ó ''06'',
+      el campo debe contener una fecha válida.
+
+      C2. Si el código de Mecanismo de pago es diferente a  ''02 ó ''04'' ó ''06'', el campo puede consignarse
+      en blanco.'
+  - numero: 16
+    nombre: Tipo de moneda
+    obligatorio: true
+    longitud: 1
+    decimales: null
+    posicion_inicial: 103
+    descripcion: '1 Soles
+
+      2 Dólares'
+    criterios_texto: C1. Solo debe contener uno de los valores definidos
+  - numero: 17
+    nombre: Monto exonerado de IGV
+    obligatorio: true
+    longitud: 12
+    decimales: 2
+    posicion_inicial: 104
+    descripcion: 'Gasto total presentado por Procedimientos, Servicios y Medicamentos exonerados de IGV.
+
+      En formato: ''999999999.99'''
+    criterios_texto: 'C1. Debe consignar un valor numérico con 2 decimales. De no corresponder se consignará
+      ''0.00''. Alinear a la derecha
+
+      C2: El valor corresponde a la sumatoria del campo: Gasto en productos, servicios o medicamentos
+      exonerados de IGV de la Tabla 2: Características generales de la prestación.'
+  - numero: 18
+    nombre: Total Copago Fijo Afecto a IGV sin IGV
+    obligatorio: true
+    longitud: 12
+    decimales: 2
+    posicion_inicial: 116
+    descripcion: 'Monto total del copago fijo afecto a IGV cobrado por la IPRESS.
+
+      En formato: ''999999999.99'', No incluye IGV.'
+    criterios_texto: 'C1. Debe consignar un valor numérico con 2 decimales. De no corresponder se consignará
+      ''0.00''. Alinear a la derecha.
+
+      C2: El valor corresponde a la sumatoria del campo: Copago Fijo afecto a IGV sin IGV de la Tabla
+      2 - Características generales de la prestación.'
+  - numero: 19
+    nombre: Total Copago Fijo Exonerado de IGV
+    obligatorio: true
+    longitud: 12
+    decimales: 2
+    posicion_inicial: 128
+    descripcion: 'Monto total del copago fijo exonerado de IGV cobrado por la IPRESS.
+
+      En formato: ''999999999.99'', No incluye IGV.'
+    criterios_texto: 'C1. Debe consignar un valor numérico con 2 decimales. De no corresponder se consignará
+      ''0.00''. Alinear a la derecha
+
+      C2: El valor corresponde a la sumatoria del campo: Copago Fijo exonerado de IGV de la Tabla 2 -
+      Características generales de la prestación.'
+  - numero: 20
+    nombre: Total Copago Variable afecto a IGV sin IGV
+    obligatorio: true
+    longitud: 12
+    decimales: 2
+    posicion_inicial: 140
+    descripcion: 'Monto total del copago variable cobrado por la IPRESS por aquellos productos, servicios
+      o medicamentos afectos a impuestos.
+
+      En formato: ''999999999.99'', No incluye IGV.'
+    criterios_texto: 'C1. Debe consignar un valor numérico con 2 decimales. De no corresponder se consignará
+      ''0.00''. Alinear a la derecha
+
+      C2: El valor corresponde a la sumatoria del campo: Copago Variable afecto a IGV sin IGV de la Tabla
+      2 - Características generales de la prestación.'
+  - numero: 21
+    nombre: Total Copago Variable Exonerado de IGV
+    obligatorio: true
+    longitud: 12
+    decimales: 2
+    posicion_inicial: 152
+    descripcion: 'Monto total del copago variable cobrado por la IPRESS por aquellos productos, servicios
+      o medicamentos inafectos a impuestos.
+
+      En formato: ''999999999.99'', No incluye IGV.'
+    criterios_texto: 'C1. Debe consignar un valor numérico con 2 decimales. De no corresponder se consignará
+      ''0.00''. Alinear a la derecha
+
+      C2: El valor corresponde a la sumatoria del campo: Copago Variable exonerado de IGV de la Tabla
+      2 - Características generales de la prestación.'
+  - numero: 22
+    nombre: Base imponible
+    obligatorio: true
+    longitud: 12
+    decimales: 2
+    posicion_inicial: 164
+    descripcion: 'Es el monto sobre el cual se aplica el porcentaje de IGV.
+
+      Su registro no incluye el IGV.
+
+      En formato: 999999999.99'
+    criterios_texto: 'C1. Debe consignar un valor numérico con 2 decimales.
+
+      C2. De no corresponder se consignará ''0.00''.
+
+      C3. El campo debe estar alineado a la derecha.
+
+      C4. En el caso el campo resultase negativo, podrá consignar ''0.00''.
+
+      C5: En caso el mecanismo de pago sea 01-Pago por Servicios:
+
+      Base Imponible = Tabla T2 ∑ (Total de Gastos Cubiertos sin IGV) - Monto Exonerado de IGV – (Total
+      Copago Fijo afecto a IGV sin IGV + Total Copago Variable Afecto a IGV sin IGV).
+
+      En el caso de Mecanismo de Pago diferente del 01-Pago por Servicios:
+
+      Base Imponible = Monto Prepactado – (Total Copago Fijo afecto a IGV sin IGV + Total Copago Variable
+      Afecto a IGV sin IGV)
+
+      C6: Cuando el tipo de documento de pago es diferente al autorizado por la SUNAT (Campo 7 = 10 ó
+      11)  se debe consignar el valor ''0.00'''
+  - numero: 23
+    nombre: IGV del Monto Facturado
+    obligatorio: true
+    longitud: 12
+    decimales: 2
+    posicion_inicial: 176
+    descripcion: 'Impuesto General a las Ventas de la Base Imponible afecto a IGV.
+
+      En formato: ''999999999.99'''
+    criterios_texto: "C1. Debe consignar un valor numérico con 2 decimales. \nC2. De ser una IPRESS que\
+      \ esta exento de IGV se consignará '0.00'. \nC3. De no corresponder se consignará '0.00'.\nC4. El\
+      \ campo debe estar alineado a la derecha."
+  - numero: 24
+    nombre: Monto Total Facturado
+    obligatorio: true
+    longitud: 12
+    decimales: 2
+    posicion_inicial: 188
+    descripcion: 'Corresponde al monto consignado en el documento facturador.
+
+      Formato: ''999999999.99'''
+    criterios_texto: 'C1. Debe consignar un valor numérico con 2 decimales.
+
+      C2. De no corresponder se consignará ''0.00''.
+
+      C3. El campo debe estar alineado a la derecha.
+
+      C4. En el caso el campo resultase negativo, podrá consignar ''0.00''.
+
+      C5: En caso el mecanismo de pago sea 01-Pago por Servicios:
+
+      Monto Total Facturado = (Base Imponible + IGV del Monto Facturado + Monto Exonerado de IGV) – (Total
+      Copago Fijo exonerado de IGV + Total Copago Variable Exonerado de IGV).
+
+      En caso el mecanismo de pago sea distinto de 01-Pago por Servicios:
+
+      Monto Total Facturado = (Base Imponible + IGV del Monto Facturado) – (Total Copago Fijo exonerado
+      de IGV + Total Copago Variable Exonerado de IGV).
+
+      C6: Cuando el tipo de documento de pago es diferente al autorizado por la SUNAT (Campo 7 = 10 ó
+      11)  se debe consignar el valor ''0.00'''
+  - numero: 25
+    nombre: Tipo de identificación de la Nota
+    obligatorio: true
+    longitud: 1
+    decimales: null
+    posicion_inicial: 200
+    descripcion: 'C. Nota de Crédito.
+
+      D. Nota de Débito.
+
+      N. Ningún documento de referencia.'
+    criterios_texto: C1. Solo debe contener uno de los valores definidos
+  - numero: 26
+    nombre: Número de la Nota
+    obligatorio: false
+    longitud: 12
+    decimales: null
+    posicion_inicial: 201
+    descripcion: "Número del Documento de Pago emitido para facturar  \nEn formato: XXXX99999999 (serienúmero)."
+    criterios_texto: 'C1: En caso el documento de pago sea electrónico, los primeros cuatro caracteres
+      correspondientes a la serie  podrán ser alfanuméricos (Ejem: F00200025654).
+
+      C2: En caso el documento de pago NO sea electrónico y la serie corresponda a tres caracteres, se
+      deberá completar el cuarto carácter con el cero (Ejem: 000100021452).
+
+      C3. El número contiene caracteres entre [0 al 9].'
+  - numero: 27
+    nombre: Monto de la Nota
+    obligatorio: false
+    longitud: 12
+    decimales: 2
+    posicion_inicial: 213
+    descripcion: "En Nuevos Soles sin IGV. \nEn formato: 999999999.99"
+    criterios_texto: 'C1. Si el tipo de identificación de la Nota es diferente a ''N'', se validará que
+      el campo debe consignar un valor numérico con 2 decimales.
+
+      C2. Si el tipo de identificación de la Nota es ''N'', se validará que el campo esté en blanco.'
+  - numero: 28
+    nombre: Fecha de la Nota
+    obligatorio: false
+    longitud: 8
+    decimales: null
+    posicion_inicial: 225
+    descripcion: 'Fecha de emisión de la nota.
+
+      En formato: AAAAMMDD.'
+    criterios_texto: 'C1. La fecha debe ser válida, menor o igual a la fecha de envio (campo 1 de la presente
+      tabla).
+
+      C2. Si el tipo de identificación de la Nota es ''N'', se validará que el campo esté en blanco.'
+  - numero: 29
+    nombre: Motivo de la Nota
+    obligatorio: false
+    longitud: 1
+    decimales: null
+    posicion_inicial: 233
+    descripcion: 'R. Reingreso
+
+      A. Anulación
+
+      D. Descuento Parcial'
+    criterios_texto: 'C1. Solo debe contener uno de los valores definidos
+
+      C2. Si el tipo de identificación de la Nota es ''N'', se validará que el campo esté en blanco.'
+  - numero: 30
+    nombre: Fecha del primer envio del documento facturador
+    obligatorio: false
+    longitud: 8
+    decimales: null
+    posicion_inicial: 234
+    descripcion: 'Fecha del primer envio electrónico del documento facturador de la IPRESS a la IAFAS.
+
+      En formato: AAAAMMDD'
+    criterios_texto: C1. Si el campo no esta en blanco, la fecha debe ser válida y menor a la fecha de
+      envio (campo 1 de la presente tabla)
+  - numero: 31
+    nombre: Indicador de Factura Global
+    obligatorio: true
+    longitud: 1
+    decimales: null
+    posicion_inicial: 242
+    descripcion: 'N = Individual
+
+      S = Global'
+    criterios_texto: C1. Solo debe contener uno de los valores definidos
+- id: T2
+  nombre: Características generales de la prestación
+  prefijo: date
+  obligatoria: true
+  condicional: false
+  longitud_registro: 410
+  campos:
+  - numero: 1
+    nombre: RUC del prestador o IPRESS
+    obligatorio: true
+    longitud: 11
+    decimales: null
+    posicion_inicial: 1
+    descripcion: RUC de la IPRESS asignado por SUNAT
+    criterios_texto: C1. Debe ser un RUC válido.
+  - numero: 2
+    nombre: Código IPRESS
+    obligatorio: true
+    longitud: 8
+    decimales: null
+    posicion_inicial: 12
+    descripcion: Código único del Registro Nacional de IPRESS asignado por SUSALUD.
+    criterios_texto: C1. Solo debe contener uno de los valores definidos según el RENIPRESS.
+  - numero: 3
+    nombre: Tipo Documento de Pago
+    obligatorio: true
+    longitud: 2
+    decimales: null
+    posicion_inicial: 20
+    descripcion: "01. Factura. \n02. Recibo por honorarios. \n03. Boleta de venta. \n04. Liquidación de\
+      \ compra. \n05. Boleto de aviación comercial para transporte de pasajeros.\n09. Ticket o cinta emitido\
+      \ por máquina registradora\n10. Formato Único de Atención - FUA\n11. Código Único de Atención (asignado\
+      \ por IAFAS pública)\n99. Otros documentos autorizados por la SUNAT"
+    criterios_texto: 'C1. Solo debe contener uno de los valores definidos
+
+      C2. Tipo de Documento = 11, aplica cuando la IAFAS es pública y el modelo de pago es Prospectivo.'
+  - numero: 4
+    nombre: Número de Documento de Pago
+    obligatorio: true
+    longitud: 12
+    decimales: null
+    posicion_inicial: 22
+    descripcion: "Número del Documento de Pago emitido para facturar  \nEn formato: XXXX99999999 (serienúmero)."
+    criterios_texto: 'C1: En caso el documento de pago sea electrónico, los primeros cuatro caracteres
+      correspondientes a la serie  podrán ser alfanuméricos (Ejem: F00200025654).
+
+      C2: En caso el documento de pago NO sea electrónico y la serie corresponda a tres caracteres, se
+      deberá completar el cuarto carácter con el cero (Ejem: 000100021452).
+
+      C3: El número contiene caracteres entre [0 al 9].
+
+      C4: En caso que el Tipo de Documento de Pago es igual a 11, el código debe ser único y asignado
+      por la IAFAS según el formato [año (4 dígitos) seguido del número correlativo de la atención (completado
+      con ceros a la izquierda a 8 dígitos)] (Ejem: 202200001234)'
+  - numero: 5
+    nombre: Correlativo de la prestación
+    obligatorio: true
+    longitud: 5
+    decimales: null
+    posicion_inicial: 34
+    descripcion: El número debe estar en concordancia con el campo 11 (Cantidad de prestaciones de salud
+      del documento facturador) de la tabla 1
+    criterios_texto: 'C1. El campo debe contener caracteres que corresponden al rango numérico del [0
+      al 9].
+
+      C2. El correlativo debe ser menor o igual al campo Cantidad de prestaciones de salud del documento
+      facturador de la tabla 1.
+
+      C3. El correlativo de la prestación debe estar ordenado de forma ascendente'
+  - numero: 6
+    nombre: Código de prestación Interno de la IPRESS
+    obligatorio: true
+    longitud: 10
+    decimales: null
+    posicion_inicial: 39
+    descripcion: Código de prestación Interno asignado por la IPRESS que presta el servicio de prestación
+      de Salud.
+    criterios_texto: C1. El campo no debe estar en blanco o nulo.
+  - numero: 7
+    nombre: Tipo de Afiliación del Paciente
+    obligatorio: true
+    longitud: 1
+    decimales: null
+    posicion_inicial: 49
+    descripcion: "CONTRIBUTIVO:\n1 = Regular\n2 = SCTR\n3 = Potestativo (Independiente)\n4 = SCTR Independiente\n\
+      5 = Otros contributivos y complementario  \n6 = SOAT\n7= AFOCAT\nSUBSIDIADO:\n8 = SIS Subsidiado\n\
+      SEMI CONTRIBUTIVO:\n9 = Semi contributivo"
+    criterios_texto: C1. Solo debe contener uno de los valores definidos
+  - numero: 8
+    nombre: Código de Asegurado del Paciente
+    obligatorio: true
+    longitud: 20
+    decimales: null
+    posicion_inicial: 50
+    descripcion: Código Único de Asegurado asignado por la IAFAS, permitirá identificar a cada asegurado
+      sea este titular o dependiente.
+    criterios_texto: 'C1. El código del paciente debe estar registrado en la IAFAS.
+
+      C2: El campo debe estar alineado a la derecha.'
+  - numero: 9
+    nombre: Tipo de documento de identidad
+    obligatorio: true
+    longitud: 1
+    decimales: null
+    posicion_inicial: 70
+    descripcion: '1 = DNI
+
+      2 = Carnet de extranjería
+
+      3 = Pasaporte
+
+      4 = Documento de Identidad Extranjero
+
+      5 = Código Unico de Identificación (CUI) en Acta de Nacimiento
+
+      6 = Código Nacido Vivo (CNV)
+
+      7 = Sin Documento de Identidad
+
+      A = Permiso Temporal de  Permanencia'
+    criterios_texto: C1. Solo debe contener uno de los valores definidos
+  - numero: 10
+    nombre: Número del documento de identidad
+    obligatorio: true
+    longitud: 15
+    decimales: null
+    posicion_inicial: 71
+    descripcion: Número de documento de identidad señalado en el numeral precedente
+    criterios_texto: 'C1. Para el caso del DNI, se validará que contenga 8 caracteres y sean caracteres
+      que corresponden al rango numérico del [0 al 9].
+
+      C2. Para otros casos diferentes al DNI, se validará que este campo no este en blanco.
+
+      C3: El campo debe estar alineado a la derecha.
+
+      C4: Si el tipo de documento de identidad es 7, deberá consignarse el número de DNI de la madre o
+      de un Tutor.'
+  - numero: 11
+    nombre: Número de Historia Clínica
+    obligatorio: true
+    longitud: 8
+    decimales: null
+    posicion_inicial: 86
+    descripcion: Número de la Historia Clínica en la IPRESS.
+    criterios_texto: C1. El campo no debe estar estar en blanco o nulo.
+  - numero: 12
+    nombre: Documento de autorización de la prestación
+    obligatorio: true
+    longitud: 2
+    decimales: null
+    posicion_inicial: 94
+    descripcion: '01. Solicitud de Atención Médica (Solicitud de Beneficio) / SITEDS
+
+      02. Solicitud de Chequeo Médico / SITEDS
+
+      03. Carta de Garantía
+
+      04. Por código
+
+      06. Otro Tipo de Autorización
+
+      07. Declaración de Accidente
+
+      99. No aplica'
+    criterios_texto: C1. Solo debe contener uno de los valores definidos, del listado las IAFAS podrán
+      acotar los valores a notificar.
+  - numero: 13
+    nombre: Número del documento de autorización.
+    obligatorio: false
+    longitud: 20
+    decimales: null
+    posicion_inicial: 96
+    descripcion: Número del documento de autorización de la prestación de acuerdo con el campo precedente.
+    criterios_texto: C1. Si el Documento de la autorización es '99' se deberá   registrar en blanco.
+  - numero: 14
+    nombre: Segundo Documento de autorización de la prestación
+    obligatorio: true
+    longitud: 2
+    decimales: null
+    posicion_inicial: 116
+    descripcion: '01. Solicitud de Atención Médica (Solicitud de Beneficio) / SITEDS
+
+      02. Solicitud de Chequeo Médico / SITEDS
+
+      03. Carta de Garantía
+
+      04. Por código
+
+      06. Otro Tipo de Autorización
+
+      07. Declaración de Accidente
+
+      99. No aplica'
+    criterios_texto: C1. Solo debe contener uno de los valores definidos, las IAFAS podrán acotar los
+      valores a notificar.
+  - numero: 15
+    nombre: Número del segundo documento de autorización.
+    obligatorio: false
+    longitud: 20
+    decimales: null
+    posicion_inicial: 118
+    descripcion: Número del segundo documento de autorización de la prestación de acuerdo con el campo
+      precedente.
+    criterios_texto: C1. Si el Documento de la autorización es '99' se deberá   registrarse en blanco.
+  - numero: 16
+    nombre: Tipo de Cobertura o Tipo de Prestación
+    obligatorio: true
+    longitud: 1
+    decimales: null
+    posicion_inicial: 138
+    descripcion: "0 = No aplica. (sepelio, prestaciones económicas, etc.)\n1 = Extra hospitalario\n2 =\
+      \ Médico en planta\n3 = Medicinas alternativas \n4 = Ambulatorio\n5 = Hospitalaria\n6 = Emergencia\n\
+      8 = Integral (Exclusivo para el SIS)\n9 = Otros"
+    criterios_texto: C1. Solo debe contener uno de los valores definidos
+  - numero: 17
+    nombre: Subtipo de Cobertura
+    obligatorio: true
+    longitud: 4
+    decimales: null
+    posicion_inicial: 139
+    descripcion: Cobertura ligada a la prestación
+    criterios_texto: C1. Contiene uno de los valores definidos por SUSALUD
+  - numero: 18
+    nombre: Primer Diagnóstico (CIE10)
+    obligatorio: true
+    longitud: 5
+    decimales: null
+    posicion_inicial: 143
+    descripcion: Se consignará el diagnóstico principal y definitivo según CIE10 a criterio del médico
+      tratante.
+    criterios_texto: 'C1. Contiene uno de los valores definidos por SUSALUD.
+
+      C2. Solo se aceptan códigos CIE10 publicados por la OMS. (Enlace de referencia https://icd.who.int/browse10/2019/en).
+      SUSALUD puede incluir códigos CIE10 cuando el Ministerio de Salud apruebe su uso en normas.
+
+      C3. Solo se aceptan códigos a nivel de subcategoria.'
+  - numero: 19
+    nombre: Segundo Diagnóstico (CIE10)
+    obligatorio: false
+    longitud: 5
+    decimales: null
+    posicion_inicial: 148
+    descripcion: Se consignará el segundo diagnóstico definitivo según CIE10 a criterio del médico tratante.
+    criterios_texto: 'C1. Si consigna un valor, debiera coincidir con los valores definidos por SUSALUD.
+
+      C2. Solo se aceptan códigos CIE10 publicados por la OMS. (Enlace de referencia https://icd.who.int/browse10/2019/en).
+      SUSALUD puede incluir códigos CIE10 cuando el Ministerio de Salud apruebe su uso en normas.
+
+      C3. Solo se aceptan códigos a nivel de subcategoria.
+
+      C4. De no haber un segundo diagnóstico deberá ir en blanco.'
+  - numero: 20
+    nombre: Tercer diagnóstico (CIE10)
+    obligatorio: false
+    longitud: 5
+    decimales: null
+    posicion_inicial: 153
+    descripcion: Se consignará el tercer diagnóstico definitivo según CIE10 a criterio del médico tratante.
+    criterios_texto: 'C1. Si consigna un valor, debiera coincidir con los valores definidos por SUSALUD.
+
+      C2. Solo se aceptan códigos CIE10 publicados por la OMS. (Enlace de referencia https://icd.who.int/browse10/2019/en).
+      SUSALUD puede incluir códigos CIE10 cuando el Ministerio de Salud apruebe su uso en normas.
+
+      C3. Solo se aceptan códigos a nivel de subcategoria.
+
+      C4. De no haber un tercer diagnóstico deberá ir en blanco.'
+  - numero: 21
+    nombre: Fecha de Prestación
+    obligatorio: true
+    longitud: 8
+    decimales: null
+    posicion_inicial: 158
+    descripcion: 'Fecha de primera prestación de salud o de ingreso hospitalario.
+
+      En formato:AAAAMMDD'
+    criterios_texto: C1. La fecha debe ser válida.
+  - numero: 22
+    nombre: Hora de Inicio de la Prestación
+    obligatorio: true
+    longitud: 6
+    decimales: null
+    posicion_inicial: 166
+    descripcion: 'Hora de la primera prestación de salud. En caso de hospitalización la fecha de inicio
+      debe ser la de internamiento.
+
+      Formato HHMMSS (donde HH es de 00 hasta 23.)'
+    criterios_texto: C1. La hora debe ser válida.
+  - numero: 23
+    nombre: Tipo del Profesional Responsable de la Prestación
+    obligatorio: true
+    longitud: 2
+    decimales: null
+    posicion_inicial: 172
+    descripcion: '00: Profesional sin colegiatura
+
+      01: Colegio Médico del Perú
+
+      02: Colegio Químico Farmacéutico del Perú
+
+      03: Colegio Odontológico del Perú
+
+      04: Colegio de Biólogos del Perú
+
+      05: Colegio de Obstetras del Perú
+
+      06: Colegio de Enfermeros del Perú
+
+      07: Colegio de Trabajadores Sociales del Perú
+
+      08: Colegio de Psicólogos del Perú
+
+      09: Colegio de Tecnólogos Médicos del Perú
+
+      10: Colegio de Nutricionistas del Perú
+
+      91: Lic. en Educación Especial
+
+      Se tomará como referencia la IEDS - Identificaciones Estándar de Datos en Salud o su modificatoria.'
+    criterios_texto: C1. Solo debe contener uno de los valores definidos
+  - numero: 24
+    nombre: Número de Colegiatura del Profesional Responsable de la Prestación
+    obligatorio: false
+    longitud: 6
+    decimales: null
+    posicion_inicial: 174
+    descripcion: Número de colegiatura del profesional de la salud
+    criterios_texto: 'C1. En el caso que el Tipo del Profesional Responsable de la Prestación es diferente
+      a ''00'', el campo no debe estar en blanco o nulo.
+
+      C2. En el caso que el Tipo del Profesional Responsable de la Prestación es igual a ''00'', el campo
+      deberá ir en blanco.'
+  - numero: 25
+    nombre: Tipo de documento de identidad del Profesional Responsable de la Prestación
+    obligatorio: true
+    longitud: 1
+    decimales: null
+    posicion_inicial: 180
+    descripcion: '1 = DNI
+
+      2 = Carnet de extranjería
+
+      3 = Pasaporte
+
+      4 = Documento de Identidad Extranjero
+
+      A = Permiso Temporal de  Permanencia'
+    criterios_texto: 'C1. Solo debe contener uno de los valores definidos
+
+      C2. En el caso que el Tipo del Profesional Responsable de la Prestación es igual a ''00'', el campo
+      deberá ir en blanco.'
+  - numero: 26
+    nombre: Número del documento de identidad del profesional responsable
+    obligatorio: true
+    longitud: 15
+    decimales: null
+    posicion_inicial: 181
+    descripcion: Número de documento de identidad del profesional responsable señalado en el numeral precedente
+    criterios_texto: 'C1. Para el caso del DNI, se validará que contenga 8 caracteres y sean caracteres
+      que corresponden al rango numérico del [0 al 9].
+
+      C2. Para otros casos diferentes al DNI, se validará que este campo no este en blanco.
+
+      C3: El campo debe estar alineado a la derecha.
+
+      C4. En el caso que el Tipo del Profesional Responsable de la Prestación es igual a ''00'', el campo
+      deberá ir en blanco.'
+  - numero: 27
+    nombre: RUC de Entidad de Referencia
+    obligatorio: true
+    longitud: 11
+    decimales: null
+    posicion_inicial: 196
+    descripcion: En el caso de que el asegurado ha sido transferida a otra entidad, para lo cual se consignará
+      el RUC de la Entidad a donde se efectúa la transferencia de la prestación.
+    criterios_texto: C1. Debe ser un RUC válido, en los casos en que no exista referencia a otro establecimiento
+      se deberá consignar el RUC del prestador o IPRESS referido en el campo 1.
+  - numero: 28
+    nombre: Fecha de la Transferencia
+    obligatorio: false
+    longitud: 8
+    decimales: null
+    posicion_inicial: 207
+    descripcion: 'Fecha de transferencia del paciente a otra IPRESS.
+
+      Formato: AAAAMMDD'
+    criterios_texto: 'C1. Si el RUC del prestador o IPRESS es diferente al RUC de la entidad de referencia,
+      deberá consignarse la fecha de transferencia del paciente.
+
+      C2. Si el RUC del prestador o IPRESS es igual al RUC de la entidad de referencia, deberá consignarse
+      en blanco.'
+  - numero: 29
+    nombre: Hora de transferencia
+    obligatorio: false
+    longitud: 6
+    decimales: null
+    posicion_inicial: 215
+    descripcion: 'Hora de la transferencia.
+
+      Formato HHMMSS (donde HH es de 00 hasta 23.)'
+    criterios_texto: 'C1. Si el RUC del prestador o IPRESS es diferente al RUC de la entidad de referencia,
+      deberá consignarse una hora válida.
+
+      C2. Si el RUC del prestador o IPRESS es igual al RUC de la entidad de referencia, deberá consignarse
+      en blanco.'
+  - numero: 30
+    nombre: Tipo de Hospitalización
+    obligatorio: false
+    longitud: 1
+    decimales: null
+    posicion_inicial: 221
+    descripcion: 'C =  Hospitalización Clínica, no se efectúa procedimiento quirúrgico.
+
+      Q = Hospitalización Quirúrgica, se efectúa un procedimiento quirúrgico o de naturaleza obstétrica
+      (cesáreas).
+
+      N = No aplica'
+    criterios_texto: "C1. Solo debe contener uno de los valores definidos\nC2. En el caso que tipo de\
+      \ cobertura es 5=Hospitalaria se validará: que el campo contenga valor \"C\" o \"Q\". \nC3. En el\
+      \ caso que tipo de cobertura es diferente de 5=Hospitalaria se validará: que el campo esté en blanco.\n\
+      C4. Si la IAFAS no registra este dato, se registra con valor \"N\"."
+  - numero: 31
+    nombre: Fecha Ingreso Hospitalario
+    obligatorio: false
+    longitud: 8
+    decimales: null
+    posicion_inicial: 222
+    descripcion: 'Fecha en la que el paciente es admitido en hospitalización.
+
+      Expresada en formato AAAAMMDD.'
+    criterios_texto: 'C1. Si es una prestación hospitalaria, la fecha debe ser mayor o igual a la fecha
+      de inicio de la prestación.
+
+      C2. Si es una prestación no hospitalaria, el campo deberá consignarse en blanco.'
+  - numero: 32
+    nombre: Fecha de Egreso Hospitalario
+    obligatorio: false
+    longitud: 8
+    decimales: null
+    posicion_inicial: 230
+    descripcion: 'Fecha en la que el paciente egresa de hospitalización.
+
+      Expresada en formato AAAAMMDD.'
+    criterios_texto: 'C1. Si es una prestación hospitalaria, la fecha debe ser mayor o igual a la fecha
+      de ingreso hospitalario.
+
+      C2. Si es una prestación no hospitalaria, el campo deberá consignarse en blanco.'
+  - numero: 33
+    nombre: Tipo de Egreso Hospitalario
+    obligatorio: false
+    longitud: 2
+    decimales: null
+    posicion_inicial: 238
+    descripcion: '01 = Alta Médica
+
+      02 = Alta Voluntaria
+
+      03 = Transferencia a otro establecimiento de IAFAS
+
+      04 = Transferencia a ESSALUD
+
+      05 = Fuga o Abandono
+
+      06 = Defunción (fecha de defunción)
+
+      07 = Egreso de facturación (Sigue hospitalizado)'
+    criterios_texto: 'C1. Solo debe contener uno de los valores definidos.
+
+      C2. En caso que el campo Tipo de Cobertura es diferente a Hospitalario el campo debe estar en blanco.'
+  - numero: 34
+    nombre: Días de Estancia Facturable
+    obligatorio: false
+    longitud: 3
+    decimales: null
+    posicion_inicial: 240
+    descripcion: Días de estancia facturable, en algunos casos puede ser diferente de lo consignado como
+      la diferencia entre el Ingreso y el Egreso Hospitalario.
+    criterios_texto: 'C1. En el caso que tipo de cobertura es 5 = Hospitalaria se validará: que el campo
+      contiene caracteres que corresponden al rango numérico del [0 al 9].
+
+      C2. En el caso que tipo de cobertura es diferente de 5 = Hospitalaria se validará: que el campo
+      esté en blanco.'
+  - numero: 35
+    nombre: Gasto por Honorarios y procedimientos sin IGV
+    obligatorio: true
+    longitud: 12
+    decimales: 2
+    posicion_inicial: 243
+    descripcion: 'Gasto cubierto por Honorarios y procedimientos (médicos o quirúrgicos), sin IGV.En formato:
+      999999999.99'
+    criterios_texto: 'C1. Debe consignar un valor numérico con 2 decimales. De no corresponder se consignará
+      ''0.00''.
+
+      C2. El campo debe estar alineado a la derecha.
+
+      C3. Si el campo 12 [Mecanismo de Pago] de la Tabla 1 es diferente a 03, El monto debe ser igual
+      a la sumatoria de todos los servicios agrupados contablemente por el presente grupo (1). Tabla  T3
+      ∑ (Montos Presentados - Montos No Cubiertos) cuando el campo Servicio Exento de Impuestos = ''A'''
+  - numero: 36
+    nombre: Gasto por Procedimientos Odontológicos sin IGV
+    obligatorio: true
+    longitud: 12
+    decimales: 2
+    posicion_inicial: 255
+    descripcion: 'Gasto cubierto por gasto odontológico, sin IGV.En formato: 999999999.99'
+    criterios_texto: 'C1. Debe consignar un valor numérico con 2 decimales. De no corresponder se consignará
+      ''0.00''.
+
+      C2. El campo debe estar alineado a la derecha.
+
+      C3. Si el campo 12 [Mecanismo de Pago] de la Tabla 1 es diferente a 03, el monto debe ser igual
+      a la sumatoria de todos los servicios agrupados contablemente por el presente grupo (2). Tabla T3
+      ∑ (Montos Presentados - Montos No Cubiertos)  cuando el campo Servicio Exento de Impuestos = ''A'''
+  - numero: 37
+    nombre: Gasto presentado por Hotelería, Servicio Clínico y Tópico sin IGV
+    obligatorio: true
+    longitud: 12
+    decimales: 2
+    posicion_inicial: 267
+    descripcion: 'Gasto cubierto por Servicios de Clínica (Hotelería, servicios clínicos y tópicos) sin
+      IGV. En formato: 999999999.99'
+    criterios_texto: 'C1. Debe consignar un valor numérico con 2 decimales. De no corresponder se consignará
+      ''0.00''.
+
+      C2. El campo debe estar alineado a la derecha.
+
+      C3. Si el campo 12 [Mecanismo de Pago] de la Tabla 1 es diferente a 03, el monto debe ser igual
+      a la sumatoria de todos los servicios agrupados contablemente por el presente grupo (3). Tabla T3
+      ∑ (Montos Presentados - Montos No Cubiertos) cuando el campo Servicio Exento de Impuestos = ''A'''
+  - numero: 38
+    nombre: Gasto por Exámenes auxiliares de laboratorio sin IGV
+    obligatorio: true
+    longitud: 12
+    decimales: 2
+    posicion_inicial: 279
+    descripcion: 'Gasto cubierto por exámenes auxiliares de laboratorio, sin IGV. En formato: 999999999.99'
+    criterios_texto: 'C1. Debe consignar un valor numérico con 2 decimales. De no corresponder se consignará
+      ''0.00''.
+
+      C2. El campo debe estar alineado a la derecha.
+
+      C3. Si el campo 12 [Mecanismo de Pago] de la Tabla 1 es diferente a 03, el monto debe ser igual
+      a la sumatoria de todos los servicios agrupados contablemente por el presente grupo (4). Tabla T3
+      ∑ (Montos Presentados - Montos No Cubiertos) cuando el campo Servicio Exento de Impuestos = ''A'''
+  - numero: 39
+    nombre: Gasto por Exámenes auxiliares por imágenes sin IGV
+    obligatorio: true
+    longitud: 12
+    decimales: 2
+    posicion_inicial: 291
+    descripcion: 'Gasto cubierto por exámenes auxiliares por imágenes, sin IGV. En formato: 999999999.99'
+    criterios_texto: 'C1. Debe consignar un valor numérico con 2 decimales. De no corresponder se consignará
+      ''0.00''.
+
+      C2. El campo debe estar alineado a la derecha.
+
+      C3. Si el campo 12 [Mecanismo de Pago] de la Tabla 1 es diferente a 03, el monto debe ser igual
+      a la sumatoria de todos los servicios agrupados contablemente por el presente grupo (5). Tabla T3
+      ∑ (Montos Presentados - Montos No Cubiertos) cuando el campo Servicio Exento de Impuestos = ''A'''
+  - numero: 40
+    nombre: Gasto por Farmacia e insumos sin IGV
+    obligatorio: true
+    longitud: 12
+    decimales: 2
+    posicion_inicial: 303
+    descripcion: "Gasto cubierto por Medicamentos, insumos y otros no farmacológicos y material médico\
+      \ no incluido en gastos por procedimientos sin IGV. \nEn formato: 999999999.99"
+    criterios_texto: 'C1. Debe consignar un valor numérico con 2 decimales. De no corresponder, se consignará
+      ''0.00''.
+
+      C2. El campo debe estar alineado a la derecha.
+
+      C3. Si el campo 12 [Mecanismo de Pago] de la Tabla 1 es diferente a 03: el monto debe ser igual
+      a la sumatoria de todos los productos de farmacia. Tabla T4 ∑ (Montos Presentados - Montos No Cubiertos)
+      cuando el campo Producto Exento de IGV = ''A'''
+  - numero: 41
+    nombre: Gasto en protesis sin IGV
+    obligatorio: true
+    longitud: 12
+    decimales: 2
+    posicion_inicial: 315
+    descripcion: "Gasto cubierto en protesis sin IGV. \nEn formato: 999999999.99"
+    criterios_texto: 'C1. Debe consignar un valor numérico con 2 decimales. De no corresponder se consignará
+      ''0.00''.
+
+      C2. El campo debe estar alineado a la derecha.
+
+      C3. Si el campo 12 [Mecanismo de Pago] de la Tabla 1 es diferente a 03, el monto debe ser igual
+      a la sumatoria de todos los servicios agrupados contablemente por el presente grupo (7). Tabla T3
+      ∑ (Montos Presentados - Montos No Cubiertos) cuando el campo Servicio Exento de Impuestos = ''A'''
+  - numero: 42
+    nombre: Gasto en productos, servicios o medicamentos exonerados de IGV
+    obligatorio: true
+    longitud: 12
+    decimales: 2
+    posicion_inicial: 327
+    descripcion: "Gasto cubierto por Medicamentos exonerados de IGV. \nEn formato: '999999999.99'"
+    criterios_texto: "C1. Debe consignar un valor numérico con 2 decimales. De no corresponder se consignará\
+      \ '0.00'. \nC2. El campo debe estar alineado a la derecha.\nC3. Si el campo 12 [Mecanismo de Pago]\
+      \ de la Tabla 1 es diferente a 03, el monto debe ser igual a la sumatoria de todos los productos\
+      \ de farmacia más los procedimientos o servicios exentos de IGV de todos los grupos contables. Tabla\
+      \ T4 ∑ (Montos Presentados - Montos No Cubiertos) cuando el campo Producto Exento de IGV = 'D' +\
+      \ T3 ∑ (Montos Presentados - Montos No Cubiertos) cuando el campo Servicio Exento de Impuestos =\
+      \ 'D'"
+  - numero: 43
+    nombre: Otros gastos por prestaciones de salud sin IGV
+    obligatorio: true
+    longitud: 12
+    decimales: 2
+    posicion_inicial: 339
+    descripcion: 'Otros Gastos por prestaciones de salud distintas a las señaladas sin IGV, tales como
+      protesis, etc.
+
+      En formato: 999999999.99'
+    criterios_texto: 'C1. Debe consignar un valor numérico con 2 decimales. De no corresponder se consignará
+      ''0.00''.
+
+      C2. El campo debe estar alineado a la derecha.
+
+      C3. Si el campo 12 [Mecanismo de Pago] de la Tabla 1 es diferente a 03, el monto debe ser igual
+      a la sumatoria de todos los servicios agrupados contablemente por el presente grupo (9). Tabla T3
+      ∑ (Montos Presentados - Montos No Cubiertos) cuando el campo Servicio Exento de Impuestos = ''A'''
+  - numero: 44
+    nombre: Copago Fijo afecto a IGV sin IGV
+    obligatorio: true
+    longitud: 12
+    decimales: 2
+    posicion_inicial: 351
+    descripcion: 'Copago Fijo afecto a IGV sin IGV cobrado por la IPRESS
+
+      En formato: 999999999.99'
+    criterios_texto: 'C1. Debe consignar un valor numérico con 2 decimales. De no corresponder se consignará
+      ''0.00''.
+
+      C2. El campo debe estar alineado a la derecha.'
+  - numero: 45
+    nombre: Copago Fijo exonerado de IGV
+    obligatorio: true
+    longitud: 12
+    decimales: 2
+    posicion_inicial: 363
+    descripcion: 'Copago Fijo exonerado de IGV cobrado por la IPRESS
+
+      En formato: 999999999.99'
+    criterios_texto: 'C1. Debe consignar un valor numérico con 2 decimales. De no corresponder se consignará
+      ''0.00''.
+
+      C2. El campo debe estar alineado a la derecha.'
+  - numero: 46
+    nombre: Copago Variable afecto a IGV sin IGV
+    obligatorio: true
+    longitud: 12
+    decimales: 2
+    posicion_inicial: 375
+    descripcion: 'Copago Variabe afecto a IGV sin IGV cobrado por la IPRESS
+
+      En formato: 999999999.99'
+    criterios_texto: 'C1. Debe consignar un valor numérico con 2 decimales. De no corresponder se consignará
+      ''0.00''.
+
+      C2. El campo debe estar alineado a la derecha.'
+  - numero: 47
+    nombre: Copago Variable exonerado de IGV
+    obligatorio: true
+    longitud: 12
+    decimales: 2
+    posicion_inicial: 387
+    descripcion: 'Copago Variabe exonerado de IGV cobrado por la IPRESS
+
+      En formato: 999999999.99'
+    criterios_texto: 'C1. Debe consignar un valor numérico con 2 decimales. De no corresponder se consignará
+      ''0.00''.
+
+      C2. El campo debe estar alineado a la derecha.'
+  - numero: 48
+    nombre: Total de Gastos Cubiertos sin IGV
+    obligatorio: true
+    longitud: 12
+    decimales: 2
+    posicion_inicial: 399
+    descripcion: 'Total de Gastos Cubiertos sin IGV
+
+      En formato: 999999999.99'
+    criterios_texto: "C1. Es un valor numérico con 2 decimales, igual a la Suma de los campos 35+36+37+38+39+40+41+42+43.\
+      \  \nC2. El campo debe estar alineado a la derecha."
+- id: T3
+  nombre: Detalle de los procedimientos y servicios de la prestación
+  prefijo: dser
+  obligatoria: false
+  condicional: true
+  longitud_registro: 244
+  campos:
+  - numero: 1
+    nombre: RUC del prestador o IPRESS
+    obligatorio: true
+    longitud: 11
+    decimales: null
+    posicion_inicial: 1
+    descripcion: RUC de la IPRESS asignado por SUNAT
+    criterios_texto: C1. Debe ser un RUC válido.
+  - numero: 2
+    nombre: Código IPRESS
+    obligatorio: true
+    longitud: 8
+    decimales: null
+    posicion_inicial: 12
+    descripcion: Código único del Registro Nacional de IPRESS asignado por SUSALUD.
+    criterios_texto: C1. Solo debe contener uno de los valores definidos según el RENIPRESS.
+  - numero: 3
+    nombre: Tipo Documento de Pago
+    obligatorio: true
+    longitud: 2
+    decimales: null
+    posicion_inicial: 20
+    descripcion: "01. Factura. \n02. Recibo por honorarios. \n03. Boleta de venta. \n04. Liquidación de\
+      \ compra. \n05. Boleto de aviación comercial para transporte de pasajeros.\n09. Ticket o cinta emitido\
+      \ por máquina registradora\n10. Formato Único de Atención - FUA\n11. Código Único de Atención (asignado\
+      \ por IAFAS pública)\n99. Otros documentos autorizados por la SUNAT"
+    criterios_texto: 'C1. Solo debe contener uno de los valores definidos
+
+      C2. Tipo de Documento = 11, aplica cuando la IAFAS es pública y el modelo de pago es Prospectivo.'
+  - numero: 4
+    nombre: Número de Documento de Pago
+    obligatorio: true
+    longitud: 12
+    decimales: null
+    posicion_inicial: 22
+    descripcion: "Número del Documento de Pago emitido para facturar  \nEn formato: XXXX99999999 (serienúmero)."
+    criterios_texto: 'C1: En caso el documento de pago sea electrónico, los primeros cuatro caracteres
+      correspondientes a la serie  podrán ser alfanuméricos (Ejem: F00200025654).
+
+      C2: En caso el documento de pago NO sea electrónico y la serie corresponda a tres caracteres, se
+      deberá completar el cuarto carácter con el cero (Ejem: 000100021452).
+
+      C3: El número contiene caracteres entre [0 al 9].
+
+      C4: En caso que el Tipo de Documento de Pago es igual a 11, el código debe ser único y asignado
+      por la IAFAS según el formato [año (4 dígitos) seguido del número correlativo de la atención (completado
+      con ceros a la izquierda a 8 dígitos)] (Ejem: 202200001234)'
+  - numero: 5
+    nombre: Correlativo de la prestación
+    obligatorio: true
+    longitud: 5
+    decimales: null
+    posicion_inicial: 34
+    descripcion: El número debe estar en concordancia con el campo 11 (Cantidad de prestaciones de salud
+      del documento facturador) de la tabla 1
+    criterios_texto: 'C1. El campo debe contener caracteres que corresponden al rango numérico del [0
+      al 9].
+
+      C2. El correlativo debe ser menor o igual al campo Cantidad de prestaciones de salud del documento
+      facturador de la tabla 1.
+
+      C3. El correlativo de la prestación debe estar ordenado de forma ascendente'
+  - numero: 6
+    nombre: Correlativo del Servicios o Procedimiento de la Prestación
+    obligatorio: true
+    longitud: 4
+    decimales: null
+    posicion_inicial: 39
+    descripcion: Correlativo de los servicios de la prestación. El correlativo debe ser por prestación
+    criterios_texto: 'C1. El campo debe contener caracteres que corresponden al rango numérico del [0
+      al 9].
+
+      C2. El correlativo del servicio debe estar ordenado de forma ascendente'
+  - numero: 7
+    nombre: Tipo Clasificación de Procedimiento y/o Servicio
+    obligatorio: true
+    longitud: 2
+    decimales: null
+    posicion_inicial: 43
+    descripcion: '01: De acuerdo a la IEDS: Identificaciones Estándar de Datos en Salud. Catálogo de Procedimientos
+      Médicos y Sanitarios del Sector Salud (CPMS) publicado con Resolución Ministerial N° 902-2017-MINSA
+      y actualizaciones publicadas por el Ministerio de Salud.
+
+      03. Otra clasificación según catálogo de la IPRESS
+
+      04: Cátalogo de Servicios Administrativos, publicado por el MINSA o en su defecto por SUSALUD.'
+    criterios_texto: C1. Solo debe contener uno de los valores definidos
+  - numero: 8
+    nombre: Código de Clasificación de Procedimiento y/o Servicio
+    obligatorio: true
+    longitud: 10
+    decimales: null
+    posicion_inicial: 45
+    descripcion: Código de Clasificación de acuerdo con el tipo de nomenclador o catálogo usado.
+    criterios_texto: C1. Debe corresponder a un código del Tipo de Clasificación de Procedimiento y/o
+      Servicio
+  - numero: 9
+    nombre: Descripción del Procedimiento y/o Servicio
+    obligatorio: true
+    longitud: 70
+    decimales: null
+    posicion_inicial: 55
+    descripcion: Descripción del Procedimiento y/o Servicio
+    criterios_texto: 'C1. El campo no debe estar en blanco o nulo.
+
+      C2. Complementario a la descripción del estándar usado, por ejemplo: marca de la prueba de laboratorio,
+      modelo del instrumental o equipo médico.'
+  - numero: 10
+    nombre: Fecha del procedimiento o servicio complementario
+    obligatorio: true
+    longitud: 8
+    decimales: null
+    posicion_inicial: 125
+    descripcion: Fecha en la que se realizó el primer procedimiento o servicio complementario expresada
+      en formato AAAAMMDD
+    criterios_texto: 'C1. La fecha debe ser válida.
+
+      C2. La fecha debe ser igual o mayor a la fecha de primera prestación de salud o de ingreso hospitalario
+      (Tabla 2 ---> Campo 21).
+
+      C3: Cuando el tipo de documento de pago es diferente al autorizado por la SUNAT (Campo 7 = 10 ó
+      11) se acepta como dato la fecha del Documento.'
+  - numero: 11
+    nombre: Tipo del Profesional Responsable de la Prestación
+    obligatorio: true
+    longitud: 2
+    decimales: null
+    posicion_inicial: 133
+    descripcion: '00: Profesional sin colegiatura
+
+      01: Colegio Médico del Perú
+
+      02: Colegio Químico Farmacéutico del Perú
+
+      03: Colegio Odontológico del Perú
+
+      04: Colegio de Biólogos del Perú
+
+      05: Colegio de Obstetras del Perú
+
+      06: Colegio de Enfermeros del Perú
+
+      07: Colegio de Trabajadores Sociales del Perú
+
+      08: Colegio de Psicólogos del Perú
+
+      09: Colegio de Tecnólogos Médicos del Perú
+
+      10: Colegio de Nutricionistas del Perú
+
+      91: Lic. en Educación Especial
+
+      Se tomará como referencia la IEDS - Identificaciones Estándar de Datos en Salud o su modificatoria.'
+    criterios_texto: C1. Solo debe contener uno de los valores definidos
+  - numero: 12
+    nombre: Número de Colegiatura del Profesional Responsable de la Prestación
+    obligatorio: false
+    longitud: 6
+    decimales: null
+    posicion_inicial: 135
+    descripcion: Número de colegiatura del profesional de la salud
+    criterios_texto: 'C1. En el caso que el Tipo del Profesional Responsable de la Prestación es diferente
+      a ''00'', el campo no debe estar en blanco o nulo.
+
+      C2. En el caso que el Tipo del Profesional Responsable de la Prestación es igual a ''00'', el campo
+      deberá ir en blanco.'
+  - numero: 13
+    nombre: Tipo de documento de identidad del Profesional Responsable de la Prestación
+    obligatorio: true
+    longitud: 1
+    decimales: null
+    posicion_inicial: 141
+    descripcion: '1 = DNI
+
+      2 = Carnet de extranjería
+
+      3 = Pasaporte
+
+      4 = Documento de Identidad Extranjero
+
+      A = Permiso Temporal de  Permanencia'
+    criterios_texto: 'C1. Solo debe contener uno de los valores definidos
+
+      C2. En el caso que el Tipo del Profesional Responsable de la Prestación es igual a ''00'', el campo
+      deberá ir en blanco.'
+  - numero: 14
+    nombre: Número del documento de identidad del profesional responsable
+    obligatorio: true
+    longitud: 15
+    decimales: null
+    posicion_inicial: 142
+    descripcion: Número de documento de identidad del profesional responsable señalado en el numeral precedente
+    criterios_texto: 'C1. Para el caso del DNI, se validará que contenga 8 caracteres y sean caracteres
+      que corresponden al rango numérico del [0 al 9].
+
+      C2. Para otros casos diferentes al DNI, se validará que este campo no este en blanco.
+
+      C3: El campo debe estar alineado a la derecha.
+
+      C4. En el caso que el Tipo del Profesional Responsable de la Prestación es igual a ''00'', el campo
+      deberá ir en blanco.'
+  - numero: 15
+    nombre: Número de veces que se brindó el procedimiento o servicio complementario
+    obligatorio: true
+    longitud: 5
+    decimales: null
+    posicion_inicial: 157
+    descripcion: 'Número de veces que se brindó el mismo procedimiento o servicio complementario como
+      parte de una prestación.
+
+      En formato: ''99999'''
+    criterios_texto: C1. El campo debe contener caracteres que corresponden al rango numérico del [0 al
+      9].
+  - numero: 16
+    nombre: Monto unitario sin impuestos (*)
+    obligatorio: true
+    longitud: 12
+    decimales: 2
+    posicion_inicial: 162
+    descripcion: 'Corresponde al precio por procedimiento o servicio complementario. Dicho monto no incluirá
+      impuestos.
+
+      En formato: ''999999999.99'''
+    criterios_texto: "C1. Debe consignar un valor numérico con 2 decimales. De no corresponder se consignará\
+      \ '0.00'. \nC2: El campo debe estar alineado a la derecha."
+  - numero: 17
+    nombre: Copago variable por procedimiento o servicio complementario (*)
+    obligatorio: true
+    longitud: 12
+    decimales: 2
+    posicion_inicial: 174
+    descripcion: 'Corresponde al Copago variable del procedimiento o servicio complementario. Dicho monto
+      no incluirá el IGV.
+
+      En formato: ''999999999.99'''
+    criterios_texto: "C1. Debe consignar un valor numérico con 2 decimales. De no corresponder se consignará\
+      \ '0.00'. \nC2: El campo debe estar alineado a la derecha."
+  - numero: 18
+    nombre: Copago fijo por procedimiento o servicio complementario (*)
+    obligatorio: true
+    longitud: 12
+    decimales: 2
+    posicion_inicial: 186
+    descripcion: 'Corresponde al Copago fijo del procedimiento o servicio complementario. Dicho monto
+      no incluirá el IGV.
+
+      En formato: ''999999999.99'''
+    criterios_texto: "C1. Debe consignar un valor numérico con 2 decimales. De no corresponder se consignará\
+      \ '0.00'. \nC2: El campo debe estar alineado a la derecha."
+  - numero: 19
+    nombre: Monto Presentado de (los) procedimiento(s) o  servicio(s) complementario(s) (*)
+    obligatorio: true
+    longitud: 12
+    decimales: 2
+    posicion_inicial: 198
+    descripcion: "Corresponde al monto sin impuestos de (los) procedimiento(s) o servicio(s) complentario(s)\
+      \ presentado(s) por la IAFAS. Debe ser obtenido sin restar los Copagos ni descuentos. \nCorresponderá\
+      \ a la multiplicación de los campos \"Número de Veces que se brindó el procedimiento\" por \"Monto\
+      \ Unitario sin impuestos\" \nEn formato: '999999999.99'"
+    criterios_texto: "C1. Debe consignar un valor numérico con 2 decimales. De no corresponder se consignará\
+      \ '0.00'. \nC2: El campo debe estar alineado a la derecha.\nC3. El margen de tolerancia para la\
+      \ validez del dato es de +/- 0.25, respecto a la multiplicación de los campos 'Número de Veces que\
+      \ se brindó el procedimiento o servicio complementario' y 'Monto Unitario sin Impuestos'.\nLa tolerancia\
+      \ será acumulativa por todos los servicios (T3) y productos de farmacia (T4) de la prestación, correspondientes\
+      \ al campo \"Correlativo de la Prestación\" y esta no deberá sobrepasar el margen de +/-0.25"
+  - numero: 20
+    nombre: Monto No Cubierto de (los) procedimiento(s) o  servicio(s) complementario(s) (*)
+    obligatorio: true
+    longitud: 12
+    decimales: 2
+    posicion_inicial: 210
+    descripcion: 'Corresponde al monto sin impuestos de (los) procedimiento(s) o servicio(s) complentario(s)
+      y no cubierto(s) por la IAFAS.
+
+      En formato: ''999999999.99'''
+    criterios_texto: "C1. Debe consignar un valor numérico con 2 decimales. De no corresponder se consignará\
+      \ '0.00'. \nC2: El campo debe estar alineado a la derecha."
+  - numero: 21
+    nombre: Diagnóstico Asociado
+    obligatorio: true
+    longitud: 5
+    decimales: null
+    posicion_inicial: 222
+    descripcion: Diagnóstico Asociado al Procedimiento o Servicio Complementario. De no tenerse se consignará
+      el diagnóstico principal o en blanco.
+    criterios_texto: "C1. De corresponder puede ser el primer, segundo o tercer diagnóstico (CIE10) de\
+      \ la tabla 2, asociados a la prestación.\nC2. Solo se aceptan códigos a nivel de subcategoria. \n\
+      C3. Cuando El código de IAFAS Tabla 1-->Campo 4 = 10001 (SIS), no se valida el criterio C1."
+  - numero: 22
+    nombre: Servicio Exento de Impuestos
+    obligatorio: true
+    longitud: 1
+    decimales: null
+    posicion_inicial: 227
+    descripcion: 'Indicador de exoneración en el cobro de impuestos
+
+      A. Servicio No exonerado de Impuesto
+
+      D. Servicio Exonerado de Impuesto'
+    criterios_texto: El campo debe contener valores  'A' o 'D'.
+  - numero: 23
+    nombre: Código Rubro
+    obligatorio: true
+    longitud: 2
+    decimales: null
+    posicion_inicial: 228
+    descripcion: "01 Hotelería (cuarto y alimentación) \n02 Consultas/Honorarios \n03 Servicios Clínicos\
+      \ \n04 Laboratorio \n05 Farmacia/Insumos \n06 Rayos X \n07 Tratamientos Especiales \n08 Ayudantes\
+      \ - instrumentistas \n09 Cirujano \n10 Examenes auxiliares y/o especiales (imágenes)\n11 Anestesistas\
+      \ \n12 Tratamiento paliativo y terapia del dolor \n13 Procedimientos odontologicos \n14 Prótesis\
+      \ \n15 Otros"
+    criterios_texto: C1. Solo debe contener uno de los valores definidos.
+  - numero: 24
+    nombre: Cantidad prescrita del procedimiento o servicio
+    obligatorio: false
+    longitud: 5
+    decimales: null
+    posicion_inicial: 230
+    descripcion: Número de unidades prescritas del procedimiento o servicio.
+    criterios_texto: 'C1. El campo debe contener caracteres que corresponden al rango numérico del [0
+      al 9].
+
+      C2. De no corresponder se consignará  ''0.00''.
+
+      C3. El campo debe estar alineado a la derecha.'
+  - numero: 25
+    nombre: Resultado del procedimiento o servicio
+    obligatorio: false
+    longitud: 10
+    decimales: null
+    posicion_inicial: 235
+    descripcion: Descripción del resultado del procedimiento o servicio.
+    criterios_texto: C1. El campo debe contener valores alfanumericos.
+- id: T4
+  nombre: Detalle de los productos de farmacia
+  prefijo: dfar
+  obligatoria: false
+  condicional: true
+  longitud_registro: 146
+  campos:
+  - numero: 1
+    nombre: RUC del prestador o IPRESS
+    obligatorio: true
+    longitud: 11
+    decimales: null
+    posicion_inicial: 1
+    descripcion: RUC de la IPRESS asignado por SUNAT
+    criterios_texto: C1. Debe ser un RUC válido.
+  - numero: 2
+    nombre: Código IPRESS
+    obligatorio: true
+    longitud: 8
+    decimales: null
+    posicion_inicial: 12
+    descripcion: Código único del Registro Nacional de IPRESS asignado por SUSALUD.
+    criterios_texto: C1. Solo debe contener uno de los valores definidos según el RENIPRESS.
+  - numero: 3
+    nombre: Tipo Documento de Pago
+    obligatorio: true
+    longitud: 2
+    decimales: null
+    posicion_inicial: 20
+    descripcion: "01. Factura. \n02. Recibo por honorarios. \n03. Boleta de venta. \n04. Liquidación de\
+      \ compra. \n05. Boleto de aviación comercial para transporte de pasajeros.\n09. Ticket o cinta emitido\
+      \ por máquina registradora\n10. Formato Único de Atención - FUA\n11. Código Único de Atención (asignado\
+      \ por IAFAS pública)\n99. Otros documentos autorizados por la SUNAT"
+    criterios_texto: 'C1. Solo debe contener uno de los valores definidos
+
+      C2. Tipo de Documento = 11, aplica cuando la IAFAS es pública y el modelo de pago es Prospectivo.'
+  - numero: 4
+    nombre: Número de Documento de Pago
+    obligatorio: true
+    longitud: 12
+    decimales: null
+    posicion_inicial: 22
+    descripcion: "Número del Documento de Pago emitido para facturar  \nEn formato: XXXX99999999 (serienúmero)."
+    criterios_texto: 'C1: En caso el documento de pago sea electrónico, los primeros cuatro caracteres
+      correspondientes a la serie  podrán ser alfanuméricos (Ejem: F00200025654).
+
+      C2: En caso el documento de pago NO sea electrónico y la serie corresponda a tres caracteres, se
+      deberá completar el cuarto carácter con el cero (Ejem: 000100021452).
+
+      C3: El número contiene caracteres entre [0 al 9].
+
+      C4: En caso que el Tipo de Documento de Pago es igual a 11, el código debe ser único y asignado
+      por la IAFAS según el formato [año (4 dígitos) seguido del número correlativo de la atención (completado
+      con ceros a la izquierda a 8 dígitos)] (Ejem: 202200001234)'
+  - numero: 5
+    nombre: Correlativo de la prestación
+    obligatorio: true
+    longitud: 5
+    decimales: null
+    posicion_inicial: 34
+    descripcion: El número debe estar en concordancia con el campo 11 (Cantidad de prestaciones de salud
+      del documento facturador) de la tabla 1
+    criterios_texto: 'C1. El campo debe contener caracteres que corresponden al rango numérico del [0
+      al 9].
+
+      C2. El correlativo debe ser menor o igual al campo Cantidad de prestaciones de salud del documento
+      facturador de la tabla 1.
+
+      C3. El correlativo de la prestación debe estar ordenado de forma ascendente'
+  - numero: 6
+    nombre: Correlativo de los Productos de Farmacia de la atención
+    obligatorio: true
+    longitud: 4
+    decimales: null
+    posicion_inicial: 39
+    descripcion: Correlativo de los Productos de Farmacia de la Atención. El Correlativo debe ser por
+      prestación
+    criterios_texto: 'C1. El campo debe contener caracteres que corresponden al rango numérico del [0
+      al 9].
+
+      C2. El correlativo de los productos de farmacia debe estar ordenado de forma ascendente'
+  - numero: 7
+    nombre: Tipo de producto
+    obligatorio: true
+    longitud: 1
+    decimales: null
+    posicion_inicial: 43
+    descripcion: 'M: Medicamento o producto de origen biológico
+
+      P: Suplemento dietético, edulcorante, producto galénico, producto natural, agente de diagnóstico,
+      radiofármaco o gas medicinal.
+
+      I: Insumo, material, dispositivo médico o prótesis
+
+      R: Preparado magistral
+
+      B: Productos sanitarios o cosméticos
+
+      A: Suplemento alimenticio'
+    criterios_texto: Solo debe contener uno de los valores definidos.
+  - numero: 8
+    nombre: Catálogo
+    obligatorio: true
+    longitud: 1
+    decimales: null
+    posicion_inicial: 44
+    descripcion: '1 = Catálogo GTIN (EAN), según el DS 024-2005-SA: Identificación de Datos Estándar en
+      Salud. Se acepta GTIN-8, GTIN-12 o GTIN 13
+
+      2 = Código de productos y servicios estándar de las Naciones Unidas (UNSPSC) según lo publicado
+      por la SUNAT.
+
+      3 = Catálogo SISMED del Ministerio de Salud.
+
+      9 = No aplica'
+    criterios_texto: '• Solo debe contener uno de los valores definidos
+
+      • Las IPRESS públicas usan el Catálogo SISMED para cualquier valor de Tipo de producto.
+
+
+      Para IPRESS privadas:
+
+      • Para el tipo de productos M sólo puede consignarse valor = 1
+
+      • P, I, B, A sólo puede consignar los valores 1 ó 2.
+
+      • Si el Tipo de Producto es igual a R, el valor a consignar es igual a 9 (No aplica)
+
+
+      Las IPRESS públicas que no usen SISMED:
+
+      • Para el tipo de productos M sólo puede consignarse valor = 1
+
+      • P, I, B, A sólo puede consignar los valores 1 ó 2.
+
+      • Si el Tipo de Producto es igual a R, el valor a consignar es igual a 9 (No aplica)'
+  - numero: 9
+    nombre: Código de producto
+    obligatorio: true
+    longitud: 13
+    decimales: null
+    posicion_inicial: 45
+    descripcion: Código del Producto según el catálogo definido
+    criterios_texto: '• Para las IPRESS públicas que seleccionen la opción 3 del campo 8 "Catálogo", deben
+      ingresar un código SISMED para cualquier tipo de producto.
+
+
+      Para IPRESS privadas:
+
+      • Si el tipo de producto es igual a M, P, I, B, A;  el código de producto es obligatorio.
+
+      • Si tipo de producto es igual a M sólo se acepta código del catálogo GTIN.
+
+      • Si el tipo de producto es P, I, B, A; el valor corresponde a los catálogos GTIN o UNSPSC
+
+      • Para los códigos del catálogo UNSPSC Si el producto no se encuentra clasificado en el cuarto nivel
+      del catálogo se debe considerar mínimamente hasta el tercer nivel jerárquico, completando los 8
+      dígitos con dos ceros ''00'' como cuarto nivel.
+
+      • Si el valor es igual a R, el código de producto = ''XXXXXXXXXXXXX''.'
+  - numero: 10
+    nombre: Fecha de Dispensación de Farmacia
+    obligatorio: true
+    longitud: 8
+    decimales: null
+    posicion_inicial: 58
+    descripcion: 'Fecha en la que se realizó la Dispensación.
+
+      Formato AAAAMMDD'
+    criterios_texto: 'C1. La fecha debe ser válida.
+
+      C2. La fecha debe ser igual o mayor a la fecha de primera prestación de salud o de ingreso hospitalario
+      (Tabla 2 ---> Campo 21).
+
+      C3: Cuando el tipo de documento de pago es diferente al autorizado por la SUNAT (Campo 7 = 10 ó
+      11) se acepta como dato la fecha del Documento.'
+  - numero: 11
+    nombre: Cantidad de Venta del Producto
+    obligatorio: true
+    longitud: 7
+    decimales: 2
+    posicion_inicial: 66
+    descripcion: Número de unidades de producto dispensadas o consumidas en función del Producto de Farmacia
+      reportado, sea este producto cubierto o no cubierto.
+    criterios_texto: 'C1. El campo debe contener caracteres que corresponden al rango numérico del [0
+      al 9].
+
+      C2. De no corresponder se consignará  ''0.00''.
+
+      C3. El campo debe estar alineado a la derecha.'
+  - numero: 12
+    nombre: Tipo de unidad de dispensación
+    obligatorio: true
+    longitud: 1
+    decimales: 0
+    posicion_inicial: 73
+    descripcion: '1: Por empaque
+
+      2: Por fracción'
+    criterios_texto: 'C1.Solo debe contener uno de los valores definidos.
+
+      *El reporte por empaque hace refencia a la Caja, Blister, Dispensador.
+
+      **El reporte por fracción hace referencia a la unidad mínima de dispensación, por ejemplo: tableta,
+      vial, frasco, tubo, pote,…'
+  - numero: 13
+    nombre: Monto Unitario sin Impuesto (*)
+    obligatorio: true
+    longitud: 12
+    decimales: 2
+    posicion_inicial: 74
+    descripcion: 'Corresponde al precio por unidad de dispensación del producto de farmacia. Dicho monto
+      no incluirá el IGV.
+
+      Formato: ''999999999.99'''
+    criterios_texto: 'C1. El campo debe contener caracteres que corresponden al rango numérico del [0
+      al 9].
+
+      C2. De no corresponder se consignará ''0.00''.
+
+      C3. El campo debe estar alineado a la derecha.
+
+      * El Monto unitario debe expresarse de acuerdo al tipo de unidad de dispensación.'
+  - numero: 14
+    nombre: Copago del Producto de Farmacia (*)
+    obligatorio: true
+    longitud: 12
+    decimales: 2
+    posicion_inicial: 86
+    descripcion: 'Corresponde al Copago del producto de Farmacia por la cantidad vendida del producto
+      dispensado o consumido, de corresponder.
+
+      Formato: ''999999999.99'''
+    criterios_texto: 'C1. El campo debe contener caracteres que corresponden al rango numérico del [0
+      al 9].
+
+      C2. De no corresponder se consignará ''0.00''.
+
+      C3. El campo debe estar alineado a la derecha.'
+  - numero: 15
+    nombre: Monto(s) Presentado(s) de (los) Producto(s) de Farmacia (*)
+    obligatorio: true
+    longitud: 12
+    decimales: 2
+    posicion_inicial: 98
+    descripcion: "Corresponde al monto presentado(s) de (los) producto(s) de farmacia reportado(s) por\
+      \ la IAFAS. Debe ser obtenido sin restar los Copagos ni descuentos. \nCorresponderá a la multiplicación\
+      \ de los campos  'Cantidad de Venta del Producto' y 'Monto Unitario sin Impuesto'.\nFormato: '999999999.99'"
+    criterios_texto: 'C1. El campo debe contener caracteres que corresponden al rango numérico del [0
+      al 9].
+
+      C2. De no corresponder se consignará ''0.00''.
+
+      C3. El campo debe estar alineado a la derecha.
+
+      C4. El margen de tolerancia para la validez del dato es de +/- 0.25, respecto a la multiplicación
+      de los campos ''Cantidad de Venta del Producto'' y ''Monto Unitario sin Impuesto''.
+
+      La tolerancia será acumulativa por todos los servicios (T3) y productos de farmacia (T4) de la prestación
+      correspondientes al campo "Correlativo de la Prestación" y esta no deberá sobrepasar el margen de
+      +/-0.25'
+  - numero: 16
+    nombre: Monto(s) No Cubierto(s) de (los) Producto(s) de Farmacia (*)
+    obligatorio: true
+    longitud: 12
+    decimales: 2
+    posicion_inicial: 110
+    descripcion: "Corresponde al monto de (los) producto(s) de farmacia reportado(s) y no cubiertos por\
+      \ la IAFAS. Debe ser obtenido sin restar los Copagos ni descuentos. \nFormato: '999999999.99'"
+    criterios_texto: 'C1. El campo debe contener caracteres que corresponden al rango numérico del [0
+      al 9].
+
+      C2. De no corresponder se consignará ''0.00''.
+
+      C3. El campo debe estar alineado a la derecha.'
+  - numero: 17
+    nombre: Diagnóstico Asociado al Producto de Farmacia
+    obligatorio: true
+    longitud: 5
+    decimales: null
+    posicion_inicial: 122
+    descripcion: 'Diagnóstico asociado a cada producto de farmacia reportado.
+
+      De no tenerse se consignará el diagnóstico principal.'
+    criterios_texto: "C1. De corresponder puede ser el primer, segundo o tercer diagnóstico (CIE10) de\
+      \ la tabla 2, asociados a la prestación.\nC2. Solo se aceptan códigos a nivel de subcategoria. \n\
+      C3. Cuando El código de IAFAS Tabla 1-->Campo 4 = 10001 (SIS), no se valida el criterio C1."
+  - numero: 18
+    nombre: Productos Exento de IGV
+    obligatorio: true
+    longitud: 1
+    decimales: null
+    posicion_inicial: 127
+    descripcion: 'Indicador de exoneración en el cobro de impuestos
+
+      A. Producto No exonerado de Impuesto
+
+      D. Producto Exonerado de Impuesto'
+    criterios_texto: El campo debe contener valores 'A' o 'D'.
+  - numero: 19
+    nombre: Guía de farmacia
+    obligatorio: true
+    longitud: 12
+    decimales: null
+    posicion_inicial: 128
+    descripcion: Se consiga la guía de la farmacia con la cual fue expendido el/los medicamentos
+    criterios_texto: C1. De no corresponder se consignará   'XXXXXXXXXXXX'
+  - numero: 20
+    nombre: Cantidad prescrita del Producto
+    obligatorio: false
+    longitud: 7
+    decimales: null
+    posicion_inicial: 140
+    descripcion: Número de unidades prescritas del Producto.
+    criterios_texto: 'C1. El campo debe contener caracteres que corresponden al rango numérico del [0
+      al 9].
+
+      C2. De no corresponder se consignará  ''0.00''.
+
+      C3. El campo debe estar alineado a la derecha.'
+- id: T5
+  nombre: Detalle del servicio odontológico
+  prefijo: dden
+  obligatoria: false
+  condicional: true
+  longitud_registro: 53
+  campos:
+  - numero: 1
+    nombre: RUC del prestador o IPRESS
+    obligatorio: true
+    longitud: 11
+    decimales: null
+    posicion_inicial: 1
+    descripcion: RUC de la IPRESS asignado por SUNAT
+    criterios_texto: C1. Debe ser un RUC válido.
+  - numero: 2
+    nombre: Código IPRESS
+    obligatorio: true
+    longitud: 8
+    decimales: null
+    posicion_inicial: 12
+    descripcion: Código único del Registro Nacional de IPRESS asignado por SUSALUD.
+    criterios_texto: C1. Solo debe contener uno de los valores definidos según el RENIPRESS.
+  - numero: 3
+    nombre: Tipo Documento de Pago
+    obligatorio: true
+    longitud: 2
+    decimales: null
+    posicion_inicial: 20
+    descripcion: "01. Factura. \n02. Recibo por honorarios. \n03. Boleta de venta. \n04. Liquidación de\
+      \ compra. \n05. Boleto de aviación comercial para transporte de pasajeros.\n09. Ticket o cinta emitido\
+      \ por máquina registradora\n10. Formato Único de Atención - FUA\n11. Código Único de Atención (asignado\
+      \ por IAFAS pública)\n99. Otros documentos autorizados por la SUNAT"
+    criterios_texto: 'C1. Solo debe contener uno de los valores definidos
+
+      C2. Tipo de Documento = 11, aplica cuando la IAFAS es pública y el modelo de pago es Prospectivo.'
+  - numero: 4
+    nombre: Número de Documento de Pago
+    obligatorio: true
+    longitud: 12
+    decimales: null
+    posicion_inicial: 22
+    descripcion: "Número del Documento de Pago emitido para facturar  \nEn formato: XXXX99999999 (serienúmero)."
+    criterios_texto: 'C1: En caso el documento de pago sea electrónico, los primeros cuatro caracteres
+      correspondientes a la serie  podrán ser alfanuméricos (Ejem: F00200025654).
+
+      C2: En caso el documento de pago NO sea electrónico y la serie corresponda a tres caracteres, se
+      deberá completar el cuarto carácter con el cero (Ejem: 000100021452).
+
+      C3: El número contiene caracteres entre [0 al 9].
+
+      C4: En caso que el Tipo de Documento de Pago es igual a 11, el código debe ser único y asignado
+      por la IAFAS según el formato [año (4 dígitos) seguido del número correlativo de la atención (completado
+      con ceros a la izquierda a 8 dígitos)] (Ejem: 202200001234)'
+  - numero: 5
+    nombre: Correlativo de la prestación
+    obligatorio: true
+    longitud: 5
+    decimales: null
+    posicion_inicial: 34
+    descripcion: El número debe estar en concordancia con el campo 11 (Cantidad de prestaciones de salud
+      del documento facturador) de la tabla 1
+    criterios_texto: 'C1. El campo debe contener caracteres que corresponden al rango numérico del [0
+      al 9].
+
+      C2. El correlativo debe ser menor o igual al campo Cantidad de prestaciones de salud del documento
+      facturador de la tabla 1.
+
+      C3. El correlativo de la prestación debe estar ordenado de forma ascendente'
+  - numero: 6
+    nombre: Correlativo de los Servicios Odontológicos
+    obligatorio: true
+    longitud: 4
+    decimales: null
+    posicion_inicial: 39
+    descripcion: Correlativo de los Servicios Odontológicos de la Atención.
+    criterios_texto: 'C1. El campo no debe estar en blanco o nulo.
+
+      C2. El correlativo del servicio odontologico debe estar ordenado de forma ascendente'
+  - numero: 7
+    nombre: Código de Pieza Dentaria
+    obligatorio: true
+    longitud: 2
+    decimales: null
+    posicion_inicial: 43
+    descripcion: 'Según Odontograma Oficial aprobado por el Colegio Odontológico del Perú según Resolución
+      N° 035.97.COP.  Aprobado en sesión Extraordinaria del Consejo Nacional Marzo 1999 (Adaptados del
+      Código Uniformizado de la Asociación Dental Americana).
+
+
+      Aplicable solo en el caso de que el tipo de clasificación de Gasto sea un gasto odontológico.'
+    criterios_texto: C1. El campo debe contener valores  que corresponden a la Tabla de Odontograma Oficial
+      consignado por el Colegio Odontológico del Perú.
+  - numero: 8
+    nombre: Superficie Dentaria Mesial
+    obligatorio: true
+    longitud: 1
+    decimales: null
+    posicion_inicial: 45
+    descripcion: Si se ha efectuado curación en la superficie Mesial se consignará '1', de lo contrario
+      se consignará '0'
+    criterios_texto: C1. El campo debe contener solo valores binarios
+  - numero: 9
+    nombre: Superficie Dentaria Lingual
+    obligatorio: true
+    longitud: 1
+    decimales: null
+    posicion_inicial: 46
+    descripcion: Si se ha efectuado curación en la superficie Lingual se consignará '1', de lo contrario
+      se consignará '0'
+    criterios_texto: C1. El campo debe contener solo valores binarios
+  - numero: 10
+    nombre: Superficie Dentaria Distal
+    obligatorio: true
+    longitud: 1
+    decimales: null
+    posicion_inicial: 47
+    descripcion: Si se ha efectuado curación en la superficie Distal se consignará '1', de lo contrario
+      se consignará '0'
+    criterios_texto: C1. El campo debe contener solo valores binarios
+  - numero: 11
+    nombre: Superficie Dentaria Vestibular
+    obligatorio: true
+    longitud: 1
+    decimales: null
+    posicion_inicial: 48
+    descripcion: Si se ha efectuado curación en la superficie Vestivular se consignará '1', de lo contrario
+      se consignará '0'
+    criterios_texto: C1. El campo debe contener solo valores binarios
+  - numero: 12
+    nombre: Superficie Dentaria Oclusal
+    obligatorio: true
+    longitud: 1
+    decimales: null
+    posicion_inicial: 49
+    descripcion: Si se ha efectuado curación en la superficie Oclusal se consignará '1', de lo contrario
+      se consignará '0'
+    criterios_texto: C1. El campo debe contener solo valores binarios
+  - numero: 13
+    nombre: Superficie Dentaria Toda la Pieza
+    obligatorio: true
+    longitud: 1
+    decimales: null
+    posicion_inicial: 50
+    descripcion: Si se ha efectuado curación en toda la pieza se consignará '1', de lo contrario se consignará
+      '0'
+    criterios_texto: C1. El campo debe contener solo valores binarios
+  - numero: 14
+    nombre: Superficie Dentaria Palatina
+    obligatorio: true
+    longitud: 1
+    decimales: null
+    posicion_inicial: 51
+    descripcion: Si se ha efectuado curación en la superficie Palatina se consignará '1', de lo contrario
+      se consignará '0'
+    criterios_texto: C1. El campo debe contener solo valores binarios
+  - numero: 15
+    nombre: Superficie Dentaria Cervical
+    obligatorio: true
+    longitud: 1
+    decimales: null
+    posicion_inicial: 52
+    descripcion: Si se ha efectuado curación en la superficie Cervical se consignará '1', de lo contrario
+      se consignará '0'
+    criterios_texto: C1. El campo debe contener solo valores binarios
+  - numero: 16
+    nombre: Superficie Dentaria Incisal
+    obligatorio: true
+    longitud: 1
+    decimales: null
+    posicion_inicial: 53
+    descripcion: Si se ha efectuado curación en la superficie Incisal se consignará '1', de lo contrario
+      se consignará '0'
+    criterios_texto: C1. El campo debe contener solo valores binarios
+- id: T6
+  nombre: Datos adicionales de las características generales de la prestación
+  prefijo: dpre
+  obligatoria: false
+  condicional: false
+  longitud_registro: 379
+  campos:
+  - numero: 1
+    nombre: RUC del prestador o IPRESS
+    obligatorio: true
+    longitud: 11
+    decimales: null
+    posicion_inicial: 1
+    descripcion: RUC de la IPRESS asignado por SUNAT
+    criterios_texto: C1. Debe ser un RUC válido.
+  - numero: 2
+    nombre: Código IPRESS
+    obligatorio: true
+    longitud: 8
+    decimales: null
+    posicion_inicial: 12
+    descripcion: Código único del Registro Nacional de IPRESS asignado por SUSALUD.
+    criterios_texto: C1. Solo debe contener uno de los valores definidos según el RENIPRESS.
+  - numero: 3
+    nombre: Tipo documento que sustenta la prestación
+    obligatorio: true
+    longitud: 2
+    decimales: null
+    posicion_inicial: 20
+    descripcion: "01. Factura. \n02. Recibo por honorarios. \n03. Boleta de venta. \n04. Liquidación de\
+      \ compra. \n05. Boleto de aviación comercial para transporte de pasajeros.\n09. Ticket o cinta emitido\
+      \ por máquina registradora\n10. Formato Único de Atención - FUA\n11. Código Único de Atención (asignado\
+      \ por IAFAS pública)\n99. Otros documentos autorizados por la SUNAT"
+    criterios_texto: 'C1. Solo debe contener uno de los valores definidos
+
+      C2. Tipo de Documento = 11, aplica cuando la IAFAS es pública y el modelo de pago es Prospectivo.'
+  - numero: 4
+    nombre: Número de documento de pago que sustenta la prestación
+    obligatorio: true
+    longitud: 12
+    decimales: null
+    posicion_inicial: 22
+    descripcion: "Número del documento de pago emitido para sustentar la prestación \nEn formato: XXXX99999999\
+      \ (serienúmero)."
+    criterios_texto: 'C1: En caso el documento de pago sea electrónico, los primeros cuatro caracteres
+      correspondientes a la serie  podrán ser alfanuméricos (Ejem: F00200025654).
+
+      C2: En caso el documento de pago NO sea electrónico y la serie corresponda a tres caracteres, se
+      deberá completar el cuarto carácter con el cero (Ejem: 000100021452).
+
+      C3: El número contiene caracteres entre [0 al 9].
+
+      C4: En caso que el Tipo de Documento de Pago es igual a 11, el código debe ser único y asignado
+      por la IAFAS según el formato [año (4 dígitos) seguido del número correlativo de la atención (completado
+      con ceros a la izquierda a 8 dígitos)] (Ejem: 202200001234)'
+  - numero: 5
+    nombre: Correlativo de la prestación
+    obligatorio: true
+    longitud: 5
+    decimales: null
+    posicion_inicial: 34
+    descripcion: El número debe estar en concordancia con el campo 5 de la tabla 2
+    criterios_texto: 'C1. El campo debe contener caracteres que corresponden al rango numérico del [0
+      al 9].
+
+      C2. El correlativo debe ser menor o igual al campo "Cantidad de prestaciones de salud" del documento
+      facturador de la tabla 1.
+
+      C3. El correlativo de la prestación debe estar ordenado de forma ascendente'
+  - numero: 6
+    nombre: Tipo de producto del afiliado
+    obligatorio: true
+    longitud: 20
+    decimales: null
+    posicion_inicial: 39
+    descripcion: Catálogo de productos que se emplea en el Registro de Afiliados al AUS, proporcionado
+      por SUSALUD
+    criterios_texto: 'C1. Solo debe contener uno de los valores definidos en el catálogo de productos.
+
+      C2. El campo no debe estar en blanco o nulo. En caso la IAFAS no defina la obligatoriedad del campo,
+      este se consignará con ''99999''. La existencia del código será validada.'
+  - numero: 7
+    nombre: Unidad Productora de Servicios de Salud (UPS)
+    obligatorio: true
+    longitud: 6
+    decimales: null
+    posicion_inicial: 59
+    descripcion: 'Código de la UPS según el Decreto Supremo 024-2005 del MINSA - IEDS 005: Unidad Productora
+      de Servicios en Establecimientos de Salud.'
+    criterios_texto: 'C1. Debe ser un código registrado en el catalogo de UPS del MINSA.
+
+      C2. De no corresponder se consignará ''999999'''
+  - numero: 8
+    nombre: Procedencia de la prestación
+    obligatorio: false
+    longitud: 2
+    decimales: null
+    posicion_inicial: 65
+    descripcion: '01: Por referencia desde otra IPRESS
+
+      02: Por interconsulta de otro servicio de la misma IPRESS
+
+      03: Por Control o seguimiento de una consulta  anterior
+
+      06: Por contrarreferencia
+
+      07: Del servicio de Emergencia
+
+      08: Sin indicación de algún profesional de la salud
+
+      09: Otros'
+    criterios_texto: 'C1. Debe contener uno de los valores definidos.
+
+      C2. De no corresponder el campo deberá consignarse en blanco.'
+  - numero: 9
+    nombre: Lugar de atención
+    obligatorio: false
+    longitud: 1
+    decimales: null
+    posicion_inicial: 67
+    descripcion: '1: Intramural
+
+      2: Extramural'
+    criterios_texto: 'C1: Debe registrar uno de los valores.
+
+      C2. De no corresponder el campo deberá consignarse en blanco.'
+  - numero: 10
+    nombre: Códigos de prestaciones adicionales
+    obligatorio: false
+    longitud: 40
+    decimales: null
+    posicion_inicial: 68
+    descripcion: Es el código de prestacion adicional, debe estar de acuerdo al catálogo de Subtipo de
+      cobertura del SIS
+    criterios_texto: 'C1: En caso se de una prestación adicional, el campo no debe encontrarse vacio.
+
+      C2: Corresponde al valor registrado en el FUA del SIS.
+
+      C3. De no corresponder el campo deberá consignarse en blanco.'
+  - numero: 11
+    nombre: Concepto prestacional
+    obligatorio: false
+    longitud: 1
+    decimales: null
+    posicion_inicial: 108
+    descripcion: '1 Atención directa
+
+      2 Cobertura extraordinaria
+
+      3 Traslado
+
+      4 Sepelio
+
+      5 Natimuerto
+
+      6 Óbito
+
+      7 Otro'
+    criterios_texto: 'C1. Se debe consignar solo uno de los valores.
+
+      C2: Corresponde al valor registrado en el FUA del SIS.'
+  - numero: 12
+    nombre: Código de cobertura extraordinaria
+    obligatorio: false
+    longitud: 15
+    decimales: null
+    posicion_inicial: 109
+    descripcion: Número de la autorización otorgado por el aplicativo de cobertura extraordinaria.
+    criterios_texto: 'C1. Debe registrar valores alfanumericos.
+
+      C2. Corresponde al valor registrado en el FUA del SIS.
+
+      C3. De no corresponder el campo deberá consignarse en blanco.'
+  - numero: 13
+    nombre: Monto de cobertura extraordinaria
+    obligatorio: true
+    longitud: 12
+    decimales: 2
+    posicion_inicial: 124
+    descripcion: Monto total autorizado, es decir, la sumatoria de la autorización y ampliación(es) otorgadas
+      para dicho evento.
+    criterios_texto: 'C1. El campo debe contener caracteres que corresponden al rango numérico del [0
+      al 9].
+
+      C2. De no corresponder se consignará ''0.00''.
+
+      C3. El campo debe estar alineado a la derecha.'
+  - numero: 14
+    nombre: Destino del asegurado
+    obligatorio: false
+    longitud: 1
+    decimales: null
+    posicion_inicial: 136
+    descripcion: 'Alta=1
+
+      Cita=2
+
+      Hospitalizacion=8
+
+      Referido Emergencia = 3
+
+      Referido Consulta Externa=4
+
+      Referido Apoyo Al Diagnostico=5
+
+      Contrareferido = 6
+
+      Fallecido= 7
+
+      Corte Admin=9'
+    criterios_texto: 'C1. Debe registrar uno de valores definidos.
+
+      C2. De no corresponder el campo deberá consignarse en blanco.'
+  - numero: 15
+    nombre: Grupo De Riesgo HVB
+    obligatorio: false
+    longitud: 2
+    decimales: null
+    posicion_inicial: 137
+    descripcion: "Grupo De Riesgo HVB: \n1. Trabajador De Salud   \n2. Trabajadores Sexuales   \n3. HSH\
+      \   \n4. Privado Libertad   \n5. FF. AA.  \n6. Policía Nacional   \n7. Estudiantes De Salud   \n\
+      8. Politranfundidos  \n9. Drogo Dependientes"
+    criterios_texto: 'C1. Si aplica se debe registrar solo uno de los valores definidos.
+
+      C2. De no corresponder el campo deberá consignarse en blanco.'
+  - numero: 16
+    nombre: Registro de cita
+    obligatorio: true
+    longitud: 1
+    decimales: null
+    posicion_inicial: 139
+    descripcion: '1: Prestación con cita
+
+      0: Prestación sin cita'
+    criterios_texto: C1. Debe registrar uno de los valores
+  - numero: 17
+    nombre: Fecha de registro de la cita
+    obligatorio: true
+    longitud: 8
+    decimales: null
+    posicion_inicial: 140
+    descripcion: 'Fecha en la que se registro la programación de cita del paciente por parte de la IPRESS
+
+      En formato:AAAAMMDD'
+    criterios_texto: 'C1: La fecha debe ser válida
+
+      C2: El campo debe llenarse de forma obligatoria si el Campo 16 = 1
+
+      C3. La fecha consignada no debe ser mayor que la fecha de prestación.
+
+      C4. En el caso que la prestación no se haya brindado a través de una cita programada (Campo 16 =
+      0), debe consignarse la fecha de la prestación (Tabla 2 --> Campo 21).'
+  - numero: 18
+    nombre: Fecha de Nacimiento del asegurado
+    obligatorio: true
+    longitud: 8
+    decimales: null
+    posicion_inicial: 148
+    descripcion: En formato AAAAMMDD.
+    criterios_texto: C1 El campo debe contener una fecha válida
+  - numero: 19
+    nombre: Sexo del asegurado
+    obligatorio: true
+    longitud: 1
+    decimales: null
+    posicion_inicial: 156
+    descripcion: 'Sexo del asegurado
+
+      1: Masculino
+
+      2: Femenino'
+    criterios_texto: C1. Solo debe contener uno de los valores definidos
+  - numero: 20
+    nombre: Etnia
+    obligatorio: false
+    longitud: 3
+    decimales: null
+    posicion_inicial: 157
+    descripcion: Código de etnia, de acuerdo al catálogo de Etnias
+    criterios_texto: 'C1. Solo debe contener uno de los valores.
+
+      C2. De no corresponder el campo deberá consignarse en blanco.'
+  - numero: 21
+    nombre: Perímetro cefálico
+    obligatorio: true
+    longitud: 5
+    decimales: 2
+    posicion_inicial: 160
+    descripcion: 'Registro en centímetro del perímetro cefálico.
+
+      Formato: 99.99'
+    criterios_texto: 'C1. Debe consignar un valor numérico con 2 decimales. De no corresponder se consignará
+      ''0.00''.
+
+      C2. El campo debe estar alineado a la derecha.
+
+      C3. Solo se informa en niños o niñas menores de 5 años'
+  - numero: 22
+    nombre: Perímetro abdominal
+    obligatorio: true
+    longitud: 6
+    decimales: 2
+    posicion_inicial: 165
+    descripcion: 'Registro en centímetro del perímetro abdominal.
+
+      Formato: 999.99'
+    criterios_texto: 'C1. Debe consignar un valor numérico con 2 decimales. De no corresponder se consignará
+      ''0.00''.
+
+      C2. El campo debe estar alineado a la derecha.'
+  - numero: 23
+    nombre: Peso
+    obligatorio: true
+    longitud: 6
+    decimales: 2
+    posicion_inicial: 171
+    descripcion: 'Registro del peso del evaluado en kilogramos.
+
+      Formato: 999.99'
+    criterios_texto: 'C1. Debe consignar un valor numérico con 2 decimales. De no corresponder se consignará
+      ''0.00''.
+
+      C2. El campo debe estar alineado a la derecha.'
+  - numero: 24
+    nombre: Talla
+    obligatorio: true
+    longitud: 6
+    decimales: 2
+    posicion_inicial: 177
+    descripcion: 'Registro de la talla del evaluado en centímetros.
+
+      Formato: 999.99'
+    criterios_texto: 'C1. Debe consignar un valor numérico con 2 decimales. De no corresponder se consignará
+      ''0.00''.
+
+      C2. El campo debe estar alineado a la derecha.'
+  - numero: 25
+    nombre: Hemoglobina
+    obligatorio: true
+    longitud: 5
+    decimales: 2
+    posicion_inicial: 183
+    descripcion: 'Registro del valor del resultado del dosaje de hemoglobína del evaluado
+
+      Formato: 99.99'
+    criterios_texto: 'C1. Debe consignar un valor numérico con 2 decimales. De no corresponder se consignará
+      ''0.00''.
+
+      C2. El campo debe estar alineado a la derecha.'
+  - numero: 26
+    nombre: Estado de la paciente mujer
+    obligatorio: false
+    longitud: 2
+    decimales: null
+    posicion_inicial: 188
+    descripcion: '01: Gestante
+
+      02: No Gestante
+
+      03: Puerpera'
+    criterios_texto: 'C1. Debe consignar uno de los valores de forma obligatoria en caso el paciente sea
+      de sexo femenino.
+
+      C2. Si el sexo del paciente es masculino, el campo debe estar en blanco.'
+  - numero: 27
+    nombre: Semanas de gestación
+    obligatorio: false
+    longitud: 2
+    decimales: null
+    posicion_inicial: 190
+    descripcion: 'Semana en que se encuentra gestando.
+
+      Formato: 99'
+    criterios_texto: 'C1. Debe consignar un valor numérico. De no corresponder se consignará ''0''.
+
+      C2. El valor debe ser entre 0 a 45 semanas
+
+      C3. El campo debe estar alineado a la derecha.'
+  - numero: 28
+    nombre: Fecha probable de parto
+    obligatorio: false
+    longitud: 8
+    decimales: null
+    posicion_inicial: 192
+    descripcion: 'Fecha probable en que la gestante entrará en labor de parto.
+
+      En formato:AAAAMMDD'
+    criterios_texto: 'C1. La fecha consignada no debe ser mayor que la fecha de prestación.
+
+      C2. De no corresponder el campo deberá consignarse en blanco.'
+  - numero: 29
+    nombre: Tipo de Nacido
+    obligatorio: false
+    longitud: 1
+    decimales: null
+    posicion_inicial: 200
+    descripcion: '1: Unico
+
+      2: Doble
+
+      3: Triple
+
+      4: Mas de 3'
+    criterios_texto: "C1. Solo debe contener uno de los valores definidos \nC2. De no corresponder el\
+      \ campo debe ir en blanco."
+  - numero: 30
+    nombre: Tipo de Parto
+    obligatorio: false
+    longitud: 1
+    decimales: null
+    posicion_inicial: 201
+    descripcion: '1: Cesarea
+
+      2: Espontaneo
+
+      3: Instrumentado
+
+      4: No se conoce
+
+      5: Otros'
+    criterios_texto: C1. Solo debe contener uno de los valores definidos
+  - numero: 31
+    nombre: Sexo del recién nacido
+    obligatorio: false
+    longitud: 1
+    decimales: null
+    posicion_inicial: 202
+    descripcion: '1: Masculino
+
+      2: Femenino
+
+      3: Sin determinar aun'
+    criterios_texto: C1. Solo debe contener uno de los valores definidos
+  - numero: 32
+    nombre: Fecha del  Nacimiento del recién nacido
+    obligatorio: false
+    longitud: 8
+    decimales: null
+    posicion_inicial: 203
+    descripcion: 'Fecha de nacimiento del  recien nacido.
+
+      Formato AAAAMMDD'
+    criterios_texto: 'C1. La fecha debe ser válida
+
+      C2 La fecha debe ser igual a la fecha de parto de la madre.
+
+      C3. De no corresponder el campo debe ir en blanco.'
+  - numero: 33
+    nombre: Peso al nacer del recien nacido
+    obligatorio: false
+    longitud: 4
+    decimales: null
+    posicion_inicial: 211
+    descripcion: Expresado en Gramos
+    criterios_texto: 'C1. El valor debe ser positivo mayor a cero y menor a 8001.
+
+      C2. De no corresponder el campo debe ir en blanco.'
+  - numero: 34
+    nombre: Talla al nacer del recien nacido
+    obligatorio: false
+    longitud: 5
+    decimales: 2
+    posicion_inicial: 215
+    descripcion: Expresado en Centímetros
+    criterios_texto: 'C1. El valor debe ser positivo mayor a cero y menor que 60 cms.
+
+      C2. De no corresponder se consignará ''0.00''.'
+  - numero: 35
+    nombre: Apgar al primer minuto
+    obligatorio: false
+    longitud: 2
+    decimales: null
+    posicion_inicial: 220
+    descripcion: Apgar al primer minuto
+    criterios_texto: 'C1. El valor numérico debe ser válido, entre el rango de 0 a 10.
+
+      C2. De no corresponder el campo debe ir en blanco.'
+  - numero: 36
+    nombre: Apgar a los cinco minutos
+    obligatorio: false
+    longitud: 2
+    decimales: null
+    posicion_inicial: 222
+    descripcion: Apgar a los cinco minutos
+    criterios_texto: 'C1. El valor numérico debe ser válido, entre el rango de 0 a 10.
+
+      C2. De no corresponder el campo debe ir en blanco.'
+  - numero: 37
+    nombre: Edad Gestacional del recién nacido (método Capurro)
+    obligatorio: false
+    longitud: 2
+    decimales: null
+    posicion_inicial: 224
+    descripcion: Edad Gestacional del recién nacido (método Capurro)
+    criterios_texto: 'C1 . Solo debe contener uno de los valores definidos.
+
+      C2. De no corresponder el campo debe ir en blanco.'
+  - numero: 38
+    nombre: Perímetro cefálico del recién nacido.
+    obligatorio: false
+    longitud: 5
+    decimales: 2
+    posicion_inicial: 226
+    descripcion: Expresado en centímetros
+    criterios_texto: 'C1. El valor debe ser positivo mayor a cero.
+
+      C2. De no corresponder se consignará ''0.00''.'
+  - numero: 39
+    nombre: Perímetro toracico  del recién nacido.
+    obligatorio: false
+    longitud: 5
+    decimales: 2
+    posicion_inicial: 231
+    descripcion: Expresado en centímetros
+    criterios_texto: 'C1. El valor debe ser positivo mayor a cero.
+
+      C2. De no corresponder se consignará ''0.00''.'
+  - numero: 40
+    nombre: Tipo de especialidad del profesional responsable de la prestación
+    obligatorio: false
+    longitud: 3
+    decimales: null
+    posicion_inicial: 236
+    descripcion: Código de tipo de especialidad registrada en el registro nacional que corresponda al
+      profesional de la salud.
+    criterios_texto: 'C1. Debe ser un código de especialidad válido
+
+      C2. En el caso que el  profesional responsable de la prestacion no tenga especialidad el campo debe
+      estar en blanco.
+
+      C3. En el caso que el Tipo del Profesional Responsable de la Prestación es igual a ''00'', el campo
+      debe estar en blanco (Tabla 2 --> Campo 23 = ''00'')'
+  - numero: 41
+    nombre: Número de Especialidad del Profesional Responsable de la Prestación
+    obligatorio: false
+    longitud: 6
+    decimales: null
+    posicion_inicial: 239
+    descripcion: Número de Especialidad en el Registro Nacional que corresponda  del profesional de la
+      salud
+    criterios_texto: 'C1. Debe ser un número de de especialidad válido.
+
+      C2. En el caso que el  profesional responsable de la prestacion no tenga especialidad el campo debe
+      estar en blanco.
+
+      C3. En el caso que el Tipo del Profesional Responsable de la Prestación es igual a ''00'', el campo
+      debe estar en blanco.
+
+      C4. El campo debe ser numérico y estar alineado a la derecha.'
+  - numero: 42
+    nombre: Origen del personal que atiende
+    obligatorio: false
+    longitud: 1
+    decimales: null
+    posicion_inicial: 245
+    descripcion: 'Lugar donde trabaja el profesional de salud
+
+      1: De la IPRESS
+
+      2: Itinerante
+
+      4: Oferta flexible'
+    criterios_texto: 'C1. Solo debe contener uno de los valores definidos.
+
+      C2: Corresponde al valor registrado en el FUA del SIS.
+
+      C3. De no corresponder el campo debe ir en blanco.'
+  - numero: 43
+    nombre: Código de oferta flexible
+    obligatorio: false
+    longitud: 10
+    decimales: null
+    posicion_inicial: 246
+    descripcion: 'Código del equipo de salud que brinda atención extramural preventiva y/o recuperativa
+      de manera complementaria a la red local de servicios de salud, Ejm: telesalud o brigadas'
+    criterios_texto: 'C1. Solo debe contener uno de los valores definidos.
+
+      C2: Corresponde al valor registrado en el FUA del SIS.
+
+      C3. De no corresponder el campo debe ir en blanco.'
+  - numero: 44
+    nombre: Código de la IPRESS que refiere
+    obligatorio: false
+    longitud: 8
+    decimales: null
+    posicion_inicial: 256
+    descripcion: En el caso de que el asegurado ha sido referido de otra IPRESS, se consignará el código
+      RENIPRESS de SUSALUD.
+    criterios_texto: 'C1. Solo debe contener uno de los valores definidos según el RENIPRESS.
+
+      C2. De no corresponder el campo debe ir en blanco.'
+  - numero: 45
+    nombre: Número de hoja de referencia
+    obligatorio: false
+    longitud: 20
+    decimales: null
+    posicion_inicial: 264
+    descripcion: Es el número asignado a la referencia realizada.
+    criterios_texto: 'C1. El campo debe contener caracteres alfanuméricos.
+
+      C2: El campo debe llenarse de forma obligatoria si el Campo 44 consigna un código de IPRESS.
+
+      C3. De no corresponder el campo debe ir en blanco.'
+  - numero: 46
+    nombre: Código de IPRESS a donde es transferido por Referencia
+    obligatorio: false
+    longitud: 8
+    decimales: null
+    posicion_inicial: 284
+    descripcion: En el caso de que el asegurado ha sido transferido a otra entidad, para lo cual se consignará
+      el código RENIPRESS de la Entidad a donde se efectúa la transferencia de la prestación.
+    criterios_texto: 'C1. Solo debe contener uno de los valores definidos según el RENIPRESS.
+
+      C2. De no corresponder el campo debe ir en blanco.'
+  - numero: 47
+    nombre: Número de hoja de transferencia
+    obligatorio: false
+    longitud: 20
+    decimales: null
+    posicion_inicial: 292
+    descripcion: Es el número asignado a la transferencia realizada.
+    criterios_texto: 'C1. El campo debe contener caracteres alfanuméricos.
+
+      C2: El campo debe llenarse de forma obligatoria si el Campo 46 consigna un código de IPRESS.
+
+      C3. De no corresponder el campo debe ir en blanco.'
+  - numero: 48
+    nombre: Hora de Ingreso a Hospitalización
+    obligatorio: false
+    longitud: 6
+    decimales: null
+    posicion_inicial: 312
+    descripcion: Es la hora de la fecha en la que el paciente es admitido e ingresa a una UPS de Hospitalización.
+    criterios_texto: 'C1. Si es una prestación hospitalaria (Tabla 2 --> Campo 16 = 5), la hora debe tener
+      el siguiente formato HHMMSS.
+
+      C2. Si es una prestación no hospitalaria, el campo deberá consignarse en blanco.'
+  - numero: 49
+    nombre: Fecha de corte administrativo
+    obligatorio: false
+    longitud: 8
+    decimales: null
+    posicion_inicial: 318
+    descripcion: 'Fecha en que se realiza la facturación para estancia hospitalaria prolongada.
+
+      Formato: AAAAMMDD'
+    criterios_texto: 'C1. Si es una prestación hospitalaria (Tabla 2 --> Campo 16 = 5) y el Egreso es
+      por Facturación (Tabla 2 --> Campo 33 = 07), debe ingresarse un valor.
+
+      C2. Si es una prestación no hospitalaria, el campo deberá consignarse en blanco.'
+  - numero: 50
+    nombre: Fecha de Ingreso a Emergencia
+    obligatorio: false
+    longitud: 8
+    decimales: null
+    posicion_inicial: 326
+    descripcion: 'Es la fecha en la que el paciente es admitido e ingresa a una UPS de Emergencia
+
+      Formato: AAAAMMDD'
+    criterios_texto: 'C1: La fecha debe ser válida en formato AAAAMMDD
+
+      C2: El campo debe llenarse de forma obligatoria si el Tabla 2 --> Campo 16 (tipo prestación) = 6
+
+      C3: Para tipos de prestación diferentes a 6, el campo debe rellenarse con espacios en blanco.
+
+      C4. Si es una prestación de emergencia la fecha debe ser mayor o igual a la fecha de inicio de la
+      prestación.'
+  - numero: 51
+    nombre: Hora de Ingreso a Emergencia
+    obligatorio: false
+    longitud: 6
+    decimales: null
+    posicion_inicial: 334
+    descripcion: 'Es la hora en que el paciente ingresa a una UPS de Emergencia.
+
+      FormatoHHMMSS'
+    criterios_texto: 'C1: La hora debe ser válida en formato HHMMSS.
+
+      C2: El campo debe llenarse de forma obligatoria si el Tabla 2 --> Campo 16 (tipo prestación) = 6
+
+      C3: Para tipos de prestación diferentes a 6, el campo debe rellenarse con espacios en blanco.'
+  - numero: 52
+    nombre: Prioridad de la Emergencia
+    obligatorio: false
+    longitud: 2
+    decimales: null
+    posicion_inicial: 340
+    descripcion: '01: Prioridad I
+
+      02: Prioridad II
+
+      03: Prioridad III
+
+      04: Prioridad IV'
+    criterios_texto: 'C1: El campo debe llenarse de forma obligatoria si el Tabla 2 --> Campo 16 (tipo
+      prestación) = 6
+
+      C2: Para tipos de prestación diferentes a 6, el campo debe rellenarse con espacios en blanco.'
+  - numero: 53
+    nombre: Fecha de Alta de Emergencia
+    obligatorio: false
+    longitud: 8
+    decimales: null
+    posicion_inicial: 342
+    descripcion: 'Es la fecha en que el paciente sale o egresa de la UPS Emergencia.
+
+      Formato: AAAAMMDD'
+    criterios_texto: 'C1: La fecha debe ser válida en formato AAAAMMDD
+
+      C2: El campo debe llenarse de forma obligatoria si el Tabla 2 --> Campo 16 (tipo prestación) = 6
+
+      C3: Para tipos de prestación diferentes a 6, el campo debe rellenarse con espacios en blanco.
+
+      C4. Si es una prestación de emergencia la fecha debe ser mayor o igual a la fecha de ingreso a emergencia.'
+  - numero: 54
+    nombre: Hora de Alta de Emergencia
+    obligatorio: false
+    longitud: 6
+    decimales: null
+    posicion_inicial: 350
+    descripcion: 'Es la hora  de la fecha en que el paciente sale o egresa de la UPS Emergencia.
+
+      Formato: HHMMSS'
+    criterios_texto: 'C1: La hora debe ser válida en formatoHHMMSS.
+
+      C2: El campo debe llenarse de forma obligatoria si el Tabla 2 --> Campo 16 (tipo prestación) = 6
+
+      C3: Para tipos de prestación diferentes a 6, el campo debe rellenarse con espacios en blanco.'
+  - numero: 55
+    nombre: Desenlace de la prestación
+    obligatorio: true
+    longitud: 2
+    decimales: null
+    posicion_inicial: 356
+    descripcion: "01: Tratamiento ambulatorio \n02: Interconsulta \n03: Referencia \n04: Contrarreferencia\n\
+      05: Hospitalización\n06: Emergencia\n07: Fallecimiento \n08: Alta Médica \n09: Alta Voluntaria\n\
+      10: Fuga o Abandono\n11: Otro"
+    criterios_texto: 'C1. Solo debe contener uno de los valores definidos
+
+      C2 Los valores 08, 09 y 10 corresponden solo cuando el tipo de prestacion es Emergencia u Hospitalización
+      (Tabla 2 --> Campo 16 = 5 o Tabla 2 --> Campo 16 = 6)'
+  - numero: 56
+    nombre: Fecha de fallecimiento
+    obligatorio: false
+    longitud: 8
+    decimales: null
+    posicion_inicial: 358
+    descripcion: 'Es la fecha del fallecimiento de un paciente.
+
+      Formato: AAAAMMDD'
+    criterios_texto: 'C1: Debe contener un valor valido cuando el campo Desenlace de la prestación = 07
+      (fallecimiento).
+
+      C2. De no corresponder el campo debe ir en blanco.'
+  - numero: 57
+    nombre: Código de IEA
+    obligatorio: false
+    longitud: 6
+    decimales: null
+    posicion_inicial: 366
+    descripcion: Según Tabla de Incidentes y eventos adversos definida por el MINSA
+    criterios_texto: 'C1. Solo debe contener uno de los valores definidos en la Tabla de IEA
+
+      C2. De no corresponder ingresar 999999
+
+      C3. De presentarse mas de un evento adverso, registrar solo el mas relevante.'
+  - numero: 58
+    nombre: Grado de Severidad del Incidente o Evento Adverso
+    obligatorio: false
+    longitud: 1
+    decimales: null
+    posicion_inicial: 372
+    descripcion: "Se consignará el tipo de severidad del  Evento Adverso a criterio del  personal de salud\
+      \ tratante. \n1: Leve\n2: Moderado\n3: Severo"
+    criterios_texto: 'C1. Solo debe contener uno de los valores definidos
+
+      C8. Si se ha ingresado un Código de la tabla de IEA (Campo 57), debe ingresarse uno de los valores
+      de forma obligatoria
+
+      C9. De no corresponde ingresar X'
+  - numero: 59
+    nombre: Código de IEA
+    obligatorio: false
+    longitud: 6
+    decimales: null
+    posicion_inicial: 373
+    descripcion: Según Tabla de Incidentes y eventos adversos definida por el MINSA
+    criterios_texto: 'C1. Solo debe contener uno de los valores definidos en la Tabla de IEA
+
+      C2. De no corresponder ingresar 999999.
+
+      C3. De presentarse mas de un evento adverso, registrar solo el mas relevante.'
+  - numero: 60
+    nombre: Grado de Severidad del Incidente o Evento Adverso
+    obligatorio: false
+    longitud: 1
+    decimales: null
+    posicion_inicial: 379
+    descripcion: "Se consignará el tipo de severidad del  Evento Adverso a criterio del  personal de salud\
+      \ tratante. \n1: Leve\n2: Moderado\n3: Severo"
+    criterios_texto: 'C1. Solo debe contener uno de los valores definidos
+
+      C8. Si se ha ingresado un Código de la tabla de IEA (Campo 59), debe ingresarse uno de los valores
+      de forma obligatoria
+
+      C9. De no corresponde ingresar X'
+- id: T7
+  nombre: Detalle de los diagnosticos de la prestación
+  prefijo: ddia
+  obligatoria: false
+  condicional: false
+  longitud_registro: 49
+  campos:
+  - numero: 1
+    nombre: RUC del prestador o IPRESS
+    obligatorio: true
+    longitud: 11
+    decimales: null
+    posicion_inicial: 1
+    descripcion: RUC de la IPRESS asignado por SUNAT
+    criterios_texto: C1. Debe ser un RUC válido.
+  - numero: 2
+    nombre: Código IPRESS
+    obligatorio: true
+    longitud: 8
+    decimales: null
+    posicion_inicial: 12
+    descripcion: Código único del Registro Nacional de IPRESS asignado por SUSALUD.
+    criterios_texto: C1. Solo debe contener uno de los valores definidos según el RENIPRESS.
+  - numero: 3
+    nombre: Tipo documento que sustenta la prestación
+    obligatorio: true
+    longitud: 2
+    decimales: null
+    posicion_inicial: 20
+    descripcion: "01. Factura. \n02. Recibo por honorarios. \n03. Boleta de venta. \n04. Liquidación de\
+      \ compra. \n05. Boleto de aviación comercial para transporte de pasajeros.\n09. Ticket o cinta emitido\
+      \ por máquina registradora\n10. Formato Único de Atención - FUA\n11. Código Único de Atención (asignado\
+      \ por IAFAS pública)\n99. Otros documentos autorizados por la SUNAT"
+    criterios_texto: 'C1. Solo debe contener uno de los valores definidos
+
+      C2. Tipo de Documento = 11, aplica cuando la IAFAS es pública y el modelo de pago es Prospectivo.'
+  - numero: 4
+    nombre: Número de documento de pago que sustenta la prestación
+    obligatorio: true
+    longitud: 12
+    decimales: null
+    posicion_inicial: 22
+    descripcion: "Número del documento de pago emitido para sustentar la prestación \nEn formato: XXXX99999999\
+      \ (serienúmero)."
+    criterios_texto: 'C1: En caso el documento de pago sea electrónico, los primeros cuatro caracteres
+      correspondientes a la serie  podrán ser alfanuméricos (Ejem: F00200025654).
+
+      C2: En caso el documento de pago NO sea electrónico y la serie corresponda a tres caracteres, se
+      deberá completar el cuarto carácter con el cero (Ejem: 000100021452).
+
+      C3: El número contiene caracteres entre [0 al 9].
+
+      C4: En caso que el Tipo de Documento de Pago es igual a 11, el código debe ser único y asignado
+      por la IAFAS según el formato [año (4 dígitos) seguido del número correlativo de la atención (completado
+      con ceros a la izquierda a 8 dígitos)] (Ejem: 202200001234)'
+  - numero: 5
+    nombre: Correlativo de la prestación
+    obligatorio: true
+    longitud: 5
+    decimales: null
+    posicion_inicial: 34
+    descripcion: El número debe estar en concordancia con el campo 5 de la tabla 2
+    criterios_texto: 'C1. El campo debe contener caracteres que corresponden al rango numérico del [0
+      al 9].
+
+      C2. El correlativo debe ser menor o igual al campo "Cantidad de prestaciones de salud" del documento
+      facturador de la tabla 1.
+
+      C3. El correlativo de la prestación debe estar ordenado de forma ascendente'
+  - numero: 6
+    nombre: Correlativo del diagnostico
+    obligatorio: true
+    longitud: 4
+    decimales: null
+    posicion_inicial: 39
+    descripcion: Correlativo de los diagnósticos de la Atención. El Correlativo debe ser por prestación
+    criterios_texto: 'C1. El campo debe contener caracteres que corresponden al rango numérico del [0
+      al 9].
+
+      C2. El correlativo del diagnostico debe estar ordenado de forma ascendente'
+  - numero: 7
+    nombre: Identificador de diagnostico
+    obligatorio: true
+    longitud: 1
+    decimales: null
+    posicion_inicial: 43
+    descripcion: 'Campo que indica si el diagnóstico es de Ingreso o Egreso
+
+      I : Ingreso
+
+      E: Egreso'
+    criterios_texto: C1. Solo debe contener uno de los valores definidos
+  - numero: 8
+    nombre: Tipo de diagnóstico
+    obligatorio: true
+    longitud: 1
+    decimales: null
+    posicion_inicial: 44
+    descripcion: "Tipo de diagnóstico. \n1: Presuntivo  \n2: Definitivo \n3: Repetido"
+    criterios_texto: C1. Solo debe contener uno de los valores definidos
+  - numero: 9
+    nombre: Código de diagnóstico
+    obligatorio: true
+    longitud: 5
+    decimales: null
+    posicion_inicial: 45
+    descripcion: Código de diagnostico de acuerdo al catalogo de CIE10
+    criterios_texto: 'C1. Solo debe contener uno de los valores definidos en el catálogo CIE10.
+
+      C2. Solo se aceptan códigos CIE10 publicados por la OMS. (Enlace de referencia https://icd.who.int/browse10/2019/en).
+      SUSALUD puede incluir códigos CIE10 cuando el Ministerio de Salud apruebe su uso en normas.
+
+      C3. Solo se aceptan códigos a nivel de subcategoria.'
+- id: T8
+  nombre: Detalle de las actividades preventivas, vacunacion y otros
+  prefijo: dprv
+  obligatoria: false
+  condicional: false
+  longitud_registro: 64
+  campos:
+  - numero: 1
+    nombre: RUC del prestador o IPRESS
+    obligatorio: true
+    longitud: 11
+    decimales: null
+    posicion_inicial: 1
+    descripcion: RUC de la IPRESS asignado por SUNAT
+    criterios_texto: C1. Debe ser un RUC válido.
+  - numero: 2
+    nombre: Código IPRESS
+    obligatorio: true
+    longitud: 8
+    decimales: null
+    posicion_inicial: 12
+    descripcion: Código único del Registro Nacional de IPRESS asignado por SUSALUD.
+    criterios_texto: C1. Solo debe contener uno de los valores definidos según el RENIPRESS.
+  - numero: 3
+    nombre: Tipo documento que sustenta la prestación
+    obligatorio: true
+    longitud: 2
+    decimales: null
+    posicion_inicial: 20
+    descripcion: "01. Factura. \n02. Recibo por honorarios. \n03. Boleta de venta. \n04. Liquidación de\
+      \ compra. \n05. Boleto de aviación comercial para transporte de pasajeros.\n09. Ticket o cinta emitido\
+      \ por máquina registradora\n10. Formato Único de Atención - FUA\n11. Código Único de Atención (asignado\
+      \ por IAFAS pública)\n99. Otros documentos autorizados por la SUNAT"
+    criterios_texto: 'C1. Solo debe contener uno de los valores definidos
+
+      C2. Tipo de Documento = 11, aplica cuando la IAFAS es pública y el modelo de pago es Prospectivo.'
+  - numero: 4
+    nombre: Número de documento de pago que sustenta la prestación
+    obligatorio: true
+    longitud: 12
+    decimales: null
+    posicion_inicial: 22
+    descripcion: "Número del documento de pago emitido para sustentar la prestación \nEn formato: XXXX99999999\
+      \ (serienúmero)."
+    criterios_texto: 'C1: En caso el documento de pago sea electrónico, los primeros cuatro caracteres
+      correspondientes a la serie  podrán ser alfanuméricos (Ejem: F00200025654).
+
+      C2: En caso el documento de pago NO sea electrónico y la serie corresponda a tres caracteres, se
+      deberá completar el cuarto carácter con el cero (Ejem: 000100021452).
+
+      C3: El número contiene caracteres entre [0 al 9].
+
+      C4: En caso que el Tipo de Documento de Pago es igual a 11, el código debe ser único y asignado
+      por la IAFAS según el formato [año (4 dígitos) seguido del número correlativo de la atención (completado
+      con ceros a la izquierda a 8 dígitos)] (Ejem: 202200001234)'
+  - numero: 5
+    nombre: Correlativo de la prestación
+    obligatorio: true
+    longitud: 5
+    decimales: null
+    posicion_inicial: 34
+    descripcion: El número debe estar en concordancia con el campo 5 de la tabla 2
+    criterios_texto: 'C1. El campo debe contener caracteres que corresponden al rango numérico del [0
+      al 9].
+
+      C2. El correlativo debe ser menor o igual al campo "Cantidad de prestaciones de salud" del documento
+      facturador de la tabla 1.
+
+      C3. El correlativo de la prestación debe estar ordenado de forma ascendente'
+  - numero: 6
+    nombre: Correlativo del servicio
+    obligatorio: true
+    longitud: 4
+    decimales: null
+    posicion_inicial: 39
+    descripcion: El número debe estar en concordancia con el campo 6 de la tabla  3
+    criterios_texto: 'C1. El campo debe contener caracteres que corresponden al rango numérico del [0
+      al 9].
+
+      C2. El correlativo debe ser menor o igual al campo "Cantidad de prestaciones de salud" del documento
+      facturador de la tabla 1.
+
+      C3. El correlativo del servicio debe estar ordenado de forma ascendente'
+  - numero: 7
+    nombre: Correlativo del parámetro
+    obligatorio: true
+    longitud: 4
+    decimales: null
+    posicion_inicial: 43
+    descripcion: Correlativo de la actividad preventiva, vacunación u otro brindada en una prestación
+      El Correlativo debe ser por prestación
+    criterios_texto: 'C1. El campo debe contener caracteres que corresponden al rango numérico del [0
+      al 9].
+
+      C2. El correlativo del parámetro debe estar ordenado de forma ascendente'
+  - numero: 8
+    nombre: Código del parámetro medido en la actividad
+    obligatorio: true
+    longitud: 3
+    decimales: null
+    posicion_inicial: 47
+    descripcion: Código de la actividad preventiva, vacunación u otro brindado en la prestación. El código
+      debe estar registrado en el catálogo de Actividades Adicionales.
+    criterios_texto: C1. Solo debe contener uno de los valores definidos
+  - numero: 9
+    nombre: Valor del parámetro
+    obligatorio: true
+    longitud: 15
+    decimales: null
+    posicion_inicial: 50
+    descripcion: Valor obtenido de la actividad reportada
+    criterios_texto: C1. Solo debe contener uno de los valores definidos

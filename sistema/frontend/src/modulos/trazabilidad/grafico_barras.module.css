@@ -1,0 +1,111 @@
+.grafico {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio_1);
+}
+
+.fila {
+  display: grid;
+  grid-template-columns: minmax(110px, 190px) minmax(60px, 1fr) minmax(72px, auto);
+  align-items: center;
+  gap: var(--espacio_3);
+  width: 100%;
+  padding: var(--espacio_1) var(--espacio_2);
+  border: none;
+  border-radius: var(--radio_borde);
+  background: none;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+}
+
+.fila_pulsable {
+  cursor: pointer;
+}
+
+/* La fila responde al cursor y al foco del teclado con el mismo lavado
+   suave: el lector ve que la barra es pulsable antes de pulsarla. */
+.fila_pulsable:hover,
+.fila_pulsable:focus-visible {
+  background-color: var(--color_primario_suave);
+}
+
+/* Hasta dos lineas: los nombres de IAFAS son largos y cortarlos en
+   una sola linea escondia justo la parte que las distingue. */
+.etiqueta {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: var(--tamano_base);
+  line-height: 1.3;
+  color: var(--color_texto);
+}
+
+/* Sin pista de fondo: las barras comparan magnitudes sobre una misma
+   linea base, no "cuanto falta para llenar". */
+.pista {
+  display: flex;
+  height: 14px;
+}
+
+/* Extremo de dato redondeado, base recta (la barra nace de la linea
+   base). El ancho minimo deja ver un valor muy chico sin mentir sobre
+   su tamano: el numero exacto va al costado. */
+.relleno {
+  display: block;
+  height: 100%;
+  min-width: 2px;
+  border-radius: 0 4px 4px 0;
+  transition: width 0.2s ease;
+}
+
+.tono_primario,
+.tono_azul {
+  background-color: var(--color_grafico_proceso);
+}
+
+.tono_gris {
+  background-color: var(--color_texto_secundario);
+}
+
+.tono_ambar {
+  background-color: var(--color_grafico_alerta);
+}
+
+.tono_verde {
+  background-color: var(--color_grafico_exito);
+}
+
+.tono_rojo {
+  background-color: var(--color_grafico_critico);
+}
+
+.tono_atenuado {
+  background-color: var(--color_grafico_atenuado);
+}
+
+.valor {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  white-space: nowrap;
+}
+
+.valor_numero {
+  font-size: var(--tamano_base);
+  font-weight: var(--peso_enfasis);
+  font-variant-numeric: tabular-nums;
+  color: var(--color_texto);
+}
+
+.detalle {
+  font-weight: var(--peso_normal);
+  color: var(--color_texto_secundario);
+  font-size: var(--tamano_metadato);
+}
+
+.vacio {
+  color: var(--color_texto_secundario);
+  font-size: var(--tamano_base);
+}

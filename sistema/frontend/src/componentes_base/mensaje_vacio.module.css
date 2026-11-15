@@ -1,0 +1,7 @@
+.contenedor {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--espacio_8) var(--espacio_4);
+  color: var(--color_texto_secundario);
+}

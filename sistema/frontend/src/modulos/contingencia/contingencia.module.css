@@ -1,0 +1,90 @@
+/* Aviso de plataforma no disponible con la accion de registro manual
+   (RF-23): mismo lenguaje que Mensaje de tipo advertencia, con la accion
+   a la derecha. */
+.aviso {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espacio_4);
+  padding: var(--espacio_3) var(--espacio_4);
+  margin: var(--espacio_3) 0;
+  background-color: var(--color_advertencia_suave);
+  border-left: 4px solid var(--color_advertencia);
+  border-radius: var(--radio_borde);
+  color: var(--color_texto);
+}
+
+.texto_aviso {
+  margin: 0;
+  font-size: var(--tamano_metadato);
+}
+
+.formulario {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 var(--espacio_4);
+}
+
+.ancho_completo {
+  grid-column: 1 / -1;
+}
+
+.nota {
+  margin: 0 0 var(--espacio_3);
+  font-size: var(--tamano_metadato);
+  color: var(--color_texto_secundario);
+}
+
+.campo_archivo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio_1);
+  margin-bottom: var(--espacio_4);
+  font-size: var(--tamano_metadato);
+  color: var(--color_texto_secundario);
+}
+
+.filtros {
+  margin-bottom: var(--espacio_4);
+}
+
+.revision {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--espacio_2);
+  border-radius: 999px;
+  font-size: var(--tamano_metadato);
+  font-weight: var(--peso_medio);
+  white-space: nowrap;
+}
+
+.PENDIENTE {
+  background-color: var(--color_advertencia_suave);
+  color: var(--color_advertencia);
+}
+
+.CONFORME {
+  background-color: var(--color_exito_suave);
+  color: var(--color_exito);
+}
+
+.NO_CONFORME {
+  background-color: var(--color_error_suave);
+  color: var(--color_error);
+}
+
+.enlace {
+  color: var(--color_primario);
+  font-weight: var(--peso_enfasis);
+}
+
+@media (max-width: 640px) {
+  .aviso {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .formulario {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

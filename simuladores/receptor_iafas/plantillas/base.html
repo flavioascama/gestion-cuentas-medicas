@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>{% block titulo %}Simulador receptor IAFAS{% endblock %}</title>
+  <style>
+    body { font-family: sans-serif; margin: 2rem; color: #1a1a1a; }
+    .aviso { background: #fff3cd; border: 1px solid #d1a441; padding: 0.75rem 1rem; margin-bottom: 1.5rem; font-weight: bold; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #ccc; padding: 0.4rem 0.6rem; text-align: left; font-size: 0.9rem; }
+    th { background: #f0f0f0; }
+    .ACEPTADO { color: #146c2e; font-weight: bold; }
+    .RECHAZADO { color: #a11212; font-weight: bold; }
+    .motivo { font-size: 0.85rem; color: #555; }
+  </style>
+</head>
+<body>
+  <div class="aviso" id="aviso-simulacion" data-testid="aviso-simulacion">
+    ENTORNO DE SIMULACIÓN. NO CORRESPONDE A UN SISTEMA OFICIAL.<br>
+    Este procesador no es el validador oficial de SUSALUD (Sección 9.2 del plan de proyecto).
+  </div>
+  {% block contenido %}{% endblock %}
+</body>
+</html>

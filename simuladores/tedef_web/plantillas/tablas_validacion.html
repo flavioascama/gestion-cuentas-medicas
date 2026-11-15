@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block titulo %}Tablas de Validación - Validador de facturación electrónica{% endblock %}
+{% block contenido %}
+  <h1>Tablas de Validación</h1>
+  <div class="tarjeta">
+    <table data-testid="tabla-dominios">
+      <thead><tr><th>Tabla</th><th>Campo</th><th>Valores</th><th></th></tr></thead>
+      <tbody>
+        {% for d in dominios %}
+        <tr data-testid="fila-dominio">
+          <td>{{ d.tabla }}</td>
+          <td>{{ d.nombre }}</td>
+          <td>{{ d.valores|sort|join(", ") }}</td>
+          <td>
+            <a href="/tablas-validacion/{{ d.tabla }}/{{ d.campo }}" data-testid="ver-dominio-{{ d.tabla }}-{{ d.campo }}">Ver</a>
+            <a href="/tablas-validacion/{{ d.tabla }}/{{ d.campo }}.xlsx" data-testid="descargar-dominio-{{ d.tabla }}-{{ d.campo }}">Descargar Excel</a>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4">No hay tablas de validación configuradas.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}

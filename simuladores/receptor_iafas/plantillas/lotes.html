@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block titulo %}Lotes recibidos - Simulador receptor IAFAS{% endblock %}
+{% block contenido %}
+  <h1>Lotes recibidos</h1>
+  <table data-testid="tabla-lotes">
+    <thead>
+      <tr>
+        <th>Número de lote</th>
+        <th>Archivo</th>
+        <th>IAFAS</th>
+        <th>IPRESS</th>
+        <th>Fecha de recepción</th>
+        <th>Estado</th>
+        <th>Motivo</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for lote in lotes %}
+      <tr data-testid="fila-lote" data-archivo="{{ lote.nombre_archivo }}">
+        <td>{{ lote.numero_lote or "-" }}</td>
+        <td><a href="/lotes/{{ lote.nombre_archivo }}" data-testid="enlace-detalle">{{ lote.nombre_archivo }}</a></td>
+        <td>{{ lote.codigo_iafas or "-" }}</td>
+        <td>{{ lote.codigo_ipress or "-" }}</td>
+        <td>{{ lote.recibido_en }}</td>
+        <td class="{{ lote.estado }}" data-testid="estado-lote">{{ lote.estado }}{% if lote.forzado %} (forzado){% endif %}</td>
+        <td class="motivo">{{ lote.motivo or "" }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="7">Todavía no se recibió ningún lote.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}

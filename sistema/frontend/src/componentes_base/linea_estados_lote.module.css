@@ -1,0 +1,59 @@
+.linea {
+  display: flex;
+  align-items: flex-start;
+  background-color: var(--color_superficie);
+  border: 1px solid var(--color_borde);
+  border-radius: var(--radio_borde);
+  padding: var(--espacio_6) var(--espacio_4);
+  margin-bottom: var(--espacio_4);
+}
+
+.paso {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--espacio_2);
+  position: relative;
+}
+
+.paso:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 6px;
+  left: calc(50% + 14px);
+  right: calc(-50% + 14px);
+  height: 1px;
+  background-color: var(--color_borde);
+}
+
+.punto {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: var(--color_borde);
+  z-index: 1;
+}
+
+.completado {
+  background-color: var(--color_exito);
+}
+
+.actual {
+  background-color: var(--color_primario);
+}
+
+.error {
+  background-color: var(--color_error);
+}
+
+.etiqueta {
+  font-size: var(--tamano_metadato);
+  font-weight: var(--peso_enfasis);
+}
+
+.fecha_hora {
+  font-size: var(--tamano_metadato);
+  color: var(--color_texto_secundario);
+}

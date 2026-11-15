@@ -1,0 +1,50 @@
+# Simulador independiente (Regla 0.5): su propio docker-compose, sus
+# propias dependencias, su propio contenedor. Se levanta por separado del
+# docker-compose.yml de la raiz:
+#   docker network create red_oe1_simuladores   (una sola vez)
+#   cd simuladores/receptor_iafas
+#   cp .env.ejemplo .env
+#   docker compose up -d --build
+#
+# El puerto FTP (21) y el de administracion pasiva NO se publican al host:
+# solo hace falta que el backend, en la red `red_oe1_simuladores`, los
+# alcance por el nombre de este servicio. El puerto del portal web (8000)
+# si se publica, para que una persona lo abra en el navegador.
+
+services:
+  receptor-iafas:
+    build:
+      context: .
+    env_file:
+      - .env
+    environment:
+      BANDEJA_ENTRADA: /datos/bandeja_entrada
+      BASE_DATOS: /datos/receptor_iafas.sqlite3
+      RUTA_SIMULADORES_DATOS_SEMILLA: /datos_semilla
+      # Correo de la IAFAS a la IPRESS (simuladores/correo, en la misma red).
+      SMTP_HOST: ${SMTP_HOST:-correo}
+      SMTP_PUERTO: ${SMTP_PUERTO:-3025}
+    ports:
+      - "${PORTAL_PUERTO_HOST:-8101}:8000"
+      # Publicados tambien al host solo para permitir un cliente FTP manual
+      # de diagnostico (por ejemplo FileZilla) desde Windows; el backend en
+      # Docker no los usa (llega por la red compartida, ver arriba).
+      - "${FTP_PUERTO_HOST:-2121}:21"
+      - "${FTP_PUERTOS_PASIVOS_DESDE:-30000}-${FTP_PUERTOS_PASIVOS_HASTA:-30009}:30000-30009"
+    volumes:
+      - ./:/app
+      - venv_receptor_iafas:/app/.venv
+      # Solo lectura (Seccion 9.3): claves_iafas.json, para descifrar el
+      # .S01 -- el mismo archivo que TEDEF Web usa para cifrarlo.
+      - ../datos_semilla:/datos_semilla:ro
+      - datos_receptor_iafas:/datos
+    networks:
+      - red_oe1_simuladores
+
+networks:
+  red_oe1_simuladores:
+    external: true
+
+volumes:
+  venv_receptor_iafas:
+  datos_receptor_iafas:

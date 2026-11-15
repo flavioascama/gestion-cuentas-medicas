@@ -1,0 +1,754 @@
+# Dominios enumerados candidatos (Seccion 7.4). Generado por
+# herramientas/extraer_dominios.py: TODOS nacen con
+# 'confirmado: false'. Un dominio no confirmado produce
+# advertencia en el validador, nunca rechazo. Cambiar a
+# 'confirmado: true' es una decision humana, campo por campo,
+# tras comparar contra el Anexo 1 y, si corresponde, contra el
+# catalogo oficial de SUSALUD.
+- tabla: T1
+  campo: 7
+  nombre: Tipo Documento de Pago
+  confirmado: false
+  valores:
+  - codigo: '01'
+    etiqueta: Factura.
+  - codigo: '02'
+    etiqueta: Recibo por honorarios.
+  - codigo: '03'
+    etiqueta: Boleta de venta.
+  - codigo: '04'
+    etiqueta: Liquidación de compra.
+  - codigo: '05'
+    etiqueta: Boleto de aviación comercial para transporte de pasajeros.
+  - codigo: 09
+    etiqueta: Ticket o cinta emitido por máquina registradora
+  - codigo: '10'
+    etiqueta: Formato Único de Atención - FUA
+  - codigo: '11'
+    etiqueta: Código Único de Atención (asignado por IAFAS pública)
+  - codigo: '99'
+    etiqueta: Otros documentos autorizados por la SUNAT
+- tabla: T1
+  campo: 12
+  nombre: Mecanismo de Pago
+  confirmado: false
+  valores:
+  - codigo: '01'
+    etiqueta: Pago por servicio (Pago según lo gastado en la atención y bajo la condición de que se trate
+      de gastos cubiertos en el plan de salud del paciente)
+  - codigo: '02'
+    etiqueta: Pacientes mes (Asignación de un monto mensual convenido entre la IAFAS e IPRESS para la
+      atención ambulatoria del paciente en el mes, activado si se da la demanda de servicios)
+  - codigo: '03'
+    etiqueta: Paquete quirúrgico (Asignación de un monto fijo convenido entre IAFAS e IPRESS por tipo
+      de intervención quirúrgica y que cubre los gastos convenidos)
+  - codigo: '04'
+    etiqueta: Capitación (Pago en el cual los proveedores reciben una cantidad fija acordada de antemano
+      por cada asegurado que se inscriba con ellos. El financiamiento no depende de la utilización que
+      haga el asegurado de los servicios de salud)
+  - codigo: '06'
+    etiqueta: Pago fijo por atención (Pago en el cual los proveedores reciben una cantidad fija acordada
+      de antemano por cada prestación realizada)
+  - codigo: '99'
+    etiqueta: Otros mecanismos de pago
+- tabla: T1
+  campo: 25
+  nombre: Tipo de identificación de la Nota
+  confirmado: false
+  valores:
+  - codigo: C
+    etiqueta: Nota de Crédito.
+  - codigo: D
+    etiqueta: Nota de Débito.
+  - codigo: N
+    etiqueta: Ningún documento de referencia.
+- tabla: T1
+  campo: 29
+  nombre: Motivo de la Nota
+  confirmado: false
+  valores:
+  - codigo: R
+    etiqueta: Reingreso
+  - codigo: A
+    etiqueta: Anulación
+  - codigo: D
+    etiqueta: Descuento Parcial
+- tabla: T1
+  campo: 31
+  nombre: Indicador de Factura Global
+  confirmado: false
+  valores:
+  - codigo: N
+    etiqueta: Individual
+  - codigo: S
+    etiqueta: Global
+- tabla: T2
+  campo: 3
+  nombre: Tipo Documento de Pago
+  confirmado: false
+  valores:
+  - codigo: '01'
+    etiqueta: Factura.
+  - codigo: '02'
+    etiqueta: Recibo por honorarios.
+  - codigo: '03'
+    etiqueta: Boleta de venta.
+  - codigo: '04'
+    etiqueta: Liquidación de compra.
+  - codigo: '05'
+    etiqueta: Boleto de aviación comercial para transporte de pasajeros.
+  - codigo: 09
+    etiqueta: Ticket o cinta emitido por máquina registradora
+  - codigo: '10'
+    etiqueta: Formato Único de Atención - FUA
+  - codigo: '11'
+    etiqueta: Código Único de Atención (asignado por IAFAS pública)
+  - codigo: '99'
+    etiqueta: Otros documentos autorizados por la SUNAT
+- tabla: T2
+  campo: 7
+  nombre: Tipo de Afiliación del Paciente
+  confirmado: false
+  valores:
+  - codigo: '1'
+    etiqueta: Regular
+  - codigo: '2'
+    etiqueta: SCTR
+  - codigo: '3'
+    etiqueta: Potestativo (Independiente)
+  - codigo: '4'
+    etiqueta: SCTR Independiente
+  - codigo: '5'
+    etiqueta: Otros contributivos y complementario
+  - codigo: '6'
+    etiqueta: SOAT
+  - codigo: '7'
+    etiqueta: AFOCAT
+  - codigo: '8'
+    etiqueta: SIS Subsidiado
+  - codigo: '9'
+    etiqueta: Semi contributivo
+- tabla: T2
+  campo: 9
+  nombre: Tipo de documento de identidad
+  confirmado: false
+  valores:
+  - codigo: '1'
+    etiqueta: DNI
+  - codigo: '2'
+    etiqueta: Carnet de extranjería
+  - codigo: '3'
+    etiqueta: Pasaporte
+  - codigo: '4'
+    etiqueta: Documento de Identidad Extranjero
+  - codigo: '5'
+    etiqueta: Código Unico de Identificación (CUI) en Acta de Nacimiento
+  - codigo: '6'
+    etiqueta: Código Nacido Vivo (CNV)
+  - codigo: '7'
+    etiqueta: Sin Documento de Identidad
+  - codigo: A
+    etiqueta: Permiso Temporal de  Permanencia
+- tabla: T2
+  campo: 12
+  nombre: Documento de autorización de la prestación
+  confirmado: false
+  valores:
+  - codigo: '01'
+    etiqueta: Solicitud de Atención Médica (Solicitud de Beneficio) / SITEDS
+  - codigo: '02'
+    etiqueta: Solicitud de Chequeo Médico / SITEDS
+  - codigo: '03'
+    etiqueta: Carta de Garantía
+  - codigo: '04'
+    etiqueta: Por código
+  - codigo: '06'
+    etiqueta: Otro Tipo de Autorización
+  - codigo: '07'
+    etiqueta: Declaración de Accidente
+  - codigo: '99'
+    etiqueta: No aplica
+- tabla: T2
+  campo: 14
+  nombre: Segundo Documento de autorización de la prestación
+  confirmado: false
+  valores:
+  - codigo: '01'
+    etiqueta: Solicitud de Atención Médica (Solicitud de Beneficio) / SITEDS
+  - codigo: '02'
+    etiqueta: Solicitud de Chequeo Médico / SITEDS
+  - codigo: '03'
+    etiqueta: Carta de Garantía
+  - codigo: '04'
+    etiqueta: Por código
+  - codigo: '06'
+    etiqueta: Otro Tipo de Autorización
+  - codigo: '07'
+    etiqueta: Declaración de Accidente
+  - codigo: '99'
+    etiqueta: No aplica
+- tabla: T2
+  campo: 16
+  nombre: Tipo de Cobertura o Tipo de Prestación
+  confirmado: false
+  valores:
+  - codigo: '0'
+    etiqueta: No aplica. (sepelio, prestaciones económicas, etc.)
+  - codigo: '1'
+    etiqueta: Extra hospitalario
+  - codigo: '2'
+    etiqueta: Médico en planta
+  - codigo: '3'
+    etiqueta: Medicinas alternativas
+  - codigo: '4'
+    etiqueta: Ambulatorio
+  - codigo: '5'
+    etiqueta: Hospitalaria
+  - codigo: '6'
+    etiqueta: Emergencia
+  - codigo: '8'
+    etiqueta: Integral (Exclusivo para el SIS)
+  - codigo: '9'
+    etiqueta: Otros
+- tabla: T2
+  campo: 23
+  nombre: Tipo del Profesional Responsable de la Prestación
+  confirmado: false
+  valores:
+  - codigo: '00'
+    etiqueta: Profesional sin colegiatura
+  - codigo: '01'
+    etiqueta: Colegio Médico del Perú
+  - codigo: '02'
+    etiqueta: Colegio Químico Farmacéutico del Perú
+  - codigo: '03'
+    etiqueta: Colegio Odontológico del Perú
+  - codigo: '04'
+    etiqueta: Colegio de Biólogos del Perú
+  - codigo: '05'
+    etiqueta: Colegio de Obstetras del Perú
+  - codigo: '06'
+    etiqueta: Colegio de Enfermeros del Perú
+  - codigo: '07'
+    etiqueta: Colegio de Trabajadores Sociales del Perú
+  - codigo: 08
+    etiqueta: Colegio de Psicólogos del Perú
+  - codigo: 09
+    etiqueta: Colegio de Tecnólogos Médicos del Perú
+  - codigo: '10'
+    etiqueta: Colegio de Nutricionistas del Perú
+  - codigo: '91'
+    etiqueta: Lic. en Educación Especial
+- tabla: T2
+  campo: 25
+  nombre: Tipo de documento de identidad del Profesional Responsable de la Prestación
+  confirmado: false
+  valores:
+  - codigo: '1'
+    etiqueta: DNI
+  - codigo: '2'
+    etiqueta: Carnet de extranjería
+  - codigo: '3'
+    etiqueta: Pasaporte
+  - codigo: '4'
+    etiqueta: Documento de Identidad Extranjero
+  - codigo: A
+    etiqueta: Permiso Temporal de  Permanencia
+- tabla: T2
+  campo: 30
+  nombre: Tipo de Hospitalización
+  confirmado: false
+  valores:
+  - codigo: C
+    etiqueta: Hospitalización Clínica, no se efectúa procedimiento quirúrgico.
+  - codigo: Q
+    etiqueta: Hospitalización Quirúrgica, se efectúa un procedimiento quirúrgico o de naturaleza obstétrica
+      (cesáreas).
+  - codigo: N
+    etiqueta: No aplica
+- tabla: T2
+  campo: 33
+  nombre: Tipo de Egreso Hospitalario
+  confirmado: false
+  valores:
+  - codigo: '01'
+    etiqueta: Alta Médica
+  - codigo: '02'
+    etiqueta: Alta Voluntaria
+  - codigo: '03'
+    etiqueta: Transferencia a otro establecimiento de IAFAS
+  - codigo: '04'
+    etiqueta: Transferencia a ESSALUD
+  - codigo: '05'
+    etiqueta: Fuga o Abandono
+  - codigo: '06'
+    etiqueta: Defunción (fecha de defunción)
+  - codigo: '07'
+    etiqueta: Egreso de facturación (Sigue hospitalizado)
+- tabla: T3
+  campo: 3
+  nombre: Tipo Documento de Pago
+  confirmado: false
+  valores:
+  - codigo: '01'
+    etiqueta: Factura.
+  - codigo: '02'
+    etiqueta: Recibo por honorarios.
+  - codigo: '03'
+    etiqueta: Boleta de venta.
+  - codigo: '04'
+    etiqueta: Liquidación de compra.
+  - codigo: '05'
+    etiqueta: Boleto de aviación comercial para transporte de pasajeros.
+  - codigo: 09
+    etiqueta: Ticket o cinta emitido por máquina registradora
+  - codigo: '10'
+    etiqueta: Formato Único de Atención - FUA
+  - codigo: '11'
+    etiqueta: Código Único de Atención (asignado por IAFAS pública)
+  - codigo: '99'
+    etiqueta: Otros documentos autorizados por la SUNAT
+- tabla: T3
+  campo: 7
+  nombre: Tipo Clasificación de Procedimiento y/o Servicio
+  confirmado: false
+  valores:
+  - codigo: '01'
+    etiqueta: 'De acuerdo a la IEDS: Identificaciones Estándar de Datos en Salud. Catálogo de Procedimientos
+      Médicos y Sanitarios del Sector Salud (CPMS) publicado con Resolución Ministerial N° 902-2017-MINSA
+      y actualizaciones publicadas por el Ministerio de Salud.'
+  - codigo: '03'
+    etiqueta: Otra clasificación según catálogo de la IPRESS
+  - codigo: '04'
+    etiqueta: Cátalogo de Servicios Administrativos, publicado por el MINSA o en su defecto por SUSALUD.
+- tabla: T3
+  campo: 11
+  nombre: Tipo del Profesional Responsable de la Prestación
+  confirmado: false
+  valores:
+  - codigo: '00'
+    etiqueta: Profesional sin colegiatura
+  - codigo: '01'
+    etiqueta: Colegio Médico del Perú
+  - codigo: '02'
+    etiqueta: Colegio Químico Farmacéutico del Perú
+  - codigo: '03'
+    etiqueta: Colegio Odontológico del Perú
+  - codigo: '04'
+    etiqueta: Colegio de Biólogos del Perú
+  - codigo: '05'
+    etiqueta: Colegio de Obstetras del Perú
+  - codigo: '06'
+    etiqueta: Colegio de Enfermeros del Perú
+  - codigo: '07'
+    etiqueta: Colegio de Trabajadores Sociales del Perú
+  - codigo: 08
+    etiqueta: Colegio de Psicólogos del Perú
+  - codigo: 09
+    etiqueta: Colegio de Tecnólogos Médicos del Perú
+  - codigo: '10'
+    etiqueta: Colegio de Nutricionistas del Perú
+  - codigo: '91'
+    etiqueta: Lic. en Educación Especial
+- tabla: T3
+  campo: 13
+  nombre: Tipo de documento de identidad del Profesional Responsable de la Prestación
+  confirmado: false
+  valores:
+  - codigo: '1'
+    etiqueta: DNI
+  - codigo: '2'
+    etiqueta: Carnet de extranjería
+  - codigo: '3'
+    etiqueta: Pasaporte
+  - codigo: '4'
+    etiqueta: Documento de Identidad Extranjero
+  - codigo: A
+    etiqueta: Permiso Temporal de  Permanencia
+- tabla: T3
+  campo: 22
+  nombre: Servicio Exento de Impuestos
+  confirmado: false
+  valores:
+  - codigo: A
+    etiqueta: Servicio No exonerado de Impuesto
+  - codigo: D
+    etiqueta: Servicio Exonerado de Impuesto
+- tabla: T4
+  campo: 3
+  nombre: Tipo Documento de Pago
+  confirmado: false
+  valores:
+  - codigo: '01'
+    etiqueta: Factura.
+  - codigo: '02'
+    etiqueta: Recibo por honorarios.
+  - codigo: '03'
+    etiqueta: Boleta de venta.
+  - codigo: '04'
+    etiqueta: Liquidación de compra.
+  - codigo: '05'
+    etiqueta: Boleto de aviación comercial para transporte de pasajeros.
+  - codigo: 09
+    etiqueta: Ticket o cinta emitido por máquina registradora
+  - codigo: '10'
+    etiqueta: Formato Único de Atención - FUA
+  - codigo: '11'
+    etiqueta: Código Único de Atención (asignado por IAFAS pública)
+  - codigo: '99'
+    etiqueta: Otros documentos autorizados por la SUNAT
+- tabla: T4
+  campo: 7
+  nombre: Tipo de producto
+  confirmado: false
+  valores:
+  - codigo: M
+    etiqueta: Medicamento o producto de origen biológico
+  - codigo: P
+    etiqueta: Suplemento dietético, edulcorante, producto galénico, producto natural, agente de diagnóstico,
+      radiofármaco o gas medicinal.
+  - codigo: I
+    etiqueta: Insumo, material, dispositivo médico o prótesis
+  - codigo: R
+    etiqueta: Preparado magistral
+  - codigo: B
+    etiqueta: Productos sanitarios o cosméticos
+  - codigo: A
+    etiqueta: Suplemento alimenticio
+- tabla: T4
+  campo: 8
+  nombre: Catálogo
+  confirmado: false
+  valores:
+  - codigo: '1'
+    etiqueta: 'Catálogo GTIN (EAN), según el DS 024-2005-SA: Identificación de Datos Estándar en Salud.
+      Se acepta GTIN-8, GTIN-12 o GTIN 13'
+  - codigo: '2'
+    etiqueta: Código de productos y servicios estándar de las Naciones Unidas (UNSPSC) según lo publicado
+      por la SUNAT.
+  - codigo: '3'
+    etiqueta: Catálogo SISMED del Ministerio de Salud.
+  - codigo: '9'
+    etiqueta: No aplica
+- tabla: T4
+  campo: 12
+  nombre: Tipo de unidad de dispensación
+  confirmado: false
+  valores:
+  - codigo: '1'
+    etiqueta: Por empaque
+  - codigo: '2'
+    etiqueta: Por fracción
+- tabla: T4
+  campo: 18
+  nombre: Productos Exento de IGV
+  confirmado: false
+  valores:
+  - codigo: A
+    etiqueta: Producto No exonerado de Impuesto
+  - codigo: D
+    etiqueta: Producto Exonerado de Impuesto
+- tabla: T5
+  campo: 3
+  nombre: Tipo Documento de Pago
+  confirmado: false
+  valores:
+  - codigo: '01'
+    etiqueta: Factura.
+  - codigo: '02'
+    etiqueta: Recibo por honorarios.
+  - codigo: '03'
+    etiqueta: Boleta de venta.
+  - codigo: '04'
+    etiqueta: Liquidación de compra.
+  - codigo: '05'
+    etiqueta: Boleto de aviación comercial para transporte de pasajeros.
+  - codigo: 09
+    etiqueta: Ticket o cinta emitido por máquina registradora
+  - codigo: '10'
+    etiqueta: Formato Único de Atención - FUA
+  - codigo: '11'
+    etiqueta: Código Único de Atención (asignado por IAFAS pública)
+  - codigo: '99'
+    etiqueta: Otros documentos autorizados por la SUNAT
+- tabla: T6
+  campo: 3
+  nombre: Tipo documento que sustenta la prestación
+  confirmado: false
+  valores:
+  - codigo: '01'
+    etiqueta: Factura.
+  - codigo: '02'
+    etiqueta: Recibo por honorarios.
+  - codigo: '03'
+    etiqueta: Boleta de venta.
+  - codigo: '04'
+    etiqueta: Liquidación de compra.
+  - codigo: '05'
+    etiqueta: Boleto de aviación comercial para transporte de pasajeros.
+  - codigo: 09
+    etiqueta: Ticket o cinta emitido por máquina registradora
+  - codigo: '10'
+    etiqueta: Formato Único de Atención - FUA
+  - codigo: '11'
+    etiqueta: Código Único de Atención (asignado por IAFAS pública)
+  - codigo: '99'
+    etiqueta: Otros documentos autorizados por la SUNAT
+- tabla: T6
+  campo: 8
+  nombre: Procedencia de la prestación
+  confirmado: false
+  valores:
+  - codigo: '01'
+    etiqueta: Por referencia desde otra IPRESS
+  - codigo: '02'
+    etiqueta: Por interconsulta de otro servicio de la misma IPRESS
+  - codigo: '03'
+    etiqueta: Por Control o seguimiento de una consulta  anterior
+  - codigo: '06'
+    etiqueta: Por contrarreferencia
+  - codigo: '07'
+    etiqueta: Del servicio de Emergencia
+  - codigo: 08
+    etiqueta: Sin indicación de algún profesional de la salud
+  - codigo: 09
+    etiqueta: Otros
+- tabla: T6
+  campo: 9
+  nombre: Lugar de atención
+  confirmado: false
+  valores:
+  - codigo: '1'
+    etiqueta: Intramural
+  - codigo: '2'
+    etiqueta: Extramural
+- tabla: T6
+  campo: 15
+  nombre: Grupo De Riesgo HVB
+  confirmado: false
+  valores:
+  - codigo: '1'
+    etiqueta: Trabajador De Salud
+  - codigo: '2'
+    etiqueta: Trabajadores Sexuales
+  - codigo: '3'
+    etiqueta: HSH
+  - codigo: '4'
+    etiqueta: Privado Libertad
+  - codigo: '5'
+    etiqueta: FF. AA.
+  - codigo: '6'
+    etiqueta: Policía Nacional
+  - codigo: '7'
+    etiqueta: Estudiantes De Salud
+  - codigo: '8'
+    etiqueta: Politranfundidos
+  - codigo: '9'
+    etiqueta: Drogo Dependientes
+- tabla: T6
+  campo: 16
+  nombre: Registro de cita
+  confirmado: false
+  valores:
+  - codigo: '1'
+    etiqueta: Prestación con cita
+  - codigo: '0'
+    etiqueta: Prestación sin cita
+- tabla: T6
+  campo: 19
+  nombre: Sexo del asegurado
+  confirmado: false
+  valores:
+  - codigo: '1'
+    etiqueta: Masculino
+  - codigo: '2'
+    etiqueta: Femenino
+- tabla: T6
+  campo: 26
+  nombre: Estado de la paciente mujer
+  confirmado: false
+  valores:
+  - codigo: '01'
+    etiqueta: Gestante
+  - codigo: '02'
+    etiqueta: No Gestante
+  - codigo: '03'
+    etiqueta: Puerpera
+- tabla: T6
+  campo: 29
+  nombre: Tipo de Nacido
+  confirmado: false
+  valores:
+  - codigo: '1'
+    etiqueta: Unico
+  - codigo: '2'
+    etiqueta: Doble
+  - codigo: '3'
+    etiqueta: Triple
+  - codigo: '4'
+    etiqueta: Mas de 3
+- tabla: T6
+  campo: 30
+  nombre: Tipo de Parto
+  confirmado: false
+  valores:
+  - codigo: '1'
+    etiqueta: Cesarea
+  - codigo: '2'
+    etiqueta: Espontaneo
+  - codigo: '3'
+    etiqueta: Instrumentado
+  - codigo: '4'
+    etiqueta: No se conoce
+  - codigo: '5'
+    etiqueta: Otros
+- tabla: T6
+  campo: 31
+  nombre: Sexo del recién nacido
+  confirmado: false
+  valores:
+  - codigo: '1'
+    etiqueta: Masculino
+  - codigo: '2'
+    etiqueta: Femenino
+  - codigo: '3'
+    etiqueta: Sin determinar aun
+- tabla: T6
+  campo: 42
+  nombre: Origen del personal que atiende
+  confirmado: false
+  valores:
+  - codigo: '1'
+    etiqueta: De la IPRESS
+  - codigo: '2'
+    etiqueta: Itinerante
+  - codigo: '4'
+    etiqueta: Oferta flexible
+- tabla: T6
+  campo: 52
+  nombre: Prioridad de la Emergencia
+  confirmado: false
+  valores:
+  - codigo: '01'
+    etiqueta: Prioridad I
+  - codigo: '02'
+    etiqueta: Prioridad II
+  - codigo: '03'
+    etiqueta: Prioridad III
+  - codigo: '04'
+    etiqueta: Prioridad IV
+- tabla: T6
+  campo: 55
+  nombre: Desenlace de la prestación
+  confirmado: false
+  valores:
+  - codigo: '01'
+    etiqueta: Tratamiento ambulatorio
+  - codigo: '02'
+    etiqueta: Interconsulta
+  - codigo: '03'
+    etiqueta: Referencia
+  - codigo: '04'
+    etiqueta: Contrarreferencia
+  - codigo: '05'
+    etiqueta: Hospitalización
+  - codigo: '06'
+    etiqueta: Emergencia
+  - codigo: '07'
+    etiqueta: Fallecimiento
+  - codigo: 08
+    etiqueta: Alta Médica
+  - codigo: 09
+    etiqueta: Alta Voluntaria
+  - codigo: '10'
+    etiqueta: Fuga o Abandono
+  - codigo: '11'
+    etiqueta: Otro
+- tabla: T6
+  campo: 58
+  nombre: Grado de Severidad del Incidente o Evento Adverso
+  confirmado: false
+  valores:
+  - codigo: '1'
+    etiqueta: Leve
+  - codigo: '2'
+    etiqueta: Moderado
+  - codigo: '3'
+    etiqueta: Severo
+- tabla: T6
+  campo: 60
+  nombre: Grado de Severidad del Incidente o Evento Adverso
+  confirmado: false
+  valores:
+  - codigo: '1'
+    etiqueta: Leve
+  - codigo: '2'
+    etiqueta: Moderado
+  - codigo: '3'
+    etiqueta: Severo
+- tabla: T7
+  campo: 3
+  nombre: Tipo documento que sustenta la prestación
+  confirmado: false
+  valores:
+  - codigo: '01'
+    etiqueta: Factura.
+  - codigo: '02'
+    etiqueta: Recibo por honorarios.
+  - codigo: '03'
+    etiqueta: Boleta de venta.
+  - codigo: '04'
+    etiqueta: Liquidación de compra.
+  - codigo: '05'
+    etiqueta: Boleto de aviación comercial para transporte de pasajeros.
+  - codigo: 09
+    etiqueta: Ticket o cinta emitido por máquina registradora
+  - codigo: '10'
+    etiqueta: Formato Único de Atención - FUA
+  - codigo: '11'
+    etiqueta: Código Único de Atención (asignado por IAFAS pública)
+  - codigo: '99'
+    etiqueta: Otros documentos autorizados por la SUNAT
+- tabla: T7
+  campo: 7
+  nombre: Identificador de diagnostico
+  confirmado: false
+  valores:
+  - codigo: I
+    etiqueta: Ingreso
+  - codigo: E
+    etiqueta: Egreso
+- tabla: T7
+  campo: 8
+  nombre: Tipo de diagnóstico
+  confirmado: false
+  valores:
+  - codigo: '1'
+    etiqueta: Presuntivo
+  - codigo: '2'
+    etiqueta: Definitivo
+  - codigo: '3'
+    etiqueta: Repetido
+- tabla: T8
+  campo: 3
+  nombre: Tipo documento que sustenta la prestación
+  confirmado: false
+  valores:
+  - codigo: '01'
+    etiqueta: Factura.
+  - codigo: '02'
+    etiqueta: Recibo por honorarios.
+  - codigo: '03'
+    etiqueta: Boleta de venta.
+  - codigo: '04'
+    etiqueta: Liquidación de compra.
+  - codigo: '05'
+    etiqueta: Boleto de aviación comercial para transporte de pasajeros.
+  - codigo: 09
+    etiqueta: Ticket o cinta emitido por máquina registradora
+  - codigo: '10'
+    etiqueta: Formato Único de Atención - FUA
+  - codigo: '11'
+    etiqueta: Código Único de Atención (asignado por IAFAS pública)
+  - codigo: '99'
+    etiqueta: Otros documentos autorizados por la SUNAT

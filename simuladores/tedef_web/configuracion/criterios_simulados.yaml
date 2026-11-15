@@ -1,0 +1,39 @@
+# Subconjunto configurable de criterios adicionales (Seccion 9.2): dominios
+# enumerados que el Anexo 1 no lista en la fila de su propio campo (dice
+# "uno de los valores definidos" sin mas detalle) pero que se pueden
+# confirmar por una cita literal en otra parte del propio Anexo 1. No es
+# exhaustivo a proposito (Seccion 9.2: "un subconjunto configurable"); no
+# se inventa ningun valor sin una cita (Regla 1).
+
+dominios:
+  - tabla: T3
+    campo: 22
+    nombre: "Servicio Exento de Impuestos"
+    valores: ["A", "D"]
+    cita: >
+      Anexo 1, Tabla 3, campo 22, columna Criterios: "El campo debe
+      contener valores 'A' o 'D'." (unico campo de este subconjunto cuyo
+      propio criterio enumera el dominio completo, sin depender de otro
+      campo).
+
+  - tabla: T4
+    campo: 18
+    nombre: "Productos Exento de IGV"
+    valores: ["A", "D"]
+    cita: >
+      Anexo 1, Tabla 4, campo 18, columna Criterios: "El campo debe
+      contener valores 'A' o 'D'." (mismo texto literal que T3 campo 22,
+      Fase 17).
+
+  - tabla: T1
+    campo: 12
+    nombre: "Mecanismo de Pago"
+    valores: ["01", "02", "03", "04", "06"]
+    cita: >
+      El Anexo 1 no enumera el dominio del campo 12 en su propia fila
+      ("uno de los valores definidos"), pero otros campos de la Tabla 1
+      citan valores concretos: campo 15 ("02' o '04' o '06'"), campo 24
+      ("01-Pago por Servicios") y campos 35 a 43 ("diferente a 03"). Solo
+      se incluyen aqui los valores confirmados por esas citas; puede haber
+      valores adicionales del dominio real que el Anexo 1 no menciona en
+      ningun campo y que este subconjunto no cubre.

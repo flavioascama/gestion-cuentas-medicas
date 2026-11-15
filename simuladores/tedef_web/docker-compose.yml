@@ -1,0 +1,55 @@
+# Simulador independiente (Regla 0.5): su propio docker-compose, sus
+# propias dependencias, su propio contenedor. Se levanta por separado:
+#   docker network create red_oe1_simuladores   (una sola vez)
+#   cd simuladores/tedef_web
+#   cp .env.ejemplo .env
+#   docker compose up -d --build
+#
+# Se une a la red externa compartida (misma que simuladores/acredita_salud
+# y simuladores/receptor_iafas) para que el trabajador de fases futuras
+# (robot de Playwright, Fase 16) lo alcance por el nombre de este servicio;
+# el puerto tambien se publica al host para verlo en el navegador.
+#
+# Monta tres cosas de solo lectura, ninguna de ellas codigo (Regla 0.5 solo
+# prohibe compartir codigo con sistema/backend/):
+#   - docs/fuentes: el Anexo 1 vigente, que este simulador parsea con su
+#     propia implementacion (Seccion 9.2: "sin usar el YAML ni el codigo
+#     del backend").
+#   - sistema/backend/pruebas/fixtures: el maestro sintetico de IAFAS e
+#     IPRESS (Seccion 3.3), la misma fuente que usa el backend para poblar
+#     Postgres, para que "la entidad" y el "maestro de IAFAS" de este
+#     simulador coincidan con los de un lote real del backend (ver
+#     docs/DECISIONES.md, Fase 14).
+#   - simuladores/datos_semilla: claves_iafas.json, para cifrar el .S01.
+
+services:
+  tedef-web:
+    build:
+      context: .
+    env_file:
+      - .env
+    environment:
+      RUTA_SIMULADORES_DATOS_SEMILLA: /datos_semilla
+      RUTA_DOCS_FUENTES: /docs_fuentes
+      RUTA_MAESTROS_SINTETICOS: /maestros_sinteticos
+      BASE_DATOS: /datos/tedef_web.sqlite3
+      DIRECTORIO_LOTES: /datos/lotes
+    ports:
+      - "${PORTAL_PUERTO_HOST:-8102}:8000"
+    volumes:
+      - ./:/app
+      - venv_tedef_web:/app/.venv
+      - ../datos_semilla:/datos_semilla:ro
+      - ../../docs/fuentes:/docs_fuentes:ro
+      - ../../sistema/backend/pruebas/fixtures:/maestros_sinteticos:ro
+      - datos_tedef_web:/datos
+    networks:
+      - red_oe1_simuladores
+
+networks:
+  red_oe1_simuladores:
+    external: true
+
+volumes:
+  venv_tedef_web:
+  datos_tedef_web:

@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block titulo %}Ingreso - Validador de facturación electrónica{% endblock %}
+{% block contenido %}
+  <div class="tarjeta" style="max-width:400px; margin: 2rem auto;">
+    <h1>Ingreso</h1>
+    {% if error %}<p class="error" data-testid="error-ingreso">{{ error }}</p>{% endif %}
+    <form method="post" action="/ingreso" data-testid="formulario-ingreso">
+      <label>Usuario
+        <input type="text" name="usuario" data-testid="campo-usuario" required>
+      </label>
+      <label>Contraseña
+        <input type="password" name="clave" data-testid="campo-clave" required>
+      </label>
+      <label>Código de la imagen
+        <img src="/captcha/{{ captcha_id }}.png" alt="CAPTCHA" data-testid="imagen-captcha">
+        <a href="/ingreso" data-testid="enlace-refrescar-captcha">Refrescar imagen</a>
+        <input type="hidden" name="captcha_id" value="{{ captcha_id }}">
+        <input type="text" name="respuesta_captcha" data-testid="campo-captcha" required>
+      </label>
+      <button type="submit" data-testid="boton-ingresar">Ingresar</button>
+    </form>
+  </div>
+{% endblock %}

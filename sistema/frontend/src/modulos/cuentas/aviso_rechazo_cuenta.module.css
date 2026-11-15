@@ -1,0 +1,57 @@
+/* Aviso de cuenta rechazada (T-05): mismo lenguaje que Mensaje de tipo
+   error (fondo suave y borde izquierdo), pero con titulo, detalle y una
+   accion a la derecha, por eso no reusa el componente Mensaje. */
+.aviso {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espacio_6);
+  padding: var(--espacio_4) var(--espacio_6);
+  margin-bottom: var(--espacio_6);
+  background-color: var(--color_error_suave);
+  border: 1px solid var(--color_borde);
+  border-left: 4px solid var(--color_error);
+  border-radius: var(--radio_borde);
+}
+
+.contenido {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio_1);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.titulo {
+  margin: 0;
+  font-size: var(--tamano_titulo_seccion);
+  font-weight: var(--peso_enfasis);
+  color: var(--color_texto);
+}
+
+.detalle,
+.motivo {
+  margin: 0;
+  color: var(--color_texto);
+}
+
+.detalle {
+  font-size: var(--tamano_metadato);
+  color: var(--color_texto_secundario);
+}
+
+.etiqueta {
+  font-weight: var(--peso_enfasis);
+}
+
+.enlace {
+  color: var(--color_primario);
+  font-weight: var(--peso_enfasis);
+}
+
+@media (max-width: 640px) {
+  .aviso {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

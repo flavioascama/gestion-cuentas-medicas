@@ -1,0 +1,48 @@
+.envoltorio {
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color_fondo);
+  padding: var(--espacio_4);
+}
+
+.tarjeta {
+  width: 100%;
+  max-width: 400px;
+  background-image: radial-gradient(
+    circle at top right,
+    var(--color_primario_suave),
+    var(--color_superficie) 60%
+  );
+  border: 1px solid var(--color_borde);
+  border-radius: var(--radio_borde);
+  box-shadow: var(--sombra_dialogo);
+  padding: var(--espacio_8);
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio_4);
+}
+
+.titulo {
+  font-size: var(--tamano_titulo_destacado);
+  font-weight: var(--peso_fuerte);
+  letter-spacing: var(--interletraje_titulo);
+  line-height: 1.25;
+  text-align: center;
+  color: var(--color_texto);
+}
+
+.boton_enviar {
+  width: 100%;
+}
+
+.confianza {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--espacio_2);
+  margin: 0;
+  font-size: var(--tamano_metadato);
+  color: var(--color_texto_secundario);
+}

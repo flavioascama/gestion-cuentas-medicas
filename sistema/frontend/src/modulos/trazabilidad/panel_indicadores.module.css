@@ -1,0 +1,19 @@
+.actualizacion {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio_3);
+}
+
+.actualizado {
+  font-size: var(--tamano_metadato);
+  color: var(--color_texto_secundario);
+}
+
+.carga {
+  color: var(--color_texto_secundario);
+}
+
+.recargando {
+  opacity: 0.6;
+  transition: opacity 0.15s ease;
+}

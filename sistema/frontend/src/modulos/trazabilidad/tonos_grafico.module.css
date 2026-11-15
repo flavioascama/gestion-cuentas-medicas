@@ -1,0 +1,36 @@
+/* Un solo lugar para el color de cada serie de los graficos del panel:
+   `relleno_*` para marcas SVG (fill) y `fondo_*` para marcas HTML
+   (background-color) -- la misma serie no puede verse de dos colores
+   segun el tipo de grafico que la dibuje. */
+
+.relleno_exito {
+  fill: var(--color_grafico_exito);
+}
+
+.relleno_proceso {
+  fill: var(--color_grafico_proceso);
+}
+
+.relleno_alerta {
+  fill: var(--color_grafico_alerta);
+}
+
+.relleno_critico {
+  fill: var(--color_grafico_critico);
+}
+
+.fondo_exito {
+  background-color: var(--color_grafico_exito);
+}
+
+.fondo_proceso {
+  background-color: var(--color_grafico_proceso);
+}
+
+.fondo_alerta {
+  background-color: var(--color_grafico_alerta);
+}
+
+.fondo_critico {
+  background-color: var(--color_grafico_critico);
+}

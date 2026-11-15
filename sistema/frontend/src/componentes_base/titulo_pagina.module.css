@@ -1,0 +1,16 @@
+.contenedor {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--espacio_4);
+}
+
+.titulo {
+  font-size: var(--tamano_titulo_pagina);
+  font-weight: var(--peso_enfasis);
+}
+
+.acciones {
+  display: flex;
+  gap: var(--espacio_3);
+}

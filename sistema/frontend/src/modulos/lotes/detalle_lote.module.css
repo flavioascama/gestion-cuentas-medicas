@@ -1,0 +1,86 @@
+.seccion {
+  background-color: var(--color_superficie);
+  border: 1px solid var(--color_borde);
+  border-radius: var(--radio_borde);
+  padding: var(--espacio_6);
+  margin-bottom: var(--espacio_6);
+}
+
+.titulo_seccion {
+  font-size: var(--tamano_titulo_seccion);
+  font-weight: var(--peso_enfasis);
+  color: var(--color_texto);
+  padding-bottom: var(--espacio_3);
+  margin-bottom: var(--espacio_4);
+  border-bottom: 1px solid var(--color_borde);
+}
+
+/* minmax(0, 1fr), no 1fr a secas: un valor largo sin espacios (un
+   nombre de archivo .S01, por ejemplo) tiene un ancho minimo de
+   contenido que "1fr" respeta antes de repartir el espacio sobrante --
+   esa columna crece y las demas quedan angostas, desalineando toda la
+   fila siguiente. minmax(0, 1fr) fuerza columnas realmente iguales;
+   overflow-wrap en .campo_dato deja que ese valor se corte dentro de
+   su propia celda en vez de desbordarla. */
+.rejilla {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--espacio_3) var(--espacio_6);
+}
+
+.campo_dato {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio_1);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.etiqueta_dato {
+  font-size: var(--tamano_metadato);
+  color: var(--color_texto_secundario);
+}
+
+.acciones {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio_3);
+  margin-bottom: var(--espacio_2);
+}
+
+.acciones_lote {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--espacio_3);
+  margin-bottom: var(--espacio_2);
+}
+.enlace_descarga {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espacio_2);
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--color_primario);
+  font-weight: var(--peso_enfasis);
+  font-size: var(--tamano_base);
+  cursor: pointer;
+}
+
+.enlace_descarga:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Media altura de una tabla vacia (Seccion 1: "nada que distraiga del
+   trabajo"): un check mas una linea, no el encabezado + fila "sin
+   datos" completos de TablaDatos. */
+.vacio_compacto {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio_2);
+  padding: var(--espacio_3) 0;
+  color: var(--color_exito);
+  font-size: var(--tamano_base);
+}

@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block titulo %}Nuevo registro - Validador de facturación electrónica{% endblock %}
+{% block contenido %}
+  <div class="tarjeta" style="max-width:520px;">
+    <h1>Nuevo registro</h1>
+    <p>Seleccionar o arrastrar los archivos aquí (los archivos T1, T2 y T3 del lote, y T4 si la prestación incluyó productos de farmacia).</p>
+    <form method="post" action="/lotes-por-validar/registrar" enctype="multipart/form-data" data-testid="formulario-nuevo-registro">
+      <input type="file" name="archivos" multiple required data-testid="campo-archivos">
+      <button type="submit" data-testid="boton-registrar-archivos">Registrar Archivos</button>
+    </form>
+  </div>
+{% endblock %}

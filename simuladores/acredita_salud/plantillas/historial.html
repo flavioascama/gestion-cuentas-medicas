@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block titulo %}Historial de acreditaciones - Simulador ACREDITA SALUD{% endblock %}
+{% block contenido %}
+  <h1>Historial de acreditaciones</h1>
+  <div class="tarjeta">
+    <form method="get" action="/historial" data-testid="formulario-historial">
+      <label>Código de IPRESS
+        <input type="text" name="ipress_codigo" data-testid="campo-ipress-codigo" value="{{ ipress_codigo or '' }}">
+      </label>
+      <label>Desde
+        <input type="date" name="desde" data-testid="campo-desde" value="{{ desde or '' }}">
+      </label>
+      <label>Hasta
+        <input type="date" name="hasta" data-testid="campo-hasta" value="{{ hasta or '' }}">
+      </label>
+      <label>Código de autorización
+        <input type="text" name="codigo_autorizacion" data-testid="campo-codigo-autorizacion" value="{{ codigo_autorizacion or '' }}">
+      </label>
+      <button type="submit" data-testid="boton-buscar-historial">Buscar</button>
+    </form>
+    <p class="no-imprimir">
+      <a href="/historial/exportar.xlsx?{{ cadena_consulta }}" data-testid="enlace-exportar-excel">Descargar en Excel</a>
+    </p>
+  </div>
+
+  <div class="tarjeta">
+    <table data-testid="tabla-historial">
+      <thead>
+        <tr><th>Código</th><th>Asegurado</th><th>IAFAS</th><th>IPRESS</th><th>Condición</th><th>Generado</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for a in acreditaciones %}
+        <tr data-testid="fila-historial">
+          <td>{{ a.codigo_autorizacion }}</td>
+          <td>{{ a.nombre_asegurado }}</td>
+          <td>{{ a.iafas_codigo }}</td>
+          <td>{{ a.ipress_codigo }}</td>
+          <td>{{ a.condicion_cobertura }}</td>
+          <td>{{ a.generado_en }}</td>
+          <td>
+            <a href="/acreditacion/{{ a.codigo_autorizacion }}/documento?reimpresion=true" data-testid="enlace-reimprimir-historial">Reimprimir</a>
+            /
+            <a href="/acreditacion/{{ a.codigo_autorizacion }}/documento.pdf?reimpresion=true" data-testid="enlace-pdf-historial">PDF</a>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7">No se encontraron acreditaciones con esos filtros.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}

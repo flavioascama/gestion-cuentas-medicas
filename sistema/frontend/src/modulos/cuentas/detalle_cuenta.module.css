@@ -1,0 +1,104 @@
+.seccion {
+  background-color: var(--color_superficie);
+  border: 1px solid var(--color_borde);
+  border-radius: var(--radio_borde);
+  padding: var(--espacio_6);
+  margin-bottom: var(--espacio_6);
+}
+
+.titulo_seccion {
+  font-size: var(--tamano_titulo_seccion);
+  font-weight: var(--peso_enfasis);
+  color: var(--color_texto);
+  padding-bottom: var(--espacio_3);
+  margin-bottom: var(--espacio_4);
+  border-bottom: 1px solid var(--color_borde);
+}
+
+/* minmax(0, 1fr), no 1fr a secas: un valor largo sin espacios tiene un
+   ancho minimo de contenido que "1fr" respeta antes de repartir el
+   espacio sobrante -- esa columna crece y las demas quedan angostas,
+   desalineando toda la fila siguiente (bug real encontrado en el
+   detalle de lote con un nombre de archivo .S01 largo, mismo patron de
+   rejilla que este). minmax(0, 1fr) fuerza columnas realmente iguales;
+   overflow-wrap en .campo_dato deja que ese valor se corte dentro de
+   su propia celda en vez de desbordarla. */
+.rejilla {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--espacio_3) var(--espacio_6);
+}
+
+.campo_dato {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio_1);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.etiqueta_dato {
+  font-size: var(--tamano_metadato);
+  color: var(--color_texto_secundario);
+}
+
+.valor_dato {
+  font-size: var(--tamano_base);
+}
+
+.fila_accion {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio_4);
+  margin-bottom: var(--espacio_3);
+}
+
+/* Rediseno "resumen + pestanias" (detalle de cuenta): las tarjetas
+   cortas (completitud, cobertura, comprobante) se acomodan en una
+   cuadricula en vez de ocupar cada una el ancho completo de la
+   pantalla para 3-4 lineas de contenido. Columnas fijas, no
+   auto-fit/minmax -- mismo criterio que panel_indicadores.module.css
+   (Fase 40): auto-fit estira la ultima fila incompleta. */
+.cuadricula_resumen {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--espacio_6);
+  margin-bottom: var(--espacio_6);
+}
+
+.cuadricula_resumen > .seccion {
+  margin-bottom: 0;
+  min-width: 0;
+}
+
+/* Las tarjetas del resumen ocupan un tercio del ancho: un boton con texto
+   largo ("Consultar en ACREDITA SALUD") pasa a dos lineas en vez de
+   desbordar la tarjeta (visto a 1024 px, 2026-11-12). */
+.cuadricula_resumen button {
+  max-width: 100%;
+  white-space: normal;
+}
+
+/* Lista vertical de etiqueta/valor para una tarjeta angosta (dentro de
+   la cuadricula de resumen), donde las 3 columnas de .rejilla quedarian
+   apretadas. */
+.lista_compacta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio_3);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 960px) {
+  .cuadricula_resumen {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .cuadricula_resumen,
+  .rejilla {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,29 @@
+# Simulador PSE (Proveedor de Servicios Electronicos), independiente del
+# stack raiz (Regla 0.5). Bring-up:
+#   docker network create red_oe1_simuladores   (una sola vez, si no existe)
+#   cp .env.ejemplo .env
+#   docker compose up -d --build
+services:
+  pse:
+    build:
+      context: .
+    env_file:
+      - .env
+    environment:
+      BASE_DATOS: /datos/pse.sqlite3
+    ports:
+      - "${PORTAL_PUERTO_HOST:-8103}:8000"
+    volumes:
+      - ./:/app
+      - venv_pse:/app/.venv
+      - datos_pse:/datos
+    networks:
+      - red_oe1_simuladores
+
+networks:
+  red_oe1_simuladores:
+    external: true
+
+volumes:
+  venv_pse:
+  datos_pse:

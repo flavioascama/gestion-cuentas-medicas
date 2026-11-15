@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block titulo %}Consulta RAAUS - Simulador ACREDITA SALUD{% endblock %}
+{% block contenido %}
+  <h1>Consulta RAAUS</h1>
+  <div class="tarjeta">
+    <form method="post" action="/acreditacion/raaus" data-testid="formulario-raaus">
+      <label>Tipo de documento
+        <select name="tipo_documento" data-testid="campo-tipo-documento">
+          <option value="1">DNI</option>
+          <option value="2">Carné de extranjería</option>
+          <option value="3">Pasaporte</option>
+        </select>
+      </label>
+      <label>Número de documento
+        <input type="text" name="numero_documento" data-testid="campo-numero-documento"
+               value="{{ numero_documento or '' }}" required>
+      </label>
+      <button type="submit" data-testid="boton-buscar-raaus">Buscar</button>
+    </form>
+  </div>
+
+  {% if buscado %}
+  <div class="tarjeta" data-testid="resultado-raaus">
+    <h2>Resultado</h2>
+    {% if asegurado %}
+    <table>
+      <tr><th>Nombre</th><td data-testid="raaus-nombre">{{ asegurado.nombre_completo }}</td></tr>
+      <tr><th>Documento</th><td>{{ asegurado.tipo_documento }} {{ asegurado.numero_documento }}</td></tr>
+      <tr><th>IAFAS</th><td>{{ nombre_iafas }}</td></tr>
+      <tr><th>Estado en esta IAFAS</th>
+          <td class="{{ asegurado.estado_afiliacion }}" data-testid="raaus-estado">{{ asegurado.estado_afiliacion }}</td></tr>
+    </table>
+    <p style="font-size:0.85rem;color:#555;">
+      La consulta real busca en todas las aseguradoras a la vez; este simulador,
+      con datos sintéticos de una sola IAFAS por asegurado, muestra el estado
+      encontrado en la IAFAS asociada al documento.
+    </p>
+    <p><a href="/acreditacion/iafas?tipo_documento={{ asegurado.tipo_documento }}&numero_documento={{ asegurado.numero_documento }}"
+          data-testid="enlace-continuar-iafas">Continuar a consulta directa por IAFAS</a></p>
+    {% else %}
+    <p class="error" data-testid="raaus-no-encontrado">No se encontró un asegurado con ese documento.</p>
+    {% endif %}
+  </div>
+  {% endif %}
+{% endblock %}

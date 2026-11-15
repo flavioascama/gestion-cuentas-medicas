@@ -1,0 +1,191 @@
+# Catalogo GTIN (EAN) DS. 024-2005-SA, transcrito literalmente (Regla 1;
+# Seccion 3.3 y Seccion 4 del plan v3): el Anexo 1 define el dominio del
+# campo 8 de T4 ("Catalogo") y la regla por tipo de producto, pero no
+# publica la lista de codigos del campo 9 -- estos 19 productos si.
+#
+# tipo_producto_tedef (T4 campo 7): M = medicamento o producto de origen
+# biologico; I = insumo, material, dispositivo medico o protesis; B =
+# productos sanitarios o cosmeticos; A = suplemento alimenticio.
+# DISPOSITIVO MEDICO -> I, COSMETICO -> B, ALIMENTO -> A siempre;
+# PRODUCTO FARMACEUTICO -> M solo cuando la denominacion comun nombra un
+# principio activo especifico (nunca cuando es un rotulo generico de
+# "suplemento dietetico/nutricional" o "vitaminas y minerales": ese caso
+# corresponde al tipo P del Anexo 1, fuera de este catalogo).
+#
+# codigo va entre comillas siempre: varios GTIN empiezan con cero, y un
+# valor sin comillas se leeria como entero, perdiendo esos ceros.
+#
+# Sin marcas de origen ni de vigencia (Regla 16): la trazabilidad de cada
+# producto a su captura y fila se registra en docs/DECISIONES.md al
+# cerrar la Fase 17, no en este archivo.
+
+- codigo: "008400001344"
+  tipo_codigo: GTIN_12
+  tipo_producto_catalogo: PRODUCTO FARMACEUTICO
+  tipo_producto_tedef: M
+  nombre: GODEK
+  denominacion_comun: KETOROLACO
+  concentracion: "0.5%"
+  forma_farmaceutica: null
+
+- codigo: "030006030039"
+  tipo_codigo: GTIN_13
+  tipo_producto_catalogo: PRODUCTO FARMACEUTICO
+  tipo_producto_tedef: M
+  nombre: SINGULAIR
+  denominacion_comun: MONTELUKAST
+  concentracion: "4 mg"
+  forma_farmaceutica: GRANULOS
+
+- codigo: "030900130507"
+  tipo_codigo: GTIN_12
+  tipo_producto_catalogo: PRODUCTO FARMACEUTICO
+  tipo_producto_tedef: M
+  nombre: SOLU-CORTEF
+  denominacion_comun: HIDROCORTISONA
+  concentracion: "100 mg/2 mL"
+  forma_farmaceutica: null
+
+- codigo: "0380652555906"
+  tipo_codigo: GTIN_13
+  tipo_producto_catalogo: DISPOSITIVO MEDICO
+  tipo_producto_tedef: I
+  nombre: ACRYSOF SINGLE-PIECE
+  denominacion_comun: LENTES INTRAOCULARES
+  concentracion: null
+  forma_farmaceutica: null
+
+- codigo: "041167627624"
+  tipo_codigo: GTIN_12
+  tipo_producto_catalogo: PRODUCTO FARMACEUTICO
+  tipo_producto_tedef: M
+  nombre: SELSUN AMARILLO
+  denominacion_comun: SULFURO DE SELENIO
+  concentracion: "2.5%"
+  forma_farmaceutica: CHAMPU
+
+- codigo: "044677100403"
+  tipo_codigo: GTIN_12
+  tipo_producto_catalogo: COSMETICO
+  tipo_producto_tedef: B
+  nombre: LANOLINA HPA LANSINOH
+  denominacion_comun: PRODUCTO DERMATOLOGICO
+  concentracion: null
+  forma_farmaceutica: CREMA
+
+- codigo: "070074114323"
+  tipo_codigo: GTIN_12
+  tipo_producto_catalogo: ALIMENTO
+  tipo_producto_tedef: A
+  nombre: ENSURE ADVANCE VAINILLA
+  denominacion_comun: SUPLEMENTO ALIMENTICIO
+  concentracion: null
+  forma_farmaceutica: null
+
+- codigo: "070074124940"
+  tipo_codigo: GTIN_12
+  tipo_producto_catalogo: ALIMENTO
+  tipo_producto_tedef: A
+  nombre: GLUCERNA NF VAINILLA
+  denominacion_comun: SUPLEMENTO ALIMENTICIO
+  concentracion: null
+  forma_farmaceutica: null
+
+- codigo: "0707387792114"
+  tipo_codigo: GTIN_13
+  tipo_producto_catalogo: DISPOSITIVO MEDICO
+  tipo_producto_tedef: I
+  nombre: CAVILON NO STING BARRIER FILM
+  denominacion_comun: BARRERAS DE PIEL
+  concentracion: null
+  forma_farmaceutica: null
+
+- codigo: "0736372872630"
+  tipo_codigo: GTIN_13
+  tipo_producto_catalogo: DISPOSITIVO MEDICO
+  tipo_producto_tedef: I
+  nombre: HIDROCIL PENSOLAC
+  denominacion_comun: LUBRICANTE OCULAR
+  concentracion: null
+  forma_farmaceutica: null
+
+- codigo: "0745853642440"
+  tipo_codigo: GTIN_13
+  tipo_producto_catalogo: PRODUCTO FARMACEUTICO
+  tipo_producto_tedef: M
+  nombre: TEGLINIL
+  denominacion_comun: SILODOSINA
+  concentracion: "8 mg"
+  forma_farmaceutica: CAPSULA
+
+- codigo: "0745853837341"
+  tipo_codigo: GTIN_13
+  tipo_producto_catalogo: ALIMENTO
+  tipo_producto_tedef: A
+  nombre: FORTEBON D3
+  denominacion_comun: SUPLEMENTO ALIMENTICIO
+  concentracion: null
+  forma_farmaceutica: null
+
+- codigo: "30106659"
+  tipo_codigo: GTIN_8
+  tipo_producto_catalogo: COSMETICO
+  tipo_producto_tedef: B
+  nombre: CICAPLAST LEVRES
+  denominacion_comun: PRODUCTO DERMATOLOGICO
+  concentracion: null
+  forma_farmaceutica: UNGUENTO
+
+- codigo: "3029939171688"
+  tipo_codigo: GTIN_13
+  tipo_producto_catalogo: COSMETICO
+  tipo_producto_tedef: B
+  nombre: CETAPHIL PIEL SENSIBLE
+  denominacion_comun: CREMAS Y LOCIONES FARMACEUTICAS
+  concentracion: null
+  forma_farmaceutica: CREMA
+
+- codigo: "3031500311423"
+  tipo_codigo: GTIN_13
+  tipo_producto_catalogo: COSMETICO
+  tipo_producto_tedef: B
+  nombre: TEEN DERM
+  denominacion_comun: PRODUCTO DERMATOLOGICO
+  concentracion: null
+  forma_farmaceutica: GEL
+
+- codigo: "311845319913"
+  tipo_codigo: GTIN_12
+  tipo_producto_catalogo: PRODUCTO FARMACEUTICO
+  tipo_producto_tedef: M
+  nombre: VITAMIN C
+  denominacion_comun: ACIDO ASCORBICO
+  concentracion: "1000 mg"
+  forma_farmaceutica: TABLETA
+
+- codigo: "311845320018"
+  tipo_codigo: GTIN_12
+  tipo_producto_catalogo: PRODUCTO FARMACEUTICO
+  tipo_producto_tedef: M
+  nombre: VITAMIN B-12
+  denominacion_comun: CIANOCOBALAMINA (VITAMINA B12)
+  concentracion: "250 mcg"
+  forma_farmaceutica: TABLETA
+
+- codigo: "311845322210"
+  tipo_codigo: GTIN_12
+  tipo_producto_catalogo: PRODUCTO FARMACEUTICO
+  tipo_producto_tedef: M
+  nombre: FOLIC ACID
+  denominacion_comun: ACIDO FOLICO
+  concentracion: "800 mcg"
+  forma_farmaceutica: TABLETA
+
+- codigo: "311845379313"
+  tipo_codigo: GTIN_12
+  tipo_producto_catalogo: PRODUCTO FARMACEUTICO
+  tipo_producto_tedef: M
+  nombre: ZINC
+  denominacion_comun: ZINC
+  concentracion: "30 mg"
+  forma_farmaceutica: TABLETA

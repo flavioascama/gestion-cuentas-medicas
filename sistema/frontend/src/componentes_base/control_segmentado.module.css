@@ -1,0 +1,31 @@
+.grupo {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--espacio_1);
+  padding: 2px;
+  border: 1px solid var(--color_borde);
+  border-radius: var(--radio_borde);
+  background-color: var(--color_fondo);
+}
+
+.opcion {
+  border: none;
+  background: none;
+  padding: var(--espacio_1) var(--espacio_3);
+  border-radius: var(--radio_borde);
+  font-size: var(--tamano_metadato);
+  font-weight: var(--peso_medio);
+  color: var(--color_texto_secundario);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.opcion:hover {
+  color: var(--color_texto);
+}
+
+.opcion_activa {
+  background-color: var(--color_superficie);
+  color: var(--color_primario);
+  box-shadow: 0 0 0 1px var(--color_borde);
+}

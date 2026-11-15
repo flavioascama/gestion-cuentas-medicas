@@ -1,0 +1,127 @@
+/* Tokens de diseno (GUIA_DISENO_INTERFAZ.md, Seccion 3). Ningun valor
+   literal de color, tipografia o espaciado fuera de este archivo. */
+:root {
+  /* 3.1 Color -- paleta clinica (Fase 34): azules/celestes que
+     transmiten confianza y rigor medico, manteniendo el contraste
+     WCAG AA y un solo color de acento (Seccion 1.3 de la guia: "un
+     solo color de marca"). */
+  --color_fondo: #f4f7fa;
+  --color_superficie: #ffffff;
+  --color_borde: #d0d9e2;
+  --color_texto: #1a2b3c;
+  --color_texto_secundario: #5a6b7a;
+  --color_primario: #005a9c;
+  --color_primario_suave: #e6f2f9;
+  --color_exito: #2f7a4f;
+  --color_advertencia: #a86a12;
+  --color_error: #b3261e;
+  /* Fondos tenues de mensaje (antes literales en mensaje.module.css,
+     Fase 34): mismo valor visual, ahora como token. */
+  --color_advertencia_suave: #fbf3e7;
+  --color_error_suave: #fbeceb;
+  /* Fondo tenue para la etiqueta de estado en pildora (rediseno
+     2026-11-11): la unica combinacion de color_exito que faltaba junto
+     a advertencia/error de arriba. */
+  --color_exito_suave: #e9f5ee;
+  /* Acento secundario de marca (Fase 34): reservado para detalles
+     puntuales (enlaces de ayuda, iconografia informativa), nunca
+     fondo de boton ni de area grande -- la guia solo permite un color
+     de acento para fondos. No se aplica a ningun componente todavia. */
+  --color_marca_celeste: #00aeef;
+  /* Superposicion del fondo de dialogos (antes literal en
+     dialogo.module.css, Fase 34): mismo color que --color_texto, con
+     transparencia. */
+  --color_superposicion: rgba(26, 43, 60, 0.4);
+  /* Graficos del panel gerencial (rediseno 2026-11-12). Cuatro colores
+     de estado propios del grafico, no los de texto/etiquetas de arriba:
+     estos pasaron la validacion de separacion para daltonismo
+     (protanopia/deuteranopia) y de vision normal entre segmentos
+     vecinos de una columna apilada, en este orden: exito, proceso,
+     alerta, critico. El ambar queda bajo 3:1 sobre blanco a proposito
+     (como todo ambar de estado); lo compensan la leyenda, la ayuda
+     emergente y la vista de tabla de cada grafico. */
+  --color_grafico_exito: #2f7a4f;
+  --color_grafico_proceso: #005a9c;
+  --color_grafico_alerta: #c98a1e;
+  --color_grafico_critico: #b3261e;
+  --color_grafico_atenuado: #c3ccd6;
+  --color_grafico_rejilla: #e3e8ee;
+
+  /* 3.2 Tipografia -- IBM Plex Sans se carga como fuente web (Fase 36,
+     index.html); hasta entonces el token nunca llegaba a usarse de
+     verdad y todo el sistema renderizaba con la fuente del sistema
+     operativo (su siguiente opcion en la lista). */
+  --fuente: "IBM Plex Sans", "Segoe UI", Roboto, Arial, sans-serif;
+  --tamano_metadato: 12px;
+  --tamano_base: 14px;
+  --tamano_titulo_seccion: 16px;
+  --tamano_titulo_pagina: 20px;
+  /* Tamano para un titulo protagonico y puntual, no para pantallas
+     densas de trabajo (bandejas, detalle): hoy solo la tarjeta de
+     ingreso. Las pantallas de trabajo siguen limitadas a 20px. */
+  --tamano_titulo_destacado: 28px;
+  --peso_normal: 400;
+  --peso_medio: 500;
+  --peso_enfasis: 600;
+  --peso_fuerte: 700;
+  /* Interletraje ligeramente negativo en titulos grandes: look mas
+     tipografico/editorial, mismo criterio que Carbon/IBM Plex en sus
+     tokens de heading. */
+  --interletraje_titulo: -0.01em;
+
+  /* 3.3 Espaciado, bordes y elevacion */
+  --espacio_1: 4px;
+  --espacio_2: 8px;
+  --espacio_3: 12px;
+  --espacio_4: 16px;
+  --espacio_6: 24px;
+  --espacio_8: 32px;
+  --radio_borde: 4px;
+  --sombra_dialogo: 0 4px 16px rgba(26, 43, 60, 0.16);
+  /* Ancho del contorno de foco (antes literal "2px" en base.css,
+     Fase 34). */
+  --foco_ancho: 2px;
+
+  /* 4. Estructura de pantalla */
+  --ancho_barra_lateral: 232px;
+  --alto_cabecera: 56px;
+  --ancho_rincon: 56px;
+}
+
+/* Modo oscuro (Fase 39): mismos tokens, valores oscuros. Se activa con
+   `data-theme="dark"` en <html> (alternado desde la barra lateral,
+   persistido en localStorage) -- nunca por preferencia automatica del
+   sistema operativo, para que la eleccion de la persona sea siempre
+   la que manda. Como todo el sistema ya consume exclusivamente estas
+   variables (sin ningun valor literal fuera de este archivo), este
+   bloque es suficiente para que toda pantalla responda, sin tocar
+   ningun componente. */
+:root[data-theme="dark"] {
+  --color_fondo: #0b1420;
+  --color_superficie: #16212f;
+  --color_borde: #2b3c4e;
+  --color_texto: #e8eef4;
+  --color_texto_secundario: #93a6ba;
+  --color_primario: #2f8fd1;
+  --color_primario_suave: #16324a;
+  --color_exito: #3f9d68;
+  --color_advertencia: #d08b2a;
+  --color_error: #e0564d;
+  --color_advertencia_suave: #3a2a15;
+  --color_error_suave: #3a1d1a;
+  --color_exito_suave: #16301f;
+  --color_marca_celeste: #1ec2ff;
+  --color_superposicion: rgba(0, 0, 0, 0.6);
+  /* Pasos propios del modo oscuro, validados contra --color_superficie
+     oscura (no una inversion automatica de los de arriba): el rojo se
+     inclina al carmesi y el ambar baja de luminosidad para que no se
+     confundan entre si dentro de la banda estrecha de luminosidad que
+     admite un fondo oscuro. */
+  --color_grafico_exito: #3f9d68;
+  --color_grafico_proceso: #2f8fd1;
+  --color_grafico_alerta: #bf8a14;
+  --color_grafico_critico: #e2476a;
+  --color_grafico_atenuado: #3a4a5c;
+  --color_grafico_rejilla: #26364a;
+  --sombra_dialogo: 0 4px 16px rgba(0, 0, 0, 0.5);
+}

@@ -1,0 +1,76 @@
+[project]
+name = "trabajador-automatizacion"
+version = "0.1.0"
+description = "Proceso trabajador de la cola (AD-02): consume `trabajo` y ejecuta los robots RPA con Playwright."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    # Dependencia de ruta editable (ver [tool.uv.sources]): reutiliza el
+    # dominio, la persistencia y los puertos ya definidos en el backend
+    # (modelos SQLAlchemy de `trabajo`/`acreditacion`, RepositorioTrabajos,
+    # dominio/acreditacion) en vez de duplicarlos. Regla 0.5 (no compartir
+    # codigo) es para simuladores/, no para sistema/ -- AD-02 solo exige
+    # que la automatizacion corra en un PROCESO aparte, no en un paquete
+    # de Python aparte.
+    "sistema-backend",
+    "playwright>=1.47",
+    "structlog>=24.4",
+    # Cifra el storage_state de la sesion asistida (Seccion 8.4, punto 4).
+    "cryptography>=43.0",
+    # Lee los reportes .xlsx que descarga del validador TEDEF Web
+    # (Seccion 9.2, Fase 16): observaciones de forma y de la validacion
+    # detallada.
+    "openpyxl>=3.1",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+    "ruff>=0.7",
+    "mypy>=1.13",
+    "types-pyyaml>=6.0",
+    "types-openpyxl>=3.1",
+]
+
+[tool.uv.sources]
+sistema-backend = { path = "../backend", editable = true }
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+# GUIA_ESTILO_CODIGO.md, Seccion 5 (mismo criterio que sistema/backend,
+# ver su pyproject.toml y docs/DECISIONES.md, Fase 13).
+select = ["E", "F", "W", "I", "N", "B", "C90", "UP", "SIM", "PLR0913"]
+ignore = [
+    "N999", # nombres de modulo en espanol
+    "N818", # convencion propia: prefijo "Error", no sufijo (Regla 9, identificadores en espanol)
+]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[tool.mypy]
+python_version = "3.12"
+warn_unused_configs = true
+no_implicit_optional = true
+
+[[tool.mypy.overrides]]
+# playwright si publica tipos propios (py.typed); esto es solo por si
+# alguna vez se le agrega un stub parcial que mypy no resuelva bien.
+module = "playwright.*"
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["pruebas"]
+python_files = ["prueba_*.py"]
+python_functions = ["prueba_*"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["trabajador"]

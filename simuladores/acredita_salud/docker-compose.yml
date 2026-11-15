@@ -1,0 +1,40 @@
+# Simulador independiente (Regla 0.5): su propio docker-compose, sus
+# propias dependencias, su propio contenedor. Se levanta por separado:
+#   docker network create red_oe1_simuladores   (una sola vez)
+#   cd simuladores/acredita_salud
+#   cp .env.ejemplo .env
+#   docker compose up -d --build
+#
+# Se une a la red externa compartida (misma que simuladores/receptor_iafas/)
+# para que el trabajador de la Fase 11 (robot de Playwright) lo alcance por
+# el nombre de este servicio; el puerto tambien se publica al host para
+# verlo en el navegador.
+
+services:
+  acredita-salud:
+    build:
+      context: .
+    env_file:
+      - .env
+    environment:
+      RUTA_SIMULADORES_DATOS_SEMILLA: /datos_semilla
+      BASE_DATOS: /datos/acredita_salud.sqlite3
+    ports:
+      - "${PORTAL_PUERTO_HOST:-8100}:8000"
+    volumes:
+      - ./:/app
+      - venv_acredita_salud:/app/.venv
+      # Solo lectura: el generador de datos sinteticos (Fase 4, backend) es
+      # el unico que escribe este archivo.
+      - ../datos_semilla:/datos_semilla:ro
+      - datos_acredita_salud:/datos
+    networks:
+      - red_oe1_simuladores
+
+networks:
+  red_oe1_simuladores:
+    external: true
+
+volumes:
+  venv_acredita_salud:
+  datos_acredita_salud:

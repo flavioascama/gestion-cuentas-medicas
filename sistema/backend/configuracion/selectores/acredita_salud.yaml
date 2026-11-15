@@ -1,0 +1,48 @@
+# Selectores del robot de acreditacion (Seccion 8.1: 'selectores en
+# configuracion/selectores/acredita_salud.yaml, nunca en el codigo').
+#
+# Apuntan a los atributos data-testid del simulador de la Fase 10
+# (simuladores/acredita_salud/plantillas/*.html), no a clases CSS ni a
+# texto visible -- lo mismo que ese simulador ya expone para que un robot
+# lo pueda localizar de forma estable.
+
+ingreso:
+  campo_usuario: '[data-testid="campo-usuario"]'
+  campo_clave: '[data-testid="campo-clave"]'
+  # Seccion 9.1 / 8.4 (Fase 15): CAPTCHA fiel al manual de ACREDITA SALUD
+  # (Seccion 5.1) -- imagen, campo de respuesta, boton de refresco y un
+  # mensaje de error distinto por cada validacion fallida.
+  imagen_captcha: '[data-testid="imagen-captcha"]'
+  campo_captcha: '[data-testid="campo-captcha"]'
+  boton_refrescar_captcha: '[data-testid="enlace-refrescar-captcha"]'
+  boton_ingresar: '[data-testid="boton-ingresar"]'
+  error: '[data-testid="error-ingreso"]'
+  error_usuario: '[data-testid="error-usuario"]'
+  error_clave: '[data-testid="error-clave"]'
+  error_captcha: '[data-testid="error-captcha"]'
+
+consulta_iafas:
+  ruta: /acreditacion/iafas
+  campo_tipo_documento: '[data-testid="campo-tipo-documento"]'
+  campo_numero_documento: '[data-testid="campo-numero-documento"]'
+  boton_buscar: '[data-testid="boton-buscar-iafas"]'
+  resultado: '[data-testid="resultado-iafas"]'
+  estado: '[data-testid="iafas-estado"]'
+  no_encontrado: '[data-testid="iafas-no-encontrado"]'
+  enlace_acreditar: '[data-testid="enlace-acreditar"]'
+  # Claves fijas (no dependen de la posicion, que varia por escenario).
+  plan: '[data-testid="iafas-plan"]'
+  vigente_desde: '[data-testid="iafas-vigente-desde"]'
+  vigente_hasta: '[data-testid="iafas-vigente-hasta"]'
+  preexistencias: '[data-testid="iafas-preexistencias"]'
+
+evaluacion:
+  condicion_cobertura: '[data-testid="condicion-cobertura"]'
+  tipo_copago: '[data-testid="tipo-copago"]'
+  monto_copago_fijo: '[data-testid="monto-copago-fijo"]'
+  porcentaje_coaseguro: '[data-testid="porcentaje-coaseguro"]'
+  boton_generar: '[data-testid="boton-generar-autorizacion"]'
+
+documento:
+  contenedor: '[data-testid="documento-solicitud"]'
+  codigo_autorizacion: '[data-testid="documento-codigo"]'

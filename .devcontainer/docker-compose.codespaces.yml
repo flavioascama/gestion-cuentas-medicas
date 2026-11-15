@@ -1,11 +1,11 @@
 # Ajustes para GitHub Codespaces: la aplicacion y los portales de los
-# simuladores se publican por el reenvio de puertos de Codespaces, sin proxy.
+# simuladores se publican por el reenvio de puertos de Codespaces.
 services:
   proxy:
-    profiles: ["servidor"]
-  frontend:
     ports:
-      - "8443:443"
+      - "8443:8080"
+    volumes:
+      - ./.devcontainer/Caddyfile:/etc/caddy/Caddyfile:ro
   acredita-salud:
     ports:
       - "8100:8000"

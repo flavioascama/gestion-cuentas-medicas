@@ -11,13 +11,18 @@ import { etiqueta_tipo_producto } from "../../componentes_base/mapa_tipos_produc
 import { MensajeErrorMutacion } from "../../componentes_base/mensaje_error_mutacion";
 import { TablaDatos, type ColumnaTabla } from "../../componentes_base/tabla_datos";
 import { formatear_fecha_hora } from "../../utilidades/formato";
+import { formatear_cantidad } from "./formato_administracion";
 import estilos from "./administracion.module.css";
 
 // CU-18: versiones del catalogo GTIN (nunca se modifican; cada carga es una
 // version nueva) y los productos de la vigente.
 const _COLUMNAS_VERSIONES: ColumnaTabla<VersionCatalogoGtin>[] = [
-  { clave: "id", encabezado: "Versión", alinear_centro: true },
-  { clave: "conteo", encabezado: "Productos", alinear_derecha: true },
+  { clave: "id", encabezado: "Versión" },
+  {
+    clave: "conteo",
+    encabezado: "Productos",
+    formatear: (fila) => formatear_cantidad(fila.conteo),
+  },
   {
     clave: "cargado_en",
     encabezado: "Cargada",

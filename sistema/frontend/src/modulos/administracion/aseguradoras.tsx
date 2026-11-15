@@ -73,7 +73,6 @@ function columnas(al_editar: (fila: ParametrosIafas) => void): ColumnaTabla<Para
     ..._PLAZOS.map(({ clave, encabezado, singular, plural }) => ({
       clave,
       encabezado,
-      alinear_derecha: true,
       formatear: (fila: ParametrosIafas) => con_unidad(fila[clave], singular, plural),
     })),
     {
@@ -160,14 +159,16 @@ export function AdministracionAseguradoras() {
       <TituloPagina titulo="Aseguradoras" />
       <div className={estilos.seccion}>
         <div className={estilos.titulo_seccion}>Plazos del convenio</div>
-        <TablaDatos
-          columnas={columnas(set_editando)}
-          filas={consulta.data ?? []}
-          obtener_clave={(fila) => fila.iafas_id}
-          cargando={consulta.isPending}
-          error={consulta.error}
-          mensaje_vacio="No hay aseguradoras registradas."
-        />
+        <div className={estilos.tabla_plazos}>
+          <TablaDatos
+            columnas={columnas(set_editando)}
+            filas={consulta.data ?? []}
+            obtener_clave={(fila) => fila.iafas_id}
+            cargando={consulta.isPending}
+            error={consulta.error}
+            mensaje_vacio="No hay aseguradoras registradas."
+          />
+        </div>
       </div>
       {editando ? <DialogoPlazos iafas={editando} al_cerrar={() => set_editando(null)} /> : null}
     </div>

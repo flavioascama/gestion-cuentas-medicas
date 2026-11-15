@@ -78,3 +78,33 @@
   font-weight: var(--peso_enfasis);
   margin: var(--espacio_6) 0 var(--espacio_3);
 }
+
+.busqueda {
+  max-width: 360px;
+  margin-bottom: var(--espacio_4);
+}
+
+/* Plazos del convenio: encabezados en dos lineas y la aseguradora sin
+   partirse, para que la tabla entre en el ancho de la pantalla. */
+.tabla_plazos th {
+  white-space: normal;
+  vertical-align: bottom;
+}
+
+.tabla_plazos td {
+  white-space: nowrap;
+  padding-top: var(--espacio_2);
+  padding-bottom: var(--espacio_2);
+}
+
+.tabla_plazos td:first-child {
+  white-space: normal;
+  min-width: 240px;
+}
+
+/* Parametros del sistema: la columna de valores en la misma posicion en
+   todos los grupos. */
+.tabla_parametros th:first-child,
+.tabla_parametros td:first-child {
+  width: 65%;
+}

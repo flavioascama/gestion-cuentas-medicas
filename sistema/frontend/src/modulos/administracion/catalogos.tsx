@@ -5,6 +5,7 @@ import { MensajeErrorMutacion } from "../../componentes_base/mensaje_error_mutac
 import { TablaDatos, type ColumnaTabla } from "../../componentes_base/tabla_datos";
 import { TituloPagina } from "../../componentes_base/titulo_pagina";
 import { formatear_fecha_hora } from "../../utilidades/formato";
+import { formatear_cantidad } from "./formato_administracion";
 import { SeccionCatalogoGtin } from "./seccion_catalogo_gtin";
 import { usar_versiones_cpms } from "./usar_administracion";
 import estilos from "./administracion.module.css";
@@ -13,7 +14,11 @@ import estilos from "./administracion.module.css";
 // propia pantalla (rediseno de la administracion, 2026-11-15).
 const _COLUMNAS_CPMS: ColumnaTabla<VersionCpms>[] = [
   { clave: "etiqueta", encabezado: "Versión" },
-  { clave: "conteo", encabezado: "Procedimientos", alinear_derecha: true },
+  {
+    clave: "conteo",
+    encabezado: "Procedimientos",
+    formatear: (fila) => formatear_cantidad(fila.conteo),
+  },
   {
     clave: "creado_en",
     encabezado: "Cargada",

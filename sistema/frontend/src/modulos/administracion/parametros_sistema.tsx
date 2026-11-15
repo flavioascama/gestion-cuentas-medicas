@@ -108,7 +108,7 @@ const _GRUPOS: { titulo: string; claves: string[] }[] = [
 
 const _COLUMNAS: ColumnaTabla<FilaParametro>[] = [
   { clave: "etiqueta", encabezado: "Parámetro" },
-  { clave: "valor", encabezado: "Valor", alinear_derecha: true },
+  { clave: "valor", encabezado: "Valor" },
 ];
 
 function filas_del_grupo(claves: string[], valores: Map<string, string>): FilaParametro[] {
@@ -138,14 +138,16 @@ export function AdministracionParametros() {
       {_GRUPOS.map((grupo) => (
         <div key={grupo.titulo} className={estilos.seccion}>
           <div className={estilos.titulo_seccion}>{grupo.titulo}</div>
-          <TablaDatos
-            columnas={_COLUMNAS}
-            filas={filas_del_grupo(grupo.claves, valores)}
-            obtener_clave={(fila) => fila.clave}
-            cargando={consulta.isPending}
-            error={consulta.error}
-            mensaje_vacio="Sin datos."
-          />
+          <div className={estilos.tabla_parametros}>
+            <TablaDatos
+              columnas={_COLUMNAS}
+              filas={filas_del_grupo(grupo.claves, valores)}
+              obtener_clave={(fila) => fila.clave}
+              cargando={consulta.isPending}
+              error={consulta.error}
+              mensaje_vacio="Sin datos."
+            />
+          </div>
         </div>
       ))}
     </div>

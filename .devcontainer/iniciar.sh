@@ -12,4 +12,4 @@ for _ in $(seq 1 60); do
   sleep 2
 done
 
-bash despliegue/desplegar.sh "${CODESPACE_NAME}-8443.${base}" 2>&1 | tee "$HOME/iniciar.log"
+bash despliegue/desplegar.sh "${CODESPACE_NAME}-8443.${base}" < /dev/null 2>&1 | tee "$HOME/iniciar.log"

@@ -101,7 +101,7 @@ if [ ! -f despliegue/.inicializado ]; then
   for herramienta in cargar_cpms cargar_catalogo_gtin cargar_cie10 cargar_cuentas_sinteticas; do
     "${COMPOSE[@]}" run --rm -T backend uv run python -m "herramientas.$herramienta"
   done
-  if [ -n "${ADMIN_CLAVE:-}" ] || [ -t 0 ]; then
+  if [ -n "${ADMIN_CLAVE:-}" ] || { [ -t 0 ] && [ -t 1 ]; }; then
     echo "Usuario administrador 'admin' (clave de al menos 8 caracteres):"
     "${COMPOSE[@]}" run --rm -e ADMIN_CLAVE backend uv run python -m herramientas.crear_usuario_administrador \
       --usuario admin --nombres "Administrador del sistema"

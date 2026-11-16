@@ -30,11 +30,6 @@
       <tr><th>Estado en esta IAFAS</th>
           <td class="{{ asegurado.estado_afiliacion }}" data-testid="raaus-estado">{{ asegurado.estado_afiliacion }}</td></tr>
     </table>
-    <p style="font-size:0.85rem;color:#555;">
-      La consulta real busca en todas las aseguradoras a la vez; este simulador,
-      con datos sintéticos de una sola IAFAS por asegurado, muestra el estado
-      encontrado en la IAFAS asociada al documento.
-    </p>
     <p><a href="/acreditacion/iafas?tipo_documento={{ asegurado.tipo_documento }}&numero_documento={{ asegurado.numero_documento }}"
           data-testid="enlace-continuar-iafas">Continuar a consulta directa por IAFAS</a></p>
     {% else %}

@@ -102,7 +102,7 @@ def _validar_dominio(
         dominio.nombre,
         valor,
         "SIM-DOM",
-        f"El campo {dominio.nombre!r} tiene el valor {valor!r}, fuera del dominio simulado "
+        f"El campo {dominio.nombre!r} tiene el valor {valor!r}, fuera del dominio permitido "
         f"{sorted(dominio.valores)}.",
     )
 

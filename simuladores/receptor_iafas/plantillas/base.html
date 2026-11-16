@@ -4,10 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block titulo %}Simulador receptor IAFAS{% endblock %}</title>
-  {# El portal de cada aseguradora es propio y no esta normado. Este sigue
-     la estructura habitual de un portal de prestadores de una aseguradora:
-     barra superior con la marca, menu lateral por area y tablas de gestion.
-     La marca es ficticia: no representa a ninguna aseguradora real. #}
+  <meta name="robots" content="noindex, nofollow">
   <style>
     :root {
       --marca: #0e5a6b; --marca_oscura: #0a4553; --acento: #e2702c; --texto: #23303d; --gris: #6c7a89;
@@ -16,13 +13,12 @@
     * { box-sizing: border-box; }
     body { font-family: "Segoe UI", Roboto, Arial, sans-serif; margin: 0; color: var(--texto); background: var(--fondo); font-size: 14px; }
     a { color: var(--marca); }
-    .aviso { background: #fff3cd; border-bottom: 1px solid #d1a441; padding: 0.35rem 1rem; font-weight: 600; font-size: 0.75rem; text-align: center; line-height: 1.5; }
     .superior { background: var(--marca); color: white; padding: 0.7rem 1.5rem; display: flex; align-items: center; justify-content: space-between; }
     .superior .marca { display: flex; align-items: center; gap: 0.7rem; font-weight: 700; font-size: 1.05rem; letter-spacing: 0.01em; }
-    .superior .marca i { width: 26px; height: 26px; border-radius: 6px; background: var(--acento); display: grid; place-items: center; font-style: normal; font-size: 0.85rem; }
+    .superior .marca svg { width: 32px; height: 32px; flex: none; }
     .superior .marca small { display: block; font-weight: 400; font-size: 0.68rem; opacity: 0.85; }
     .superior .area { font-size: 0.78rem; text-align: right; opacity: 0.92; }
-    .ventana { display: flex; min-height: calc(100vh - 100px); }
+    .ventana { display: flex; min-height: calc(100vh - 54px); }
     .lateral { width: 250px; flex: none; background: white; border-right: 1px solid var(--borde); padding: 1rem 0; }
     .lateral h2 { margin: 0; padding: 0.6rem 1.25rem 0.3rem; font-size: 0.68rem; font-weight: 700; color: var(--gris); text-transform: uppercase; letter-spacing: 0.06em; }
     .lateral a { display: block; padding: 0.5rem 1.25rem; font-size: 0.84rem; text-decoration: none; color: var(--texto); border-left: 3px solid transparent; }
@@ -54,12 +50,8 @@
   </style>
 </head>
 <body>
-  <div class="aviso" id="aviso-simulacion" data-testid="aviso-simulacion">
-    ENTORNO DE SIMULACIÓN. NO CORRESPONDE A UN SISTEMA OFICIAL.<br>
-    Este procesador no es el validador oficial de SUSALUD (Sección 9.2 del plan de proyecto).
-  </div>
   <header class="superior">
-    <div class="marca"><i>+</i><span>Portal de Prestadores<small>Aseguradora de salud (simulador de la IAFAS)</small></span></div>
+    <div class="marca"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#e2702c"/><path d="M16 5.5c3.1 2.2 6.2 3.2 9 3.4v6.6c0 5.8-3.8 9.8-9 11.5-5.2-1.7-9-5.7-9-11.5V8.9c2.8-.2 5.9-1.2 9-3.4z" fill="#fff"/><path d="M14.4 10.8h3.2v3.4H21v3.2h-3.4v3.4h-3.2v-3.4H11v-3.2h3.4z" fill="#0e5a6b"/></svg><span>Portal de Prestadores<small>Aseguradora de salud</small></span></div>
     <div class="area">Auditoría de prestaciones<br>Gestión de cuentas de IPRESS</div>
   </header>
   <div class="ventana">

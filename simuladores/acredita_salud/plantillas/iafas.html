@@ -32,13 +32,6 @@
       <tr><th>{{ etiqueta }}</th><td data-testid="iafas-detalle-{{ loop.index }}">{{ valor }}</td></tr>
       {% endfor %}
     </table>
-    <!--
-      Campos con clave fija (Fase 11): el robot los lee por su propio
-      data-testid, sin depender de la posicion que ocupan arriba, que
-      cambia segun el escenario. Ocultos a la vista (ya estan mostrados,
-      con su etiqueta, en la tabla de arriba); solo existen para que el
-      robot los pueda ubicar sin ambiguedad.
-    -->
     <dl hidden>
       <dd data-testid="iafas-plan">{{ campos.plan or "" }}</dd>
       <dd data-testid="iafas-vigente-desde">{{ campos.vigente_desde or "" }}</dd>

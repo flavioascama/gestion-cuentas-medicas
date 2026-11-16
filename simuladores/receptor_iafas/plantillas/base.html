@@ -2,16 +2,55 @@
 <html lang="es">
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block titulo %}Simulador receptor IAFAS{% endblock %}</title>
+  {# El portal de cada aseguradora es propio y no esta normado. Este sigue
+     la estructura habitual de un portal de prestadores de una aseguradora:
+     barra superior con la marca, menu lateral por area y tablas de gestion.
+     La marca es ficticia: no representa a ninguna aseguradora real. #}
   <style>
-    body { font-family: sans-serif; margin: 2rem; color: #1a1a1a; }
-    .aviso { background: #fff3cd; border: 1px solid #d1a441; padding: 0.75rem 1rem; margin-bottom: 1.5rem; font-weight: bold; }
-    table { border-collapse: collapse; width: 100%; }
-    th, td { border: 1px solid #ccc; padding: 0.4rem 0.6rem; text-align: left; font-size: 0.9rem; }
-    th { background: #f0f0f0; }
-    .ACEPTADO { color: #146c2e; font-weight: bold; }
-    .RECHAZADO { color: #a11212; font-weight: bold; }
-    .motivo { font-size: 0.85rem; color: #555; }
+    :root {
+      --marca: #0e5a6b; --marca_oscura: #0a4553; --acento: #e2702c; --texto: #23303d; --gris: #6c7a89;
+      --borde: #dbe2e8; --fondo: #f3f6f8; --suave: #e9f2f4;
+    }
+    * { box-sizing: border-box; }
+    body { font-family: "Segoe UI", Roboto, Arial, sans-serif; margin: 0; color: var(--texto); background: var(--fondo); font-size: 14px; }
+    a { color: var(--marca); }
+    .aviso { background: #fff3cd; border-bottom: 1px solid #d1a441; padding: 0.35rem 1rem; font-weight: 600; font-size: 0.75rem; text-align: center; line-height: 1.5; }
+    .superior { background: var(--marca); color: white; padding: 0.7rem 1.5rem; display: flex; align-items: center; justify-content: space-between; }
+    .superior .marca { display: flex; align-items: center; gap: 0.7rem; font-weight: 700; font-size: 1.05rem; letter-spacing: 0.01em; }
+    .superior .marca i { width: 26px; height: 26px; border-radius: 6px; background: var(--acento); display: grid; place-items: center; font-style: normal; font-size: 0.85rem; }
+    .superior .marca small { display: block; font-weight: 400; font-size: 0.68rem; opacity: 0.85; }
+    .superior .area { font-size: 0.78rem; text-align: right; opacity: 0.92; }
+    .ventana { display: flex; min-height: calc(100vh - 100px); }
+    .lateral { width: 250px; flex: none; background: white; border-right: 1px solid var(--borde); padding: 1rem 0; }
+    .lateral h2 { margin: 0; padding: 0.6rem 1.25rem 0.3rem; font-size: 0.68rem; font-weight: 700; color: var(--gris); text-transform: uppercase; letter-spacing: 0.06em; }
+    .lateral a { display: block; padding: 0.5rem 1.25rem; font-size: 0.84rem; text-decoration: none; color: var(--texto); border-left: 3px solid transparent; }
+    .lateral a:hover { background: var(--suave); border-left-color: var(--acento); color: var(--marca_oscura); }
+    main { flex: 1; min-width: 0; padding: 1.5rem; max-width: 1240px; overflow-x: auto; }
+    h1 { font-size: 1.2rem; font-weight: 700; color: var(--marca_oscura); margin: 0 0 1rem; }
+    h2 { font-size: 0.98rem; font-weight: 700; color: var(--marca_oscura); }
+    table { border-collapse: collapse; width: 100%; background: white; border: 1px solid var(--borde); border-radius: 6px; }
+    th, td { border-bottom: 1px solid var(--borde); padding: 0.5rem 0.7rem; text-align: left; font-size: 0.82rem; vertical-align: top; }
+    th { background: var(--suave); color: var(--marca_oscura); font-weight: 700; white-space: nowrap; }
+    tbody tr:hover td { background: #fafcfd; }
+    form { margin: 0; }
+    label { font-size: 0.8rem; color: var(--gris); }
+    input, select, textarea { padding: 0.4rem 0.55rem; border: 1px solid var(--borde); border-radius: 4px; font: inherit; color: var(--texto); }
+    button { padding: 0.45rem 1rem; background: var(--marca); color: white; border: none; border-radius: 4px; cursor: pointer; font: inherit; font-weight: 600; font-size: 0.82rem; }
+    button:hover { background: var(--marca_oscura); }
+    .ACEPTADO { color: #1f7a45; font-weight: 700; }
+    .RECHAZADO { color: #b3261e; font-weight: 700; }
+    .motivo { font-size: 0.8rem; color: var(--gris); }
+    td { vertical-align: middle; }
+    td form { display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center; }
+    td form input, td form select { max-width: 150px; }
+    main > form { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; }
+    dl { display: grid; grid-template-columns: max-content 1fr; gap: 0.45rem 1.25rem; margin: 0 0 1.25rem;
+         background: white; border: 1px solid var(--borde); border-radius: 6px; padding: 1rem 1.25rem; }
+    dt { color: var(--gris); font-size: 0.8rem; }
+    dd { margin: 0; font-size: 0.85rem; overflow-wrap: anywhere; }
+    main p { font-size: 0.85rem; }
   </style>
 </head>
 <body>
@@ -19,6 +58,23 @@
     ENTORNO DE SIMULACIÓN. NO CORRESPONDE A UN SISTEMA OFICIAL.<br>
     Este procesador no es el validador oficial de SUSALUD (Sección 9.2 del plan de proyecto).
   </div>
-  {% block contenido %}{% endblock %}
+  <header class="superior">
+    <div class="marca"><i>+</i><span>Portal de Prestadores<small>Aseguradora de salud (simulador de la IAFAS)</small></span></div>
+    <div class="area">Auditoría de prestaciones<br>Gestión de cuentas de IPRESS</div>
+  </header>
+  <div class="ventana">
+    <nav class="lateral">
+      <h2>Recepción</h2>
+      <a href="/">Lotes recibidos</a>
+      <h2>Auditoría</h2>
+      <a href="/auditoria">Auditoría médica</a>
+      <h2>Comunicaciones</h2>
+      <a href="/comunicaciones">Comunicaciones a la IPRESS</a>
+      <a href="/correo">Correo a la IPRESS</a>
+    </nav>
+    <main>
+      {% block contenido %}{% endblock %}
+    </main>
+  </div>
 </body>
 </html>

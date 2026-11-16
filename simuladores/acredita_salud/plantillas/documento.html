@@ -17,7 +17,7 @@
       {% if acreditacion.porcentaje_coaseguro is not none %}
       <tr><th>Porcentaje de coaseguro</th><td>{{ acreditacion.porcentaje_coaseguro }}%</td></tr>
       {% endif %}
-      <tr><th>Generado el</th><td>{{ acreditacion.generado_en }}</td></tr>
+      <tr><th>Generado el</th><td>{{ (acreditacion.generado_en|string)[:19]|replace("T", " ") }}</td></tr>
     </table>
     <p class="no-imprimir" style="margin-top:1rem;">
       <button onclick="window.print()" data-testid="boton-imprimir">Imprimir</button>

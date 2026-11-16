@@ -1,25 +1,39 @@
 {% extends "base.html" %}
 {% block titulo %}Ingreso - Simulador ACREDITA SALUD{% endblock %}
 {% block contenido %}
-  <div class="tarjeta" style="max-width:400px; margin: 2rem auto;">
-    <h1>Ingreso</h1>
-    {% if tipo_error == "usuario" %}<p class="error" data-testid="error-usuario">Debe Ingresar un Usuario válido</p>{% endif %}
-    {% if tipo_error == "clave" %}<p class="error" data-testid="error-clave">Debe Ingresar una contraseña válido</p>{% endif %}
-    {% if tipo_error == "captcha" %}<p class="error" data-testid="error-captcha">Debe Ingresar captcha completo</p>{% endif %}
-    <form method="post" action="/ingreso" data-testid="formulario-ingreso">
-      <label>Usuario
-        <input type="text" name="usuario" data-testid="campo-usuario" required>
-      </label>
-      <label>Contraseña
-        <input type="password" name="clave" data-testid="campo-clave" required>
-      </label>
-      <label>Código de la imagen
-        <img src="/captcha/{{ captcha_id }}.png" alt="CAPTCHA" data-testid="imagen-captcha">
-        <a href="/ingreso" data-testid="enlace-refrescar-captcha">Refrescar Imagen</a>
-        <input type="hidden" name="captcha_id" value="{{ captcha_id }}">
-        <input type="text" name="respuesta_captcha" data-testid="campo-captcha" required>
-      </label>
-      <button type="submit" data-testid="boton-ingresar">Ingresar</button>
-    </form>
+  <div class="tarjeta">
+    <div class="cabecera_acceso">
+      <img src="/estaticos/logo_susalud.png" alt="SUSALUD - Superintendencia Nacional de Salud" class="logo">
+    </div>
+    <div class="cuerpo_acceso">
+      <h1>Sistema de Acreditación de Asegurados</h1>
+      <h2>Iniciar Sesión</h2>
+      {% if tipo_error == "usuario" %}<p class="error" data-testid="error-usuario">Debe Ingresar un Usuario válido</p>{% endif %}
+      {% if tipo_error == "clave" %}<p class="error" data-testid="error-clave">Debe Ingresar una contraseña válido</p>{% endif %}
+      {% if tipo_error == "captcha" %}<p class="error" data-testid="error-captcha">Debe Ingresar captcha completo</p>{% endif %}
+      <form method="post" action="/ingreso" data-testid="formulario-ingreso">
+        <label><span class="oculto">Usuario</span>
+          <input type="text" name="usuario" placeholder="Usuario *" data-testid="campo-usuario" required>
+        </label>
+        <label><span class="oculto">Contraseña</span>
+          <input type="password" name="clave" placeholder="Contraseña *" data-testid="campo-clave" required>
+        </label>
+        <div class="captcha">
+          <div>
+            <img src="/captcha/{{ captcha_id }}.png" alt="CAPTCHA" data-testid="imagen-captcha">
+            <a href="/ingreso" data-testid="enlace-refrescar-captcha">Refrescar Imagen</a>
+          </div>
+          <label><span class="oculto">Código de la imagen</span>
+            <input type="hidden" name="captcha_id" value="{{ captcha_id }}">
+            <input type="text" name="respuesta_captcha" placeholder="Código de la Imagen *" data-testid="campo-captcha" required>
+          </label>
+        </div>
+        <div class="acciones">
+          <button type="submit" data-testid="boton-ingresar">Ingresar</button>
+        </div>
+      </form>
+      <div class="enlaces"><a>¿Olvidó su contraseña?</a><a>¡Preguntas Frecuentes!</a></div>
+    </div>
+    <div class="pie">Simulador de la plataforma ACREDITA SALUD · Versión 2.0</div>
   </div>
 {% endblock %}

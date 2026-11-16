@@ -36,7 +36,7 @@
           <td>{{ a.iafas_codigo }}</td>
           <td>{{ a.ipress_codigo }}</td>
           <td>{{ a.condicion_cobertura }}</td>
-          <td>{{ a.generado_en }}</td>
+          <td>{{ (a.generado_en|string)[:19]|replace("T", " ") }}</td>
           <td>
             <a href="/acreditacion/{{ a.codigo_autorizacion }}/documento?reimpresion=true" data-testid="enlace-reimprimir-historial">Reimprimir</a>
             /

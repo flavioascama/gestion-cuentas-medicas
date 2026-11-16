@@ -18,6 +18,7 @@ from fastapi.responses import (
     Response,
     StreamingResponse,
 )
+from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.datastructures import UploadFile as StarletteUploadFile
 
@@ -38,6 +39,8 @@ from app.sesion import NOMBRE_COOKIE, ErrorSesionInvalida, GestorSesiones, Sesio
 
 _RAIZ = Path(__file__).resolve().parent.parent
 plantillas = Jinja2Templates(directory=str(_RAIZ / "plantillas"))
+# La barra superior muestra la IPRESS de la sesion, como la plataforma real.
+plantillas.env.globals["ipress_codigo"] = configuracion.ipress_codigo
 
 
 def _sembrar_cartas_garantia(repositorio: RepositorioDatos, almacenamiento: Almacenamiento) -> None:
@@ -61,6 +64,7 @@ def _sembrar_cartas_garantia(repositorio: RepositorioDatos, almacenamiento: Alma
 
 def construir_app(repositorio: RepositorioDatos, almacenamiento: Almacenamiento) -> FastAPI:
     app = FastAPI(title="Simulador ACREDITA SALUD")
+    app.mount("/estaticos", StaticFiles(directory=str(_RAIZ / "estaticos")), name="estaticos")
     gestor_sesiones = GestorSesiones(configuracion.sesion_expiracion_minutos)
     gestor_captcha = GestorCaptcha()
     estado_falla = EstadoFalla(configuracion.modo_falla_inicial)

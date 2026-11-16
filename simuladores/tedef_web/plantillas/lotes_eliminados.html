@@ -17,7 +17,7 @@
       <tbody>
         {% for lote in lotes %}
         <tr data-testid="fila-lote">
-          <td>{{ lote.eliminado_en or "-" }}</td>
+          <td>{{ ((lote.eliminado_en or "-")|string)[:19]|replace("T", " ") }}</td>
           <td>{{ lote.identidad.numero_lote }}</td>
           <td>{{ lote.identidad.periodo }}</td>
           <td>{{ lote.usuario_eliminacion or "-" }}</td>

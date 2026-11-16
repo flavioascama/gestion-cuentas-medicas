@@ -21,7 +21,7 @@
         <td><a href="/lotes/{{ lote.nombre_archivo }}" data-testid="enlace-detalle">{{ lote.nombre_archivo }}</a></td>
         <td>{{ lote.codigo_iafas or "-" }}</td>
         <td>{{ lote.codigo_ipress or "-" }}</td>
-        <td>{{ lote.recibido_en }}</td>
+        <td>{{ (lote.recibido_en|string)[:19]|replace("T", " ") }}</td>
         <td class="{{ lote.estado }}" data-testid="estado-lote">{{ lote.estado }}{% if lote.forzado %} (forzado){% endif %}</td>
         <td class="motivo">{{ lote.motivo or "" }}</td>
       </tr>

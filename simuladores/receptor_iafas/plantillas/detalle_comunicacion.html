@@ -9,15 +9,15 @@
       data-emitida="{{ c.emitida_en }}">
     <dt>Tipo</dt><dd>{{ c.tipo }}</dd>
     <dt>Comprobante</dt><dd>{{ c.documento }}</dd>
-    <dt>Emitida</dt><dd>{{ c.emitida_en }}</dd>
+    <dt>Emitida</dt><dd>{{ (c.emitida_en|string)[:19]|replace("T", " ") }}</dd>
     {% for clave, valor in c.datos.items() %}
-    <dt>{{ clave }}</dt><dd data-testid="dato-{{ clave }}">{{ valor }}</dd>
+    <dt>{{ clave|replace("_", " ")|capitalize }}</dt><dd data-testid="dato-{{ clave }}">{{ valor }}</dd>
     {% endfor %}
   </dl>
   <script type="application/json" data-testid="datos-comunicacion">{{ datos_json | safe }}</script>
   {% if c.tipo == "OBSERVACION" %}
     {% if c.respondida_en %}
-    <p data-testid="respuesta-registrada">Respondida el {{ c.respondida_en }}: {{ c.respuesta_texto }}</p>
+    <p data-testid="respuesta-registrada">Respondida el {{ (c.respondida_en|string)[:19]|replace("T", " ") }}: {{ c.respuesta_texto }}</p>
     {% else %}
     <form method="post" action="/comunicaciones/{{ c.codigo }}/respuesta" data-testid="formulario-respuesta">
       <input type="hidden" name="codigo_ipress" value="{{ c.codigo_ipress }}">

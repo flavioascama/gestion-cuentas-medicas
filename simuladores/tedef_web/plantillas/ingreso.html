@@ -1,8 +1,11 @@
 {% extends "base.html" %}
 {% block titulo %}Ingreso - Validador de facturación electrónica{% endblock %}
 {% block contenido %}
-  <div class="tarjeta" style="max-width:400px; margin: 2rem auto;">
-    <h1>Ingreso</h1>
+  <div class="tarjeta">
+    <div class="cabecera_acceso">
+      <img src="/estaticos/logo_susalud.png" alt="SUSALUD - Superintendencia Nacional de Salud" class="logo">
+    </div>
+    <h1>TEDEF</h1>
     {% if error %}<p class="error" data-testid="error-ingreso">{{ error }}</p>{% endif %}
     <form method="post" action="/ingreso" data-testid="formulario-ingreso">
       <label>Usuario
@@ -11,12 +14,17 @@
       <label>Contraseña
         <input type="password" name="clave" data-testid="campo-clave" required>
       </label>
-      <label>Código de la imagen
+      <div class="captcha">
         <img src="/captcha/{{ captcha_id }}.png" alt="CAPTCHA" data-testid="imagen-captcha">
+        <label>Captcha
+          <input type="hidden" name="captcha_id" value="{{ captcha_id }}">
+          <input type="text" name="respuesta_captcha" data-testid="campo-captcha" required>
+        </label>
+      </div>
+      <div class="secundarios">
         <a href="/ingreso" data-testid="enlace-refrescar-captcha">Refrescar imagen</a>
-        <input type="hidden" name="captcha_id" value="{{ captcha_id }}">
-        <input type="text" name="respuesta_captcha" data-testid="campo-captcha" required>
-      </label>
+        <a>¿Olvidó su contraseña?</a>
+      </div>
       <button type="submit" data-testid="boton-ingresar">Ingresar</button>
     </form>
   </div>

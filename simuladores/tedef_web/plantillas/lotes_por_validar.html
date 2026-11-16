@@ -27,7 +27,7 @@
               <input type="checkbox" name="lote_ids" value="{{ lote.id }}" data-testid="seleccionar-lote-{{ lote.id }}">
               {% endif %}
             </td>
-            <td>{{ lote.registrado_en }}</td>
+            <td>{{ (lote.registrado_en|string)[:19]|replace("T", " ") }}</td>
             <td>{{ lote.identidad.numero_lote }}</td>
             <td>{{ lote.identidad.periodo }}</td>
             <td class="{{ lote.estado }}" data-testid="estado-lote-{{ lote.id }}">{{ lote.estado }}</td>

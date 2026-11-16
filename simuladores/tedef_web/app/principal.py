@@ -10,6 +10,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.responses import RedirectResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from app.almacenamiento import AlmacenamientoTedefWeb
@@ -30,6 +31,7 @@ plantillas = Jinja2Templates(directory=str(_RAIZ / "plantillas"))
 
 def construir_app(almacenamiento: AlmacenamientoTedefWeb) -> FastAPI:
     app = FastAPI(title="Simulador TEDEF Web")
+    app.mount("/estaticos", StaticFiles(directory=str(_RAIZ / "estaticos")), name="estaticos")
     gestor_sesiones = GestorSesiones(configuracion.sesion_expiracion_minutos)
     gestor_captcha = GestorCaptcha()
     estado_falla = EstadoFalla(configuracion.modo_falla_inicial)

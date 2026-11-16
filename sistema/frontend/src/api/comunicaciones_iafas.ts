@@ -8,6 +8,10 @@ export function listar_comunicaciones_iafas(cuenta_id: number): Promise<Comunica
   return obtener<ComunicacionIafas[]>("/comunicaciones-iafas", { cuenta_id });
 }
 
+export function listar_todas_las_comunicaciones_iafas(): Promise<ComunicacionIafas[]> {
+  return obtener<ComunicacionIafas[]>("/comunicaciones-iafas");
+}
+
 export function solicitar_revision_comunicaciones(): Promise<RevisionSolicitada> {
   return enviar<RevisionSolicitada>("POST", "/comunicaciones-iafas/revision");
 }

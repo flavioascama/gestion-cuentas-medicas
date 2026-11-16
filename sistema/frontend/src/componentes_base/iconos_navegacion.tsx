@@ -81,6 +81,15 @@ export function IconoLotes(props: SVGProps<SVGSVGElement>) {
   );
 }
 
+export function IconoComunicaciones(props: SVGProps<SVGSVGElement>) {
+  return (
+    <IconoBase {...props}>
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="m3 7 9 6 9-6" />
+    </IconoBase>
+  );
+}
+
 export function IconoAnulaciones(props: SVGProps<SVGSVGElement>) {
   return (
     <IconoBase {...props}>

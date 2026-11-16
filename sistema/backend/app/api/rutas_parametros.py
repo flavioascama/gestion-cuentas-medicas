@@ -14,8 +14,10 @@ from app.compartido.configuracion import obtener_configuracion
 from app.compartido.errores import ErrorAplicacion
 from app.dominio.acceso.entidades import NombreRol
 from app.dominio.acceso.puertos import CargaSesion
+from app.dominio.comunicaciones.correos import ErrorCorreoRemitenteInvalido, validar_remitentes
 from app.dominio.plazos.parametros import (
     ActualizarParametrosIafas,
+    ActualizarRemitenteIafas,
     ErrorIafasInexistente,
     ErrorParametroInvalido,
     ListarParametrosIafas,
@@ -42,6 +44,7 @@ class ParametrosIafasRespuesta(BaseModel):
     dias_plazo_respuesta_observacion: int
     dias_plazo_comunicacion_auditoria: int
     dias_plazo_pago_liquidacion: int
+    correo_remitente: str | None
 
     @staticmethod
     def desde_valor(valor: ParametrosIafas) -> ParametrosIafasRespuesta:
@@ -88,6 +91,33 @@ async def actualizar_parametros_iafas(
     except ErrorIafasInexistente as error:
         raise ErrorAplicacion("IAFAS_NO_ENCONTRADA", str(error), estado_http=404) from error
     except ErrorParametroInvalido as error:
+        raise ErrorAplicacion("PARAMETRO_INVALIDO", str(error), estado_http=400) from error
+    await sesion.commit()
+    return ParametrosIafasRespuesta.desde_valor(parametros)
+
+
+class SolicitudRemitenteIafas(BaseModel):
+    correo_remitente: str | None = Field(default=None, max_length=200)
+
+
+@router.put("/iafas/{iafas_id}/correo-remitente", response_model=ParametrosIafasRespuesta)
+async def actualizar_remitente_iafas(
+    iafas_id: int,
+    solicitud: SolicitudRemitenteIafas,
+    sesion: AsyncSession = Depends(obtener_sesion),
+    actor: CargaSesion = Depends(_SOLO_ADMINISTRADOR),
+) -> ParametrosIafasRespuesta:
+    caso_uso = ActualizarRemitenteIafas(
+        RepositorioParametrosIafasSql(sesion), RegistroEventosSql(sesion)
+    )
+    try:
+        remitente = validar_remitentes(solicitud.correo_remitente)
+        parametros = await caso_uso.ejecutar(
+            iafas_id, remitente, actor.nombre_usuario, actor.usuario_id
+        )
+    except ErrorIafasInexistente as error:
+        raise ErrorAplicacion("IAFAS_NO_ENCONTRADA", str(error), estado_http=404) from error
+    except ErrorCorreoRemitenteInvalido as error:
         raise ErrorAplicacion("PARAMETRO_INVALIDO", str(error), estado_http=400) from error
     await sesion.commit()
     return ParametrosIafasRespuesta.desde_valor(parametros)

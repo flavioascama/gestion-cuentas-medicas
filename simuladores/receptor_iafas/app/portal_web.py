@@ -14,17 +14,21 @@ from fastapi.templating import Jinja2Templates
 from app.almacenamiento import AlmacenamientoReceptor
 from app.auditoria import AuditoriaIafas, AuditoriaInvalidaError
 from app.configuracion import configuracion
+from app.correo import EnviadorCorreoSmtp
 
 _RAIZ = Path(__file__).resolve().parent.parent
 plantillas = Jinja2Templates(directory=str(_RAIZ / "plantillas"))
 
 
 def construir_app(
-    almacenamiento: AlmacenamientoReceptor, auditoria: AuditoriaIafas | None = None
+    almacenamiento: AlmacenamientoReceptor,
+    auditoria: AuditoriaIafas | None = None,
+    enviador: EnviadorCorreoSmtp | None = None,
 ) -> FastAPI:
     app = FastAPI(title="Simulador receptor IAFAS")
     auditoria = auditoria or AuditoriaIafas(configuracion.base_datos)
     _rutas_auditoria(app, auditoria)
+    _rutas_correo(app, enviador)
 
     @app.get("/", response_class=HTMLResponse)
     async def listar_lotes(request: Request) -> HTMLResponse:
@@ -116,6 +120,38 @@ def _rutas_auditoria(app: FastAPI, auditoria: AuditoriaIafas) -> None:
         except AuditoriaInvalidaError as error:
             return HTMLResponse(str(error), status_code=400)
         return RedirectResponse(f"/comunicaciones/{codigo}", status_code=303)
+
+
+def _rutas_correo(app: FastAPI, enviador: EnviadorCorreoSmtp | None) -> None:
+    """Correo libre a la IPRESS: el que la aseguradora escribe fuera de su
+    formato de comunicaciones, con o sin un documento adjunto."""
+
+    @app.get("/correo", response_class=HTMLResponse)
+    async def ver_correo(request: Request, enviado: str | None = None) -> HTMLResponse:
+        return plantillas.TemplateResponse(
+            request,
+            "correo.html",
+            {
+                "disponible": enviador is not None,
+                "enviado": enviado == "1",
+                "remitente": configuracion.correo_remitente,
+                "destinatario": configuracion.correo_destino_ipress,
+            },
+        )
+
+    @app.post("/admin/correo", response_model=None)
+    async def enviar_correo(
+        asunto: str = Form(...),
+        texto: str = Form(...),
+        adjuntar_documento: str = Form(""),
+    ) -> HTMLResponse | RedirectResponse:
+        if enviador is None:
+            return HTMLResponse("El servidor de correo no está configurado.", status_code=503)
+        try:
+            enviador.enviar_libre(asunto.strip(), texto.strip(), bool(adjuntar_documento))
+        except OSError as error:
+            return HTMLResponse(f"No se pudo enviar el correo: {error}", status_code=502)
+        return RedirectResponse("/correo?enviado=1", status_code=303)
 
 
 def crear_app_desde_configuracion() -> FastAPI:

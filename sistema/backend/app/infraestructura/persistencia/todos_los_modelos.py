@@ -19,6 +19,7 @@ from app.infraestructura.persistencia import (
     modelos_catalogo_gtin,  # noqa: F401
     modelos_cie10,  # noqa: F401
     modelos_comunicaciones,  # noqa: F401
+    modelos_correos,  # noqa: F401
     modelos_cpms,  # noqa: F401
     modelos_documentos_pago,  # noqa: F401
     modelos_farmacia,  # noqa: F401

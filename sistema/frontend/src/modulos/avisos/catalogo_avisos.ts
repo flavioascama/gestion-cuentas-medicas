@@ -3,6 +3,7 @@ import {
   CANALES_COMUNICACION,
   TIPOS_COMUNICACION,
 } from "../comunicaciones/columnas_comunicaciones";
+import { MOTIVOS_REVISION } from "../comunicaciones/etiquetas_correos";
 import { formatear_fecha, formatear_fecha_hora } from "../../utilidades/formato";
 
 // Que significa cada aviso, en el lenguaje de la clinica: un titulo y el
@@ -120,6 +121,10 @@ const _CATALOGO: Record<string, Describir> = {
       que_paso: `${tipo} ${texto(a, "codigo") ?? ""} (${canal}): ${texto(a, "detalle") ?? ""}`,
     };
   },
+  correo_iafas_por_revisar: (a) => ({
+    titulo: "Correo de la IAFAS por revisar",
+    que_paso: `${texto(a, "remitente") ?? ""}: ${MOTIVOS_REVISION[texto(a, "motivo") ?? ""] ?? ""}`,
+  }),
   // C-15: el incidente se comunica a la autoridad dentro de las 48 horas de
   // conocido (D.S. 016-2024-JUS, art. 34).
   ruptura_cadena_detectada: (a) => ({
@@ -147,6 +152,7 @@ const _CATALOGO: Record<string, Describir> = {
 
 function destino_de(aviso: Aviso): string | null {
   if (aviso.tipo_evento.startsWith("CONTINGENCIA_")) return "/contingencias";
+  if (aviso.tipo_evento === "CORREO_IAFAS_POR_REVISAR") return "/comunicaciones";
   const trabajo = texto(aviso, "tipo_trabajo");
   if (trabajo === "ENVIAR_LOTE_SUSALUD") return "/lotes";
   if (aviso.tipo_evento.startsWith("SUSALUD_ENVIO_")) return "/lotes";

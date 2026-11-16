@@ -1924,6 +1924,301 @@
         ]
       }
     },
+    "/correos-iafas": {
+      "get": {
+        "tags": [
+          "comunicaciones_iafas"
+        ],
+        "summary": "Listar Correos",
+        "operationId": "listar_correos_correos_iafas_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "estado",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "PROCESADO",
+                    "POR_REVISAR",
+                    "VINCULADO",
+                    "DESCARTADO"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Estado"
+            }
+          },
+          {
+            "name": "cuenta_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cuenta Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CorreoIafasRespuesta"
+                  },
+                  "title": "Response Listar Correos Correos Iafas Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/correos-iafas/{correo_id}": {
+      "get": {
+        "tags": [
+          "comunicaciones_iafas"
+        ],
+        "summary": "Consultar Correo",
+        "operationId": "consultar_correo_correos_iafas__correo_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "correo_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Correo Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CorreoIafasDetalleRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/correos-iafas/{correo_id}/adjuntos/{adjunto_id}": {
+      "get": {
+        "tags": [
+          "comunicaciones_iafas"
+        ],
+        "summary": "Descargar Adjunto",
+        "operationId": "descargar_adjunto_correos_iafas__correo_id__adjuntos__adjunto_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "correo_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Correo Id"
+            }
+          },
+          {
+            "name": "adjunto_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Adjunto Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/correos-iafas/{correo_id}/vinculacion": {
+      "post": {
+        "tags": [
+          "comunicaciones_iafas"
+        ],
+        "summary": "Vincular Correo",
+        "operationId": "vincular_correo_correos_iafas__correo_id__vinculacion_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "correo_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Correo Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SolicitudVinculacion"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CorreoIafasDetalleRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/correos-iafas/{correo_id}/descarte": {
+      "post": {
+        "tags": [
+          "comunicaciones_iafas"
+        ],
+        "summary": "Descartar Correo",
+        "operationId": "descartar_correo_correos_iafas__correo_id__descarte_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "correo_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Correo Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SolicitudDescarte"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CorreoIafasDetalleRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/cuentas/{cuenta_id}/auditoria/conformidad": {
       "get": {
         "tags": [
@@ -2450,6 +2745,63 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/SolicitudParametrosIafas"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ParametrosIafasRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/parametros/iafas/{iafas_id}/correo-remitente": {
+      "put": {
+        "tags": [
+          "administracion"
+        ],
+        "summary": "Actualizar Remitente Iafas",
+        "operationId": "actualizar_remitente_iafas_parametros_iafas__iafas_id__correo_remitente_put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "iafas_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Iafas Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SolicitudRemitenteIafas"
               }
             }
           }
@@ -4076,6 +4428,56 @@
         ],
         "title": "AcreditacionRespuesta"
       },
+      "AdjuntoCorreoRespuesta": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "nombre": {
+            "type": "string",
+            "title": "Nombre"
+          },
+          "tipo": {
+            "type": "string",
+            "title": "Tipo"
+          },
+          "tamano": {
+            "type": "integer",
+            "title": "Tamano"
+          },
+          "huella": {
+            "type": "string",
+            "title": "Huella"
+          },
+          "almacenado": {
+            "type": "boolean",
+            "title": "Almacenado"
+          },
+          "motivo_omision": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Motivo Omision"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "nombre",
+          "tipo",
+          "tamano",
+          "huella",
+          "almacenado",
+          "motivo_omision"
+        ],
+        "title": "AdjuntoCorreoRespuesta"
+      },
       "AvisoRespuesta": {
         "properties": {
           "evento_id": {
@@ -4562,6 +4964,327 @@
           "estado"
         ],
         "title": "ControlPeriodoSusaludRespuesta"
+      },
+      "CorreoIafasDetalleRespuesta": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "remitente": {
+            "type": "string",
+            "title": "Remitente"
+          },
+          "codigo_iafas": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Codigo Iafas"
+          },
+          "asunto": {
+            "type": "string",
+            "title": "Asunto"
+          },
+          "fecha": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fecha"
+          },
+          "recibido_en": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Recibido En"
+          },
+          "estado": {
+            "type": "string",
+            "title": "Estado"
+          },
+          "motivo_revision": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Motivo Revision"
+          },
+          "comunicacion_codigo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comunicacion Codigo"
+          },
+          "cuenta_medica_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cuenta Medica Id"
+          },
+          "identificacion_interna": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Identificacion Interna"
+          },
+          "huella": {
+            "type": "string",
+            "title": "Huella"
+          },
+          "resuelto_por": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resuelto Por"
+          },
+          "resuelto_en": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resuelto En"
+          },
+          "nota_resolucion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nota Resolucion"
+          },
+          "cantidad_adjuntos": {
+            "type": "integer",
+            "title": "Cantidad Adjuntos"
+          },
+          "texto": {
+            "type": "string",
+            "title": "Texto"
+          },
+          "adjuntos": {
+            "items": {
+              "$ref": "#/components/schemas/AdjuntoCorreoRespuesta"
+            },
+            "type": "array",
+            "title": "Adjuntos"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "remitente",
+          "codigo_iafas",
+          "asunto",
+          "fecha",
+          "recibido_en",
+          "estado",
+          "motivo_revision",
+          "comunicacion_codigo",
+          "cuenta_medica_id",
+          "identificacion_interna",
+          "huella",
+          "resuelto_por",
+          "resuelto_en",
+          "nota_resolucion",
+          "cantidad_adjuntos",
+          "texto",
+          "adjuntos"
+        ],
+        "title": "CorreoIafasDetalleRespuesta"
+      },
+      "CorreoIafasRespuesta": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "remitente": {
+            "type": "string",
+            "title": "Remitente"
+          },
+          "codigo_iafas": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Codigo Iafas"
+          },
+          "asunto": {
+            "type": "string",
+            "title": "Asunto"
+          },
+          "fecha": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fecha"
+          },
+          "recibido_en": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Recibido En"
+          },
+          "estado": {
+            "type": "string",
+            "title": "Estado"
+          },
+          "motivo_revision": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Motivo Revision"
+          },
+          "comunicacion_codigo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comunicacion Codigo"
+          },
+          "cuenta_medica_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cuenta Medica Id"
+          },
+          "identificacion_interna": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Identificacion Interna"
+          },
+          "huella": {
+            "type": "string",
+            "title": "Huella"
+          },
+          "resuelto_por": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resuelto Por"
+          },
+          "resuelto_en": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resuelto En"
+          },
+          "nota_resolucion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nota Resolucion"
+          },
+          "cantidad_adjuntos": {
+            "type": "integer",
+            "title": "Cantidad Adjuntos"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "remitente",
+          "codigo_iafas",
+          "asunto",
+          "fecha",
+          "recibido_en",
+          "estado",
+          "motivo_revision",
+          "comunicacion_codigo",
+          "cuenta_medica_id",
+          "identificacion_interna",
+          "huella",
+          "resuelto_por",
+          "resuelto_en",
+          "nota_resolucion",
+          "cantidad_adjuntos"
+        ],
+        "title": "CorreoIafasRespuesta"
       },
       "CuentaLoteRespuesta": {
         "properties": {
@@ -5818,6 +6541,17 @@
           "dias_plazo_pago_liquidacion": {
             "type": "integer",
             "title": "Dias Plazo Pago Liquidacion"
+          },
+          "correo_remitente": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Correo Remitente"
           }
         },
         "type": "object",
@@ -5829,7 +6563,8 @@
           "ventana_monitoreo_horas",
           "dias_plazo_respuesta_observacion",
           "dias_plazo_comunicacion_auditoria",
-          "dias_plazo_pago_liquidacion"
+          "dias_plazo_pago_liquidacion",
+          "correo_remitente"
         ],
         "title": "ParametrosIafasRespuesta"
       },
@@ -7465,6 +8200,21 @@
         ],
         "title": "SolicitudCrearUsuario"
       },
+      "SolicitudDescarte": {
+        "properties": {
+          "motivo": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Motivo"
+          }
+        },
+        "type": "object",
+        "required": [
+          "motivo"
+        ],
+        "title": "SolicitudDescarte"
+      },
       "SolicitudEnvioSusalud": {
         "properties": {
           "periodo": {
@@ -7922,6 +8672,24 @@
         ],
         "title": "SolicitudRegistroObservacion"
       },
+      "SolicitudRemitenteIafas": {
+        "properties": {
+          "correo_remitente": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Correo Remitente"
+          }
+        },
+        "type": "object",
+        "title": "SolicitudRemitenteIafas"
+      },
       "SolicitudResolucionAnulacion": {
         "properties": {
           "aprobada": {
@@ -8035,6 +8803,21 @@
           "sustento"
         ],
         "title": "SolicitudValidacionContingencia"
+      },
+      "SolicitudVinculacion": {
+        "properties": {
+          "identificacion_interna": {
+            "type": "string",
+            "maxLength": 10,
+            "minLength": 1,
+            "title": "Identificacion Interna"
+          }
+        },
+        "type": "object",
+        "required": [
+          "identificacion_interna"
+        ],
+        "title": "SolicitudVinculacion"
       },
       "TiempoCicloCuentasRespuesta": {
         "properties": {

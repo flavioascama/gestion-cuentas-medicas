@@ -16,6 +16,15 @@ export function actualizar_parametros_iafas(
   return enviar<ParametrosIafas>("PATCH", `/parametros/iafas/${iafas_id}`, cambios);
 }
 
+export function actualizar_remitente_iafas(
+  iafas_id: number,
+  correo_remitente: string | null,
+): Promise<ParametrosIafas> {
+  return enviar<ParametrosIafas>("PUT", `/parametros/iafas/${iafas_id}/correo-remitente`, {
+    correo_remitente,
+  });
+}
+
 export function listar_parametros_sistema(): Promise<ParametroSistema[]> {
   return obtener<ParametroSistema[]>("/parametros/sistema");
 }

@@ -19,6 +19,7 @@ def _a_parametros(fila: IafasModelo) -> ParametrosIafas:
         dias_plazo_respuesta_observacion=fila.dias_plazo_respuesta_observacion,
         dias_plazo_comunicacion_auditoria=fila.dias_plazo_comunicacion_auditoria,
         dias_plazo_pago_liquidacion=fila.dias_plazo_pago_liquidacion,
+        correo_remitente=fila.correo_remitente,
     )
 
 
@@ -37,6 +38,18 @@ class RepositorioParametrosIafasSql(RepositorioParametrosIafas):
     async def actualizar(self, iafas_id: int, cambios: dict[str, int]) -> ParametrosIafas:
         await self._sesion.execute(
             sa.update(IafasModelo).where(IafasModelo.id == iafas_id).values(**cambios)
+        )
+        fila = await self._sesion.get(IafasModelo, iafas_id, populate_existing=True)
+        assert fila is not None
+        return _a_parametros(fila)
+
+    async def actualizar_remitente(
+        self, iafas_id: int, correo_remitente: str | None
+    ) -> ParametrosIafas:
+        await self._sesion.execute(
+            sa.update(IafasModelo)
+            .where(IafasModelo.id == iafas_id)
+            .values(correo_remitente=correo_remitente)
         )
         fila = await self._sesion.get(IafasModelo, iafas_id, populate_existing=True)
         assert fila is not None

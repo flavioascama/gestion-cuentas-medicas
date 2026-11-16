@@ -32,6 +32,7 @@ from app.api.rutas_comunicaciones import router as router_comunicaciones  # noqa
 from app.api.rutas_contingencia import router as router_contingencia  # noqa: E402
 from app.api.rutas_contingencia import router_cuentas as router_contingencia_cuentas  # noqa: E402
 from app.api.rutas_contingencia import router_lotes as router_contingencia_lotes  # noqa: E402
+from app.api.rutas_correos import router as router_correos  # noqa: E402
 from app.api.rutas_cpms import router as router_cpms  # noqa: E402
 from app.api.rutas_cuentas import router as router_cuentas  # noqa: E402
 from app.api.rutas_cuentas import router_iafas  # noqa: E402
@@ -80,6 +81,7 @@ app.include_router(router_lotes)
 app.include_router(router_observaciones)
 app.include_router(router_observaciones_item)
 app.include_router(router_comunicaciones)
+app.include_router(router_correos)
 app.include_router(router_auditoria)
 app.include_router(router_carta_garantia)
 app.include_router(router_farmacia)

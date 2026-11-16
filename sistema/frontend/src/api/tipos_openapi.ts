@@ -559,6 +559,91 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/correos-iafas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar Correos */
+        get: operations["listar_correos_correos_iafas_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/correos-iafas/{correo_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Consultar Correo */
+        get: operations["consultar_correo_correos_iafas__correo_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/correos-iafas/{correo_id}/adjuntos/{adjunto_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Descargar Adjunto */
+        get: operations["descargar_adjunto_correos_iafas__correo_id__adjuntos__adjunto_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/correos-iafas/{correo_id}/vinculacion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Vincular Correo */
+        post: operations["vincular_correo_correos_iafas__correo_id__vinculacion_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/correos-iafas/{correo_id}/descarte": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Descartar Correo */
+        post: operations["descartar_correo_correos_iafas__correo_id__descarte_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/cuentas/{cuenta_id}/auditoria/conformidad": {
         parameters: {
             query?: never;
@@ -712,6 +797,23 @@ export interface paths {
         head?: never;
         /** Actualizar Parametros Iafas */
         patch: operations["actualizar_parametros_iafas_parametros_iafas__iafas_id__patch"];
+        trace?: never;
+    };
+    "/parametros/iafas/{iafas_id}/correo-remitente": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Actualizar Remitente Iafas */
+        put: operations["actualizar_remitente_iafas_parametros_iafas__iafas_id__correo_remitente_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/parametros/sistema": {
@@ -1208,6 +1310,23 @@ export interface components {
             /** Preexistencias */
             preexistencias: string[];
         };
+        /** AdjuntoCorreoRespuesta */
+        AdjuntoCorreoRespuesta: {
+            /** Id */
+            id: number;
+            /** Nombre */
+            nombre: string;
+            /** Tipo */
+            tipo: string;
+            /** Tamano */
+            tamano: number;
+            /** Huella */
+            huella: string;
+            /** Almacenado */
+            almacenado: boolean;
+            /** Motivo Omision */
+            motivo_omision: string | null;
+        };
         /** AvisoRespuesta */
         AvisoRespuesta: {
             /** Evento Id */
@@ -1397,6 +1516,86 @@ export interface components {
             ultimo_envio: string | null;
             /** Estado */
             estado: string;
+        };
+        /** CorreoIafasDetalleRespuesta */
+        CorreoIafasDetalleRespuesta: {
+            /** Id */
+            id: number;
+            /** Remitente */
+            remitente: string;
+            /** Codigo Iafas */
+            codigo_iafas: string | null;
+            /** Asunto */
+            asunto: string;
+            /** Fecha */
+            fecha: string | null;
+            /**
+             * Recibido En
+             * Format: date-time
+             */
+            recibido_en: string;
+            /** Estado */
+            estado: string;
+            /** Motivo Revision */
+            motivo_revision: string | null;
+            /** Comunicacion Codigo */
+            comunicacion_codigo: string | null;
+            /** Cuenta Medica Id */
+            cuenta_medica_id: number | null;
+            /** Identificacion Interna */
+            identificacion_interna: string | null;
+            /** Huella */
+            huella: string;
+            /** Resuelto Por */
+            resuelto_por: string | null;
+            /** Resuelto En */
+            resuelto_en: string | null;
+            /** Nota Resolucion */
+            nota_resolucion: string | null;
+            /** Cantidad Adjuntos */
+            cantidad_adjuntos: number;
+            /** Texto */
+            texto: string;
+            /** Adjuntos */
+            adjuntos: components["schemas"]["AdjuntoCorreoRespuesta"][];
+        };
+        /** CorreoIafasRespuesta */
+        CorreoIafasRespuesta: {
+            /** Id */
+            id: number;
+            /** Remitente */
+            remitente: string;
+            /** Codigo Iafas */
+            codigo_iafas: string | null;
+            /** Asunto */
+            asunto: string;
+            /** Fecha */
+            fecha: string | null;
+            /**
+             * Recibido En
+             * Format: date-time
+             */
+            recibido_en: string;
+            /** Estado */
+            estado: string;
+            /** Motivo Revision */
+            motivo_revision: string | null;
+            /** Comunicacion Codigo */
+            comunicacion_codigo: string | null;
+            /** Cuenta Medica Id */
+            cuenta_medica_id: number | null;
+            /** Identificacion Interna */
+            identificacion_interna: string | null;
+            /** Huella */
+            huella: string;
+            /** Resuelto Por */
+            resuelto_por: string | null;
+            /** Resuelto En */
+            resuelto_en: string | null;
+            /** Nota Resolucion */
+            nota_resolucion: string | null;
+            /** Cantidad Adjuntos */
+            cantidad_adjuntos: number;
         };
         /** CuentaLoteRespuesta */
         CuentaLoteRespuesta: {
@@ -1846,6 +2045,8 @@ export interface components {
             dias_plazo_comunicacion_auditoria: number;
             /** Dias Plazo Pago Liquidacion */
             dias_plazo_pago_liquidacion: number;
+            /** Correo Remitente */
+            correo_remitente: string | null;
         };
         /** PiezaCompletitudRespuesta */
         PiezaCompletitudRespuesta: {
@@ -2404,6 +2605,11 @@ export interface components {
             /** Roles */
             roles: components["schemas"]["NombreRol"][];
         };
+        /** SolicitudDescarte */
+        SolicitudDescarte: {
+            /** Motivo */
+            motivo: string;
+        };
         /** SolicitudEnvioSusalud */
         SolicitudEnvioSusalud: {
             /** Periodo */
@@ -2542,6 +2748,11 @@ export interface components {
             /** Detalle Campo Objetado */
             detalle_campo_objetado?: string | null;
         };
+        /** SolicitudRemitenteIafas */
+        SolicitudRemitenteIafas: {
+            /** Correo Remitente */
+            correo_remitente?: string | null;
+        };
         /** SolicitudResolucionAnulacion */
         SolicitudResolucionAnulacion: {
             /** Aprobada */
@@ -2578,6 +2789,11 @@ export interface components {
             nombre_s01?: string | null;
             /** Contenido S01 Base64 */
             contenido_s01_base64?: string | null;
+        };
+        /** SolicitudVinculacion */
+        SolicitudVinculacion: {
+            /** Identificacion Interna */
+            identificacion_interna: string;
         };
         /** TiempoCicloCuentasRespuesta */
         TiempoCicloCuentasRespuesta: {
@@ -3861,6 +4077,171 @@ export interface operations {
             };
         };
     };
+    listar_correos_correos_iafas_get: {
+        parameters: {
+            query?: {
+                estado?: ("PROCESADO" | "POR_REVISAR" | "VINCULADO" | "DESCARTADO") | null;
+                cuenta_id?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CorreoIafasRespuesta"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    consultar_correo_correos_iafas__correo_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                correo_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CorreoIafasDetalleRespuesta"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    descargar_adjunto_correos_iafas__correo_id__adjuntos__adjunto_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                correo_id: number;
+                adjunto_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    vincular_correo_correos_iafas__correo_id__vinculacion_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                correo_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SolicitudVinculacion"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CorreoIafasDetalleRespuesta"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    descartar_correo_correos_iafas__correo_id__descarte_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                correo_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SolicitudDescarte"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CorreoIafasDetalleRespuesta"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     consultar_conformidad_cuentas__cuenta_id__auditoria_conformidad_get: {
         parameters: {
             query?: never;
@@ -4185,6 +4566,41 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["SolicitudParametrosIafas"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ParametrosIafasRespuesta"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    actualizar_remitente_iafas_parametros_iafas__iafas_id__correo_remitente_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                iafas_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SolicitudRemitenteIafas"];
             };
         };
         responses: {

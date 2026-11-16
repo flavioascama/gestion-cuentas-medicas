@@ -12,11 +12,15 @@ import { MensajeErrorMutacion } from "../../componentes_base/mensaje_error_mutac
 import { TablaDatos, type ColumnaTabla } from "../../componentes_base/tabla_datos";
 import { TituloPagina } from "../../componentes_base/titulo_pagina";
 import { con_unidad } from "./formato_administracion";
+import { SeccionRemitentes } from "./seccion_remitentes";
 import estilos from "./administracion.module.css";
 
 // CU-18: plazos del convenio con cada aseguradora (Tabla 61) y ventanas de
 // monitoreo (Seccion 8.3), en su propia pantalla (rediseno 2026-11-15).
-type CampoPlazo = Exclude<keyof ParametrosIafas, "iafas_id" | "codigo" | "razon_social">;
+type CampoPlazo = Exclude<
+  keyof ParametrosIafas,
+  "iafas_id" | "codigo" | "razon_social" | "correo_remitente"
+>;
 
 interface DefinicionPlazo {
   clave: CampoPlazo;
@@ -170,6 +174,11 @@ export function AdministracionAseguradoras() {
           />
         </div>
       </div>
+      <SeccionRemitentes
+        filas={consulta.data ?? []}
+        cargando={consulta.isPending}
+        error={consulta.error}
+      />
       {editando ? <DialogoPlazos iafas={editando} al_cerrar={() => set_editando(null)} /> : null}
     </div>
   );

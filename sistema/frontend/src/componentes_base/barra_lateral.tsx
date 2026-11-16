@@ -14,6 +14,7 @@ import {
   IconoAnulaciones,
   IconoAseguradoras,
   IconoCatalogos,
+  IconoComunicaciones,
   IconoContingencias,
   IconoCuentas,
   IconoIndicadores,
@@ -22,29 +23,21 @@ import {
 } from "./iconos_navegacion";
 import estilos from "./barra_lateral.module.css";
 
+const _ICONOS = new Map([
+  ["/cuentas", IconoCuentas],
+  ["/lotes", IconoLotes],
+  ["/comunicaciones", IconoComunicaciones],
+  ["/anulaciones", IconoAnulaciones],
+  ["/contingencias", IconoContingencias],
+  ["/indicadores", IconoIndicadores],
+  ["/administracion/usuarios", IconoUsuarios],
+  ["/administracion/aseguradoras", IconoAseguradoras],
+  ["/administracion/parametros", IconoAdministracion],
+  ["/administracion/catalogos", IconoCatalogos],
+]);
+
 function icono_de_ruta(ruta: string) {
-  switch (ruta) {
-    case "/cuentas":
-      return IconoCuentas;
-    case "/lotes":
-      return IconoLotes;
-    case "/anulaciones":
-      return IconoAnulaciones;
-    case "/contingencias":
-      return IconoContingencias;
-    case "/indicadores":
-      return IconoIndicadores;
-    case "/administracion/usuarios":
-      return IconoUsuarios;
-    case "/administracion/aseguradoras":
-      return IconoAseguradoras;
-    case "/administracion/parametros":
-      return IconoAdministracion;
-    case "/administracion/catalogos":
-      return IconoCatalogos;
-    default:
-      return null;
-  }
+  return _ICONOS.get(ruta) ?? null;
 }
 
 function modulos_visibles(roles_usuario: string[]): DefinicionRuta[] {

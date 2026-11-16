@@ -64,3 +64,40 @@ class TextoCifrado(TypeDecorator[str]):
 
     def process_result_value(self, value: Any, dialect: Any) -> str | None:
         return None if value is None else descifrar_texto(str(value))
+
+
+def cifrar_bytes(valor: bytes, clave: str | None = None) -> bytes:
+    clave = clave or obtener_configuracion().clave_cifrado_datos
+    return _fernet(clave).encrypt(valor)
+
+
+def descifrar_bytes(valor: bytes, clave: str | None = None) -> bytes:
+    clave = clave or obtener_configuracion().clave_cifrado_datos
+    return _fernet(clave).decrypt(valor)
+
+
+class TextoLargoCifrado(TypeDecorator[str]):
+    """Como TextoCifrado, para textos sin longitud fija (el asunto y el
+    texto de un correo recibido)."""
+
+    impl = sa.Text
+    cache_ok = True
+
+    def process_bind_param(self, value: Any, dialect: Any) -> str | None:
+        return None if value is None else cifrar_texto(str(value))
+
+    def process_result_value(self, value: Any, dialect: Any) -> str | None:
+        return None if value is None else descifrar_texto(str(value))
+
+
+class BinarioCifrado(TypeDecorator[bytes]):
+    """Contenido binario cifrado (el adjunto de un correo recibido)."""
+
+    impl = sa.LargeBinary
+    cache_ok = True
+
+    def process_bind_param(self, value: Any, dialect: Any) -> bytes | None:
+        return None if value is None else cifrar_bytes(bytes(value))
+
+    def process_result_value(self, value: Any, dialect: Any) -> bytes | None:
+        return None if value is None else descifrar_bytes(bytes(value))

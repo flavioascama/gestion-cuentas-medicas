@@ -8,10 +8,15 @@ import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dominio.avisos.puertos import RepositorioAvisos
-from app.dominio.avisos.valores import TIPO_AVISO_TRABAJO_AGOTADO, EventoAviso
+from app.dominio.avisos.valores import (
+    TIPO_AVISO_CORREO_POR_REVISAR,
+    TIPO_AVISO_TRABAJO_AGOTADO,
+    EventoAviso,
+)
 from app.dominio.contingencia.valores import es_no_encontrado_legado
 from app.dominio.puertos_comunes import TIPO_AGREGADO_LOTE
 from app.infraestructura.persistencia.atencion_avisos_sql import EvaluadorAtencionAvisos
+from app.infraestructura.persistencia.modelos_correos import CorreoIafasModelo
 from app.infraestructura.persistencia.modelos_integracion import (
     CuentaMedicaModelo,
     EventoModelo,
@@ -28,11 +33,45 @@ class RepositorioAvisosSql(RepositorioAvisos):
         avisos = await self._avisos_de_eventos(tipos_evento, limite)
         if TIPO_AVISO_TRABAJO_AGOTADO in tipos_evento:
             avisos.extend(await self._trabajos_agotados(limite))
-            avisos.sort(key=lambda aviso: aviso.ocurrido_en, reverse=True)
+        if TIPO_AVISO_CORREO_POR_REVISAR in tipos_evento:
+            avisos.extend(await self._correos_por_revisar(limite))
+        avisos.sort(key=lambda aviso: aviso.ocurrido_en, reverse=True)
         return avisos[:limite]
 
     async def evaluar_atencion(self, avisos: list[EventoAviso]) -> list[EventoAviso]:
         return await EvaluadorAtencionAvisos(self._sesion).evaluar(avisos)
+
+    async def _correos_por_revisar(self, limite: int) -> list[EventoAviso]:
+        filas = await self._sesion.execute(
+            sa.select(
+                CorreoIafasModelo.id,
+                CorreoIafasModelo.recibido_en,
+                CorreoIafasModelo.remitente,
+                CorreoIafasModelo.motivo_revision,
+                CorreoIafasModelo.codigo_iafas,
+            )
+            .where(CorreoIafasModelo.estado == "POR_REVISAR")
+            .order_by(CorreoIafasModelo.recibido_en.desc())
+            .limit(limite)
+        )
+        return [
+            EventoAviso(
+                evento_id=f"correo-{fila[0]}",
+                tipo_evento=TIPO_AVISO_CORREO_POR_REVISAR,
+                ocurrido_en=fila[1],
+                datos={
+                    "correo_id": fila[0],
+                    "remitente": fila[2],
+                    "motivo": fila[3],
+                    "iafas": fila[4],
+                },
+                cuenta_medica_id=None,
+                identificacion_interna=None,
+                lote_id=None,
+                numero_lote=None,
+            )
+            for fila in filas.all()
+        ]
 
     async def _trabajos_agotados(self, limite: int) -> list[EventoAviso]:
         trabajos = (

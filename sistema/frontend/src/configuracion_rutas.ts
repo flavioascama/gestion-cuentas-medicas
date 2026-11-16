@@ -23,6 +23,13 @@ export const CONFIGURACION_RUTAS: DefinicionRuta[] = [
   { ruta: "/cuentas/:cuenta_id", roles: ["analista", "auditor", "jefe", "tesoreria"] },
   { ruta: "/lotes", etiqueta: "Lotes", roles: ["analista", "jefe"] },
   { ruta: "/lotes/:lote_id", roles: ["analista", "jefe"] },
+  // Todo lo que las aseguradoras comunican por su portal y por correo,
+  // incluidos los correos que una persona debe revisar (2026-11-15).
+  {
+    ruta: "/comunicaciones",
+    etiqueta: "Comunicaciones",
+    roles: ["analista", "auditor", "jefe", "tesoreria"],
+  },
   // CU-13/RF-21 (Fase 28, 31): bandeja del jefe para aprobar o rechazar
   // las solicitudes de anulacion -- no vive dentro de una cuenta porque
   // reune solicitudes de cualquier cuenta.

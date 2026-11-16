@@ -185,6 +185,10 @@ class EvaluadorAtencionAvisos:
 def _atendido(aviso: EventoAviso, contexto: _Contexto) -> bool:
     if aviso.tipo_evento == "RUPTURA_CADENA_DETECTADA":
         return False
+    # Solo se listan los correos que siguen por revisar: al vincularlos o
+    # descartarlos dejan de ser un aviso.
+    if aviso.tipo_evento == "CORREO_IAFAS_POR_REVISAR":
+        return False
     if aviso.tipo_evento in _CONTINGENCIAS:
         return aviso.evento_id in contexto.revisados
     if aviso.tipo_evento == TIPO_AVISO_TRABAJO_AGOTADO:

@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block titulo %}Correo a la IPRESS - Simulador receptor IAFAS{% endblock %}
+{% block contenido %}
+  <h1>Correo a la IPRESS</h1>
+  {% if enviado %}<p data-testid="correo-enviado"><strong>Correo enviado.</strong></p>{% endif %}
+  {% if disponible %}
+  <form method="post" action="/admin/correo" data-testid="formulario-correo">
+    <p>De: {{ remitente }}<br>Para: {{ destinatario }}</p>
+    <p><label>Asunto<br><input type="text" name="asunto" size="80" maxlength="200" required data-testid="asunto-correo"></label></p>
+    <p><label>Texto<br><textarea name="texto" rows="8" cols="80" required data-testid="texto-correo"></textarea></label></p>
+    <p><label><input type="checkbox" name="adjuntar_documento" value="1" data-testid="adjuntar-documento"> Adjuntar el texto como documento PDF</label></p>
+    <p><button type="submit" data-testid="enviar-correo">Enviar correo</button></p>
+  </form>
+  {% else %}
+  <p>El servidor de correo no está configurado.</p>
+  {% endif %}
+{% endblock %}

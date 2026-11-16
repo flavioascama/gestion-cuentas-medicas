@@ -38,6 +38,7 @@ class DefinicionAviso:
 
 
 TIPO_AVISO_TRABAJO_AGOTADO = "TRABAJO_AGOTADO"
+TIPO_AVISO_CORREO_POR_REVISAR = "CORREO_IAFAS_POR_REVISAR"
 
 _ANALISTA = NombreRol.ANALISTA
 _AUDITOR = NombreRol.AUDITOR
@@ -94,6 +95,14 @@ CATALOGO_AVISOS: dict[str, DefinicionAviso] = {
         Severidad.CRITICO,
         frozenset({_ANALISTA, _JEFE, _TESORERIA}),
     ),
+    # Un correo de la IAFAS que el robot no pudo aplicar solo (2026-11-15):
+    # sin el formato de la aseguradora, de un remitente no registrado o de
+    # un comprobante desconocido. No es un evento del almacen sino un
+    # correo en estado POR_REVISAR; deja de avisarse al vincularlo o
+    # descartarlo.
+    TIPO_AVISO_CORREO_POR_REVISAR: DefinicionAviso(
+        "Correo de la IAFAS por revisar", Severidad.CRITICO, frozenset({_ANALISTA, _JEFE})
+    ),
     # C-15 (2026-11-13): el acceso indebido tambien es una alerta para el
     # titular del banco de datos (el administrador y el jefe).
     "ACCESO_DENEGADO": DefinicionAviso(
@@ -144,8 +153,13 @@ _FAMILIAS = {
 }
 
 # Cada registro en contingencia se revisa por separado (C-18): no se agrupan.
+# Tampoco los correos por revisar: cada uno lo resuelve una persona.
 _TIPOS_SIN_AGRUPAR = frozenset(
-    {"CONTINGENCIA_COBERTURA_REGISTRADA", "CONTINGENCIA_VALIDACION_REGISTRADA"}
+    {
+        "CONTINGENCIA_COBERTURA_REGISTRADA",
+        "CONTINGENCIA_VALIDACION_REGISTRADA",
+        TIPO_AVISO_CORREO_POR_REVISAR,
+    }
 )
 
 

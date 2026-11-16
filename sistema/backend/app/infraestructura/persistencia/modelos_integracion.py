@@ -67,6 +67,10 @@ class IafasModelo(Base):
         sa.Integer, nullable=False, default=30
     )
     dias_plazo_pago_liquidacion: Mapped[int] = mapped_column(sa.Integer, nullable=False, default=30)
+    # Remitente del que se aceptan comunicaciones por correo de esta
+    # aseguradora (2026-11-15): direcciones o dominios (@dominio) separados
+    # por coma. Sin valor, sus correos quedan por revisar.
+    correo_remitente: Mapped[str | None] = mapped_column(sa.String(200), nullable=True)
 
 
 class IpressModelo(Base):

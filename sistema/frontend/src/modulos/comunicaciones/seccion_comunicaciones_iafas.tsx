@@ -11,10 +11,11 @@ import { TablaDatos } from "../../componentes_base/tabla_datos";
 import { usar_sesion } from "../../sesion/contexto_sesion";
 import estilos from "../cuentas/detalle_cuenta.module.css";
 import { COLUMNAS_COMUNICACIONES } from "./columnas_comunicaciones";
+import { TablaCorreos } from "./tabla_correos";
 
 const _REVISA = ["analista", "jefe", "tesoreria"];
 
-function AccionRevisar() {
+export function AccionRevisar() {
   const { sesion } = usar_sesion();
   const cliente = useQueryClient();
   const revision = useMutation({ mutationFn: solicitar_revision_comunicaciones });
@@ -44,17 +45,27 @@ export function SeccionComunicacionesIafas({ cuenta_id }: { cuenta_id: number })
   });
 
   return (
-    <div className={estilos.seccion}>
-      <div className={estilos.titulo_seccion}>Comunicaciones de la IAFAS</div>
-      <AccionRevisar />
-      <TablaDatos
-        columnas={COLUMNAS_COMUNICACIONES}
-        filas={consulta.data ?? []}
-        obtener_clave={(fila) => fila.codigo}
-        cargando={consulta.isPending}
-        error={consulta.error}
-        mensaje_vacio="Sin comunicaciones de la IAFAS para esta cuenta."
-      />
-    </div>
+    <>
+      <div className={estilos.seccion}>
+        <div className={estilos.titulo_seccion}>Comunicaciones de la IAFAS</div>
+        <AccionRevisar />
+        <TablaDatos
+          columnas={COLUMNAS_COMUNICACIONES}
+          filas={consulta.data ?? []}
+          obtener_clave={(fila) => fila.codigo}
+          cargando={consulta.isPending}
+          error={consulta.error}
+          mensaje_vacio="Sin comunicaciones de la IAFAS para esta cuenta."
+        />
+      </div>
+      <div className={estilos.seccion}>
+        <div className={estilos.titulo_seccion}>Correos recibidos</div>
+        <TablaCorreos
+          filtro={{ cuenta_id }}
+          mostrar_cuenta={false}
+          mensaje_vacio="Sin correos de esta cuenta."
+        />
+      </div>
+    </>
   );
 }

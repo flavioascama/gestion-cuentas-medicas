@@ -16,9 +16,13 @@ from typing import TYPE_CHECKING
 
 import structlog
 from app.dominio.comunicaciones.casos_uso import (
-    ComunicacionIafas,
     RegistrarRemisionRespuesta,
     RemisionRespuesta,
+)
+from app.dominio.comunicaciones.correos import (
+    CorreoRecibido,
+    RegistrarCorreoIafas,
+    comunicacion_autorizada,
 )
 from app.infraestructura.cola.repositorio_trabajos_sql import RepositorioTrabajosSql
 from app.infraestructura.comunicaciones.fabrica import construir_procesar_comunicacion
@@ -27,6 +31,7 @@ from app.infraestructura.persistencia.registro_eventos_sql import RegistroEvento
 from app.infraestructura.persistencia.repositorio_comunicaciones_sql import (
     RepositorioComunicacionesSql,
 )
+from app.infraestructura.persistencia.repositorio_correos_sql import RepositorioCorreosSql
 from app.infraestructura.reloj import RelojSistema
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
@@ -44,11 +49,26 @@ class FuentesComunicaciones:
     correo: FuenteCorreoImap | None
 
 
-async def _leer_correo(fuentes: FuentesComunicaciones) -> tuple[list[str], list[ComunicacionIafas]]:
+async def _leer_correo(fuentes: FuentesComunicaciones) -> list[tuple[str, CorreoRecibido]]:
     if fuentes.correo is None:
-        return [], []
-    leidos = await asyncio.to_thread(fuentes.correo.leer_no_leidos)
-    return [uid for uid, _ in leidos], [comunicacion for _, comunicacion in leidos]
+        return []
+    return await asyncio.to_thread(fuentes.correo.leer_no_leidos)
+
+
+async def _registrar_correos(
+    fabrica_sesiones: async_sessionmaker[AsyncSession],
+    correos: list[CorreoRecibido],
+    resultados: Counter[str],
+) -> None:
+    """Deja en el sistema cada correo leido, con su estado: procesado, si
+    su comunicacion se aplico a una cuenta, o por revisar."""
+    for correo in correos:
+        async with fabrica_sesiones() as sesion:
+            estado = await RegistrarCorreoIafas(
+                RepositorioCorreosSql(sesion), RepositorioComunicacionesSql(sesion), RelojSistema()
+            ).ejecutar(correo)
+        if estado is not None:
+            resultados[f"CORREO_{estado.value}"] += 1
 
 
 async def _codigos_nuevos_del_portal(
@@ -74,12 +94,21 @@ async def procesar_monitorear_comunicaciones(
     """Primero el correo (si una comunicacion llego por los dos canales,
     queda registrada como recibida por correo), despues el portal. Se
     aplican en el orden en que la IAFAS las emitio; cada una en su propia
-    transaccion. Los correos se marcan como leidos al final, cuando todas
-    quedaron registradas."""
+    transaccion. Del correo solo se aplica sola la comunicacion cuyo
+    remitente esta registrado para la IAFAS que la emite; los demas correos
+    quedan por revisar. Todos se registran y, al final, se marcan como
+    leidos."""
 
     fuentes = adaptadores.comunicaciones
-    uids, del_correo = await _leer_correo(fuentes)
-    pendientes = {comunicacion.codigo: comunicacion for comunicacion in del_correo}
+    leidos = await _leer_correo(fuentes)
+    correos = [correo for _, correo in leidos]
+    async with fabrica_sesiones() as sesion:
+        remitentes = await RepositorioCorreosSql(sesion).remitentes_por_iafas()
+    pendientes = {
+        correo.comunicacion.codigo: correo.comunicacion
+        for correo in correos
+        if correo.comunicacion is not None and comunicacion_autorizada(correo, remitentes)
+    }
     for codigo in await _codigos_nuevos_del_portal(
         fabrica_sesiones, fuentes.portal, set(pendientes)
     ):
@@ -90,9 +119,10 @@ async def procesar_monitorear_comunicaciones(
         async with fabrica_sesiones() as sesion:
             resultado = await construir_procesar_comunicacion(sesion).ejecutar(pendientes[codigo])
         resultados[resultado.value] += 1
+    await _registrar_correos(fabrica_sesiones, correos, resultados)
 
-    if fuentes.correo is not None and uids:
-        await asyncio.to_thread(fuentes.correo.marcar_leidos, uids)
+    if fuentes.correo is not None and leidos:
+        await asyncio.to_thread(fuentes.correo.marcar_leidos, [uid for uid, _ in leidos])
     async with fabrica_sesiones() as sesion:
         await RepositorioTrabajosSql(sesion).marcar_completado(trabajo.id)
     registro.info("comunicaciones_iafas_revisadas", trabajo_id=trabajo.id, **resultados)

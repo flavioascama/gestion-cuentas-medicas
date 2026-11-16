@@ -9,6 +9,7 @@ import { AdministracionUsuarios } from "./modulos/administracion/usuarios";
 import { Ingreso } from "./modulos/acceso/ingreso";
 import { BandejaAvisos } from "./modulos/avisos/bandeja_avisos";
 import { BandejaAnulaciones } from "./modulos/cierre/bandeja_anulaciones";
+import { BandejaComunicaciones } from "./modulos/comunicaciones/bandeja_comunicaciones";
 import { BandejaContingencias } from "./modulos/contingencia/bandeja_contingencias";
 import { BandejaCuentas } from "./modulos/cuentas/bandeja_cuentas";
 import { DetalleCuenta } from "./modulos/cuentas/detalle_cuenta";
@@ -30,6 +31,7 @@ const _ELEMENTOS = new Map<string, ReactNode>([
   ["/cuentas/:cuenta_id", <DetalleCuenta />],
   ["/lotes", <BandejaLotes />],
   ["/lotes/:lote_id", <DetalleLote />],
+  ["/comunicaciones", <BandejaComunicaciones />],
   ["/anulaciones", <BandejaAnulaciones />],
   ["/contingencias", <BandejaContingencias />],
   ["/indicadores", <PanelIndicadores />],

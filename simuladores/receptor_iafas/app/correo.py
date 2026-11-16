@@ -70,3 +70,63 @@ class EnviadorCorreoSmtp:
             # La comunicacion ya quedo publicada en el portal; el correo es
             # un segundo canal y su falla no deshace la decision.
             registro.exception("correo_no_enviado codigo=%s", comunicacion.codigo)
+
+    def enviar_libre(self, asunto: str, texto: str, adjuntar_documento: bool) -> None:
+        """Correo que el personal de la IAFAS escribe fuera del formato de
+        comunicaciones (2026-11-15): un pedido de documentacion, una consulta
+        o una carta, con o sin un documento PDF. La clinica lo recibe en su
+        buzon y su sistema lo deja por revisar."""
+        mensaje = construir_correo_libre(
+            self._remitente, self._destinatario, asunto, texto, adjuntar_documento
+        )
+        with smtplib.SMTP(self._host, self._puerto, timeout=15) as cliente:
+            cliente.send_message(mensaje)
+
+
+def _escapar_pdf(texto: str) -> str:
+    return texto.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
+
+
+def generar_documento_pdf(lineas: list[str]) -> bytes:
+    """Un PDF de una pagina con las lineas dadas, sin depender de ninguna
+    libreria: basta para representar el documento que adjunta la IAFAS."""
+    texto = " ".join(f"({_escapar_pdf(linea)}) Tj T*" for linea in lineas)
+    flujo = f"BT /F1 11 Tf 50 780 Td 16 TL {texto} ET".encode("latin-1", "replace")
+    objetos = [
+        b"<< /Type /Catalog /Pages 2 0 R >>",
+        b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+        b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R "
+        b"/Resources << /Font << /F1 5 0 R >> >> >>",
+        b"<< /Length " + str(len(flujo)).encode() + b" >>\nstream\n" + flujo + b"\nendstream",
+        b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>",
+    ]
+    salida = bytearray(b"%PDF-1.4\n")
+    posiciones = []
+    for numero, objeto in enumerate(objetos, start=1):
+        posiciones.append(len(salida))
+        salida += str(numero).encode() + b" 0 obj\n" + objeto + b"\nendobj\n"
+    inicio_tabla = len(salida)
+    salida += b"xref\n0 " + str(len(objetos) + 1).encode() + b"\n0000000000 65535 f \n"
+    for posicion in posiciones:
+        salida += f"{posicion:010d} 00000 n \n".encode()
+    salida += b"trailer\n<< /Size " + str(len(objetos) + 1).encode() + b" /Root 1 0 R >>\n"
+    salida += b"startxref\n" + str(inicio_tabla).encode() + b"\n%%EOF\n"
+    return bytes(salida)
+
+
+def construir_correo_libre(
+    remitente: str, destinatario: str, asunto: str, texto: str, adjuntar_documento: bool
+) -> EmailMessage:
+    mensaje = EmailMessage()
+    mensaje["Subject"] = asunto
+    mensaje["From"] = remitente
+    mensaje["To"] = destinatario
+    mensaje.set_content(texto)
+    if adjuntar_documento:
+        mensaje.add_attachment(
+            generar_documento_pdf([asunto, "", *texto.splitlines()]),
+            maintype="application",
+            subtype="pdf",
+            filename="documento_iafas.pdf",
+        )
+    return mensaje

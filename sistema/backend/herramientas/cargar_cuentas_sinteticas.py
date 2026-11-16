@@ -58,6 +58,9 @@ RUTA_ASEGURADOS = raiz_simuladores_datos_semilla() / "asegurados.json"
 RUTA_CUENTAS = RAIZ_BACKEND / "pruebas" / "fixtures" / "cuentas_medicas.json"
 
 _ORIGEN_CODIGO_BOOTSTRAP = "bootstrap_fase7_sin_confirmar_por_auditor"
+# Buzon desde el que el simulador del receptor de la IAFAS envia sus
+# comunicaciones (simuladores/receptor_iafas, CORREO_REMITENTE).
+REMITENTE_SIMULADOR_IAFAS = "auditoria@iafas.test"
 
 
 def _leer_csv_con_cabecera(ruta: Path) -> list[dict[str, str]]:
@@ -103,6 +106,8 @@ async def _cargar_maestros(
             razon_social=fila["razon_social"],
             periodicidad_remision_dias=int(fila["periodicidad_remision_dias"]),
             ventana_monitoreo_horas=int(fila["ventana_monitoreo_horas"]),
+            # El simulador del receptor de la IAFAS envia desde este buzon.
+            correo_remitente=REMITENTE_SIMULADOR_IAFAS,
         )
         sesion.add(modelo_iafas)
         await sesion.flush()

@@ -7,14 +7,16 @@ from __future__ import annotations
 import email
 import imaplib
 import json
-from email.message import Message
+from datetime import UTC, datetime
+from email.message import EmailMessage
 from email.policy import default as politica_por_defecto
-from typing import Any
+from email.utils import parseaddr, parsedate_to_datetime
 
 import httpx
 from bs4 import BeautifulSoup, Tag
 
 from app.dominio.comunicaciones.casos_uso import ComunicacionIafas
+from app.dominio.comunicaciones.correos import AdjuntoRecibido, CorreoRecibido, huella_de
 
 
 class ErrorFuenteComunicaciones(Exception):
@@ -77,20 +79,89 @@ class FuentePortalIafas:
             )
 
 
-def _adjunto_comunicacion(mensaje: Message) -> dict[str, Any] | None:
-    for parte in mensaje.walk():
-        if parte.get_filename() == "comunicacion.json":
-            contenido = parte.get_payload(decode=True)
-            if isinstance(contenido, bytes):
-                datos: dict[str, Any] = json.loads(contenido.decode("utf-8"))
-                return datos
+NOMBRE_ADJUNTO_COMUNICACION = "comunicacion.json"
+
+
+def _comunicacion(adjuntos: tuple[AdjuntoRecibido, ...]) -> ComunicacionIafas | None:
+    """La comunicacion con el formato de la IAFAS, si el correo la trae. Un
+    adjunto con ese nombre que no se puede leer no detiene la revision: el
+    correo queda por revisar, como cualquier otro sin el formato."""
+    for adjunto in adjuntos:
+        if adjunto.nombre != NOMBRE_ADJUNTO_COMUNICACION:
+            continue
+        try:
+            datos = json.loads(adjunto.contenido.decode("utf-8"))
+            return ComunicacionIafas(
+                codigo=str(datos["codigo"]),
+                canal="CORREO",
+                tipo=str(datos["tipo"]),
+                codigo_iafas=str(datos["codigo_iafas"]),
+                codigo_ipress=str(datos["codigo_ipress"]),
+                documento=str(datos["documento"]),
+                datos=dict(datos["datos"]),
+                emitida_en=str(datos["emitida_en"]),
+            )
+        except (ValueError, KeyError, TypeError):
+            return None
     return None
 
 
+def _texto(mensaje: EmailMessage) -> str:
+    cuerpo = mensaje.get_body(preferencelist=("plain", "html"))
+    if cuerpo is None:
+        return ""
+    try:
+        contenido = str(cuerpo.get_content())
+    except (LookupError, ValueError):
+        return ""
+    if cuerpo.get_content_subtype() == "html":
+        contenido = BeautifulSoup(contenido, "html.parser").get_text("\n")
+    return contenido.strip()
+
+
+def _adjuntos(mensaje: EmailMessage) -> tuple[AdjuntoRecibido, ...]:
+    adjuntos = []
+    for parte in mensaje.iter_attachments():
+        contenido = parte.get_payload(decode=True)
+        if isinstance(contenido, bytes):
+            adjuntos.append(
+                AdjuntoRecibido(
+                    nombre=parte.get_filename() or "adjunto",
+                    tipo=parte.get_content_type(),
+                    contenido=contenido,
+                )
+            )
+    return tuple(adjuntos)
+
+
+def _fecha(mensaje: EmailMessage) -> datetime | None:
+    try:
+        fecha = parsedate_to_datetime(str(mensaje.get("Date", "")))
+    except (TypeError, ValueError):
+        return None
+    return fecha if fecha.tzinfo is not None else fecha.replace(tzinfo=UTC)
+
+
+def interpretar_correo(crudo: bytes) -> CorreoRecibido:
+    """Convierte un mensaje del buzon en lo que el sistema registra de el."""
+    mensaje = email.message_from_bytes(crudo, policy=politica_por_defecto)
+    assert isinstance(mensaje, EmailMessage)
+    adjuntos = _adjuntos(mensaje)
+    return CorreoRecibido(
+        huella=huella_de(crudo),
+        remitente=parseaddr(str(mensaje.get("From", "")))[1].strip().lower(),
+        asunto=str(mensaje.get("Subject", "")).strip(),
+        fecha=_fecha(mensaje),
+        texto=_texto(mensaje),
+        adjuntos=adjuntos,
+        comunicacion=_comunicacion(adjuntos),
+    )
+
+
 class FuenteCorreoImap:
-    """Bandeja de la clinica por IMAP (TLS fuera de desarrollo). Lee los
-    correos no leidos que traen una comunicacion adjunta y, una vez
-    procesados, los marca como leidos."""
+    """Bandeja de la clinica por IMAP (TLS fuera de desarrollo). Lee todos
+    los correos no leidos -- traigan o no una comunicacion con el formato de
+    la IAFAS -- y, una vez registrados, los marca como leidos."""
 
     def __init__(self, host: str, puerto: int, usuario: str, clave: str, usar_tls: bool) -> None:
         self._host, self._puerto = host, puerto
@@ -107,7 +178,7 @@ class FuenteCorreoImap:
         cliente.select("INBOX")
         return cliente
 
-    def leer_no_leidos(self) -> list[tuple[str, ComunicacionIafas]]:
+    def leer_no_leidos(self) -> list[tuple[str, CorreoRecibido]]:
         cliente = self._conectar()
         try:
             _, datos = cliente.uid("search", "UNSEEN")
@@ -116,25 +187,7 @@ class FuenteCorreoImap:
             for uid in uids:
                 _, partes = cliente.uid("fetch", uid, "(BODY.PEEK[])")
                 crudo = next(p[1] for p in partes if isinstance(p, tuple))
-                mensaje = email.message_from_bytes(crudo, policy=politica_por_defecto)
-                adjunto = _adjunto_comunicacion(mensaje)
-                if adjunto is None:
-                    continue
-                leidos.append(
-                    (
-                        uid.decode(),
-                        ComunicacionIafas(
-                            codigo=adjunto["codigo"],
-                            canal="CORREO",
-                            tipo=adjunto["tipo"],
-                            codigo_iafas=adjunto["codigo_iafas"],
-                            codigo_ipress=adjunto["codigo_ipress"],
-                            documento=adjunto["documento"],
-                            datos=adjunto["datos"],
-                            emitida_en=adjunto["emitida_en"],
-                        ),
-                    )
-                )
+                leidos.append((uid.decode(), interpretar_correo(crudo)))
             return leidos
         finally:
             cliente.logout()

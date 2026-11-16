@@ -44,6 +44,7 @@ class ParametrosIafas:
     dias_plazo_respuesta_observacion: int
     dias_plazo_comunicacion_auditoria: int
     dias_plazo_pago_liquidacion: int
+    correo_remitente: str | None = None
 
 
 class RepositorioParametrosIafas(Protocol):
@@ -52,6 +53,16 @@ class RepositorioParametrosIafas(Protocol):
     async def obtener(self, iafas_id: int) -> ParametrosIafas | None: ...
 
     async def actualizar(self, iafas_id: int, cambios: dict[str, int]) -> ParametrosIafas: ...
+
+
+class RepositorioRemitenteIafas(Protocol):
+    """Lo que necesita el registro del remitente de una aseguradora."""
+
+    async def obtener(self, iafas_id: int) -> ParametrosIafas | None: ...
+
+    async def actualizar_remitente(
+        self, iafas_id: int, correo_remitente: str | None
+    ) -> ParametrosIafas: ...
 
 
 class ListarParametrosIafas:
@@ -108,6 +119,47 @@ class ActualizarParametrosIafas:
                 estado_previo=None,
                 estado_nuevo=None,
                 datos={"iafas_codigo": actuales.codigo, "cambios": diferencias},
+            )
+        )
+        return actualizados
+
+
+class ActualizarRemitenteIafas:
+    """Registra el remitente del que se aceptan comunicaciones por correo de
+    una aseguradora. El valor llega ya validado (direcciones o dominios)."""
+
+    def __init__(
+        self, repositorio: RepositorioRemitenteIafas, registro_eventos: RegistroEventos
+    ) -> None:
+        self._repositorio = repositorio
+        self._registro_eventos = registro_eventos
+
+    async def ejecutar(
+        self, iafas_id: int, correo_remitente: str | None, actor: str, usuario_id: int
+    ) -> ParametrosIafas:
+        actuales = await self._repositorio.obtener(iafas_id)
+        if actuales is None:
+            raise ErrorIafasInexistente(f"No existe la IAFAS {iafas_id}.")
+        if actuales.correo_remitente == correo_remitente:
+            return actuales
+        actualizados = await self._repositorio.actualizar_remitente(iafas_id, correo_remitente)
+        await self._registro_eventos.registrar(
+            Evento(
+                cuenta_medica_id=None,
+                sesion_usuario_id=usuario_id,
+                tipo_evento="PARAMETROS_IAFAS_ACTUALIZADOS",
+                actor=actor,
+                estado_previo=None,
+                estado_nuevo=None,
+                datos={
+                    "iafas_codigo": actuales.codigo,
+                    "cambios": {
+                        "correo_remitente": {
+                            "antes": actuales.correo_remitente,
+                            "despues": correo_remitente,
+                        }
+                    },
+                },
             )
         )
         return actualizados

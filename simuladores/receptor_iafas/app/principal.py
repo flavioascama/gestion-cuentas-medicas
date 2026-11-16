@@ -54,7 +54,7 @@ def main() -> None:
         configuracion.bandeja_entrada,
     )
 
-    app = construir_app(almacenamiento, auditoria)
+    app = construir_app(almacenamiento, auditoria, enviador)
     uvicorn.run(app, host="0.0.0.0", port=configuracion.portal_puerto)
 
 

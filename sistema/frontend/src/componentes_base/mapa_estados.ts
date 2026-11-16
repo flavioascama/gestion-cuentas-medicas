@@ -88,6 +88,12 @@ const _ESTADOS: Record<string, DefinicionEstado> = {
   // acuse_transmision.resultado_transferencia / respuesta_receptor
   ENVIADO: { texto: "Enviado", color: "verde" },
   ERROR_TRANSFERENCIA: { texto: "Error de transferencia", color: "rojo" },
+
+  // correo_iafas.estado: ambar solo el que una persona debe revisar.
+  POR_REVISAR: { texto: "Por revisar", color: "ambar" },
+  PROCESADO: { texto: "Aplicado a la cuenta", color: "gris" },
+  VINCULADO: { texto: "Vinculado a la cuenta", color: "gris" },
+  DESCARTADO: { texto: "Descartado", color: "gris" },
 };
 
 export function resolver_estado(estado: string): DefinicionEstado {

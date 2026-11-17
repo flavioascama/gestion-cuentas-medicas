@@ -13,3 +13,23 @@ for _ in $(seq 1 60); do
 done
 
 bash despliegue/desplegar.sh "${CODESPACE_NAME}-8443.${base}" < /dev/null 2>&1 | tee "$HOME/iniciar.log"
+
+# El enlace de la aplicacion debe ser publico: en privado, Codespaces reenvia
+# el puerto 8443 por HTTPS y el proxy responde por HTTP. La visibilidad vuelve
+# a privado en cada arranque, por eso se fija aqui. Los portales de los
+# simuladores quedan privados.
+publicar_aplicacion() {
+  if ! command -v gh >/dev/null 2>&1; then
+    sudo apt-get update -qq && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq gh || return 1
+  fi
+  for _ in $(seq 1 10); do
+    gh codespace ports visibility 8443:public -c "$CODESPACE_NAME" && return 0
+    sleep 6
+  done
+  return 1
+}
+if publicar_aplicacion >> "$HOME/iniciar.log" 2>&1; then
+  echo "Enlace de la aplicacion: publico"
+else
+  echo "No se pudo publicar el puerto 8443: hacerlo desde la pestana Puertos."
+fi

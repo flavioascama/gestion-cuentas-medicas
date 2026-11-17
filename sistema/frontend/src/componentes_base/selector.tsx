@@ -30,20 +30,22 @@ export function Selector({
       <label className={estilos.etiqueta} htmlFor={id_campo}>
         {etiqueta}
       </label>
-      <select
-        id={id_campo}
-        className={[estilos.entrada, error ? estilos.entrada_con_error : "", className]
-          .filter(Boolean)
-          .join(" ")}
-        aria-invalid={error ? true : undefined}
-        {...resto}
-      >
-        {opciones.map((opcion) => (
-          <option key={opcion.valor} value={opcion.valor}>
-            {opcion.etiqueta}
-          </option>
-        ))}
-      </select>
+      <div className={estilos.envoltorio_entrada}>
+        <select
+          id={id_campo}
+          className={[estilos.entrada, error ? estilos.entrada_con_error : "", className]
+            .filter(Boolean)
+            .join(" ")}
+          aria-invalid={error ? true : undefined}
+          {...resto}
+        >
+          {opciones.map((opcion) => (
+            <option key={opcion.valor} value={opcion.valor}>
+              {opcion.etiqueta}
+            </option>
+          ))}
+        </select>
+      </div>
       {error ? (
         <span className={estilos.error}>{error}</span>
       ) : ayuda ? (

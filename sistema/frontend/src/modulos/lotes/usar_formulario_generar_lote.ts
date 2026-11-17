@@ -1,50 +1,49 @@
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
-import { listar_cuentas } from "../../api/cuentas";
-import { listar_iafas } from "../../api/iafas";
+import { useState } from "react";
+import { listar_lotes_sugeridos, type LoteSugerido } from "../../api/lotes";
 
+export function clave_lote_sugerido(sugerido: LoteSugerido): string {
+  return `${sugerido.iafas_id}_${sugerido.periodo}`;
+}
+
+// El sistema ya agrupa las cuentas facturadas por IAFAS y periodo (el mes
+// del comprobante): el analista elige un grupo y, si hace falta, desmarca
+// las cuentas que no deben entrar.
 export function usar_formulario_generar_lote() {
-  const [iafas_id, set_iafas_id] = useState("");
-  const [periodo, set_periodo] = useState("");
-  const [cuenta_ids, set_cuenta_ids] = useState<number[]>([]);
+  const consulta = useQuery({ queryKey: ["lotes", "sugeridos"], queryFn: listar_lotes_sugeridos });
+  const [clave_elegida, set_clave_elegida] = useState<string | null>(null);
+  const [excluidas, set_excluidas] = useState<number[]>([]);
 
-  const consulta_iafas = useQuery({ queryKey: ["iafas"], queryFn: listar_iafas });
-  const iafas_elegida = consulta_iafas.data?.find((i) => String(i.id) === iafas_id);
+  const sugeridos = consulta.data ?? [];
+  // Con un solo grupo no hay nada que elegir: queda seleccionado.
+  const unico = sugeridos.length === 1 ? sugeridos[0] : undefined;
+  const elegido = sugeridos.find((s) => clave_lote_sugerido(s) === clave_elegida) ?? unico;
+  const cuentas = elegido?.cuentas ?? [];
+  const cuenta_ids = cuentas.map((c) => c.cuenta_id).filter((id) => !excluidas.includes(id));
 
-  const consulta_cuentas = useQuery({
-    queryKey: ["cuentas", "facturadas", iafas_elegida?.codigo],
-    queryFn: () => listar_cuentas("FACTURADA"),
-    enabled: Boolean(iafas_elegida),
-  });
-
-  const cuentas_elegibles = useMemo(
-    () =>
-      (consulta_cuentas.data ?? []).filter(
-        (cuenta) => cuenta.iafas_codigo === iafas_elegida?.codigo,
-      ),
-    [consulta_cuentas.data, iafas_elegida],
-  );
-
-  const elegir_iafas = (valor: string) => {
-    set_iafas_id(valor);
-    set_cuenta_ids([]);
+  const elegir = (clave: string) => {
+    set_clave_elegida(clave);
+    set_excluidas([]);
   };
 
   const alternar_cuenta = (cuenta_id: number) => {
-    set_cuenta_ids((actual) =>
+    set_excluidas((actual) =>
       actual.includes(cuenta_id) ? actual.filter((id) => id !== cuenta_id) : [...actual, cuenta_id],
     );
   };
 
+  const alternar_todas = () => {
+    set_excluidas(excluidas.length === 0 ? cuentas.map((c) => c.cuenta_id) : []);
+  };
+
   return {
-    iafas_id,
-    periodo,
+    consulta,
+    sugeridos,
+    elegido,
     cuenta_ids,
-    consulta_iafas,
-    iafas_elegida,
-    cuentas_elegibles,
-    set_periodo,
-    elegir_iafas,
+    excluidas,
+    elegir,
     alternar_cuenta,
+    alternar_todas,
   };
 }

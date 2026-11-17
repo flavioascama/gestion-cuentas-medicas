@@ -41,6 +41,7 @@ from app.infraestructura.persistencia.modelos_prevalidacion import (
     HallazgoPrevalidacionModelo,
     InformePrevalidacionModelo,
 )
+from app.infraestructura.persistencia.montos_cuenta_sql import montos_por_cuenta
 
 
 @dataclass(frozen=True, slots=True)
@@ -326,40 +327,7 @@ class RepositorioLotesConsultaSql(RepositorioLotesConsulta):
         ]
 
     async def _montos_por_cuenta(self, cuenta_ids: list[int]) -> dict[int, Decimal]:
-        """Misma logica que `_sumar_procedimientos_por_lote`/
-        `_sumar_productos_por_lote` (dos consultas de agregacion
-        separadas, no un unico join de las tres tablas -- ver el
-        docstring de `_calcular_agregados`), agrupada por cuenta en vez
-        de por lote."""
-        if not cuenta_ids:
-            return {}
-
-        procedimientos = await self._sesion.execute(
-            sa.select(
-                ProcedimientoFacturadoModelo.cuenta_id,
-                sa.func.sum(
-                    ProcedimientoFacturadoModelo.cantidad
-                    * ProcedimientoFacturadoModelo.monto_unitario
-                ),
-            )
-            .where(ProcedimientoFacturadoModelo.cuenta_id.in_(cuenta_ids))
-            .group_by(ProcedimientoFacturadoModelo.cuenta_id)
-        )
-        productos = await self._sesion.execute(
-            sa.select(
-                ProductoFacturadoModelo.cuenta_medica_id,
-                sa.func.sum(ProductoFacturadoModelo.monto_presentado),
-            )
-            .where(ProductoFacturadoModelo.cuenta_medica_id.in_(cuenta_ids))
-            .group_by(ProductoFacturadoModelo.cuenta_medica_id)
-        )
-        montos_procedimientos = {fila[0]: fila[1] for fila in procedimientos.all()}
-        montos_productos = {fila[0]: fila[1] for fila in productos.all()}
-        return {
-            cuenta_id: (montos_procedimientos.get(cuenta_id) or Decimal("0.00"))
-            + (montos_productos.get(cuenta_id) or Decimal("0.00"))
-            for cuenta_id in cuenta_ids
-        }
+        return await montos_por_cuenta(self._sesion, cuenta_ids)
 
     async def obtener_ruta_s01(self, lote_id: int) -> str | None:
         lote = await self._sesion.get(LoteFacturacionModelo, lote_id)

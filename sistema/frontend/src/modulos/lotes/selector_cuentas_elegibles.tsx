@@ -1,42 +1,53 @@
-import type { ResumenCuenta } from "../../api/cuentas";
+import type { CuentaPorLotear } from "../../api/lotes";
+import { formatear_fecha, formatear_monto } from "../../utilidades/formato";
 import estilos from "./dialogo_generar_lote.module.css";
 
 interface Propiedades {
-  codigo_iafas: string;
-  cuentas: ResumenCuenta[];
-  cuenta_ids_elegidos: number[];
+  cuentas: CuentaPorLotear[];
+  excluidas: number[];
   al_alternar: (cuenta_id: number) => void;
+  al_alternar_todas: () => void;
 }
 
+// Todas las cuentas del grupo vienen marcadas: el analista solo desmarca
+// las que no deben entrar en este lote.
 export function SelectorCuentasElegibles({
-  codigo_iafas,
   cuentas,
-  cuenta_ids_elegidos,
+  excluidas,
   al_alternar,
+  al_alternar_todas,
 }: Propiedades) {
+  const marcadas = cuentas.filter((cuenta) => !excluidas.includes(cuenta.cuenta_id)).length;
   return (
-    <div>
-      <label>Cuentas facturadas de {codigo_iafas}</label>
+    <fieldset className={estilos.grupo}>
+      <legend className={estilos.leyenda}>
+        Cuentas del lote ({marcadas} de {cuentas.length})
+      </legend>
       <div className={estilos.lista_cuentas}>
-        {cuentas.length === 0 ? (
-          <p>No hay cuentas facturadas para esta IAFAS.</p>
-        ) : (
-          cuentas.map((cuenta) => (
-            <div key={cuenta.id} className={estilos.fila_cuenta}>
-              <input
-                type="checkbox"
-                id={`cuenta_${cuenta.id}`}
-                checked={cuenta_ids_elegidos.includes(cuenta.id)}
-                onChange={() => al_alternar(cuenta.id)}
-              />
-              <label htmlFor={`cuenta_${cuenta.id}`}>
-                {cuenta.identificacion_interna} — {cuenta.nombres_asegurado}{" "}
-                {cuenta.apellidos_asegurado}
-              </label>
-            </div>
-          ))
-        )}
+        <label className={`${estilos.fila_cuenta} ${estilos.fila_todas}`}>
+          <input
+            type="checkbox"
+            checked={marcadas === cuentas.length}
+            onChange={al_alternar_todas}
+          />
+          <span>Todas</span>
+        </label>
+        {cuentas.map((cuenta) => (
+          <label key={cuenta.cuenta_id} className={estilos.fila_cuenta}>
+            <input
+              type="checkbox"
+              checked={!excluidas.includes(cuenta.cuenta_id)}
+              onChange={() => al_alternar(cuenta.cuenta_id)}
+            />
+            <span className={estilos.texto_largo}>
+              {cuenta.identificacion_interna} — {cuenta.nombres_asegurado}{" "}
+              {cuenta.apellidos_asegurado}
+            </span>
+            <span>{formatear_fecha(cuenta.fecha_emision)}</span>
+            <span className={estilos.dato_numerico}>{formatear_monto(cuenta.monto)}</span>
+          </label>
+        ))}
       </div>
-    </div>
+    </fieldset>
   );
 }

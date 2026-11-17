@@ -19,6 +19,7 @@ from pathlib import Path
 from app.dominio.integracion.esquema import TablaEsquema
 from app.dominio.integracion.hallazgos import Hallazgo
 from app.dominio.integracion.lote import ContextoLote, DocumentoLote
+from app.dominio.integracion.lotes_sugeridos import periodo_unico
 from app.dominio.integracion.puertos import DatosLoteConforme, RepositorioLoteFacturacion
 from app.dominio.puertos_comunes import (
     Evento,
@@ -152,7 +153,7 @@ class GenerarLote:
         self._directorio_salida = directorio_salida
 
     async def ejecutar(
-        self, iafas_id: int, periodo: str, cuenta_ids: list[int], actor: str
+        self, iafas_id: int, periodo: str | None, cuenta_ids: list[int], actor: str
     ) -> ResultadoGenerarLote:
         inicio = self._reloj.ahora()
         esquema = cargar_esquema()
@@ -162,8 +163,11 @@ class GenerarLote:
         # lote.
         cargar_tablas_activas()
 
-        contexto = await self._preparar_contexto(iafas_id, periodo, inicio)
         documentos = await self._repositorio.obtener_documentos_facturados(iafas_id, cuenta_ids)
+        # Sin periodo explicito (asi lo pide la pantalla) es el mes de emision
+        # de los comprobantes; si abarcan mas de un mes, el lote no se genera.
+        periodo_lote = periodo or periodo_unico(d.fecha_emision for d in documentos)
+        contexto = await self._preparar_contexto(iafas_id, periodo_lote, inicio)
         filas = _construir_filas(esquema, contexto, documentos)
         hallazgos = _validar_filas(esquema, filas)
         lote = _LoteGenerado(

@@ -46,7 +46,8 @@ from app.infraestructura.tedef.nombrado import (
 
 _ESTADO_OBSERVADO_VALIDADOR = "OBSERVADO_VALIDADOR"
 _ESTADO_CARGADO_VALIDADOR = "CARGADO_VALIDADOR"
-_ESTADOS_ENVIABLES_SUSALUD = ("VALIDADO", "REMITIDO_IAFAS", "ACEPTADO", "RECHAZADO")
+# Tambien lo usa el control del envio (repositorio_control_susalud_sql).
+ESTADOS_ENVIABLES_SUSALUD = ("VALIDADO", "REMITIDO_IAFAS", "ACEPTADO", "RECHAZADO")
 
 
 class RepositorioValidacionOficialSql(RepositorioValidacionOficial):
@@ -170,7 +171,7 @@ class RepositorioValidacionOficialSql(RepositorioValidacionOficial):
         resultado = await self._sesion.execute(
             sa.select(LoteFacturacionModelo).where(
                 LoteFacturacionModelo.periodo == periodo,
-                LoteFacturacionModelo.estado.in_(_ESTADOS_ENVIABLES_SUSALUD),
+                LoteFacturacionModelo.estado.in_(ESTADOS_ENVIABLES_SUSALUD),
                 LoteFacturacionModelo.enviado_susalud_en.is_(None),
             )
         )

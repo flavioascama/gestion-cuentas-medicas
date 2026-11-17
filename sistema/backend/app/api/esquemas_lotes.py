@@ -9,6 +9,7 @@ from pydantic import BaseModel
 
 from app.api.serializacion import campos
 from app.dominio.integracion.hallazgos import Hallazgo
+from app.dominio.integracion.lotes_sugeridos import CuentaPorLotear, LoteSugerido
 from app.dominio.integracion.puertos_consulta import (
     CuentaDelLote,
     DetalleLote,
@@ -24,7 +25,8 @@ from app.infraestructura.tedef.remitir_lote import ResultadoRemitirLote
 
 class SolicitudGenerarLote(BaseModel):
     iafas_id: int
-    periodo: str
+    # Sin periodo, el lote toma el mes de emision de sus comprobantes.
+    periodo: str | None = None
     cuenta_ids: list[int]
 
 
@@ -193,3 +195,46 @@ class SolicitudEnvioSusalud(BaseModel):
 
 class RespuestaEnvioSusalud(BaseModel):
     trabajo_id: int | None
+
+
+class CuentaPorLotearRespuesta(BaseModel):
+    cuenta_id: int
+    identificacion_interna: str
+    nombres_asegurado: str
+    apellidos_asegurado: str
+    fecha_emision: date
+    monto: Decimal
+
+    @staticmethod
+    def desde_valor(valor: CuentaPorLotear) -> CuentaPorLotearRespuesta:
+        return CuentaPorLotearRespuesta(
+            cuenta_id=valor.cuenta_id,
+            identificacion_interna=valor.identificacion_interna,
+            nombres_asegurado=valor.nombres_asegurado,
+            apellidos_asegurado=valor.apellidos_asegurado,
+            fecha_emision=valor.fecha_emision,
+            monto=valor.monto,
+        )
+
+
+class LoteSugeridoRespuesta(BaseModel):
+    """Un grupo de cuentas facturadas de una IAFAS y un periodo (el mes de
+    sus comprobantes), listo para generarse como lote."""
+
+    iafas_id: int
+    iafas_codigo: str
+    iafas_razon_social: str
+    periodo: str
+    monto_total: Decimal
+    cuentas: list[CuentaPorLotearRespuesta]
+
+    @staticmethod
+    def desde_valor(valor: LoteSugerido) -> LoteSugeridoRespuesta:
+        return LoteSugeridoRespuesta(
+            iafas_id=valor.iafas_id,
+            iafas_codigo=valor.iafas_codigo,
+            iafas_razon_social=valor.iafas_razon_social,
+            periodo=valor.periodo,
+            monto_total=valor.monto_total,
+            cuentas=[CuentaPorLotearRespuesta.desde_valor(c) for c in valor.cuentas],
+        )

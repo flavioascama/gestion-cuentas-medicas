@@ -1171,6 +1171,37 @@
         }
       }
     },
+    "/lotes/sugeridos": {
+      "get": {
+        "tags": [
+          "lotes"
+        ],
+        "summary": "Sugerir Lotes",
+        "description": "Cuentas facturadas sin lote en curso, agrupadas por IAFAS y periodo.",
+        "operationId": "sugerir_lotes_lotes_sugeridos_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/LoteSugeridoRespuesta"
+                  },
+                  "type": "array",
+                  "title": "Response Sugerir Lotes Lotes Sugeridos Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/lotes/{lote_id}": {
       "get": {
         "tags": [
@@ -4952,6 +4983,10 @@
           "estado": {
             "type": "string",
             "title": "Estado"
+          },
+          "listos_envio": {
+            "type": "integer",
+            "title": "Listos Envio"
           }
         },
         "type": "object",
@@ -4961,7 +4996,8 @@
           "pendientes_envio",
           "fecha_limite",
           "ultimo_envio",
-          "estado"
+          "estado",
+          "listos_envio"
         ],
         "title": "ControlPeriodoSusaludRespuesta"
       },
@@ -5337,6 +5373,46 @@
           "fecha_prestacion"
         ],
         "title": "CuentaLoteRespuesta"
+      },
+      "CuentaPorLotearRespuesta": {
+        "properties": {
+          "cuenta_id": {
+            "type": "integer",
+            "title": "Cuenta Id"
+          },
+          "identificacion_interna": {
+            "type": "string",
+            "title": "Identificacion Interna"
+          },
+          "nombres_asegurado": {
+            "type": "string",
+            "title": "Nombres Asegurado"
+          },
+          "apellidos_asegurado": {
+            "type": "string",
+            "title": "Apellidos Asegurado"
+          },
+          "fecha_emision": {
+            "type": "string",
+            "format": "date",
+            "title": "Fecha Emision"
+          },
+          "monto": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Monto"
+          }
+        },
+        "type": "object",
+        "required": [
+          "cuenta_id",
+          "identificacion_interna",
+          "nombres_asegurado",
+          "apellidos_asegurado",
+          "fecha_emision",
+          "monto"
+        ],
+        "title": "CuentaPorLotearRespuesta"
       },
       "DetalleCuentaRespuesta": {
         "properties": {
@@ -6182,6 +6258,49 @@
           "conciliado_en"
         ],
         "title": "LiquidacionRespuesta"
+      },
+      "LoteSugeridoRespuesta": {
+        "properties": {
+          "iafas_id": {
+            "type": "integer",
+            "title": "Iafas Id"
+          },
+          "iafas_codigo": {
+            "type": "string",
+            "title": "Iafas Codigo"
+          },
+          "iafas_razon_social": {
+            "type": "string",
+            "title": "Iafas Razon Social"
+          },
+          "periodo": {
+            "type": "string",
+            "title": "Periodo"
+          },
+          "monto_total": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Monto Total"
+          },
+          "cuentas": {
+            "items": {
+              "$ref": "#/components/schemas/CuentaPorLotearRespuesta"
+            },
+            "type": "array",
+            "title": "Cuentas"
+          }
+        },
+        "type": "object",
+        "required": [
+          "iafas_id",
+          "iafas_codigo",
+          "iafas_razon_social",
+          "periodo",
+          "monto_total",
+          "cuentas"
+        ],
+        "title": "LoteSugeridoRespuesta",
+        "description": "Un grupo de cuentas facturadas de una IAFAS y un periodo (el mes de\nsus comprobantes), listo para generarse como lote."
       },
       "LotesPeriodoEstadoRespuesta": {
         "properties": {
@@ -8250,7 +8369,14 @@
             "title": "Iafas Id"
           },
           "periodo": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Periodo"
           },
           "cuenta_ids": {
@@ -8264,7 +8390,6 @@
         "type": "object",
         "required": [
           "iafas_id",
-          "periodo",
           "cuenta_ids"
         ],
         "title": "SolicitudGenerarLote"

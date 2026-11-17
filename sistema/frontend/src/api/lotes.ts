@@ -15,10 +15,18 @@ export type RespuestaRemitirLote = components["schemas"]["RespuestaRemitirLote"]
 export type RespuestaTrabajoEncolado = components["schemas"]["RespuestaTrabajoEncolado"];
 export type RespuestaEnvioSusalud = components["schemas"]["RespuestaEnvioSusalud"];
 
+export type LoteSugerido = components["schemas"]["LoteSugeridoRespuesta"];
+export type CuentaPorLotear = components["schemas"]["CuentaPorLotearRespuesta"];
+
+// Sin periodo: el servidor toma el mes de emision de los comprobantes.
 export interface SolicitudGenerarLote {
   iafas_id: number;
-  periodo: string;
+  periodo?: string;
   cuenta_ids: number[];
+}
+
+export function listar_lotes_sugeridos(): Promise<LoteSugerido[]> {
+  return obtener<LoteSugerido[]>("/lotes/sugeridos");
 }
 
 export function generar_lote(solicitud: SolicitudGenerarLote): Promise<RespuestaGenerarLote> {

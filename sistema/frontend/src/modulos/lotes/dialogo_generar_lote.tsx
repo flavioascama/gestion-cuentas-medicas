@@ -15,14 +15,15 @@ export function DialogoGenerarLote({ al_cerrar, al_generar_conforme }: Propiedad
   const formulario = usar_formulario_generar_lote();
 
   const mutacion = useMutation({
-    mutationFn: () =>
-      generar_lote({
-        iafas_id: Number(formulario.iafas_id),
-        periodo: formulario.periodo,
-        cuenta_ids: formulario.cuenta_ids,
-      }),
+    mutationFn: generar_lote,
     onSuccess: (respuesta) => set_resultado(respuesta),
   });
+
+  // Sin periodo: el servidor lo toma del mes de los comprobantes.
+  const al_generar = () => {
+    if (!formulario.elegido) return;
+    mutacion.mutate({ iafas_id: formulario.elegido.iafas_id, cuenta_ids: formulario.cuenta_ids });
+  };
 
   if (resultado) {
     return (
@@ -39,7 +40,7 @@ export function DialogoGenerarLote({ al_cerrar, al_generar_conforme }: Propiedad
       formulario={formulario}
       generando={mutacion.isPending}
       error={mutacion.error}
-      al_generar={() => mutacion.mutate()}
+      al_generar={al_generar}
       al_cerrar={al_cerrar}
     />
   );

@@ -24,11 +24,13 @@ from app.api.dependencias_lotes import (
     construir_remitir_lote,
     construir_solicitar_carga_en_validador,
     construir_solicitar_envio_susalud,
+    construir_sugerir_lotes,
 )
 from app.api.esquemas_lotes import (
     CuentaLoteRespuesta,
     DetalleLoteRespuesta,
     InformePrevalidacionRespuesta,
+    LoteSugeridoRespuesta,
     RespuestaEnvioSusalud,
     RespuestaGenerarLote,
     RespuestaRemitirLote,
@@ -55,6 +57,7 @@ from app.dominio.integracion.casos_uso_validacion import (
     SolicitarCargaEnValidador,
     SolicitarEnvioSusalud,
 )
+from app.dominio.integracion.lotes_sugeridos import ErrorPeriodoLote, SugerirLotes
 from app.dominio.integracion.puertos import ErrorLoteNoRemisible, ErrorRepositorioLote
 from app.dominio.integracion.puertos_validacion import ErrorLoteNoCargable
 from app.infraestructura.tedef.generar_lote import GenerarLote
@@ -76,11 +79,21 @@ async def generar_lote(
         resultado = await caso_uso.ejecutar(
             solicitud.iafas_id, solicitud.periodo, solicitud.cuenta_ids, actor.nombre_usuario
         )
-    except ErrorRepositorioLote as error:
+    except (ErrorRepositorioLote, ErrorPeriodoLote) as error:
         raise ErrorAplicacion(
             "LOTE_NO_GENERABLE", str(error), estado_http=status.HTTP_409_CONFLICT
         ) from error
     return RespuestaGenerarLote.desde_valor(resultado)
+
+
+# Antes de las rutas /{lote_id}: si no, "sugeridos" se tomaria como un id.
+@router.get("/sugeridos", response_model=list[LoteSugeridoRespuesta])
+async def sugerir_lotes(
+    caso_uso: SugerirLotes = Depends(construir_sugerir_lotes),
+    _actor: CargaSesion = Depends(_LECTURA),
+) -> list[LoteSugeridoRespuesta]:
+    """Cuentas facturadas sin lote en curso, agrupadas por IAFAS y periodo."""
+    return [LoteSugeridoRespuesta.desde_valor(s) for s in await caso_uso.ejecutar()]
 
 
 @router.get("", response_model=list[ResumenLoteRespuesta])

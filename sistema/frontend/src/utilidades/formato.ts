@@ -12,6 +12,13 @@ export function formatear_fecha(iso: string): string {
   return `${dia}/${mes}/${fecha.getFullYear()}`;
 }
 
+// Periodo AAAAMM como "Noviembre de 2026".
+export function formatear_periodo(periodo: string): string {
+  const fecha = new Date(Number(periodo.slice(0, 4)), Number(periodo.slice(4, 6)) - 1, 1);
+  const texto = fecha.toLocaleDateString("es-PE", { month: "long", year: "numeric" });
+  return texto.charAt(0).toUpperCase() + texto.slice(1);
+}
+
 export function formatear_fecha_hora(iso: string): string {
   const fecha = new Date(iso);
   const horas = String(fecha.getHours()).padStart(2, "0");

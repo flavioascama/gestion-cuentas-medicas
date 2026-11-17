@@ -35,6 +35,15 @@
   width: 260px;
 }
 
+/* Mismo alto que los campos (36px) y pegado al borde inferior de la
+   fila: el texto queda centrado respecto de ellos, no de su etiqueta. */
+.limpiar_filtros {
+  align-self: flex-end;
+  display: flex;
+  align-items: center;
+  height: 36px;
+}
+
 .envio_susalud {
   display: flex;
   align-items: center;

@@ -69,6 +69,9 @@ class LotesPeriodo:
     lotes: int
     pendientes_envio: int
     ultimo_envio: datetime | None
+    # Los que el envio tomaria ahora: validados o posteriores, sin enviar.
+    # Un lote generado y aun sin validar es pendiente, pero no esta listo.
+    listos_envio: int = 0
 
 
 @dataclass(frozen=True, slots=True)
@@ -87,6 +90,7 @@ class ControlPeriodoSusalud:
     fecha_limite: date
     ultimo_envio: datetime | None
     estado: EstadoEnvioSusalud
+    listos_envio: int = 0
 
 
 class RepositorioControlSusalud(Protocol):
@@ -148,6 +152,7 @@ class ConsultarControlSusalud:
             limite,
             resumen.ultimo_envio,
             self._estado(resumen, limite, hoy),
+            resumen.listos_envio,
         )
 
     def _estado(self, resumen: LotesPeriodo, limite: date, hoy: date) -> EstadoEnvioSusalud:

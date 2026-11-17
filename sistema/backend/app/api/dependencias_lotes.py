@@ -21,6 +21,7 @@ from app.dominio.integracion.casos_uso_validacion import (
     SolicitarCargaEnValidador,
     SolicitarEnvioSusalud,
 )
+from app.dominio.integracion.lotes_sugeridos import SugerirLotes
 from app.dominio.integracion.puertos import (
     RepositorioLoteFacturacion,
     RepositorioLoteRemision,
@@ -37,6 +38,9 @@ from app.infraestructura.cola.repositorio_trabajos_sql import RepositorioTrabajo
 from app.infraestructura.persistencia.base import obtener_sesion
 from app.infraestructura.persistencia.registro_eventos_sql import RegistroEventosSql
 from app.infraestructura.persistencia.registro_mediciones_sql import RegistroMedicionesSql
+from app.infraestructura.persistencia.repositorio_cuentas_por_lotear_sql import (
+    RepositorioCuentasPorLotearSql,
+)
 from app.infraestructura.persistencia.repositorio_lote_remision_sql import (
     RepositorioLoteRemisionSql,
 )
@@ -108,6 +112,12 @@ def construir_generar_lote(
         reloj=reloj,
         directorio_salida=raiz_reportes() / "lotes_generados",
     )
+
+
+def construir_sugerir_lotes(
+    sesion: AsyncSession = Depends(obtener_sesion),
+) -> SugerirLotes:
+    return SugerirLotes(RepositorioCuentasPorLotearSql(sesion))
 
 
 def construir_listar_lotes(

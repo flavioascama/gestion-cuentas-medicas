@@ -23,6 +23,7 @@ _CUERPO_ENVIO_SUSALUD = {"periodo": "2026-01"}
 _RUTAS_LECTURA: tuple[tuple[str, str, dict[str, Any] | None], ...] = (
     ("POST", "/lotes", _CUERPO_GENERAR_LOTE),
     ("GET", "/lotes", None),
+    ("GET", "/lotes/sugeridos", None),
     ("GET", "/lotes/1", None),
     ("GET", "/lotes/1/prevalidacion", None),
     ("GET", "/lotes/1/validacion-oficial", None),

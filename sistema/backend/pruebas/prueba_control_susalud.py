@@ -93,7 +93,8 @@ async def prueba_control_marca_estados_y_meses_sin_lotes() -> None:
             # Limite 14/09: enviado el 05/09.
             LotesPeriodo("202608", 1, 0, datetime(2026, 9, 5, 15, 0, tzinfo=UTC)),
             # 202609 sin ningun lote. Limite de 202610: 13/11 (hoy).
-            LotesPeriodo("202610", 3, 2, None),
+            # Dos pendientes; solo uno ya esta validado y se puede enviar.
+            LotesPeriodo("202610", 3, 2, None, listos_envio=1),
         ]
     )
     controles = await ConsultarControlSusalud(
@@ -108,6 +109,8 @@ async def prueba_control_marca_estados_y_meses_sin_lotes() -> None:
     ]
     assert controles[0].pendientes_envio == 2
     assert controles[1].fecha_limite == date(2026, 10, 14)
+    # El boton de envio se habilita con este dato: solo 202610 tiene algo listo.
+    assert [c.listos_envio for c in controles] == [1, 0, 0, 0]
 
 
 async def prueba_control_incluye_hasta_el_ultimo_mes_cerrado() -> None:
@@ -213,8 +216,12 @@ async def prueba_repositorio_resume_periodos_y_pendientes(
         assert periodos["202608"].lotes == 1
         assert periodos["202608"].pendientes_envio == 0
         assert periodos["202608"].ultimo_envio is not None
+        # Aceptado y ya enviado: nada queda listo para enviar.
+        assert periodos["202608"].listos_envio == 0
         assert periodos["202610"].lotes == 3
         assert periodos["202610"].pendientes_envio == 2
+        # De los dos pendientes, el GENERADO aun no esta validado.
+        assert periodos["202610"].listos_envio == 1
 
         pendientes = {p.lote_id: p for p in await repositorio.lotes_pendientes_envio()}
         assert set(pendientes) >= {avisado, pendiente}

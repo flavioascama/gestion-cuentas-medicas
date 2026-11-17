@@ -299,6 +299,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/lotes/sugeridos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Sugerir Lotes
+         * @description Cuentas facturadas sin lote en curso, agrupadas por IAFAS y periodo.
+         */
+        get: operations["sugerir_lotes_lotes_sugeridos_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/lotes/{lote_id}": {
         parameters: {
             query?: never;
@@ -1516,6 +1536,8 @@ export interface components {
             ultimo_envio: string | null;
             /** Estado */
             estado: string;
+            /** Listos Envio */
+            listos_envio: number;
         };
         /** CorreoIafasDetalleRespuesta */
         CorreoIafasDetalleRespuesta: {
@@ -1613,6 +1635,24 @@ export interface components {
             estado: string;
             /** Fecha Prestacion */
             fecha_prestacion: string | null;
+        };
+        /** CuentaPorLotearRespuesta */
+        CuentaPorLotearRespuesta: {
+            /** Cuenta Id */
+            cuenta_id: number;
+            /** Identificacion Interna */
+            identificacion_interna: string;
+            /** Nombres Asegurado */
+            nombres_asegurado: string;
+            /** Apellidos Asegurado */
+            apellidos_asegurado: string;
+            /**
+             * Fecha Emision
+             * Format: date
+             */
+            fecha_emision: string;
+            /** Monto */
+            monto: string;
         };
         /** DetalleCuentaRespuesta */
         DetalleCuentaRespuesta: {
@@ -1915,6 +1955,25 @@ export interface components {
             diferencia: string | null;
             /** Conciliado En */
             conciliado_en: string | null;
+        };
+        /**
+         * LoteSugeridoRespuesta
+         * @description Un grupo de cuentas facturadas de una IAFAS y un periodo (el mes de
+         *     sus comprobantes), listo para generarse como lote.
+         */
+        LoteSugeridoRespuesta: {
+            /** Iafas Id */
+            iafas_id: number;
+            /** Iafas Codigo */
+            iafas_codigo: string;
+            /** Iafas Razon Social */
+            iafas_razon_social: string;
+            /** Periodo */
+            periodo: string;
+            /** Monto Total */
+            monto_total: string;
+            /** Cuentas */
+            cuentas: components["schemas"]["CuentaPorLotearRespuesta"][];
         };
         /** LotesPeriodoEstadoRespuesta */
         LotesPeriodoEstadoRespuesta: {
@@ -2625,7 +2684,7 @@ export interface components {
             /** Iafas Id */
             iafas_id: number;
             /** Periodo */
-            periodo: string;
+            periodo?: string | null;
             /** Cuenta Ids */
             cuenta_ids: number[];
         };
@@ -3589,6 +3648,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    sugerir_lotes_lotes_sugeridos_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoteSugeridoRespuesta"][];
                 };
             };
         };

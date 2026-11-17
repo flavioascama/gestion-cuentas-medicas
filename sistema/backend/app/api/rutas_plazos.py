@@ -70,6 +70,7 @@ class ControlPeriodoSusaludRespuesta(BaseModel):
     fecha_limite: date
     ultimo_envio: datetime | None
     estado: str
+    listos_envio: int
 
     @staticmethod
     def desde_valor(valor: ControlPeriodoSusalud) -> ControlPeriodoSusaludRespuesta:

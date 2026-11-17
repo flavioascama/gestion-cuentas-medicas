@@ -21,6 +21,9 @@ from app.infraestructura.persistencia.modelos_integracion import (
     EventoModelo,
     LoteFacturacionModelo,
 )
+from app.infraestructura.persistencia.repositorio_validacion_oficial_sql import (
+    ESTADOS_ENVIABLES_SUSALUD,
+)
 
 _NO_SUJETOS_A_ENVIO = ("OBSERVADO_VALIDADOR",)
 
@@ -43,10 +46,11 @@ class RepositorioControlSusaludSql(RepositorioControlSusalud):
         self._sesion = sesion
 
     async def lotes_por_periodo(self) -> list[LotesPeriodo]:
-        pendiente = sa.and_(
-            LoteFacturacionModelo.enviado_susalud_en.is_(None),
-            LoteFacturacionModelo.estado.not_in(_NO_SUJETOS_A_ENVIO),
-        )
+        sin_enviar = LoteFacturacionModelo.enviado_susalud_en.is_(None)
+        estado = LoteFacturacionModelo.estado
+        pendiente = sa.and_(sin_enviar, estado.not_in(_NO_SUJETOS_A_ENVIO))
+        # Mismo criterio con que SolicitarEnvioSusalud elige los lotes.
+        listo = sa.and_(sin_enviar, estado.in_(ESTADOS_ENVIABLES_SUSALUD))
         filas = (
             await self._sesion.execute(
                 sa.select(
@@ -54,6 +58,7 @@ class RepositorioControlSusaludSql(RepositorioControlSusalud):
                     sa.func.count(LoteFacturacionModelo.id),
                     sa.func.sum(sa.case((pendiente, 1), else_=0)),
                     sa.func.max(LoteFacturacionModelo.enviado_susalud_en),
+                    sa.func.sum(sa.case((listo, 1), else_=0)),
                 ).group_by(LoteFacturacionModelo.periodo)
             )
         ).all()
@@ -63,8 +68,9 @@ class RepositorioControlSusaludSql(RepositorioControlSusalud):
                 lotes=int(lotes),
                 pendientes_envio=int(pendientes or 0),
                 ultimo_envio=ultimo_envio,
+                listos_envio=int(listos or 0),
             )
-            for periodo, lotes, pendientes, ultimo_envio in filas
+            for periodo, lotes, pendientes, ultimo_envio, listos in filas
         ]
 
     async def lotes_pendientes_envio(self) -> list[LotePendienteSusalud]:

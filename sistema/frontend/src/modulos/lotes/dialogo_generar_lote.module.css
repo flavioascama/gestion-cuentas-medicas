@@ -1,21 +1,81 @@
 .formulario {
   display: flex;
   flex-direction: column;
-  gap: var(--espacio_3);
-  min-width: 420px;
+  gap: var(--espacio_4);
+}
+
+.grupo {
+  border: none;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+.leyenda {
+  padding: 0;
+  margin-bottom: var(--espacio_2);
+  font-size: var(--tamano_metadato);
+  font-weight: var(--peso_medio);
+  color: var(--color_texto_secundario);
+}
+
+.lista_sugeridos,
+.lista_cuentas {
+  overflow-y: auto;
+  border: 1px solid var(--color_borde);
+  border-radius: var(--radio_borde);
+}
+
+.lista_sugeridos {
+  max-height: 200px;
 }
 
 .lista_cuentas {
   max-height: 240px;
-  overflow-y: auto;
-  border: 1px solid var(--color_borde);
-  border-radius: var(--radio_borde);
+}
+
+.fila_sugerido,
+.fila_cuenta {
+  display: grid;
+  align-items: center;
+  gap: var(--espacio_3);
   padding: var(--espacio_2) var(--espacio_3);
+  cursor: pointer;
+}
+
+/* Marca, texto que ocupa lo que sobra y columnas de datos de ancho fijo:
+   asi quedan alineadas entre filas sin usar una tabla. */
+.fila_sugerido {
+  grid-template-columns: auto minmax(0, 1fr) 150px 90px 110px;
 }
 
 .fila_cuenta {
-  display: flex;
-  align-items: center;
-  gap: var(--espacio_2);
-  padding: var(--espacio_1) 0;
+  grid-template-columns: auto minmax(0, 1fr) 90px 110px;
+}
+
+.fila_sugerido + .fila_sugerido,
+.fila_cuenta + .fila_cuenta {
+  border-top: 1px solid var(--color_borde);
+}
+
+.fila_sugerido:hover,
+.fila_elegida {
+  background-color: var(--color_primario_suave);
+}
+
+.fila_todas {
+  font-weight: var(--peso_medio);
+  background-color: var(--color_fondo);
+}
+
+.texto_largo {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dato_numerico {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }

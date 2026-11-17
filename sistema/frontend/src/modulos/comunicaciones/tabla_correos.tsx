@@ -8,7 +8,7 @@ import {
 } from "../../api/correos_iafas";
 import { Boton } from "../../componentes_base/boton";
 import { EtiquetaEstado } from "../../componentes_base/etiqueta_estado";
-import { Paginacion } from "../../componentes_base/paginacion";
+import { ConPaginacion } from "../../componentes_base/paginacion";
 import { usar_pagina_cliente } from "../../componentes_base/paginar";
 import { TablaDatos, type ColumnaTabla } from "../../componentes_base/tabla_datos";
 import { formatear_fecha_hora } from "../../utilidades/formato";
@@ -101,21 +101,22 @@ export function TablaCorreos({ filtro, mostrar_cuenta, mensaje_vacio }: Propieda
 
   return (
     <>
-      <TablaDatos
-        columnas={columnas(mostrar_cuenta, (correo) => set_abierto(correo.id))}
-        filas={filas_pagina}
-        obtener_clave={(fila) => fila.id}
-        cargando={consulta.isPending}
-        error={consulta.error}
-        mensaje_vacio={mensaje_vacio}
-      />
-      <Paginacion
+      <ConPaginacion
         pagina={pagina_actual}
         total_paginas={total_paginas}
         total_registros={filas.length}
         al_cambiar_pagina={set_pagina}
         etiqueta_entidad="correos"
-      />
+      >
+        <TablaDatos
+          columnas={columnas(mostrar_cuenta, (correo) => set_abierto(correo.id))}
+          filas={filas_pagina}
+          obtener_clave={(fila) => fila.id}
+          cargando={consulta.isPending}
+          error={consulta.error}
+          mensaje_vacio={mensaje_vacio}
+        />
+      </ConPaginacion>
       {abierto !== null ? (
         <DialogoCorreo correo_id={abierto} al_cerrar={() => set_abierto(null)} />
       ) : null}

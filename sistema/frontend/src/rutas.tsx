@@ -14,6 +14,7 @@ import { BandejaContingencias } from "./modulos/contingencia/bandeja_contingenci
 import { BandejaCuentas } from "./modulos/cuentas/bandeja_cuentas";
 import { DetalleCuenta } from "./modulos/cuentas/detalle_cuenta";
 import { BandejaLotes } from "./modulos/lotes/bandeja_lotes";
+import { BandejaActividadRobot } from "./modulos/robot/actividad_robot";
 import { DetalleLote } from "./modulos/lotes/detalle_lote";
 import { PanelIndicadores } from "./modulos/trazabilidad/panel_indicadores";
 import { RutaProtegida } from "./sesion/ruta_protegida";
@@ -32,6 +33,7 @@ const _ELEMENTOS = new Map<string, ReactNode>([
   ["/lotes", <BandejaLotes />],
   ["/lotes/:lote_id", <DetalleLote />],
   ["/comunicaciones", <BandejaComunicaciones />],
+  ["/robot", <BandejaActividadRobot />],
   ["/anulaciones", <BandejaAnulaciones />],
   ["/contingencias", <BandejaContingencias />],
   ["/indicadores", <PanelIndicadores />],

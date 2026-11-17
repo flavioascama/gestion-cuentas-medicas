@@ -4325,6 +4325,207 @@
           }
         }
       }
+    },
+    "/robot/navegacion-visible": {
+      "get": {
+        "tags": [
+          "robot"
+        ],
+        "summary": "Consultar Navegacion Visible",
+        "operationId": "consultar_navegacion_visible_robot_navegacion_visible_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpcionNavegacion"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "robot"
+        ],
+        "summary": "Cambiar Navegacion Visible",
+        "operationId": "cambiar_navegacion_visible_robot_navegacion_visible_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OpcionNavegacion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpcionNavegacion"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/robot/actividad": {
+      "get": {
+        "tags": [
+          "robot"
+        ],
+        "summary": "Listar Actividad",
+        "description": "Trabajos del robot que dejaron capturas, el mas reciente primero.",
+        "operationId": "listar_actividad_robot_actividad_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ActividadRobotRespuesta"
+                  },
+                  "type": "array",
+                  "title": "Response Listar Actividad Robot Actividad Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/robot/trabajos/{trabajo_id}/pasos": {
+      "get": {
+        "tags": [
+          "robot"
+        ],
+        "summary": "Listar Pasos",
+        "operationId": "listar_pasos_robot_trabajos__trabajo_id__pasos_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "trabajo_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Trabajo Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PasoRobotRespuesta"
+                  },
+                  "title": "Response Listar Pasos Robot Trabajos  Trabajo Id  Pasos Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/robot/trabajos/{trabajo_id}/pasos/{orden}/captura": {
+      "get": {
+        "tags": [
+          "robot"
+        ],
+        "summary": "Obtener Captura",
+        "operationId": "obtener_captura_robot_trabajos__trabajo_id__pasos__orden__captura_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "trabajo_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Trabajo Id"
+            }
+          },
+          {
+            "name": "orden",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Orden"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -4458,6 +4659,40 @@
           "preexistencias"
         ],
         "title": "AcreditacionRespuesta"
+      },
+      "ActividadRobotRespuesta": {
+        "properties": {
+          "trabajo_id": {
+            "type": "integer",
+            "title": "Trabajo Id"
+          },
+          "tipo": {
+            "type": "string",
+            "title": "Tipo"
+          },
+          "estado": {
+            "type": "string",
+            "title": "Estado"
+          },
+          "iniciado_en": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Iniciado En"
+          },
+          "pasos": {
+            "type": "integer",
+            "title": "Pasos"
+          }
+        },
+        "type": "object",
+        "required": [
+          "trabajo_id",
+          "tipo",
+          "estado",
+          "iniciado_en",
+          "pasos"
+        ],
+        "title": "ActividadRobotRespuesta"
       },
       "AdjuntoCorreoRespuesta": {
         "properties": {
@@ -6609,6 +6844,19 @@
         ],
         "title": "ObservacionRespuesta"
       },
+      "OpcionNavegacion": {
+        "properties": {
+          "activa": {
+            "type": "boolean",
+            "title": "Activa"
+          }
+        },
+        "type": "object",
+        "required": [
+          "activa"
+        ],
+        "title": "OpcionNavegacion"
+      },
       "ParametroSistemaRespuesta": {
         "properties": {
           "clave": {
@@ -6686,6 +6934,40 @@
           "correo_remitente"
         ],
         "title": "ParametrosIafasRespuesta"
+      },
+      "PasoRobotRespuesta": {
+        "properties": {
+          "orden": {
+            "type": "integer",
+            "title": "Orden"
+          },
+          "plataforma": {
+            "type": "string",
+            "title": "Plataforma"
+          },
+          "descripcion": {
+            "type": "string",
+            "title": "Descripcion"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "capturado_en": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Capturado En"
+          }
+        },
+        "type": "object",
+        "required": [
+          "orden",
+          "plataforma",
+          "descripcion",
+          "url",
+          "capturado_en"
+        ],
+        "title": "PasoRobotRespuesta"
       },
       "PiezaCompletitudRespuesta": {
         "properties": {

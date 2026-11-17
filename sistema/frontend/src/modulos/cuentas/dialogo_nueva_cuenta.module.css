@@ -1,6 +1,18 @@
-.formulario {
+.cuerpo {
   display: flex;
   flex-direction: column;
   gap: var(--espacio_3);
-  min-width: 420px;
+}
+
+/* Ocho campos en dos columnas: cuatro filas, sin desplazamiento. */
+.formulario {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--espacio_3) var(--espacio_4);
+}
+
+@media (max-width: 560px) {
+  .formulario {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }

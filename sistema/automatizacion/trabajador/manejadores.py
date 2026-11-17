@@ -64,6 +64,7 @@ from trabajador.manejadores_comunicaciones import (
     procesar_monitorear_comunicaciones,
 )
 from trabajador.soporte.errores import ErrorSesionNoDisponible, ErrorSinResultado
+from trabajador.soporte.pasos import RegistradorPasos
 
 registro = structlog.get_logger(__name__)
 
@@ -85,6 +86,8 @@ class Adaptadores:
     sesion_plataforma: AsistenteSesionPlataforma
     validador_tedef_web: ValidadorTedefWeb
     comunicaciones: FuentesComunicaciones
+    # Capturas de la navegacion del robot, si el administrador las activo.
+    pasos: RegistradorPasos | None = None
 
 
 async def _procesar_consultar_cobertura(

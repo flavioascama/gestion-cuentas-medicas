@@ -37,6 +37,7 @@ from trabajador.soporte.cifrado import AlmacenSesionesCifrado
 from trabajador.soporte.errores import ErrorSesionNoDisponible, ErrorSinResultado
 from trabajador.soporte.evidencias import AlmacenEvidenciasCifrado
 from trabajador.soporte.navegador import GestorNavegador
+from trabajador.soporte.pasos import RegistradorPasos
 from trabajador.soporte.selectores import obtener_selector
 
 registro = structlog.get_logger(__name__)
@@ -71,10 +72,16 @@ class AdaptadorAcreditacionWeb(AcreditacionWeb):
         gestor_navegador: GestorNavegador,
         almacen_sesiones: AlmacenSesionesCifrado,
         almacen_evidencias: AlmacenEvidenciasCifrado,
+        pasos: RegistradorPasos | None = None,
     ) -> None:
         self._gestor_navegador = gestor_navegador
         self._almacen_sesiones = almacen_sesiones
         self._evidencias = almacen_evidencias
+        self._pasos = pasos
+
+    async def _paso(self, pagina: Page, descripcion: str) -> None:
+        if self._pasos is not None:
+            await self._pasos.capturar(pagina, _PLATAFORMA, descripcion)
 
     async def verificar_cobertura(
         self, contexto: ContextoCuentaAcreditacion, trabajo_id: int
@@ -116,6 +123,7 @@ class AdaptadorAcreditacionWeb(AcreditacionWeb):
             raise ErrorSesionNoDisponible(
                 "La sesion asistida guardada de ACREDITA SALUD ya no es valida."
             )
+        await self._paso(pagina, "Menú principal, con la sesión iniciada")
 
     async def _consultar_y_acreditar(
         self, pagina: Page, contexto: ContextoCuentaAcreditacion, trabajo_id: int
@@ -133,6 +141,7 @@ class AdaptadorAcreditacionWeb(AcreditacionWeb):
         )
         await pagina.click(obtener_selector("consulta_iafas", "boton_buscar"))
         await pagina.wait_for_selector(obtener_selector("consulta_iafas", "resultado"))
+        await self._paso(pagina, "Consulta del asegurado")
 
         if await pagina.locator(obtener_selector("consulta_iafas", "no_encontrado")).count() > 0:
             raise ErrorAseguradoNoEncontrado(
@@ -148,6 +157,7 @@ class AdaptadorAcreditacionWeb(AcreditacionWeb):
 
         await pagina.click(obtener_selector("consulta_iafas", "enlace_acreditar"))
         await pagina.wait_for_selector(obtener_selector("evaluacion", "condicion_cobertura"))
+        await self._paso(pagina, "Evaluación de la cobertura")
 
         condicion_cobertura = await self._texto_requerido(
             pagina, "evaluacion", "condicion_cobertura"
@@ -164,6 +174,7 @@ class AdaptadorAcreditacionWeb(AcreditacionWeb):
 
         await pagina.click(obtener_selector("evaluacion", "boton_generar"))
         await pagina.wait_for_selector(obtener_selector("documento", "codigo_autorizacion"))
+        await self._paso(pagina, "Documento de acreditación generado")
 
         codigo_autorizacion = await self._texto_requerido(
             pagina, "documento", "codigo_autorizacion"

@@ -5,6 +5,7 @@
   {% if enviado %}<p data-testid="correo-enviado"><strong>Correo enviado.</strong></p>{% endif %}
   {% if disponible %}
   <form method="post" action="/admin/correo" data-testid="formulario-correo">
+    {% if prefijo %}<input type="hidden" name="volver" value="{{ prefijo }}/correo">{% endif %}
     <p>De: {{ remitente }}<br>Para: {{ destinatario }}</p>
     <p><label>Asunto<br><input type="text" name="asunto" size="80" maxlength="200" required data-testid="asunto-correo"></label></p>
     <p><label>Texto<br><textarea name="texto" rows="8" cols="80" required data-testid="texto-correo"></textarea></label></p>

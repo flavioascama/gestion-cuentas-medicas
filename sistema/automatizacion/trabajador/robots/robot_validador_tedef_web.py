@@ -46,6 +46,7 @@ from playwright.async_api import FilePayload, Locator, Page
 from trabajador.soporte.cifrado import AlmacenSesionesCifrado
 from trabajador.soporte.errores import ErrorSesionNoDisponible
 from trabajador.soporte.navegador import GestorNavegador
+from trabajador.soporte.pasos import RegistradorPasos
 from trabajador.soporte.selectores import obtener_selector, ruta_selectores
 
 registro = structlog.get_logger(__name__)
@@ -92,13 +93,19 @@ class AdaptadorValidadorTedefWeb(ValidadorTedefWeb):
         almacen_sesiones: AlmacenSesionesCifrado,
         configuracion: ConfiguracionValidadorTedefWeb,
         reloj: Reloj,
+        pasos: RegistradorPasos | None = None,
     ) -> None:
+        self._pasos = pasos
         self._gestor_navegador = gestor_navegador
         self._almacen_sesiones = almacen_sesiones
         self._url_base = configuracion.url_base
         self._reloj = reloj
         self._tiempo_limite_validacion_segundos = configuracion.tiempo_limite_validacion_segundos
         self._intervalo_poll_segundos = configuracion.intervalo_poll_segundos
+
+    async def _paso(self, pagina: Page, descripcion: str) -> None:
+        if self._pasos is not None:
+            await self._pasos.capturar(pagina, _PLATAFORMA, descripcion)
 
     @asynccontextmanager
     async def _pagina_autenticada(self) -> AsyncIterator[Page]:
@@ -114,6 +121,7 @@ class AdaptadorValidadorTedefWeb(ValidadorTedefWeb):
                 raise ErrorSesionNoDisponible(
                     "La sesion asistida guardada de TEDEF Web ya no es valida."
                 )
+            await self._paso(pagina, "Lotes por validar, con la sesión iniciada")
             yield pagina
         except ErrorSesionNoDisponible:
             raise
@@ -133,7 +141,9 @@ class AdaptadorValidadorTedefWeb(ValidadorTedefWeb):
             ]
             campo = pagina.locator(_sel("lotes_por_validar", "campo_archivos"))
             await campo.set_input_files(archivos)
+            await self._paso(pagina, "Archivos del lote cargados en el formulario")
             await pagina.click(_sel("lotes_por_validar", "boton_registrar_archivos"))
+            await self._paso(pagina, "Resultado del registro del lote")
             return await self._leer_resultado_registro(pagina)
 
     async def _leer_resultado_registro(self, pagina: Page) -> ResultadoEtapaValidador:
@@ -156,8 +166,11 @@ class AdaptadorValidadorTedefWeb(ValidadorTedefWeb):
         async with self._pagina_autenticada() as pagina:
             fila = await self._fila_o_error(pagina, "lotes_por_validar", identidad)
             await fila.locator(_sel("lotes_por_validar", "checkbox_lote")).check()
+            await self._paso(pagina, "Lote marcado para validar")
             await pagina.click(_sel("lotes_por_validar", "boton_validar_lotes"))
-            return await self._esperar_resolucion(pagina, identidad)
+            resultado = await self._esperar_resolucion(pagina, identidad)
+            await self._paso(pagina, "Resultado de la validación del lote")
+            return resultado
 
     async def _esperar_resolucion(
         self, pagina: Page, identidad: IdentidadLoteTedef
@@ -196,6 +209,7 @@ class AdaptadorValidadorTedefWeb(ValidadorTedefWeb):
             await pagina.goto(f"{self._url_base}{_sel('lotes_por_enviar', 'ruta')}")
             fila = await self._fila_o_error(pagina, "lotes_por_enviar", identidad)
             enlace = fila.locator(_sel("lotes_por_enviar", "descargar_s01"))
+            await self._paso(pagina, "Lotes por enviar: archivo de transmisión")
             return await self._descargar(pagina, enlace)
 
     async def enviar_a_susalud(self, lotes: tuple[IdentidadLoteTedef, ...]) -> None:
@@ -204,7 +218,9 @@ class AdaptadorValidadorTedefWeb(ValidadorTedefWeb):
             for identidad in lotes:
                 fila = await self._fila_o_error(pagina, "lotes_por_enviar", identidad)
                 await fila.locator(_sel("lotes_por_enviar", "checkbox_lote")).check()
+            await self._paso(pagina, "Lotes marcados para enviar a SUSALUD")
             await pagina.click(_sel("lotes_por_enviar", "boton_enviar_lotes"))
+            await self._paso(pagina, "Envío a SUSALUD realizado")
 
     async def _fila_opcional(
         self, pagina: Page, seccion: str, identidad: IdentidadLoteTedef

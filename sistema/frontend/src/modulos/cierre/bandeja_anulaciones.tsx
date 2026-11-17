@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { SolicitudAnulacion } from "../../api/cierre";
 import { Boton } from "../../componentes_base/boton";
-import { Paginacion } from "../../componentes_base/paginacion";
+import { ConPaginacion } from "../../componentes_base/paginacion";
 import { usar_pagina_cliente } from "../../componentes_base/paginar";
 import { TablaDatos, type ColumnaTabla } from "../../componentes_base/tabla_datos";
 import { TituloPagina } from "../../componentes_base/titulo_pagina";
@@ -89,21 +89,22 @@ export function BandejaAnulaciones() {
   return (
     <div className={estilos.panel}>
       <TituloPagina titulo="Solicitudes de anulación" />
-      <TablaDatos
-        columnas={columnas}
-        filas={solicitudes_pagina}
-        obtener_clave={(fila) => fila.id}
-        cargando={consulta.isPending}
-        error={consulta.error}
-        mensaje_vacio="No hay solicitudes de anulación pendientes."
-      />
-      <Paginacion
+      <ConPaginacion
         pagina={pagina_actual}
         total_paginas={total_paginas}
         total_registros={solicitudes.length}
         al_cambiar_pagina={set_pagina}
         etiqueta_entidad="solicitudes"
-      />
+      >
+        <TablaDatos
+          columnas={columnas}
+          filas={solicitudes_pagina}
+          obtener_clave={(fila) => fila.id}
+          cargando={consulta.isPending}
+          error={consulta.error}
+          mensaje_vacio="No hay solicitudes de anulación pendientes."
+        />
+      </ConPaginacion>
       {resolucion ? (
         <DialogoResolverAnulacion
           solicitud_id={resolucion.solicitud_id}

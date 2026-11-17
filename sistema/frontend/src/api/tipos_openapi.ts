@@ -1293,6 +1293,78 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/robot/navegacion-visible": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Consultar Navegacion Visible */
+        get: operations["consultar_navegacion_visible_robot_navegacion_visible_get"];
+        /** Cambiar Navegacion Visible */
+        put: operations["cambiar_navegacion_visible_robot_navegacion_visible_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/robot/actividad": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Listar Actividad
+         * @description Trabajos del robot que dejaron capturas, el mas reciente primero.
+         */
+        get: operations["listar_actividad_robot_actividad_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/robot/trabajos/{trabajo_id}/pasos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar Pasos */
+        get: operations["listar_pasos_robot_trabajos__trabajo_id__pasos_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/robot/trabajos/{trabajo_id}/pasos/{orden}/captura": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Obtener Captura */
+        get: operations["obtener_captura_robot_trabajos__trabajo_id__pasos__orden__captura_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1329,6 +1401,22 @@ export interface components {
             porcentaje_coaseguro: number | null;
             /** Preexistencias */
             preexistencias: string[];
+        };
+        /** ActividadRobotRespuesta */
+        ActividadRobotRespuesta: {
+            /** Trabajo Id */
+            trabajo_id: number;
+            /** Tipo */
+            tipo: string;
+            /** Estado */
+            estado: string;
+            /**
+             * Iniciado En
+             * Format: date-time
+             */
+            iniciado_en: string;
+            /** Pasos */
+            pasos: number;
         };
         /** AdjuntoCorreoRespuesta */
         AdjuntoCorreoRespuesta: {
@@ -2079,6 +2167,11 @@ export interface components {
             /** Respondido En */
             respondido_en: string | null;
         };
+        /** OpcionNavegacion */
+        OpcionNavegacion: {
+            /** Activa */
+            activa: boolean;
+        };
         /** ParametroSistemaRespuesta */
         ParametroSistemaRespuesta: {
             /** Clave */
@@ -2106,6 +2199,22 @@ export interface components {
             dias_plazo_pago_liquidacion: number;
             /** Correo Remitente */
             correo_remitente: string | null;
+        };
+        /** PasoRobotRespuesta */
+        PasoRobotRespuesta: {
+            /** Orden */
+            orden: number;
+            /** Plataforma */
+            plataforma: string;
+            /** Descripcion */
+            descripcion: string;
+            /** Url */
+            url: string;
+            /**
+             * Capturado En
+             * Format: date-time
+             */
+            capturado_en: string;
         };
         /** PiezaCompletitudRespuesta */
         PiezaCompletitudRespuesta: {
@@ -5612,6 +5721,140 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ProductoCatalogoRespuesta"][];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    consultar_navegacion_visible_robot_navegacion_visible_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OpcionNavegacion"];
+                };
+            };
+        };
+    };
+    cambiar_navegacion_visible_robot_navegacion_visible_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OpcionNavegacion"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OpcionNavegacion"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listar_actividad_robot_actividad_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActividadRobotRespuesta"][];
+                };
+            };
+        };
+    };
+    listar_pasos_robot_trabajos__trabajo_id__pasos_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                trabajo_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PasoRobotRespuesta"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    obtener_captura_robot_trabajos__trabajo_id__pasos__orden__captura_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                trabajo_id: number;
+                orden: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

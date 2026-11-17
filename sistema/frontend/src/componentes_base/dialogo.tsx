@@ -6,7 +6,7 @@ interface Propiedades {
   children: ReactNode;
   acciones: ReactNode;
   al_cerrar: () => void;
-  ancho?: "normal" | "grande";
+  ancho?: "normal" | "mediano" | "grande";
 }
 
 const _ENFOCABLES =
@@ -65,9 +65,8 @@ function usar_foco_de_dialogo(caja: RefObject<HTMLDivElement>, al_cerrar: () => 
 export function Dialogo({ titulo, children, acciones, al_cerrar, ancho = "normal" }: Propiedades) {
   const caja = useRef<HTMLDivElement>(null);
   usar_foco_de_dialogo(caja, al_cerrar);
-  const clase_caja = [estilos.caja, ancho === "grande" ? estilos.grande : null]
-    .filter(Boolean)
-    .join(" ");
+  const clase_ancho = { normal: null, mediano: estilos.mediano, grande: estilos.grande }[ancho];
+  const clase_caja = [estilos.caja, clase_ancho].filter(Boolean).join(" ");
   return (
     <div
       className={estilos.fondo}

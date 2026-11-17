@@ -8,7 +8,15 @@ interface Propiedades extends InputHTMLAttributes<HTMLInputElement> {
   icono?: ReactNode;
 }
 
-export function CampoTexto({ etiqueta, ayuda, error, icono, id, className, ...resto }: Propiedades) {
+export function CampoTexto({
+  etiqueta,
+  ayuda,
+  error,
+  icono,
+  id,
+  className,
+  ...resto
+}: Propiedades) {
   const id_generado = useId();
   const id_campo = id ?? id_generado;
 

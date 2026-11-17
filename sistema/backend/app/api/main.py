@@ -45,6 +45,7 @@ from app.api.rutas_orquestacion import router as router_orquestacion  # noqa: E4
 from app.api.rutas_parametros import router as router_parametros  # noqa: E402
 from app.api.rutas_plataformas import router as router_plataformas  # noqa: E402
 from app.api.rutas_plazos import router as router_plazos  # noqa: E402
+from app.api.rutas_robot import router as router_robot  # noqa: E402
 from app.api.rutas_salud import router as router_salud  # noqa: E402
 from app.api.rutas_trabajos import router as router_trabajos  # noqa: E402
 from app.api.rutas_trazabilidad import router as router_trazabilidad  # noqa: E402
@@ -101,6 +102,7 @@ app.include_router(router_trazabilidad)
 app.include_router(router_indicadores)
 app.include_router(router_historial_lote)
 app.include_router(router_administracion)
+app.include_router(router_robot)
 
 
 @app.exception_handler(ErrorAplicacion)

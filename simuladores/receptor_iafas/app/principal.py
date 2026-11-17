@@ -17,7 +17,7 @@ from app.almacenamiento import AlmacenamientoReceptor
 from app.auditoria import AuditoriaIafas
 from app.configuracion import configuracion
 from app.correo import EnviadorCorreoSmtp
-from app.portal_web import construir_app
+from app.portal_web import cargar_aseguradoras, construir_app
 from app.servidor_ftp import construir_servidor
 
 logging.basicConfig(level=logging.INFO)
@@ -54,7 +54,8 @@ def main() -> None:
         configuracion.bandeja_entrada,
     )
 
-    app = construir_app(almacenamiento, auditoria, enviador)
+    aseguradoras = cargar_aseguradoras(configuracion.datos_semilla / "iafas.json")
+    app = construir_app(almacenamiento, auditoria, enviador, aseguradoras)
     uvicorn.run(app, host="0.0.0.0", port=configuracion.portal_puerto)
 
 

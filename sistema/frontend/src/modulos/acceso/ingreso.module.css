@@ -1,5 +1,5 @@
 .envoltorio {
-  height: 100vh;
+  min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -7,7 +7,11 @@
   padding: var(--espacio_4);
 }
 
+/* La tarjeta completa se ve un 50 % mas grande (pedido del usuario,
+   2026-11-17): `zoom` escala texto, campos y espacios a la vez. En
+   pantallas chicas vuelve a un tamano que entra sin recortarse. */
 .tarjeta {
+  zoom: 1.5;
   width: 100%;
   max-width: 400px;
   background-image: radial-gradient(
@@ -45,4 +49,10 @@
   margin: 0;
   font-size: var(--tamano_metadato);
   color: var(--color_texto_secundario);
+}
+
+@media (max-height: 660px), (max-width: 520px) {
+  .tarjeta {
+    zoom: 1.15;
+  }
 }

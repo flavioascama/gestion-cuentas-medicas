@@ -37,6 +37,18 @@ export function obtener_token(): string | null {
   return localStorage.getItem(CLAVE_TOKEN);
 }
 
+// El backend ya no acepta el token (vencio o fue revocado): quien se
+// suscribe (ProveedorSesion) cierra la sesion local y la aplicacion
+// vuelve al ingreso, en vez de dejar la pantalla con un mensaje de error.
+let _al_expirar_sesion: (() => void) | null = null;
+
+export function suscribir_sesion_expirada(manejador: () => void): () => void {
+  _al_expirar_sesion = manejador;
+  return () => {
+    if (_al_expirar_sesion === manejador) _al_expirar_sesion = null;
+  };
+}
+
 function construir_query(
   parametros?: Record<string, string | number | boolean | undefined>,
 ): string {
@@ -70,6 +82,10 @@ async function peticion<T>(ruta: string, opciones: RequestInit): Promise<T> {
   if (token) encabezados.set("Authorization", `Bearer ${token}`);
 
   const respuesta = await fetch(`${URL_BASE}${ruta}`, { ...opciones, headers: encabezados });
+  if (respuesta.status === 401 && token) {
+    borrar_token();
+    _al_expirar_sesion?.();
+  }
   if (!respuesta.ok) throw await leer_error(respuesta);
   if (respuesta.status === 204) return undefined as T;
 

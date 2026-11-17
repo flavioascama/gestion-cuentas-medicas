@@ -14,23 +14,3 @@
   font-weight: var(--peso_enfasis);
   white-space: nowrap;
 }
-
-/* Mismo boton de ojo que la bandeja de cuentas. */
-.boton_ver {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  margin: 0 auto;
-  border: none;
-  background: none;
-  color: var(--color_texto_secundario);
-  border-radius: var(--radio_borde);
-  cursor: pointer;
-}
-
-.boton_ver:hover {
-  background-color: var(--color_primario_suave);
-  color: var(--color_primario);
-}

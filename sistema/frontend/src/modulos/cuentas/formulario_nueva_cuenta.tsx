@@ -24,6 +24,7 @@ export function FormularioNuevaCuenta({
     <Dialogo
       titulo="Nueva cuenta médica"
       al_cerrar={al_cerrar}
+      ancho="mediano"
       acciones={
         <>
           <Boton variante="secundario" onClick={al_cerrar}>
@@ -39,9 +40,11 @@ export function FormularioNuevaCuenta({
         </>
       }
     >
-      <div className={estilos.formulario}>
+      <div className={estilos.cuerpo}>
         <MensajeErrorMutacion error={error} texto_por_defecto="No se pudo registrar la cuenta." />
-        <CamposNuevaCuenta formulario={formulario} />
+        <div className={estilos.formulario}>
+          <CamposNuevaCuenta formulario={formulario} />
+        </div>
       </div>
     </Dialogo>
   );

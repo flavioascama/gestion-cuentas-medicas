@@ -5,7 +5,7 @@ import { ControlSegmentado, type OpcionSegmento } from "../../componentes_base/c
 import { IconoCampana } from "../../componentes_base/iconos_navegacion";
 import { Mensaje } from "../../componentes_base/mensaje";
 import { MigasPan } from "../../componentes_base/migas_pan";
-import { Paginacion } from "../../componentes_base/paginacion";
+import { ConPaginacion } from "../../componentes_base/paginacion";
 import { usar_pagina_cliente } from "../../componentes_base/paginar";
 import { usar_ahora } from "../../utilidades/usar_ahora";
 import { describir_aviso } from "./catalogo_avisos";
@@ -98,18 +98,19 @@ function ListaAvisos({ avisos, al_abrir }: { avisos: Aviso[]; al_abrir: (aviso: 
   }
   return (
     <>
-      <div className={estilos.lista}>
-        {filas_pagina.map((aviso) => (
-          <FilaAviso key={aviso.evento_id} aviso={aviso} ahora={ahora} al_abrir={al_abrir} />
-        ))}
-      </div>
-      <Paginacion
+      <ConPaginacion
         pagina={pagina_actual}
         total_paginas={total_paginas}
         total_registros={avisos.length}
         al_cambiar_pagina={set_pagina}
         etiqueta_entidad="avisos"
-      />
+      >
+        <div className={estilos.lista}>
+          {filas_pagina.map((aviso) => (
+            <FilaAviso key={aviso.evento_id} aviso={aviso} ahora={ahora} al_abrir={al_abrir} />
+          ))}
+        </div>
+      </ConPaginacion>
     </>
   );
 }

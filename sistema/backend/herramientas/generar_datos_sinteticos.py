@@ -59,6 +59,9 @@ SALIDA_MAESTRO_IPRESS = RAIZ_BACKEND / "pruebas" / "fixtures" / "maestro_ipress.
 SALIDA_ASEGURADOS = raiz_simuladores_datos_semilla() / "asegurados.json"
 SALIDA_CUENTAS = RAIZ_BACKEND / "pruebas" / "fixtures" / "cuentas_medicas.json"
 SALIDA_CLAVES_IAFAS = raiz_simuladores_datos_semilla() / "claves_iafas.json"
+# Codigo y razon social de cada IAFAS: el receptor IAFAS presenta un portal
+# por aseguradora y necesita saber como se llama cada una.
+SALIDA_IAFAS_SEMILLA = raiz_simuladores_datos_semilla() / "iafas.json"
 
 # Dominio literal del campo 9 de T2 (tipo de documento de identidad),
 # transcrito de configuracion/esquema_tedef/esquema_2025_10.yaml, que a su
@@ -341,6 +344,23 @@ def _escribir_cuentas(
     print(f"{SALIDA_CUENTAS} generado.")
 
 
+def _escribir_iafas_semilla(filas_iafas: list[_FilaIafas]) -> None:
+    SALIDA_IAFAS_SEMILLA.parent.mkdir(parents=True, exist_ok=True)
+    contenido = {
+        "metadatos": _cabecera(
+            "IAFAS del maestro sintetico (codigo y razon social) para los portales "
+            "por aseguradora del receptor IAFAS (Seccion 9.3)"
+        ),
+        "iafas": [
+            {"codigo": fila.codigo, "razon_social": fila.razon_social}
+            for fila in sorted(filas_iafas, key=lambda f: f.codigo)
+        ],
+    }
+    with SALIDA_IAFAS_SEMILLA.open("w", encoding="utf-8") as archivo:
+        json.dump(contenido, archivo, ensure_ascii=False, indent=2)
+    print(f"{SALIDA_IAFAS_SEMILLA}: {len(filas_iafas)} IAFAS")
+
+
 def main() -> None:
     random.seed(SEMILLA)
     faker = Faker("es_ES")
@@ -353,6 +373,7 @@ def main() -> None:
     print(f"{SALIDA_MAESTRO_IAFAS}: {len(filas_iafas)} filas")
 
     _escribir_claves_iafas(filas_iafas, faker)
+    _escribir_iafas_semilla(filas_iafas)
 
     filas_ipress = _generar_maestro_ipress(faker)
     _escribir_csv_con_cabecera(

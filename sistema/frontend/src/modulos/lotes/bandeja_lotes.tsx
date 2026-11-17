@@ -7,7 +7,7 @@ import { Boton } from "../../componentes_base/boton";
 import { EtiquetaEstado } from "../../componentes_base/etiqueta_estado";
 import { IconoLotes } from "../../componentes_base/iconos_navegacion";
 import { IconoFlechaDerecha } from "../../componentes_base/iconos_tabla";
-import { Paginacion } from "../../componentes_base/paginacion";
+import { ConPaginacion } from "../../componentes_base/paginacion";
 import { usar_pagina_cliente } from "../../componentes_base/paginar";
 import { Pestanas, type DefinicionPestana } from "../../componentes_base/pestanas";
 import { TablaDatos, type ColumnaTabla } from "../../componentes_base/tabla_datos";
@@ -148,23 +148,24 @@ function PanelLotes({ al_abrir_lote }: { al_abrir_lote: (lote_id: number) => voi
       </div>
       {/* La clave reinicia el progreso del envio al cambiar de periodo. */}
       <AccionEnvioSusalud key={filtros.periodo} periodo={filtros.periodo} />
-      <TablaDatos
-        columnas={construir_columnas(mapa_iafas)}
-        filas={filas_pagina}
-        obtener_clave={(fila) => fila.id}
-        cargando={consulta.isPending}
-        actualizando={consulta.isPlaceholderData}
-        error={consulta.error}
-        mensaje_vacio="No hay lotes para los filtros seleccionados."
-        al_hacer_clic_fila={(fila) => al_abrir_lote(fila.id)}
-      />
-      <Paginacion
+      <ConPaginacion
         pagina={pagina_actual}
         total_paginas={total_paginas}
         total_registros={filtrados.length}
         al_cambiar_pagina={set_pagina}
         etiqueta_entidad="lotes"
-      />
+      >
+        <TablaDatos
+          columnas={construir_columnas(mapa_iafas)}
+          filas={filas_pagina}
+          obtener_clave={(fila) => fila.id}
+          cargando={consulta.isPending}
+          actualizando={consulta.isPlaceholderData}
+          error={consulta.error}
+          mensaje_vacio="No hay lotes para los filtros seleccionados."
+          al_hacer_clic_fila={(fila) => al_abrir_lote(fila.id)}
+        />
+      </ConPaginacion>
     </>
   );
 }

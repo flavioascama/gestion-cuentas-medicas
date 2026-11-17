@@ -28,5 +28,6 @@ from app.infraestructura.persistencia import (
     modelos_observaciones,  # noqa: F401
     modelos_plataformas,  # noqa: F401
     modelos_prevalidacion,  # noqa: F401
+    modelos_robot,  # noqa: F401
     proyeccion_ciclo,  # noqa: F401
 )

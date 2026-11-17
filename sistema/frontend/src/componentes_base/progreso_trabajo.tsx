@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { obtener_trabajo, type DetalleTrabajo } from "../api/trabajos";
 import { formatear_duracion } from "../utilidades/formato";
 import { resolver_estado } from "./mapa_estados";
+import { BotonNavegacionRobot } from "./navegacion_robot";
 
 // REQUIERE_SESION no es terminal: en cuanto el usuario resuelve la sesion
 // asistida (GestorSesionPlataforma), el backend reactiva este mismo trabajo
@@ -14,6 +15,14 @@ import { resolver_estado } from "./mapa_estados";
 // apariencia, porque `al_completar` (que invalida la completitud de la
 // cuenta) tampoco llegaria a dispararse.
 const _ESTADOS_TERMINALES = new Set(["COMPLETADO", "AGOTADO"]);
+// Trabajos que el robot hace con su navegador: solo esos pueden mostrar
+// su navegacion (los de correo y de consulta por programa no la tienen).
+const _TIPOS_CON_NAVEGADOR = new Set([
+  "INICIAR_SESION_PLATAFORMA",
+  "CONSULTAR_COBERTURA",
+  "CARGAR_LOTE_VALIDADOR",
+  "ENVIAR_LOTE_SUSALUD",
+]);
 
 interface Propiedades {
   trabajo_id: number;
@@ -50,6 +59,15 @@ export function ProgresoTrabajo({ trabajo_id, al_completar }: Propiedades) {
     <span>
       {definicion.texto}, {transcurrido}
       {trabajo.error ? ` — ${trabajo.error}` : ""}
+      {_TIPOS_CON_NAVEGADOR.has(trabajo.tipo) ? (
+        <>
+          {" "}
+          <BotonNavegacionRobot
+            trabajo_id={trabajo_id}
+            en_curso={!_ESTADOS_TERMINALES.has(trabajo.estado)}
+          />
+        </>
+      ) : null}
     </span>
   );
 }

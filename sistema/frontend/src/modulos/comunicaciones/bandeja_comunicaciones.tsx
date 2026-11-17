@@ -6,7 +6,7 @@ import {
   type ComunicacionIafas,
 } from "../../api/comunicaciones_iafas";
 import { ControlSegmentado, type OpcionSegmento } from "../../componentes_base/control_segmentado";
-import { Paginacion } from "../../componentes_base/paginacion";
+import { ConPaginacion } from "../../componentes_base/paginacion";
 import { usar_pagina_cliente } from "../../componentes_base/paginar";
 import { TablaDatos, type ColumnaTabla } from "../../componentes_base/tabla_datos";
 import { TituloPagina } from "../../componentes_base/titulo_pagina";
@@ -47,21 +47,22 @@ function ComunicacionesRegistradas() {
 
   return (
     <>
-      <TablaDatos
-        columnas={_COLUMNAS_REGISTRADAS}
-        filas={filas_pagina}
-        obtener_clave={(fila) => fila.codigo}
-        cargando={consulta.isPending}
-        error={consulta.error}
-        mensaje_vacio="Sin comunicaciones registradas."
-      />
-      <Paginacion
+      <ConPaginacion
         pagina={pagina_actual}
         total_paginas={total_paginas}
         total_registros={filas.length}
         al_cambiar_pagina={set_pagina}
         etiqueta_entidad="comunicaciones"
-      />
+      >
+        <TablaDatos
+          columnas={_COLUMNAS_REGISTRADAS}
+          filas={filas_pagina}
+          obtener_clave={(fila) => fila.codigo}
+          cargando={consulta.isPending}
+          error={consulta.error}
+          mensaje_vacio="Sin comunicaciones registradas."
+        />
+      </ConPaginacion>
     </>
   );
 }

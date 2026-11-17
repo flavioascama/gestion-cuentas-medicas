@@ -4,6 +4,7 @@ import { TablaDatos, type ColumnaTabla } from "../../componentes_base/tabla_dato
 import { TituloPagina } from "../../componentes_base/titulo_pagina";
 import { formatear_fecha } from "../../utilidades/formato";
 import { con_unidad } from "./formato_administracion";
+import { OpcionNavegacionRobot } from "./opcion_navegacion_robot";
 import estilos from "./administracion.module.css";
 
 // Parametros del sistema (fijados en el despliegue), con nombres y unidades
@@ -150,6 +151,7 @@ export function AdministracionParametros() {
           </div>
         </div>
       ))}
+      <OpcionNavegacionRobot />
     </div>
   );
 }

@@ -11,7 +11,7 @@ import { CampoTexto } from "../../componentes_base/campo_texto";
 import { ControlSegmentado } from "../../componentes_base/control_segmentado";
 import { Dialogo } from "../../componentes_base/dialogo";
 import { MensajeErrorMutacion } from "../../componentes_base/mensaje_error_mutacion";
-import { Paginacion } from "../../componentes_base/paginacion";
+import { ConPaginacion } from "../../componentes_base/paginacion";
 import { usar_pagina_cliente } from "../../componentes_base/paginar";
 import { TablaDatos, type ColumnaTabla } from "../../componentes_base/tabla_datos";
 import { TituloPagina } from "../../componentes_base/titulo_pagina";
@@ -195,21 +195,22 @@ export function BandejaContingencias() {
           etiqueta_accesible="Filtrar por revisión"
         />
       </div>
-      <TablaDatos
-        columnas={construir_columnas(set_en_revision)}
-        filas={filas_pagina}
-        obtener_clave={(fila) => fila.evento_id}
-        cargando={consulta.isPending}
-        error={consulta.error}
-        mensaje_vacio="No hay registros en contingencia por revisar."
-      />
-      <Paginacion
+      <ConPaginacion
         pagina={pagina_actual}
         total_paginas={total_paginas}
         total_registros={filas.length}
         al_cambiar_pagina={set_pagina}
         etiqueta_entidad="registros"
-      />
+      >
+        <TablaDatos
+          columnas={construir_columnas(set_en_revision)}
+          filas={filas_pagina}
+          obtener_clave={(fila) => fila.evento_id}
+          cargando={consulta.isPending}
+          error={consulta.error}
+          mensaje_vacio="No hay registros en contingencia por revisar."
+        />
+      </ConPaginacion>
       {en_revision ? (
         <DialogoRevision registro={en_revision} al_cerrar={() => set_en_revision(null)} />
       ) : null}

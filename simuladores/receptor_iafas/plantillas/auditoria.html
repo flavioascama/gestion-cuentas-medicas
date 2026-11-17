@@ -17,6 +17,7 @@
         <td>
           {% if d.estado == "PENDIENTE" %}
           <form method="post" action="/admin/documentos/{{ d.documento }}/auditoria">
+            {% if prefijo %}<input type="hidden" name="volver" value="{{ prefijo }}/auditoria">{% endif %}
             <select name="resultado">
               <option value="CONFORME">Conforme</option>
               <option value="GLOSA">Glosa total</option>

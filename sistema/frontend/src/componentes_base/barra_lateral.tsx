@@ -19,6 +19,7 @@ import {
   IconoCuentas,
   IconoIndicadores,
   IconoLotes,
+  IconoRobot,
   IconoUsuarios,
 } from "./iconos_navegacion";
 import estilos from "./barra_lateral.module.css";
@@ -27,6 +28,7 @@ const _ICONOS = new Map([
   ["/cuentas", IconoCuentas],
   ["/lotes", IconoLotes],
   ["/comunicaciones", IconoComunicaciones],
+  ["/robot", IconoRobot],
   ["/anulaciones", IconoAnulaciones],
   ["/contingencias", IconoContingencias],
   ["/indicadores", IconoIndicadores],

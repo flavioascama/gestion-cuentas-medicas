@@ -197,6 +197,18 @@ export function IconoAseguradoras(props: SVGProps<SVGSVGElement>) {
   );
 }
 
+export function IconoRobot(props: SVGProps<SVGSVGElement>) {
+  return (
+    <IconoBase {...props}>
+      <rect x="4" y="8" width="16" height="11" rx="2" />
+      <path d="M12 4v4" />
+      <path d="M9 13h.01" />
+      <path d="M15 13h.01" />
+      <path d="M9 16h6" />
+    </IconoBase>
+  );
+}
+
 export function IconoCatalogos(props: SVGProps<SVGSVGElement>) {
   return (
     <IconoBase {...props}>

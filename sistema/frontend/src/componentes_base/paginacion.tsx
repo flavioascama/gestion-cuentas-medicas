@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { TAMANIO_PAGINA } from "./paginar";
 import estilos from "./paginacion.module.css";
 
@@ -9,26 +10,31 @@ interface Propiedades {
   etiqueta_entidad?: string;
 }
 
-export function Paginacion({
+function BarraPaginacion({
+  posicion,
   pagina,
   total_paginas,
   total_registros,
   al_cambiar_pagina,
   etiqueta_entidad = "registros",
-}: Propiedades) {
+}: Propiedades & { posicion: "superior" | "inferior" }) {
   // Una sola pagina: no hay nada que paginar, y mostrar el control de
   // todas formas solo serian dos botones deshabilitados sin proposito
-  // (Seccion 1, "nada que distraiga del trabajo"). Cada bandeja llama a
-  // este componente siempre, sin un condicional propio repetido.
+  // (Seccion 1, "nada que distraiga del trabajo"). Cada bandeja usa este
+  // componente siempre, sin un condicional propio repetido.
   if (total_paginas <= 1) return null;
 
   const inicio = (pagina - 1) * TAMANIO_PAGINA + 1;
   const fin = Math.min(pagina * TAMANIO_PAGINA, total_registros);
 
   return (
-    <div className={estilos.pie}>
+    <div className={`${estilos.barra} ${estilos[posicion]}`}>
       <span>
-        Mostrando {inicio}–{fin} de {total_registros} {etiqueta_entidad}
+        Mostrando{" "}
+        <strong>
+          {inicio}–{fin}
+        </strong>{" "}
+        de <strong>{total_registros}</strong> {etiqueta_entidad}
       </span>
       <div className={estilos.controles}>
         <button
@@ -40,7 +46,7 @@ export function Paginacion({
           Anterior
         </button>
         <span>
-          Página {pagina} de {Math.max(total_paginas, 1)}
+          Página <strong>{pagina}</strong> de {total_paginas}
         </span>
         <button
           type="button"
@@ -52,5 +58,17 @@ export function Paginacion({
         </button>
       </div>
     </div>
+  );
+}
+
+// La paginacion va arriba y abajo de la tabla: quien no baja hasta el final
+// de la pagina igual ve que la informacion continua en otras paginas.
+export function ConPaginacion({ children, ...paginacion }: Propiedades & { children: ReactNode }) {
+  return (
+    <>
+      <BarraPaginacion {...paginacion} posicion="superior" />
+      {children}
+      <BarraPaginacion {...paginacion} posicion="inferior" />
+    </>
   );
 }

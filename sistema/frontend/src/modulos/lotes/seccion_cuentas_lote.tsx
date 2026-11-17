@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import type { CuentaLote } from "../../api/lotes";
 import { EtiquetaEstado } from "../../componentes_base/etiqueta_estado";
-import { IconoFlechaDerecha, IconoOjo } from "../../componentes_base/iconos_tabla";
+import { IconoFlechaDerecha } from "../../componentes_base/iconos_tabla";
 import { TablaDatos, type ColumnaTabla } from "../../componentes_base/tabla_datos";
 import type { Recorrido } from "../../navegacion/recorrido";
 import { formatear_fecha, formatear_monto } from "../../utilidades/formato";
@@ -41,7 +41,7 @@ function recorrido_del_lote(
   };
 }
 
-function construir_columnas(al_ver: (fila: CuentaLote) => void): ColumnaTabla<CuentaLote>[] {
+function construir_columnas(): ColumnaTabla<CuentaLote>[] {
   return [
     {
       clave: "identificacion_interna",
@@ -70,25 +70,6 @@ function construir_columnas(al_ver: (fila: CuentaLote) => void): ColumnaTabla<Cu
       alinear_derecha: true,
       formatear: (fila) => formatear_monto(fila.monto),
     },
-    {
-      clave: "id",
-      encabezado: "Acciones",
-      alinear_centro: true,
-      formatear: (fila) => (
-        <button
-          type="button"
-          className={propios.boton_ver}
-          aria-label={`Ver la cuenta ${fila.identificacion_interna}`}
-          title="Ver detalle"
-          onClick={(evento) => {
-            evento.stopPropagation();
-            al_ver(fila);
-          }}
-        >
-          <IconoOjo />
-        </button>
-      ),
-    },
   ];
 }
 
@@ -109,7 +90,7 @@ export function SeccionCuentasLote({ lote_id, numero }: { lote_id: number; numer
         Cuentas incluidas en el lote{cuentas.length > 0 ? ` (${cuentas.length})` : ""}
       </div>
       <TablaDatos
-        columnas={construir_columnas(abrir)}
+        columnas={construir_columnas()}
         filas={cuentas}
         obtener_clave={(fila) => fila.id}
         cargando={consulta.isPending}

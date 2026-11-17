@@ -2,7 +2,7 @@
 {% block titulo %}{{ c.codigo }} - Simulador receptor IAFAS{% endblock %}
 {% block contenido %}
   <h1>Comunicación {{ c.codigo }}</h1>
-  <p><a href="/comunicaciones">Comunicaciones</a></p>
+  <p><a href="{{ prefijo }}/comunicaciones">Comunicaciones</a></p>
   <dl data-testid="detalle-comunicacion"
       data-codigo="{{ c.codigo }}" data-tipo="{{ c.tipo }}" data-documento="{{ c.documento }}"
       data-iafas="{{ c.codigo_iafas }}" data-ipress="{{ c.codigo_ipress }}"
@@ -21,6 +21,7 @@
     {% else %}
     <form method="post" action="/comunicaciones/{{ c.codigo }}/respuesta" data-testid="formulario-respuesta">
       <input type="hidden" name="codigo_ipress" value="{{ c.codigo_ipress }}">
+      {% if prefijo %}<input type="hidden" name="volver" value="{{ prefijo }}/comunicaciones/{{ c.codigo }}">{% endif %}
       <textarea name="respuesta" required></textarea>
       <input name="sustento" placeholder="Sustento">
       <button type="submit">Enviar respuesta</button>

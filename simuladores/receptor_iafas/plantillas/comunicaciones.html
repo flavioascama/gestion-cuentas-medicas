@@ -9,7 +9,7 @@
     <tbody>
       {% for c in comunicaciones %}
       <tr data-testid="fila-comunicacion" data-codigo="{{ c.codigo }}">
-        <td><a href="/comunicaciones/{{ c.codigo }}" data-testid="enlace-comunicacion">{{ c.codigo }}</a></td>
+        <td><a href="{{ prefijo }}/comunicaciones/{{ c.codigo }}" data-testid="enlace-comunicacion">{{ c.codigo }}</a></td>
         <td data-testid="tipo-comunicacion">{{ c.tipo }}</td>
         <td>{{ c.documento }}</td>
         <td>{{ c.codigo_iafas }}</td>

@@ -73,8 +73,10 @@ export function FiltrosBandejaLotes({
         <CampoTexto
           etiqueta="Buscar"
           value={busqueda}
-          onChange={(evento) => al_cambiar_busqueda(evento.target.value)}
+          onChange={(evento) => al_cambiar_busqueda(evento.target.value.replace(/\D/g, ""))}
           placeholder="N.° de lote"
+          inputMode="numeric"
+          maxLength={7}
         />
       </div>
       <FiltroPeriodo filtros={filtros} al_cambiar={al_cambiar} />

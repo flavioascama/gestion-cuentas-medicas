@@ -3,7 +3,7 @@ import type { Usuario } from "../../api/usuarios";
 import { Boton } from "../../componentes_base/boton";
 import { CampoTexto } from "../../componentes_base/campo_texto";
 import { etiquetas_roles } from "../../componentes_base/mapa_roles";
-import { Paginacion } from "../../componentes_base/paginacion";
+import { ConPaginacion } from "../../componentes_base/paginacion";
 import { usar_pagina_cliente } from "../../componentes_base/paginar";
 import { TablaDatos, type ColumnaTabla } from "../../componentes_base/tabla_datos";
 import { TituloPagina } from "../../componentes_base/titulo_pagina";
@@ -80,23 +80,24 @@ function TablaUsuarios() {
           placeholder="Nombre o usuario"
         />
       </div>
-      <TablaDatos
-        columnas={_COLUMNAS}
-        filas={filas_pagina}
-        obtener_clave={(fila) => fila.id}
-        cargando={consulta.isPending}
-        error={consulta.error}
-        mensaje_vacio={
-          busqueda ? "Ningún usuario coincide con la búsqueda." : "No hay usuarios registrados."
-        }
-      />
-      <Paginacion
+      <ConPaginacion
         pagina={pagina_actual}
         total_paginas={total_paginas}
         total_registros={filtrados.length}
         al_cambiar_pagina={set_pagina}
         etiqueta_entidad="usuarios"
-      />
+      >
+        <TablaDatos
+          columnas={_COLUMNAS}
+          filas={filas_pagina}
+          obtener_clave={(fila) => fila.id}
+          cargando={consulta.isPending}
+          error={consulta.error}
+          mensaje_vacio={
+            busqueda ? "Ningún usuario coincide con la búsqueda." : "No hay usuarios registrados."
+          }
+        />
+      </ConPaginacion>
     </div>
   );
 }

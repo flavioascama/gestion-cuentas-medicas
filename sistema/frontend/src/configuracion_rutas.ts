@@ -33,6 +33,9 @@ export const CONFIGURACION_RUTAS: DefinicionRuta[] = [
   // CU-13/RF-21 (Fase 28, 31): bandeja del jefe para aprobar o rechazar
   // las solicitudes de anulacion -- no vive dentro de una cuenta porque
   // reune solicitudes de cualquier cuenta.
+  // Capturas de la navegacion del robot (2026-11-17): el administrador
+  // activa la opcion; las ven quienes operan, no el.
+  { ruta: "/robot", etiqueta: "Actividad del robot", roles: ["analista", "jefe"] },
   { ruta: "/anulaciones", etiqueta: "Anulaciones", roles: ["jefe"] },
   // C-18 (verificacion de cumplimiento, 2026-11-12): revision posterior de
   // los resultados registrados en modo de contingencia.

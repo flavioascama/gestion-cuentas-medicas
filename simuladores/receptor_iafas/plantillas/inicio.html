@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block titulo %}Portales de prestadores - Simulador receptor IAFAS{% endblock %}
+{% block contenido %}
+  <h1>Portales de prestadores</h1>
+  <table data-testid="tabla-aseguradoras">
+    <thead>
+      <tr><th>Código</th><th>Aseguradora</th><th>Lotes recibidos</th><th>Portal</th></tr>
+    </thead>
+    <tbody>
+      {% for a in aseguradoras %}
+      <tr data-testid="fila-aseguradora" data-codigo="{{ a.codigo }}">
+        <td>{{ a.codigo }}</td>
+        <td>{{ a.razon_social }}</td>
+        <td>{{ a.lotes }}</td>
+        <td><a href="/aseguradora/{{ a.codigo }}" data-testid="enlace-portal">Ingresar</a></td>
+      </tr>
+      {% else %}
+      <tr><td colspan="4">No hay aseguradoras registradas.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}

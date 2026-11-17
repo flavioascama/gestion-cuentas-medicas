@@ -108,3 +108,14 @@
 .tabla_parametros td:first-child {
   width: 65%;
 }
+
+/* Una opcion que se activa o se apaga: nombre, estado y boton. */
+.opcion {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio_4);
+}
+
+.opcion > span:first-child {
+  flex: 1;
+}

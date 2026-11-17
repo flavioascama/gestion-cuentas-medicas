@@ -51,6 +51,7 @@ from trabajador.robots.robot_validador_tedef_web import (
 from trabajador.soporte.cifrado import AlmacenSesionesCifrado
 from trabajador.soporte.evidencias import AlmacenEvidenciasCifrado
 from trabajador.soporte.navegador import GestorNavegador
+from trabajador.soporte.pasos import RegistradorPasos
 
 registro = structlog.get_logger(__name__)
 
@@ -76,10 +77,15 @@ async def _ciclo(
     if trabajo is None:
         return False
 
+    if adaptadores.pasos is not None:
+        await adaptadores.pasos.iniciar(trabajo.id)
     try:
         await MANEJADORES[trabajo.tipo](fabrica_sesiones, adaptadores, trabajo)
     except Exception as error:  # noqa: BLE001 -- cualquier fallo del robot debe reintentarse
         await manejar_error(fabrica_sesiones, trabajo, error)
+    finally:
+        if adaptadores.pasos is not None:
+            adaptadores.pasos.terminar()
     return True
 
 
@@ -127,13 +133,16 @@ def _construir_adaptadores(
     consultor_receptor: ConsultorRespuestaReceptorHttp,
 ) -> Adaptadores:
     configuracion_asistente = _construir_configuracion_asistente()
+    pasos = RegistradorPasos(fabrica_sesiones, RelojSistema())
     return Adaptadores(
+        pasos=pasos,
         acreditacion=AdaptadorAcreditacionWeb(
             gestor_navegador,
             almacen_sesiones,
             AlmacenEvidenciasCifrado(
                 configuracion.ruta_reportes, configuracion.clave_cifrado_evidencias
             ),
+            pasos,
         ),
         consultor_receptor=consultor_receptor,
         sesion_plataforma=AdaptadorSesionPlataforma(
@@ -142,7 +151,7 @@ def _construir_adaptadores(
             fabrica_sesiones,
             RelojSistema(),
             configuracion_asistente,
-        ),
+        ).con_pasos(pasos),
         validador_tedef_web=AdaptadorValidadorTedefWeb(
             gestor_navegador,
             almacen_sesiones,
@@ -152,6 +161,7 @@ def _construir_adaptadores(
                 intervalo_poll_segundos=configuracion.intervalo_poll_validacion_segundos,
             ),
             RelojSistema(),
+            pasos,
         ),
         comunicaciones=_construir_fuentes_comunicaciones(),
     )

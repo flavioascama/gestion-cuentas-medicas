@@ -1,0 +1,24 @@
+{
+  "metadatos": {
+    "ficticio": true,
+    "descripcion": "IAFAS del maestro sintetico (codigo y razon social) para los portales por aseguradora del receptor IAFAS (Seccion 9.3)"
+  },
+  "iafas": [
+    {
+      "codigo": "05292",
+      "razon_social": "Barrios & Asociados S.Com. IAFAS"
+    },
+    {
+      "codigo": "19395",
+      "razon_social": "Supermercados ONB S.Coop. IAFAS"
+    },
+    {
+      "codigo": "96969",
+      "razon_social": "Mariano Arjona Company S.Coop. IAFAS"
+    },
+    {
+      "codigo": "99553",
+      "razon_social": "Simó y asociados S.Com. IAFAS"
+    }
+  ]
+}

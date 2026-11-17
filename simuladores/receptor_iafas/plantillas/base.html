@@ -52,17 +52,24 @@
 <body>
   <header class="superior">
     <div class="marca"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#e2702c"/><path d="M16 5.5c3.1 2.2 6.2 3.2 9 3.4v6.6c0 5.8-3.8 9.8-9 11.5-5.2-1.7-9-5.7-9-11.5V8.9c2.8-.2 5.9-1.2 9-3.4z" fill="#fff"/><path d="M14.4 10.8h3.2v3.4H21v3.2h-3.4v3.4h-3.2v-3.4H11v-3.2h3.4z" fill="#0e5a6b"/></svg><span>Portal de Prestadores<small>Aseguradora de salud</small></span></div>
-    <div class="area">Auditoría de prestaciones<br>Gestión de cuentas de IPRESS</div>
+    <div class="area" data-testid="aseguradora-portal">{% if aseguradora %}<strong>{{ aseguradora.razon_social }}</strong><br>IAFAS {{ aseguradora.codigo }}{% else %}Auditoría de prestaciones<br>Gestión de cuentas de IPRESS{% endif %}</div>
   </header>
   <div class="ventana">
     <nav class="lateral">
+      {% if aseguradora %}
       <h2>Recepción</h2>
-      <a href="/">Lotes recibidos</a>
+      <a href="{{ prefijo }}">Lotes recibidos</a>
       <h2>Auditoría</h2>
-      <a href="/auditoria">Auditoría médica</a>
+      <a href="{{ prefijo }}/auditoria">Auditoría médica</a>
       <h2>Comunicaciones</h2>
-      <a href="/comunicaciones">Comunicaciones a la IPRESS</a>
-      <a href="/correo">Correo a la IPRESS</a>
+      <a href="{{ prefijo }}/comunicaciones">Comunicaciones a la IPRESS</a>
+      <a href="{{ prefijo }}/correo">Correo a la IPRESS</a>
+      <h2>Portal</h2>
+      <a href="/">Cambiar de aseguradora</a>
+      {% else %}
+      <h2>Portales</h2>
+      <a href="/">Aseguradoras</a>
+      {% endif %}
     </nav>
     <main>
       {% block contenido %}{% endblock %}

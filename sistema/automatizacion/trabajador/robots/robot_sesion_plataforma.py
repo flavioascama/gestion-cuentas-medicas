@@ -35,6 +35,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from trabajador.soporte.cifrado import AlmacenSesionesCifrado
 from trabajador.soporte.navegador import GestorNavegador
+from trabajador.soporte.pasos import RegistradorPasos
 from trabajador.soporte.selectores import (
     ErrorSelectorNoEncontrado,
     obtener_selector,
@@ -84,6 +85,7 @@ class AdaptadorSesionPlataforma(AsistenteSesionPlataforma):
         reloj: Reloj,
         configuracion: ConfiguracionAsistente,
     ) -> None:
+        self._pasos: RegistradorPasos | None = None
         self._gestor_navegador = gestor_navegador
         self._almacen_sesiones = almacen_sesiones
         self._fabrica_sesiones = fabrica_sesiones
@@ -115,9 +117,12 @@ class AdaptadorSesionPlataforma(AsistenteSesionPlataforma):
         pagina = await contexto.new_page()
         try:
             await self._ingresar_credenciales(pagina, ruta, config)
+            # La clave se ve como puntos: es un campo de contrasena.
+            await self._paso(pagina, plataforma, "Pantalla de ingreso de la plataforma")
             await self._resolver_captcha(pagina, ruta, sesion_id, config)
             if config.pasos_adicionales_ingreso is not None:
                 await config.pasos_adicionales_ingreso(pagina)
+            await self._paso(pagina, plataforma, "Ingreso aceptado por la plataforma")
             estado = await self._gestor_navegador.obtener_estado_sesion(contexto)
             self._almacen_sesiones.guardar(plataforma, estado)
             expira_en = self._reloj.ahora() + timedelta(
@@ -138,6 +143,15 @@ class AdaptadorSesionPlataforma(AsistenteSesionPlataforma):
             raise
         finally:
             await contexto.close()
+
+    def con_pasos(self, pasos: RegistradorPasos) -> AdaptadorSesionPlataforma:
+        """Aparte del constructor, que ya recibe cinco colaboradores."""
+        self._pasos = pasos
+        return self
+
+    async def _paso(self, pagina: Page, plataforma: str, descripcion: str) -> None:
+        if self._pasos is not None:
+            await self._pasos.capturar(pagina, plataforma, descripcion)
 
     async def _ingresar_credenciales(
         self, pagina: Page, ruta: Path, config: ConfiguracionPlataforma

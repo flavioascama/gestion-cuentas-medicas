@@ -4,8 +4,8 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import type { ColumnaTabla } from "../../componentes_base/tabla_datos";
 import { Boton } from "../../componentes_base/boton";
 import { EtiquetaEstado } from "../../componentes_base/etiqueta_estado";
-import { IconoOjo } from "../../componentes_base/iconos_tabla";
-import { Paginacion } from "../../componentes_base/paginacion";
+import { IconoFlechaDerecha } from "../../componentes_base/iconos_tabla";
+import { ConPaginacion } from "../../componentes_base/paginacion";
 import { usar_pagina_cliente } from "../../componentes_base/paginar";
 import { TablaDatos } from "../../componentes_base/tabla_datos";
 import { TituloPagina } from "../../componentes_base/titulo_pagina";
@@ -20,12 +20,19 @@ import type { Vencimiento } from "../../api/plazos";
 import { PlazoCuenta } from "./plazo_cuenta";
 import estilos from "./bandeja_cuentas.module.css";
 
-function construir_columnas(
-  al_ver: (id: number) => void,
-  vencimientos: Map<number, Vencimiento>,
-): ColumnaTabla<ResumenCuenta>[] {
+function construir_columnas(vencimientos: Map<number, Vencimiento>): ColumnaTabla<ResumenCuenta>[] {
   return [
-    { clave: "identificacion_interna", encabezado: "Identificación" },
+    {
+      clave: "identificacion_interna",
+      encabezado: "Identificación",
+      // Mismo enlace que el numero de lote: se ve que la fila se abre.
+      formatear: (fila) => (
+        <span className={estilos.enlace_cuenta}>
+          {fila.identificacion_interna}
+          <IconoFlechaDerecha />
+        </span>
+      ),
+    },
     {
       clave: "estado",
       encabezado: "Estado",
@@ -47,25 +54,6 @@ function construir_columnas(
       formatear: (fila) => `${fila.nombres_asegurado} ${fila.apellidos_asegurado}`,
     },
     { clave: "iafas_razon_social", encabezado: "IAFAS" },
-    {
-      clave: "id",
-      encabezado: "Acciones",
-      alinear_centro: true,
-      formatear: (fila) => (
-        <button
-          type="button"
-          className={estilos.boton_ver}
-          aria-label="Ver detalle"
-          title="Ver detalle"
-          onClick={(evento) => {
-            evento.stopPropagation();
-            al_ver(fila.id);
-          }}
-        >
-          <IconoOjo />
-        </button>
-      ),
-    },
   ];
 }
 
@@ -206,7 +194,7 @@ export function BandejaCuentas() {
   const filtradas = (consulta.data ?? []).filter((fila) => coincide_busqueda(fila, busqueda));
   const { pagina_actual, total_paginas, filas_pagina, set_pagina } = usar_pagina_cliente(filtradas);
   const vencimientos = usar_vencimientos();
-  const columnas = construir_columnas((id) => void navegar(`/cuentas/${id}`), vencimientos);
+  const columnas = construir_columnas(vencimientos);
   const manejadores = construir_manejadores_filtros(set_filtros, set_busqueda, set_pagina);
 
   return (
@@ -219,23 +207,24 @@ export function BandejaCuentas() {
         al_limpiar_filtros={manejadores.al_limpiar_filtros}
         al_crear={(cuenta_id) => void navegar(`/cuentas/${cuenta_id}`)}
       />
-      <TablaDatos
-        columnas={columnas}
-        filas={filas_pagina}
-        obtener_clave={(fila) => fila.id}
-        cargando={consulta.isPending}
-        actualizando={consulta.isPlaceholderData}
-        error={consulta.error}
-        mensaje_vacio="No hay cuentas para los filtros seleccionados."
-        al_hacer_clic_fila={(fila) => void navegar(`/cuentas/${fila.id}`)}
-      />
-      <Paginacion
+      <ConPaginacion
         pagina={pagina_actual}
         total_paginas={total_paginas}
         total_registros={filtradas.length}
         al_cambiar_pagina={set_pagina}
         etiqueta_entidad="cuentas"
-      />
+      >
+        <TablaDatos
+          columnas={columnas}
+          filas={filas_pagina}
+          obtener_clave={(fila) => fila.id}
+          cargando={consulta.isPending}
+          actualizando={consulta.isPlaceholderData}
+          error={consulta.error}
+          mensaje_vacio="No hay cuentas para los filtros seleccionados."
+          al_hacer_clic_fila={(fila) => void navegar(`/cuentas/${fila.id}`)}
+        />
+      </ConPaginacion>
     </div>
   );
 }

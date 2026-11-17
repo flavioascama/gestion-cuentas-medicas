@@ -18,7 +18,7 @@
       {% for lote in lotes %}
       <tr data-testid="fila-lote" data-archivo="{{ lote.nombre_archivo }}">
         <td>{{ lote.numero_lote or "-" }}</td>
-        <td><a href="/lotes/{{ lote.nombre_archivo }}" data-testid="enlace-detalle">{{ lote.nombre_archivo }}</a></td>
+        <td><a href="{{ prefijo }}/lotes/{{ lote.nombre_archivo }}" data-testid="enlace-detalle">{{ lote.nombre_archivo }}</a></td>
         <td>{{ lote.codigo_iafas or "-" }}</td>
         <td>{{ lote.codigo_ipress or "-" }}</td>
         <td>{{ (lote.recibido_en|string)[:19]|replace("T", " ") }}</td>

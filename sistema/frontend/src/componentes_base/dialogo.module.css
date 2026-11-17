@@ -30,6 +30,13 @@
   width: 90vw;
 }
 
+/* Formularios de mas de cinco campos: caben en dos columnas y el
+   dialogo no necesita desplazamiento interno. */
+.mediano {
+  max-width: 720px;
+  width: 90vw;
+}
+
 .titulo {
   font-size: var(--tamano_titulo_seccion);
   font-weight: var(--peso_enfasis);

@@ -70,6 +70,9 @@ const _ESTADOS: Record<string, DefinicionEstado> = {
   COMPLETADO: { texto: "Completado", color: "verde" },
   AGOTADO: { texto: "Agotado", color: "rojo" },
   REQUIERE_SESION: { texto: "Requiere sesión", color: "ambar" },
+  // Opciones que el administrador activa o apaga (navegacion del robot).
+  OPCION_ACTIVADA: { texto: "Activada", color: "verde" },
+  OPCION_DESACTIVADA: { texto: "Desactivada", color: "gris" },
 
   // sesion_plataforma.estado
   SOLICITADA: { texto: "Solicitada", color: "gris" },

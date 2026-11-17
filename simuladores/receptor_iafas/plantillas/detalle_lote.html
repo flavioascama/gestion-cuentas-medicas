@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block titulo %}{{ lote.nombre_archivo }} - Simulador receptor IAFAS{% endblock %}
 {% block contenido %}
-  <p><a href="/">&larr; Volver al listado</a></p>
+  <p><a href="{{ prefijo or "/" }}">&larr; Volver al listado</a></p>
   <h1>{{ lote.nombre_archivo }}</h1>
   <dl>
     <dt>Número de lote</dt><dd data-testid="detalle-numero-lote">{{ lote.numero_lote or "-" }}</dd>
@@ -14,6 +14,7 @@
 
   <h2>Forzar estado (ruta de administración, pruebas deterministas)</h2>
   <form method="post" action="/admin/lotes/{{ lote.nombre_archivo }}/forzar" data-testid="formulario-forzar">
+    {% if prefijo %}<input type="hidden" name="volver" value="{{ prefijo }}/lotes/{{ lote.nombre_archivo }}">{% endif %}
     <label>Estado:
       <select name="estado" data-testid="campo-estado-forzado">
         <option value="ACEPTADO">ACEPTADO</option>

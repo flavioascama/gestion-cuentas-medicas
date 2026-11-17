@@ -57,6 +57,10 @@ function CamposPrestacion({ formulario }: { formulario: Formulario }) {
         value={formulario.iafas_id}
         onChange={(evento) => formulario.set_iafas_id(evento.target.value)}
       />
+      <CampoCie10
+        value={formulario.diagnostico_principal_cie10}
+        onChange={formulario.set_diagnostico_principal_cie10}
+      />
       <CampoTexto
         etiqueta="Fecha de prestación"
         type="date"
@@ -68,10 +72,6 @@ function CamposPrestacion({ formulario }: { formulario: Formulario }) {
         type="time"
         value={formulario.hora_prestacion}
         onChange={(evento) => formulario.set_hora_prestacion(evento.target.value)}
-      />
-      <CampoCie10
-        value={formulario.diagnostico_principal_cie10}
-        onChange={formulario.set_diagnostico_principal_cie10}
       />
     </>
   );

@@ -16,7 +16,9 @@
   background-color: var(--color_superficie);
   border-right: 1px solid var(--color_borde);
   border-bottom: 1px solid var(--color_borde);
-  transition: background-color 0.15s ease, border-color 0.15s ease;
+  transition:
+    background-color var(--duracion_rapida) var(--curva_estandar),
+    border-color var(--duracion_rapida) var(--curva_estandar);
 }
 
 .boton_menu {

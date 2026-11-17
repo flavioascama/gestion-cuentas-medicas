@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import {
   obtener_acuses_lote,
   obtener_cuentas_lote,
@@ -12,6 +12,8 @@ import {
 export function usar_bandeja_lotes(filtros: FiltrosListarLotes) {
   return useQuery({
     queryKey: ["lotes", filtros],
+    // Al cambiar un filtro se ven las filas anteriores hasta que llegan las nuevas.
+    placeholderData: keepPreviousData,
     queryFn: () => listar_lotes(filtros),
   });
 }

@@ -81,6 +81,11 @@
   /* Ancho del contorno de foco (antes literal "2px" en base.css,
      Fase 34). */
   --foco_ancho: 2px;
+  /* Movimiento: solo respuesta funcional, nunca decorativa
+     (GUIA_DISENO_INTERFAZ.md, principio 5). */
+  --duracion_rapida: 150ms;
+  --duracion_media: 200ms;
+  --curva_estandar: ease;
 
   /* 4. Estructura de pantalla */
   --ancho_barra_lateral: 232px;
@@ -124,4 +129,12 @@
   --color_grafico_atenuado: #3a4a5c;
   --color_grafico_rejilla: #26364a;
   --sombra_dialogo: 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+
+/* Quien pide menos movimiento en su sistema operativo no ve transiciones. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duracion_rapida: 0ms;
+    --duracion_media: 0ms;
+  }
 }

@@ -6,9 +6,9 @@
   border-right: 1px solid var(--color_borde);
   height: 100%;
   transition:
-    width 0.15s ease,
-    border-color 0.15s ease,
-    background-color 0.15s ease;
+    width var(--duracion_rapida) var(--curva_estandar),
+    border-color var(--duracion_rapida) var(--curva_estandar),
+    background-color var(--duracion_rapida) var(--curva_estandar);
 }
 
 .barra_cerrada {

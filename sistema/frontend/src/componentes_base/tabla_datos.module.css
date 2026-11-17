@@ -45,3 +45,18 @@
 .alinear_centro {
   text-align: center;
 }
+
+/* Fila alcanzada con el teclado: el contorno queda dentro de la tabla. */
+.fila_clicable:focus-visible {
+  outline: var(--foco_ancho) solid var(--color_primario);
+  outline-offset: calc(var(--foco_ancho) * -1);
+}
+
+/* Filas del filtro anterior mientras llega la respuesta del nuevo. */
+.tabla {
+  transition: opacity var(--duracion_rapida) var(--curva_estandar);
+}
+
+.actualizando {
+  opacity: 0.55;
+}

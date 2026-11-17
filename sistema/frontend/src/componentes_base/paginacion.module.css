@@ -14,13 +14,25 @@
   gap: var(--espacio_3);
 }
 
+/* El seudoelemento agranda el area de clic sin cambiar el aspecto. */
 .boton_pagina {
+  position: relative;
   border: none;
   background: none;
   color: var(--color_primario);
   cursor: pointer;
   font-size: var(--tamano_metadato);
   padding: 0;
+}
+
+.boton_pagina::after {
+  content: "";
+  position: absolute;
+  inset: -10px -6px;
+}
+
+.boton_pagina:hover:not(:disabled) {
+  text-decoration: underline;
 }
 
 .boton_pagina:disabled {

@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { type Dispatch, type SetStateAction, useState } from "react";
+import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import type { ColumnaTabla } from "../../componentes_base/tabla_datos";
 import { Boton } from "../../componentes_base/boton";
@@ -11,6 +11,7 @@ import { TablaDatos } from "../../componentes_base/tabla_datos";
 import { TituloPagina } from "../../componentes_base/titulo_pagina";
 import type { ResumenCuenta } from "../../api/cuentas";
 import { usar_sesion } from "../../sesion/contexto_sesion";
+import { usar_estado_de_sesion } from "../../utilidades/estado_de_sesion";
 import { formatear_fecha } from "../../utilidades/formato";
 import { DialogoNuevaCuenta } from "./dialogo_nueva_cuenta";
 import { FiltrosBandejaCuentas, type FiltrosCuentas } from "./filtros_bandeja_cuentas";
@@ -96,8 +97,8 @@ function coincide_busqueda(fila: ResumenCuenta, busqueda: string): boolean {
 // vez de declararlos sueltos en el cuerpo de BandejaCuentas -- ahi
 // hacian que la funcion pasara el limite de lineas del linter.
 function construir_manejadores_filtros(
-  set_filtros: Dispatch<SetStateAction<FiltrosCuentas>>,
-  set_busqueda: Dispatch<SetStateAction<string>>,
+  set_filtros: (filtros: FiltrosCuentas) => void,
+  set_busqueda: (busqueda: string) => void,
   set_pagina: (pagina: number) => void,
 ) {
   return {
@@ -174,11 +175,27 @@ function EncabezadoCuentas({
   );
 }
 
+// Un enlace con filtros en la direccion manda; si no, se conservan los de
+// la sesion: al abrir una cuenta y volver, la bandeja queda igual.
+function usar_filtros_cuentas() {
+  const [parametros] = useSearchParams();
+  const de_url = parametros.toString() ? filtros_desde_url(parametros) : null;
+  const [filtros, set_filtros] = usar_estado_de_sesion(
+    "cuentas.filtros",
+    _FILTROS_INICIALES,
+    de_url,
+  );
+  const [busqueda, set_busqueda] = usar_estado_de_sesion(
+    "cuentas.busqueda",
+    "",
+    de_url ? "" : null,
+  );
+  return { filtros, set_filtros, busqueda, set_busqueda };
+}
+
 export function BandejaCuentas() {
   const navegar = useNavigate();
-  const [parametros] = useSearchParams();
-  const [filtros, set_filtros] = useState<FiltrosCuentas>(() => filtros_desde_url(parametros));
-  const [busqueda, set_busqueda] = useState("");
+  const { filtros, set_filtros, busqueda, set_busqueda } = usar_filtros_cuentas();
   const consulta = usar_bandeja_cuentas({
     estado: filtros.estado || undefined,
     etapa: filtros.etapa || undefined,
@@ -207,6 +224,7 @@ export function BandejaCuentas() {
         filas={filas_pagina}
         obtener_clave={(fila) => fila.id}
         cargando={consulta.isPending}
+        actualizando={consulta.isPlaceholderData}
         error={consulta.error}
         mensaje_vacio="No hay cuentas para los filtros seleccionados."
         al_hacer_clic_fila={(fila) => void navegar(`/cuentas/${fila.id}`)}

@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import {
   consultar_completitud,
   listar_cuentas,
@@ -11,6 +11,8 @@ import { listar_vencimientos, type Vencimiento } from "../../api/plazos";
 export function usar_bandeja_cuentas(filtros: FiltrosListarCuentas) {
   return useQuery({
     queryKey: ["cuentas", filtros],
+    // Al cambiar un filtro se ven las filas anteriores hasta que llegan las nuevas.
+    placeholderData: keepPreviousData,
     queryFn: () =>
       listar_cuentas(filtros.estado, {
         etapa: filtros.etapa,

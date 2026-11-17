@@ -5,6 +5,7 @@ import {
   obtener_sesion_actual,
   type CargaSesion,
 } from "../api/auth";
+import { olvidar_estados_de_sesion } from "../utilidades/estado_de_sesion";
 import { ContextoSesion, type ValorSesion } from "./contexto_sesion";
 
 export function ProveedorSesion({ children }: { children: ReactNode }) {
@@ -12,6 +13,8 @@ export function ProveedorSesion({ children }: { children: ReactNode }) {
 
   const iniciar_sesion = useCallback(async (nombre_usuario: string, clave: string) => {
     await iniciar_sesion_api(nombre_usuario, clave);
+    // Quien entra no hereda los filtros de quien uso antes la pestana.
+    olvidar_estados_de_sesion();
     set_sesion(obtener_sesion_actual());
   }, []);
 
@@ -24,6 +27,7 @@ export function ProveedorSesion({ children }: { children: ReactNode }) {
       // propio `finally`), así que la sesión del cliente se cierra de
       // todas formas -- nunca debe quedar la persona sin poder salir.
     }
+    olvidar_estados_de_sesion();
     set_sesion(null);
   }, []);
 

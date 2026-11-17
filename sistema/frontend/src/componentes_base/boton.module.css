@@ -11,6 +11,9 @@
   cursor: pointer;
   border: 1px solid transparent;
   white-space: nowrap;
+  transition:
+    background-color var(--duracion_rapida) var(--curva_estandar),
+    filter var(--duracion_rapida) var(--curva_estandar);
 }
 
 .boton:disabled {
@@ -30,13 +33,46 @@
 }
 
 .terciario {
+  position: relative;
   background-color: transparent;
   color: var(--color_primario);
   height: auto;
   padding: 0;
 }
 
+/* Area de clic mayor que el texto, sin cambiar su tamano ni mover lo
+   que tiene alrededor: el seudoelemento cuenta como parte del boton. */
+.terciario::after {
+  content: "";
+  position: absolute;
+  inset: -8px -4px;
+}
+
 .destructivo {
   background-color: var(--color_error);
   color: var(--color_superficie);
+}
+
+/* Respuesta al cursor y al clic: solo cambia el tono, nada se mueve. */
+.primario:hover:not(:disabled),
+.destructivo:hover:not(:disabled) {
+  filter: brightness(0.92);
+}
+
+.primario:active:not(:disabled),
+.destructivo:active:not(:disabled) {
+  filter: brightness(0.84);
+}
+
+.secundario:hover:not(:disabled) {
+  background-color: var(--color_primario_suave);
+}
+
+.secundario:active:not(:disabled) {
+  background-color: var(--color_primario_suave);
+  filter: brightness(0.94);
+}
+
+.terciario:hover:not(:disabled) {
+  text-decoration: underline;
 }

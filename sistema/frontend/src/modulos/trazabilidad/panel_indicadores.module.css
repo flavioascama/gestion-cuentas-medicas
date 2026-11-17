@@ -15,5 +15,5 @@
 
 .recargando {
   opacity: 0.6;
-  transition: opacity 0.15s ease;
+  transition: opacity var(--duracion_rapida) var(--curva_estandar);
 }

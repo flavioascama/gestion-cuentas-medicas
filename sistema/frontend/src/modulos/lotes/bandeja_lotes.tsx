@@ -13,6 +13,7 @@ import { Pestanas, type DefinicionPestana } from "../../componentes_base/pestana
 import { TablaDatos, type ColumnaTabla } from "../../componentes_base/tabla_datos";
 import { TituloPagina } from "../../componentes_base/titulo_pagina";
 import { usar_sesion } from "../../sesion/contexto_sesion";
+import { usar_estado_de_sesion } from "../../utilidades/estado_de_sesion";
 import { formatear_fecha_hora, formatear_monto } from "../../utilidades/formato";
 import { AccionEnvioSusalud } from "./accion_envio_susalud";
 import { ControlSusalud } from "./control_susalud";
@@ -116,8 +117,9 @@ function coincide_busqueda_lote(fila: ResumenLote, busqueda: string): boolean {
 
 // Pestana "Lotes": filtros, envio del periodo elegido y la tabla de lotes.
 function PanelLotes({ al_abrir_lote }: { al_abrir_lote: (lote_id: number) => void }) {
-  const [filtros, set_filtros] = useState<Filtros>(FILTROS_VACIOS);
-  const [busqueda, set_busqueda] = useState("");
+  // Se conservan al abrir un lote y volver a la bandeja.
+  const [filtros, set_filtros] = usar_estado_de_sesion<Filtros>("lotes.filtros", FILTROS_VACIOS);
+  const [busqueda, set_busqueda] = usar_estado_de_sesion("lotes.busqueda", "");
   const consulta = usar_bandeja_lotes({
     periodo: filtros.periodo || undefined,
     estado: filtros.estado || undefined,
@@ -151,6 +153,7 @@ function PanelLotes({ al_abrir_lote }: { al_abrir_lote: (lote_id: number) => voi
         filas={filas_pagina}
         obtener_clave={(fila) => fila.id}
         cargando={consulta.isPending}
+        actualizando={consulta.isPlaceholderData}
         error={consulta.error}
         mensaje_vacio="No hay lotes para los filtros seleccionados."
         al_hacer_clic_fila={(fila) => al_abrir_lote(fila.id)}

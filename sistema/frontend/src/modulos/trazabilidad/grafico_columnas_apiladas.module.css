@@ -72,7 +72,7 @@
 .columna_normal,
 .columna_activa,
 .columna_atenuada {
-  transition: opacity 0.15s ease;
+  transition: opacity var(--duracion_rapida) var(--curva_estandar);
 }
 
 /* La columna bajo el cursor (o con foco) se aclara un poco: responde

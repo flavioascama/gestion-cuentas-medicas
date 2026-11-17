@@ -19,8 +19,8 @@ body {
   font-weight: var(--peso_normal);
   line-height: 1.5;
   transition:
-    background-color 0.15s ease,
-    color 0.15s ease;
+    background-color var(--duracion_rapida) var(--curva_estandar),
+    color var(--duracion_rapida) var(--curva_estandar);
 }
 
 table {

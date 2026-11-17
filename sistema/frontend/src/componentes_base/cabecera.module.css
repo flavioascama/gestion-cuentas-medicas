@@ -7,7 +7,9 @@
   padding: 0 var(--espacio_6) 0 var(--ancho_rincon);
   background-color: var(--color_superficie);
   border-bottom: 1px solid var(--color_borde);
-  transition: background-color 0.15s ease, border-color 0.15s ease;
+  transition:
+    background-color var(--duracion_rapida) var(--curva_estandar),
+    border-color var(--duracion_rapida) var(--curva_estandar);
 }
 
 .nombre_sistema {
@@ -102,7 +104,7 @@
 .chevron_abierto {
   flex-shrink: 0;
   color: var(--color_texto_secundario);
-  transition: transform 0.15s ease;
+  transition: transform var(--duracion_rapida) var(--curva_estandar);
 }
 
 .chevron_abierto {

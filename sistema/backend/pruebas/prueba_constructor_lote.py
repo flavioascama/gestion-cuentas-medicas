@@ -23,6 +23,7 @@ from app.infraestructura.tedef.constructor_lote import (
     construir_t4,
 )
 from app.infraestructura.tedef.escritor_ancho_fijo import escribir_registro
+from app.infraestructura.tedef.montos_lote import calcular_gastos, calcular_montos_facturados
 
 _ESQUEMA = cargar_esquema()
 
@@ -231,3 +232,61 @@ def prueba_t1_tipo_documento_10_fuerza_montos_en_cero() -> None:
     valores_t1 = construir_t1(_ESQUEMA["T1"], _contexto(), documento, valores_t2)
     assert valores_t1[22].strip() == "0.00"
     assert valores_t1[24].strip() == "0.00"
+
+
+def _documento_con_farmacia(
+    procedimientos: tuple[ProcedimientoLote, ...], productos: tuple[ProductoLote, ...]
+) -> DocumentoLote:
+    documento = _documento(procedimientos)
+    return replace(documento, prestacion=replace(documento.prestacion, productos=productos))
+
+
+def prueba_t2_la_farmacia_suma_al_total_de_gastos_cubiertos() -> None:
+    # Criterio C3 del campo 40: T4 suma (presentado - no cubierto) de los
+    # productos no exonerados. Hasta el 2026-11-18 iba siempre en 0.00.
+    procedimiento = _procedimiento(1, "100.00", copago_variable="20.00")
+    producto = replace(
+        _producto("2", "25.00"), copago=Decimal("8.00"), monto_no_cubierto=Decimal("10.00")
+    )
+    documento = _documento_con_farmacia((procedimiento,), (producto,))
+    valores = construir_t2(_ESQUEMA["T2"], _contexto(), documento, (procedimiento,))
+    assert valores[35].strip() == "80.00"  # 100.00 - 20.00
+    assert valores[40].strip() == "40.00"  # 2 * 25.00 - 10.00
+    assert valores[42].strip() == "0.00"
+    assert valores[46].strip() == "28.00"  # copago del procedimiento y del producto
+    assert valores[48].strip() == "120.00"
+
+
+def prueba_t2_la_farmacia_exonerada_va_al_campo_de_exonerados() -> None:
+    procedimiento = _procedimiento(1, "100.00")
+    producto = replace(_producto("1", "50.00"), exento_igv="D", copago=Decimal("5.00"))
+    documento = _documento_con_farmacia((procedimiento,), (producto,))
+    valores = construir_t2(_ESQUEMA["T2"], _contexto(), documento, (procedimiento,))
+    assert valores[40].strip() == "0.00"
+    assert valores[42].strip() == "50.00"
+    assert valores[47].strip() == "5.00"
+    assert valores[48].strip() == "150.00"
+
+
+def prueba_t1_factura_la_farmacia_con_la_misma_regla() -> None:
+    procedimiento = _procedimiento(1, "100.00")
+    afecto = _producto("1", "50.00")
+    exonerado = replace(_producto("1", "30.00"), correlativo=2, exento_igv="D")
+    documento = _documento_con_farmacia((procedimiento,), (afecto, exonerado))
+    valores_t2 = construir_t2(_ESQUEMA["T2"], _contexto(), documento, (procedimiento,))
+    valores = construir_t1(_ESQUEMA["T1"], _contexto(), documento, valores_t2)
+    assert valores[17].strip() == "30.00"  # exonerado de IGV
+    assert valores[22].strip() == "150.00"  # base imponible: 180.00 - 30.00
+    assert valores[23].strip() == "27.00"  # 18 % de 150.00
+    assert valores[24].strip() == "207.00"  # 150.00 + 27.00 + 30.00
+
+
+def prueba_el_comprobante_cobra_la_farmacia() -> None:
+    procedimiento = _procedimiento(1, "100.00")
+    exonerado = replace(_producto("1", "30.00"), exento_igv="D")
+    gastos = calcular_gastos((procedimiento,), (_producto("1", "50.00"), exonerado))
+    montos = calcular_montos_facturados("01", gastos, Decimal("0.18"))
+    assert montos.total_facturado == Decimal("207.00")
+    assert montos.igv == Decimal("27.00")
+    # Valor de venta mas IGV da el total aunque haya productos exonerados.
+    assert montos.valor_venta + montos.igv == montos.total_facturado

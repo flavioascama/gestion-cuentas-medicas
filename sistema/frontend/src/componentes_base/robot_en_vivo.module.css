@@ -1,0 +1,35 @@
+/* La pantalla del robot, sin adornos: la imagen y nada mas. Queda por debajo
+   de los dialogos (z-index 100), para que el del codigo de verificacion se
+   pueda responder. */
+.ventana {
+  position: fixed;
+  right: var(--espacio_4);
+  bottom: var(--espacio_4);
+  z-index: 90;
+  width: clamp(420px, 46vw, 820px);
+  max-width: calc(100vw - 2 * var(--espacio_4));
+  border: 1px solid var(--color_borde);
+  background-color: #ffffff;
+  line-height: 0;
+}
+
+.pantalla {
+  display: block;
+  width: 100%;
+}
+
+.cerrar {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-left: 1px solid var(--color_borde);
+  border-bottom: 1px solid var(--color_borde);
+  background-color: #ffffff;
+  color: #1a2b3c;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}

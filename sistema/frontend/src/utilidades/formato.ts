@@ -1,6 +1,20 @@
 // Formatos unicos de la aplicacion (GUIA_DISENO_INTERFAZ.md, Seccion 5:
 // "fechas dd/mm/aaaa y horas HH:MM:SS, montos 'S/ 1 250.00'").
 
+const _dos = (valor: number): string => String(valor).padStart(2, "0");
+
+// La fecha de hoy y la hora de ahora del equipo, como las piden los campos
+// de fecha y de hora de un formulario.
+export function fecha_local_hoy(): string {
+  const hoy = new Date();
+  return `${hoy.getFullYear()}-${_dos(hoy.getMonth() + 1)}-${_dos(hoy.getDate())}`;
+}
+
+export function hora_local_ahora(): string {
+  const ahora = new Date();
+  return `${_dos(ahora.getHours())}:${_dos(ahora.getMinutes())}`;
+}
+
 export function formatear_fecha(iso: string): string {
   // Una fecha sin hora ("2026-11-13") es un dia calendario: new Date() la
   // tomaria como medianoche UTC y en Lima la mostraria un dia antes.

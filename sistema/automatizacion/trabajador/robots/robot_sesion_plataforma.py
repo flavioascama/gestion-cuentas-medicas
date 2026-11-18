@@ -151,7 +151,7 @@ class AdaptadorSesionPlataforma(AsistenteSesionPlataforma):
 
     async def _paso(self, pagina: Page, plataforma: str, descripcion: str) -> None:
         if self._pasos is not None:
-            await self._pasos.capturar(pagina, plataforma, descripcion)
+            await self._pasos.anotar(pagina, plataforma, descripcion)
 
     async def _ingresar_credenciales(
         self, pagina: Page, ruta: Path, config: ConfiguracionPlataforma

@@ -1,0 +1,132 @@
+/* Linea horizontal de pasos de la cuenta. Mismo lenguaje que la linea de
+   estados del lote (linea_estados_lote.module.css): marcas unidas por una
+   linea, verde cuando el paso ya esta hecho. */
+.linea {
+  display: flex;
+  align-items: flex-start;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.paso {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+}
+
+.paso:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 13px;
+  left: calc(50% + 20px);
+  right: calc(-50% + 20px);
+  height: 2px;
+  background-color: var(--color_borde);
+}
+
+.paso_hecho:not(:last-child)::after {
+  background-color: var(--color_exito);
+}
+
+.boton_paso {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--espacio_1);
+  padding: 0 var(--espacio_2) var(--espacio_2);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: center;
+}
+
+button.boton_paso {
+  cursor: pointer;
+}
+
+button.boton_paso:hover .titulo {
+  color: var(--color_primario);
+}
+
+button.boton_paso:focus-visible {
+  outline: var(--foco_ancho) solid var(--color_primario);
+  outline-offset: 2px;
+  border-radius: var(--radio_borde);
+}
+
+.abierto .boton_paso {
+  border-bottom-color: var(--color_primario);
+}
+
+.abierto .titulo {
+  color: var(--color_primario);
+}
+
+.marca {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 2px solid var(--color_borde);
+  background-color: var(--color_superficie);
+  color: var(--color_texto_secundario);
+  font-size: var(--tamano_metadato);
+  font-weight: var(--peso_enfasis);
+  position: relative;
+  z-index: 1;
+}
+
+.marca_hecha {
+  border-color: var(--color_exito);
+  background-color: var(--color_exito);
+  color: #ffffff;
+}
+
+.titulo {
+  font-size: var(--tamano_base);
+  font-weight: var(--peso_enfasis);
+  color: var(--color_texto);
+  transition: color var(--duracion_rapida) var(--curva_estandar);
+}
+
+.estado {
+  font-size: var(--tamano_metadato);
+  color: var(--color_texto_secundario);
+}
+
+.paso_hecho .estado {
+  color: var(--color_exito);
+}
+
+.panel {
+  margin-top: var(--espacio_4);
+  padding-top: var(--espacio_4);
+  border-top: 1px solid var(--color_borde);
+}
+
+/* La ultima fila del panel no deja un hueco bajo sus botones. */
+.panel > :last-child {
+  margin-bottom: 0;
+}
+
+@media (max-width: 640px) {
+  .linea {
+    flex-direction: column;
+    gap: var(--espacio_3);
+  }
+
+  .paso:not(:last-child)::after {
+    display: none;
+  }
+
+  .boton_paso {
+    flex-direction: row;
+    text-align: left;
+    gap: var(--espacio_3);
+  }
+}

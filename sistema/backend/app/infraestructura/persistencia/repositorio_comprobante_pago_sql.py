@@ -11,12 +11,16 @@ from app.dominio.pse.puertos import (
     ErrorComprobanteYaExiste,
     ErrorCuentaNoEncontrada,
     RepositorioComprobantePago,
+    RequisitosComprobante,
 )
 from app.infraestructura.persistencia.modelos_integracion import (
+    AcreditacionModelo,
     CuentaMedicaModelo,
     DocumentoFacturadorModelo,
     IpressModelo,
+    ProcedimientoFacturadoModelo,
 )
+from app.infraestructura.persistencia.montos_comprobante_sql import montos_facturados_de_cuenta
 
 
 class RepositorioComprobantePagoSql(RepositorioComprobantePago):
@@ -26,6 +30,27 @@ class RepositorioComprobantePagoSql(RepositorioComprobantePago):
     async def obtener_ipress_propia(self) -> tuple[str, str]:
         ipress = (await self._sesion.execute(sa.select(IpressModelo).limit(1))).scalar_one()
         return ipress.ruc, ipress.codigo_ipress
+
+    async def requisitos_para_facturar(self, cuenta_id: int) -> RequisitosComprobante | None:
+        cuenta = await self._sesion.get(CuentaMedicaModelo, cuenta_id)
+        if cuenta is None:
+            return None
+        acreditada = await self._sesion.scalar(
+            sa.select(sa.literal(True))
+            .select_from(AcreditacionModelo)
+            .where(AcreditacionModelo.cuenta_id == cuenta_id)
+            .limit(1)
+        )
+        procedimientos = await self._sesion.scalar(
+            sa.select(sa.func.count())
+            .select_from(ProcedimientoFacturadoModelo)
+            .where(ProcedimientoFacturadoModelo.cuenta_id == cuenta_id)
+        )
+        return RequisitosComprobante(
+            acreditada=bool(acreditada),
+            con_diagnostico=bool(cuenta.diagnostico_principal_cie10),
+            procedimientos=int(procedimientos or 0),
+        )
 
     async def guardar_comprobante(self, cuenta_id: int, comprobante: ComprobantePse) -> int:
         cuenta = await self._sesion.get(CuentaMedicaModelo, cuenta_id)
@@ -55,6 +80,14 @@ class RepositorioComprobantePagoSql(RepositorioComprobantePago):
             numero=comprobante.numero,
             fecha_emision=comprobante.fecha_emision,
         )
+        # El comprobante guarda lo que factura, con la regla de T1.
+        montos = await montos_facturados_de_cuenta(
+            self._sesion, cuenta_id, comprobante.tipo_documento_pago
+        )
+        if montos is not None:
+            documento.valor_venta = montos.valor_venta
+            documento.igv = montos.igv
+            documento.total = montos.total_facturado
         self._sesion.add(documento)
         await self._sesion.flush()
         await self._sesion.commit()

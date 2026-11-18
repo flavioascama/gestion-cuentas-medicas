@@ -9,7 +9,7 @@ from datetime import date
 
 import httpx
 
-from app.dominio.pse.puertos import ComprobantePse, EmisorPse
+from app.dominio.pse.puertos import ComprobantePse, EmisorPse, NotaPse
 
 
 class EmisorPseHttp(EmisorPse):
@@ -27,6 +27,20 @@ class EmisorPseHttp(EmisorPse):
         cuerpo = respuesta.json()
         return ComprobantePse(
             tipo_documento_pago=cuerpo["tipo_documento_pago"],
+            serie=cuerpo["serie"],
+            numero=cuerpo["numero"],
+            fecha_emision=date.fromisoformat(cuerpo["fecha_emision"]),
+        )
+
+    async def emitir_nota(self, ruc_ipress: str, codigo_ipress: str, tipo: str) -> NotaPse:
+        async with httpx.AsyncClient(timeout=self._tiempo_espera_segundos) as cliente:
+            respuesta = await cliente.post(
+                f"{self._url_base}/notas",
+                json={"ruc_ipress": ruc_ipress, "codigo_ipress": codigo_ipress, "tipo": tipo},
+            )
+        respuesta.raise_for_status()
+        cuerpo = respuesta.json()
+        return NotaPse(
             serie=cuerpo["serie"],
             numero=cuerpo["numero"],
             fecha_emision=date.fromisoformat(cuerpo["fecha_emision"]),

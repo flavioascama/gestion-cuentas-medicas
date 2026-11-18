@@ -50,6 +50,11 @@ class RepositorioUsuarios(Protocol):
         intentos fallidos y levanta el bloqueo, si lo hubiera."""
         ...
 
+    async def cambiar_clave(self, usuario_id: int, hash_clave: str) -> None:
+        """Guarda la clave nueva; la persona deja de estar obligada a
+        cambiarla y su contador de intentos fallidos vuelve a cero."""
+        ...
+
 
 class VerificadorClave(Protocol):
     """Puerto y adaptador: bcrypt en infraestructura (Seccion 5.2)."""
@@ -73,6 +78,8 @@ class CargaSesion:
     roles: frozenset[NombreRol]
     jti: str
     expira_en: datetime
+    # La clave la puso el administrador: antes de operar debe cambiarla.
+    debe_cambiar_clave: bool = False
 
 
 class GestorSesion(Protocol):

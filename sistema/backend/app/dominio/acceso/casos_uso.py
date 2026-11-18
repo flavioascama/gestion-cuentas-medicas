@@ -178,17 +178,23 @@ async def _registrar_administracion(
 
 
 class RegistrarUsuario:
-    """CU-18, parte de RF-19: crear un usuario con sus roles iniciales."""
+    """CU-18, parte de RF-19: crear un usuario con sus roles iniciales.
+
+    `clave_temporal` (2026-11-18): la clave la pone el administrador desde
+    la pantalla, asi que la persona debe cambiarla en su primer ingreso.
+    Las cargas iniciales y las pruebas crean usuarios sin esa obligacion."""
 
     def __init__(
         self,
         repositorio: RepositorioUsuarios,
         verificador: VerificadorClave,
         registro_eventos: RegistroEventos | None = None,
+        clave_temporal: bool = False,
     ) -> None:
         self._repositorio = repositorio
         self._verificador = verificador
         self._registro_eventos = registro_eventos
+        self._clave_temporal = clave_temporal
 
     async def ejecutar(
         self,
@@ -210,6 +216,7 @@ class RegistrarUsuario:
             hash_clave=self._verificador.generar_hash(clave),
             activo=True,
             roles=roles,
+            debe_cambiar_clave=self._clave_temporal,
         )
         creado = await self._repositorio.crear(usuario)
         await _registrar_administracion(

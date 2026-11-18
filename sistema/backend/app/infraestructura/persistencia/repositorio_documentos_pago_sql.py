@@ -18,6 +18,7 @@ from app.infraestructura.persistencia.modelos_documentos_pago import (
     NotaDocumentoModelo,
 )
 from app.infraestructura.persistencia.modelos_integracion import DocumentoFacturadorModelo
+from app.infraestructura.persistencia.montos_comprobante_sql import montos_facturados_de_cuenta
 
 
 class RepositorioDocumentosPagoSql(RepositorioDocumentosPago):
@@ -51,6 +52,18 @@ class RepositorioDocumentosPagoSql(RepositorioDocumentosPago):
                 .order_by(ComprobanteReemplazadoModelo.reemplazado_en)
             )
         ).scalars()
+        valor_venta, igv, total = documento.valor_venta, documento.igv, documento.total
+        if total is None:
+            # Comprobante anterior al 2026-11-18: no guardo su monto.
+            montos = await montos_facturados_de_cuenta(
+                self._sesion, cuenta_medica_id, documento.tipo_documento_pago
+            )
+            if montos is not None:
+                valor_venta, igv, total = (
+                    montos.valor_venta,
+                    montos.igv,
+                    montos.total_facturado,
+                )
         return DocumentosPagoCuenta(
             vigente=ComprobanteVigente(
                 documento_id=documento.id,
@@ -58,6 +71,9 @@ class RepositorioDocumentosPagoSql(RepositorioDocumentosPago):
                 serie=documento.serie,
                 numero=documento.numero,
                 fecha_emision=documento.fecha_emision,
+                valor_venta=valor_venta,
+                igv=igv,
+                total=total,
             ),
             nota=(
                 NotaDocumento(
@@ -124,4 +140,12 @@ class RepositorioDocumentosPagoSql(RepositorioDocumentosPago):
         documento.serie = nuevo.serie
         documento.numero = nuevo.numero
         documento.fecha_emision = nuevo.fecha_emision
+        # El reemplazo factura lo que la cuenta tiene ahora.
+        montos = await montos_facturados_de_cuenta(
+            self._sesion, cuenta_medica_id, nuevo.tipo_documento_pago
+        )
+        if montos is not None:
+            documento.valor_venta = montos.valor_venta
+            documento.igv = montos.igv
+            documento.total = montos.total_facturado
         await self._sesion.flush()

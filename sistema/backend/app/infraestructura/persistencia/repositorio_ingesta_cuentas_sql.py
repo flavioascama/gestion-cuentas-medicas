@@ -7,9 +7,11 @@ import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dominio.integracion.puertos_ingesta import (
+    AseguradoRegistrado,
     DatosNuevaCuenta,
     ErrorIafasInexistente,
     EstadoPiezasCuenta,
+    LoteDeCuenta,
     RepositorioCompletitudCuenta,
     RepositorioIngestaCuentas,
 )
@@ -21,6 +23,8 @@ from app.infraestructura.persistencia.modelos_integracion import (
     DocumentoFacturadorModelo,
     IafasModelo,
     IpressModelo,
+    LoteDocumentoModelo,
+    LoteFacturacionModelo,
     ProcedimientoFacturadoModelo,
 )
 
@@ -58,15 +62,31 @@ class RepositorioIngestaCuentasSql(RepositorioIngestaCuentas):
         await self._sesion.commit()
         return cuenta.id
 
-    async def _obtener_o_crear_asegurado(self, datos: DatosNuevaCuenta) -> int:
+    async def _asegurado(self, tipo_documento: str, numero: str) -> AseguradoModelo | None:
         resultado = await self._sesion.execute(
             # C-05: el documento esta cifrado; se busca por su indice ciego.
             sa.select(AseguradoModelo).where(
-                AseguradoModelo.documento_indice
-                == indice_ciego(datos.tipo_documento_asegurado, datos.numero_documento_asegurado)
+                AseguradoModelo.documento_indice == indice_ciego(tipo_documento, numero)
             )
         )
-        existente = resultado.scalar_one_or_none()
+        return resultado.scalar_one_or_none()
+
+    async def buscar_asegurado(
+        self, tipo_documento: str, numero_documento: str
+    ) -> AseguradoRegistrado | None:
+        asegurado = await self._asegurado(tipo_documento, numero_documento)
+        if asegurado is None:
+            return None
+        return AseguradoRegistrado(
+            nombres=asegurado.nombres,
+            apellidos=asegurado.apellidos,
+            iafas_id=asegurado.iafas_id,
+        )
+
+    async def _obtener_o_crear_asegurado(self, datos: DatosNuevaCuenta) -> int:
+        existente = await self._asegurado(
+            datos.tipo_documento_asegurado, datos.numero_documento_asegurado
+        )
         if existente is not None:
             return existente.id
 
@@ -124,7 +144,29 @@ class RepositorioCompletitudCuentaSql(RepositorioCompletitudCuenta):
             tiene_acreditacion=tiene_acreditacion,
             cantidad_procedimientos=cantidad_procedimientos,
             tiene_comprobante=tiene_comprobante,
+            tiene_diagnostico=bool(cuenta.diagnostico_principal_cie10),
+            lote=await self._lote_de(cuenta_id),
         )
+
+    async def _lote_de(self, cuenta_id: int) -> LoteDeCuenta | None:
+        fila = (
+            await self._sesion.execute(
+                sa.select(
+                    LoteFacturacionModelo.id,
+                    LoteFacturacionModelo.numero,
+                    LoteFacturacionModelo.estado,
+                )
+                .join(LoteDocumentoModelo, LoteDocumentoModelo.lote_id == LoteFacturacionModelo.id)
+                .join(
+                    DocumentoFacturadorModelo,
+                    DocumentoFacturadorModelo.id == LoteDocumentoModelo.documento_id,
+                )
+                .where(DocumentoFacturadorModelo.cuenta_id == cuenta_id)
+                .order_by(LoteFacturacionModelo.generado_en.desc())
+                .limit(1)
+            )
+        ).first()
+        return LoteDeCuenta(lote_id=fila[0], numero=fila[1], estado=fila[2]) if fila else None
 
     async def marcar_facturada(self, cuenta_id: int) -> None:
         await self._sesion.execute(

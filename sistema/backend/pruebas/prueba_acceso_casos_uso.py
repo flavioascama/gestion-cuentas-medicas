@@ -87,6 +87,7 @@ class RepositorioUsuariosFalso(RepositorioUsuarios):
             hash_clave=usuario.hash_clave,
             activo=usuario.activo,
             roles=usuario.roles,
+            debe_cambiar_clave=usuario.debe_cambiar_clave,
         )
         self._siguiente_id += 1
         self._usuarios[creado.nombre_usuario] = creado
@@ -147,6 +148,18 @@ class RepositorioUsuariosFalso(RepositorioUsuarios):
             roles=actual.roles,
             intentos_fallidos=actual.intentos_fallidos,
             bloqueado_hasta=hasta,
+        )
+
+    async def cambiar_clave(self, usuario_id: int, hash_clave: str) -> None:
+        actual = await self.obtener_por_id(usuario_id)
+        assert actual is not None
+        self._usuarios[actual.nombre_usuario] = Usuario(
+            id=actual.id,
+            nombre_usuario=actual.nombre_usuario,
+            nombres=actual.nombres,
+            hash_clave=hash_clave,
+            activo=actual.activo,
+            roles=actual.roles,
         )
 
     async def registrar_inicio_exitoso(self, usuario_id: int) -> None:

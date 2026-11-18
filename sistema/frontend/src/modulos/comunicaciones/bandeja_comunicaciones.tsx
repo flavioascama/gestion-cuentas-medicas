@@ -10,9 +10,9 @@ import { ConPaginacion } from "../../componentes_base/paginacion";
 import { usar_pagina_cliente } from "../../componentes_base/paginar";
 import { TablaDatos, type ColumnaTabla } from "../../componentes_base/tabla_datos";
 import { TituloPagina } from "../../componentes_base/titulo_pagina";
-import { COLUMNAS_COMUNICACIONES } from "./columnas_comunicaciones";
 import { AccionRevisar } from "./seccion_comunicaciones_iafas";
 import { TablaCorreos } from "./tabla_correos";
+import { usar_columnas_comunicaciones } from "./usar_columnas_comunicaciones";
 import estilos from "./comunicaciones.module.css";
 
 // Todo lo que las aseguradoras comunican a la clinica, en una sola
@@ -27,21 +27,19 @@ const _VISTAS: OpcionSegmento<Vista>[] = [
   { valor: "registradas", etiqueta: "Registradas en cuentas" },
 ];
 
-const _COLUMNAS_REGISTRADAS: ColumnaTabla<ComunicacionIafas>[] = [
-  ...COLUMNAS_COMUNICACIONES,
-  {
-    clave: "cuenta_medica_id",
-    encabezado: "Cuenta",
-    formatear: (fila) =>
-      fila.cuenta_medica_id ? <Link to={`/cuentas/${fila.cuenta_medica_id}`}>Abrir</Link> : "—",
-  },
-];
+const _COLUMNA_CUENTA: ColumnaTabla<ComunicacionIafas> = {
+  clave: "cuenta_medica_id",
+  encabezado: "Cuenta",
+  formatear: (fila) =>
+    fila.cuenta_medica_id ? <Link to={`/cuentas/${fila.cuenta_medica_id}`}>Abrir</Link> : "—",
+};
 
 function ComunicacionesRegistradas() {
   const consulta = useQuery({
     queryKey: ["comunicaciones_iafas", "todas"],
     queryFn: listar_todas_las_comunicaciones_iafas,
   });
+  const columnas = [...usar_columnas_comunicaciones(), _COLUMNA_CUENTA];
   const filas = consulta.data ?? [];
   const { pagina_actual, total_paginas, filas_pagina, set_pagina } = usar_pagina_cliente(filas);
 
@@ -55,7 +53,7 @@ function ComunicacionesRegistradas() {
         etiqueta_entidad="comunicaciones"
       >
         <TablaDatos
-          columnas={_COLUMNAS_REGISTRADAS}
+          columnas={columnas}
           filas={filas_pagina}
           obtener_clave={(fila) => fila.codigo}
           cargando={consulta.isPending}

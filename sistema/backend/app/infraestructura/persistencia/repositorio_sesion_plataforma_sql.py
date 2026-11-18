@@ -105,6 +105,17 @@ class RepositorioSesionPlataformaSql(RepositorioSesionPlataforma):
             return None
         return _a_valor(fila)
 
+    async def expirar_activas(self, plataforma: str) -> None:
+        await self._sesion.execute(
+            sa.update(SesionPlataformaModelo)
+            .where(
+                SesionPlataformaModelo.plataforma == plataforma,
+                SesionPlataformaModelo.estado == "ACTIVA",
+            )
+            .values(estado="EXPIRADA")
+        )
+        await self._sesion.commit()
+
     async def registrar_captcha(self, sesion_id: int, imagen: bytes) -> None:
         await self._sesion.execute(
             sa.update(SesionPlataformaModelo)

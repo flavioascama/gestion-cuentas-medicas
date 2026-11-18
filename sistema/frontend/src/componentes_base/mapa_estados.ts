@@ -73,6 +73,9 @@ const _ESTADOS: Record<string, DefinicionEstado> = {
   // Opciones que el administrador activa o apaga (navegacion del robot).
   OPCION_ACTIVADA: { texto: "Activada", color: "verde" },
   OPCION_DESACTIVADA: { texto: "Desactivada", color: "gris" },
+  // El robot que corre en un equipo con pantalla (el que abre la ventana real).
+  ROBOT_ENCENDIDO: { texto: "Encendido", color: "verde" },
+  ROBOT_APAGADO: { texto: "Apagado", color: "gris" },
 
   // sesion_plataforma.estado
   SOLICITADA: { texto: "Solicitada", color: "gris" },

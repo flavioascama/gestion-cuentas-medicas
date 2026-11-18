@@ -119,3 +119,9 @@
 .opcion > span:first-child {
   flex: 1;
 }
+
+/* El selector que acompana a la opcion, debajo de ella. */
+.opcion_modo {
+  max-width: 460px;
+  margin-top: var(--espacio_4);
+}

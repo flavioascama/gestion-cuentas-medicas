@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import type { SolicitudAnulacion } from "../../api/cierre";
 import { Boton } from "../../componentes_base/boton";
 import { ConPaginacion } from "../../componentes_base/paginacion";
@@ -57,7 +58,16 @@ function construir_columnas(
   al_elegir: (resolucion: Resolucion) => void,
 ): ColumnaTabla<SolicitudAnulacion>[] {
   return [
-    { clave: "cuenta_medica_id", encabezado: "Cuenta", alinear_derecha: true },
+    {
+      clave: "cuenta_medica_id",
+      encabezado: "Cuenta",
+      formatear: (fila) => (
+        <Link to={`/cuentas/${fila.cuenta_medica_id}`}>
+          {fila.identificacion_interna ?? fila.cuenta_medica_id}
+        </Link>
+      ),
+    },
+    { clave: "asegurado", encabezado: "Asegurado", formatear: (fila) => fila.asegurado ?? "—" },
     { clave: "motivo", encabezado: "Motivo" },
     { clave: "solicitado_por", encabezado: "Solicitado por" },
     {

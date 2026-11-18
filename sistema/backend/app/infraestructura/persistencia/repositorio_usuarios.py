@@ -24,6 +24,7 @@ def _a_entidad(modelo: UsuarioModelo) -> Usuario:
         roles=frozenset(NombreRol(r.nombre) for r in modelo.roles),
         intentos_fallidos=modelo.intentos_fallidos,
         bloqueado_hasta=modelo.bloqueado_hasta,
+        debe_cambiar_clave=modelo.debe_cambiar_clave,
     )
 
 
@@ -64,6 +65,7 @@ class RepositorioUsuariosSql(RepositorioUsuarios):
             nombres=usuario.nombres,
             hash_clave=usuario.hash_clave,
             activo=usuario.activo,
+            debe_cambiar_clave=usuario.debe_cambiar_clave,
             roles=roles_modelo,
         )
         self._sesion.add(modelo)
@@ -126,6 +128,19 @@ class RepositorioUsuariosSql(RepositorioUsuarios):
             sa.update(UsuarioModelo)
             .where(UsuarioModelo.id == usuario_id)
             .values(bloqueado_hasta=hasta)
+        )
+        await self._sesion.commit()
+
+    async def cambiar_clave(self, usuario_id: int, hash_clave: str) -> None:
+        await self._sesion.execute(
+            sa.update(UsuarioModelo)
+            .where(UsuarioModelo.id == usuario_id)
+            .values(
+                hash_clave=hash_clave,
+                debe_cambiar_clave=False,
+                intentos_fallidos=0,
+                bloqueado_hasta=None,
+            )
         )
         await self._sesion.commit()
 

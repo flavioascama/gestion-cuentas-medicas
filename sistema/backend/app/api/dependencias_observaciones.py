@@ -5,11 +5,13 @@ from __future__ import annotations
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.dependencias import obtener_reloj
+from app.api.dependencias import obtener_reloj, obtener_repositorio_usuarios
+from app.dominio.acceso.puertos import RepositorioUsuarios
 from app.dominio.observaciones.casos_uso import (
     AsignarResponsableObservacion,
     ListarCatalogoMotivos,
     ListarObservacionesPorCuenta,
+    ListarResponsablesPosibles,
     RegistrarObservacion,
     ResponderObservacion,
 )
@@ -65,8 +67,15 @@ def construir_registrar_observacion(
 def construir_asignar_responsable_observacion(
     repositorio: RepositorioObservaciones = Depends(obtener_repositorio_observaciones),
     observabilidad: Observabilidad = Depends(obtener_observabilidad),
+    usuarios: RepositorioUsuarios = Depends(obtener_repositorio_usuarios),
 ) -> AsignarResponsableObservacion:
-    return AsignarResponsableObservacion(repositorio, observabilidad)
+    return AsignarResponsableObservacion(repositorio, observabilidad, usuarios)
+
+
+def construir_listar_responsables_posibles(
+    usuarios: RepositorioUsuarios = Depends(obtener_repositorio_usuarios),
+) -> ListarResponsablesPosibles:
+    return ListarResponsablesPosibles(usuarios)
 
 
 def construir_responder_observacion(

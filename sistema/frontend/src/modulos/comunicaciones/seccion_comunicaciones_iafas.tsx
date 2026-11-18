@@ -10,8 +10,8 @@ import { ProgresoTrabajo } from "../../componentes_base/progreso_trabajo";
 import { TablaDatos } from "../../componentes_base/tabla_datos";
 import { usar_sesion } from "../../sesion/contexto_sesion";
 import estilos from "../cuentas/detalle_cuenta.module.css";
-import { COLUMNAS_COMUNICACIONES } from "./columnas_comunicaciones";
 import { TablaCorreos } from "./tabla_correos";
+import { usar_columnas_comunicaciones } from "./usar_columnas_comunicaciones";
 
 const _REVISA = ["analista", "jefe", "tesoreria"];
 
@@ -39,6 +39,7 @@ export function AccionRevisar() {
 }
 
 export function SeccionComunicacionesIafas({ cuenta_id }: { cuenta_id: number }) {
+  const columnas = usar_columnas_comunicaciones();
   const consulta = useQuery({
     queryKey: ["cuentas", cuenta_id, "comunicaciones_iafas"],
     queryFn: () => listar_comunicaciones_iafas(cuenta_id),
@@ -50,7 +51,7 @@ export function SeccionComunicacionesIafas({ cuenta_id }: { cuenta_id: number })
         <div className={estilos.titulo_seccion}>Comunicaciones de la IAFAS</div>
         <AccionRevisar />
         <TablaDatos
-          columnas={COLUMNAS_COMUNICACIONES}
+          columnas={columnas}
           filas={consulta.data ?? []}
           obtener_clave={(fila) => fila.codigo}
           cargando={consulta.isPending}

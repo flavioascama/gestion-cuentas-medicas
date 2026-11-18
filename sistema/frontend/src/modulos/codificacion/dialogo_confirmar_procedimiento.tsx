@@ -1,13 +1,15 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import {
   confirmar_procedimiento,
+  ultimo_precio_procedimiento,
   type CandidatoCpms,
   type SolicitudConfirmarProcedimiento,
 } from "../../api/cpms";
 import { ErrorApi } from "../../api/cliente_http";
 import { Dialogo } from "../../componentes_base/dialogo";
 import { Mensaje } from "../../componentes_base/mensaje";
+import { usar_detalle_cuenta } from "../cuentas/usar_cuentas";
 import { AccionesConfirmarProcedimiento } from "./acciones_confirmar_procedimiento";
 import { FormularioDatosProcedimiento } from "./formulario_datos_procedimiento";
 import { DATOS_CONFIRMACION_INICIALES, type DatosConfirmacion } from "./tipos_confirmacion";
@@ -65,9 +67,27 @@ function usar_confirmar_procedimiento(propiedades: Propiedades, datos: DatosConf
   });
 }
 
+// Lo que se propone sin que la persona lo escriba (2026-11-18): la fecha de
+// la atencion y el ultimo precio de ese codigo con la IAFAS de la cuenta.
+function usar_datos_propuestos(cuenta_id: number, codigo: string): DatosConfirmacion {
+  const cuenta = usar_detalle_cuenta(cuenta_id);
+  const precio = useQuery({
+    queryKey: ["cuentas", cuenta_id, "ultimo_precio", codigo],
+    queryFn: () => ultimo_precio_procedimiento(cuenta_id, codigo),
+  });
+  return {
+    ...DATOS_CONFIRMACION_INICIALES,
+    monto_unitario: precio.data?.monto_unitario ?? "",
+    fecha: cuenta.data?.fecha_prestacion ?? "",
+  };
+}
+
 export function DialogoConfirmarProcedimiento(propiedades: Propiedades) {
   const { candidato, al_cerrar } = propiedades;
-  const [datos, set_datos] = useState(DATOS_CONFIRMACION_INICIALES);
+  const propuestos = usar_datos_propuestos(propiedades.cuenta_id, candidato.codigo);
+  // Mientras la persona no cambie nada, valen los datos propuestos.
+  const [escritos, set_datos] = useState<DatosConfirmacion | null>(null);
+  const datos = escritos ?? propuestos;
   const mutacion = usar_confirmar_procedimiento(propiedades, datos);
 
   return (

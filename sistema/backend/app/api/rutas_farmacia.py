@@ -69,7 +69,6 @@ class SolicitudProductoDispensado(BaseModel):
     cantidad_venta: Decimal = Field(gt=0, max_digits=9, decimal_places=2)
     tipo_unidad_dispensacion: str = Field(min_length=1, max_length=1)
     monto_unitario: Decimal = Field(ge=0, max_digits=12, decimal_places=2)
-    copago: Decimal = Field(default=Decimal("0"), ge=0, max_digits=12, decimal_places=2)
     monto_no_cubierto: Decimal = Field(default=Decimal("0"), ge=0, max_digits=12, decimal_places=2)
     exento_igv: str = Field(min_length=1, max_length=1)
     guia_farmacia: str | None = Field(default=None, max_length=12)

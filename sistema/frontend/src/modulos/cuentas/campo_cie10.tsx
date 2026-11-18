@@ -10,6 +10,8 @@ const _LARGO_MINIMO_BUSQUEDA = 2;
 interface Propiedades {
   value: string;
   onChange: (valor: string) => void;
+  // Al registrar la cuenta es opcional; despues, en la cuenta, ya no.
+  etiqueta?: string;
 }
 
 function ListaResultadosCie10({
@@ -45,7 +47,11 @@ function ListaResultadosCie10({
 // 13 mil codigos de memoria, asi que escribe la descripcion clinica
 // ("embarazo", "hipertension") y elige de la lista -- sin dejar de admitir
 // que alguien que ya conoce el codigo lo escriba directo, como antes.
-export function CampoCie10({ value, onChange }: Propiedades) {
+export function CampoCie10({
+  value,
+  onChange,
+  etiqueta = "Diagnóstico principal (CIE-10, opcional)",
+}: Propiedades) {
   const [mostrar_lista, set_mostrar_lista] = useState(false);
   const texto_diferido = usar_valor_diferido(value.trim());
   const busqueda_habilitada = texto_diferido.length >= _LARGO_MINIMO_BUSQUEDA && mostrar_lista;
@@ -64,7 +70,7 @@ export function CampoCie10({ value, onChange }: Propiedades) {
   return (
     <div className={estilos.contenedor}>
       <CampoTexto
-        etiqueta="Diagnóstico principal (CIE-10, opcional)"
+        etiqueta={etiqueta}
         value={value}
         onChange={(evento) => {
           onChange(evento.target.value);

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import {
+  cambiar_clave as cambiar_clave_api,
   cerrar_sesion as cerrar_sesion_api,
   hay_sesion_vencida,
   iniciar_sesion as iniciar_sesion_api,
@@ -12,12 +13,12 @@ import { ContextoSesion, type ValorSesion } from "./contexto_sesion";
 
 export function ProveedorSesion({ children }: { children: ReactNode }) {
   // Un token guardado que ya vencio no es una sesion: se entra directo al
-  // ingreso, sin pasar por una pantalla que el backend va a rechazar.
+  // ingreso, sin pasar por una pantalla que el backend va a rechazar. El
+  // ingreso no avisa nada (pedido del usuario, 2026-11-18).
   const [vencida_al_cargar] = useState(hay_sesion_vencida);
   const [sesion, set_sesion] = useState<CargaSesion | null>(() =>
     vencida_al_cargar ? null : obtener_sesion_actual(),
   );
-  const [sesion_vencida, set_sesion_vencida] = useState(vencida_al_cargar);
 
   useEffect(() => {
     if (vencida_al_cargar) borrar_token();
@@ -29,7 +30,6 @@ export function ProveedorSesion({ children }: { children: ReactNode }) {
     () =>
       suscribir_sesion_expirada(() => {
         olvidar_estados_de_sesion();
-        set_sesion_vencida(true);
         set_sesion(null);
       }),
     [],
@@ -39,7 +39,6 @@ export function ProveedorSesion({ children }: { children: ReactNode }) {
     await iniciar_sesion_api(nombre_usuario, clave);
     // Quien entra no hereda los filtros de quien uso antes la pestana.
     olvidar_estados_de_sesion();
-    set_sesion_vencida(false);
     set_sesion(obtener_sesion_actual());
   }, []);
 
@@ -53,10 +52,14 @@ export function ProveedorSesion({ children }: { children: ReactNode }) {
       // todas formas -- nunca debe quedar la persona sin poder salir.
     }
     olvidar_estados_de_sesion();
-    set_sesion_vencida(false);
     set_sesion(null);
   }, []);
 
-  const valor: ValorSesion = { sesion, sesion_vencida, iniciar_sesion, cerrar_sesion };
+  const cambiar_clave = useCallback(async (clave_actual: string, clave_nueva: string) => {
+    await cambiar_clave_api(clave_actual, clave_nueva);
+    set_sesion(obtener_sesion_actual());
+  }, []);
+
+  const valor: ValorSesion = { sesion, iniciar_sesion, cerrar_sesion, cambiar_clave };
   return <ContextoSesion.Provider value={valor}>{children}</ContextoSesion.Provider>;
 }

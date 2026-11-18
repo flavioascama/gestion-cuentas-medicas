@@ -552,11 +552,11 @@
 - tabla: T2
   campo: 40
   nombre: Gasto por Farmacia e insumos sin IGV
-  origen: blanco
-  expresion: ''
-  transformacion: ''
-  nota: 'Criterio C3: suma sobre la Tabla T4 (Productos de Farmacia), que el prototipo no genera (Sección
-    1.2). Se consigna ''0.00'' por definición del propio criterio (''de no corresponder'').'
+  origen: calculado
+  expresion: sumar(productos_T4.monto_presentado - productos_T4.monto_no_cubierto) cuando Producto Exento='A'
+  transformacion: monto(12,2)
+  nota: 'Criterio C3: suma en T4 de (Monto Presentado - Monto No Cubierto) de los productos no exonerados.
+    Sin productos da 0.00. Hasta el 2026-11-18 iba siempre en 0.00.'
 - tabla: T2
   campo: 41
   nombre: Gasto en protesis sin IGV
@@ -571,8 +571,9 @@
   origen: calculado
   expresion: formula_gasto_exonerado(prestacion)
   transformacion: monto(12,2)
-  nota: 'Criterio C3: suma en T4 (Producto Exento=''D'', no generado) más T3 (Servicio Exento de Impuestos=''D'')
-    de todos los rubros. El prototipo fija Servicio Exento en ''A'' (T3 campo 22), por lo que da 0.00.'
+  nota: 'Criterio C3: suma en T4 (Producto Exento=''D'') más T3 (Servicio Exento de Impuestos=''D'') de todos
+    los rubros. El prototipo fija Servicio Exento en ''A'' (T3 campo 22), por lo que solo suman los productos
+    de farmacia exonerados (desde el 2026-11-18).'
 - tabla: T2
   campo: 43
   nombre: Otros gastos por prestaciones de salud sin IGV
@@ -604,15 +605,16 @@
   origen: calculado
   expresion: sumar(procedimientos_T3.copago_variable) cuando Servicio Exento='A'
   transformacion: monto(12,2)
-  nota: Misma inferencia que el campo 44, sobre el copago variable (T3 campo 17). Marcar para confirmación
-    del asesor.
+  nota: Misma inferencia que el campo 44, sobre el copago variable (T3 campo 17), más el copago de los productos
+    de farmacia no exonerados (T4 campo 14) desde el 2026-11-18. Marcar para confirmación del asesor.
 - tabla: T2
   campo: 47
   nombre: Copago Variable exonerado de IGV
   origen: calculado
   expresion: sumar(procedimientos_T3.copago_variable) cuando Servicio Exento='D'
   transformacion: monto(12,2)
-  nota: Misma inferencia que el campo 45; da 0.00 con Servicio Exento fijo en 'A'.
+  nota: Misma inferencia que el campo 45; con Servicio Exento fijo en 'A' solo suma el copago de los productos
+    de farmacia exonerados (T4 campo 14).
 - tabla: T2
   campo: 48
   nombre: Total de Gastos Cubiertos sin IGV
@@ -921,11 +923,11 @@
 - tabla: T4
   campo: 14
   nombre: Copago del Producto de Farmacia
-  origen: columna
-  expresion: producto.copago
+  origen: calculado
+  expresion: (producto.monto_presentado - producto.monto_no_cubierto) * acreditacion.porcentaje_coaseguro / 100
   transformacion: monto(12,2)
-  nota: Dato sintético; no se modela reparto entre productos de una misma prestación (a diferencia
-    de T3 campos 17/18, marcado igual para confirmación del asesor).
+  nota: Coaseguro de la acreditación sobre lo que la IAFAS cubre del producto, igual que T3 campo 17 (desde
+    el 2026-11-18; antes era un dato escrito a mano). Marcado igual para confirmación del asesor.
 - tabla: T4
   campo: 15
   nombre: Monto(s) Presentado(s) de (los) Producto(s) de Farmacia

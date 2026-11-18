@@ -21,6 +21,11 @@ from app.dominio.integracion.puertos_consulta import (
     ResumenAcuse,
     ResumenLote,
 )
+from app.infraestructura.persistencia.cuentas_por_linea_sql import (
+    CuentasPorLinea,
+    cuenta_de_linea,
+    cuentas_por_linea,
+)
 from app.infraestructura.persistencia.modelos_farmacia import ProductoFacturadoModelo
 from app.infraestructura.persistencia.modelos_integracion import (
     AcuseTransmisionModelo,
@@ -50,6 +55,23 @@ class _AgregadoLote:
     monto_total: Decimal = Decimal("0.00")
 
 
+def _a_observacion_oficial(
+    fila: ObservacionValidadorModelo, lineas: CuentasPorLinea
+) -> ObservacionOficial:
+    cuenta = cuenta_de_linea(lineas, fila.tabla, fila.numero_linea)
+    return ObservacionOficial(
+        tabla=fila.tabla,
+        numero_linea=fila.numero_linea,
+        campo_clave=fila.campo_clave,
+        campo=fila.campo,
+        valor_observado=fila.valor_observado,
+        codigo_error=fila.codigo_error,
+        descripcion=fila.descripcion,
+        cuenta_medica_id=cuenta[0] if cuenta else None,
+        identificacion_interna=cuenta[1] if cuenta else None,
+    )
+
+
 class RepositorioLotesConsultaSql(RepositorioLotesConsulta):
     def __init__(self, sesion: AsyncSession) -> None:
         self._sesion = sesion
@@ -64,7 +86,15 @@ class RepositorioLotesConsultaSql(RepositorioLotesConsulta):
             sa.select(LoteFacturacionModelo)
             .join(IafasModelo)
             .options(contains_eager(LoteFacturacionModelo.iafas))
-            .order_by(LoteFacturacionModelo.generado_en.desc())
+            # Los lotes que ya terminaron (aceptados por la IAFAS y enviados a
+            # SUSALUD) van al final: primero los que tienen trabajo (2026-11-18).
+            .order_by(
+                sa.and_(
+                    LoteFacturacionModelo.estado == "ACEPTADO",
+                    LoteFacturacionModelo.enviado_susalud_en.is_not(None),
+                ).asc(),
+                LoteFacturacionModelo.generado_en.desc(),
+            )
         )
         if periodo is not None:
             consulta = consulta.where(LoteFacturacionModelo.periodo == periodo)
@@ -247,6 +277,7 @@ class RepositorioLotesConsultaSql(RepositorioLotesConsulta):
             .order_by(ValidacionOficialModelo.registrado_en)
         )
         validaciones = resultado.scalars().all()
+        lineas = await cuentas_por_linea(self._sesion, lote_id) if validaciones else {}
         salida = []
         for validacion in validaciones:
             observaciones_resultado = await self._sesion.execute(
@@ -261,15 +292,7 @@ class RepositorioLotesConsultaSql(RepositorioLotesConsulta):
                     estado_informado_validador=validacion.estado_informado_validador,
                     registrado_en=validacion.registrado_en,
                     observaciones=tuple(
-                        ObservacionOficial(
-                            tabla=o.tabla,
-                            numero_linea=o.numero_linea,
-                            campo_clave=o.campo_clave,
-                            campo=o.campo,
-                            valor_observado=o.valor_observado,
-                            codigo_error=o.codigo_error,
-                            descripcion=o.descripcion,
-                        )
+                        _a_observacion_oficial(o, lineas)
                         for o in observaciones_resultado.scalars().all()
                     ),
                 )

@@ -7,6 +7,7 @@ from datetime import datetime
 from pydantic import BaseModel, Field
 
 from app.api.serializacion import campos
+from app.dominio.acceso.entidades import NombreRol, Usuario
 from app.dominio.observaciones.casos_uso import ResultadoRegistroObservacion
 from app.dominio.observaciones.valores import MotivoObservacion, Naturaleza, Observacion
 
@@ -42,10 +43,27 @@ class ObservacionRespuesta(BaseModel):
     respuesta_sustento: str | None
     registrado_en: datetime
     respondido_en: datetime | None
+    responsable_nombres: str | None = None
 
     @staticmethod
     def desde_valor(valor: Observacion) -> ObservacionRespuesta:
         return ObservacionRespuesta(**campos(valor))
+
+
+class ResponsablePosibleRespuesta(BaseModel):
+    """A quien se puede asignar una observacion: solo el nombre y los
+    roles que responden observaciones."""
+
+    id: int
+    nombres: str
+    roles: list[NombreRol]
+
+    @staticmethod
+    def desde_usuario(usuario: Usuario, roles: frozenset[NombreRol]) -> ResponsablePosibleRespuesta:
+        assert usuario.id is not None
+        return ResponsablePosibleRespuesta(
+            id=usuario.id, nombres=usuario.nombres, roles=sorted(usuario.roles & roles)
+        )
 
 
 class MotivoObservacionRespuesta(BaseModel):

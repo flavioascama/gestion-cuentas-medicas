@@ -86,7 +86,7 @@ class Adaptadores:
     sesion_plataforma: AsistenteSesionPlataforma
     validador_tedef_web: ValidadorTedefWeb
     comunicaciones: FuentesComunicaciones
-    # Capturas de la navegacion del robot, si el administrador las activo.
+    # Navegacion visible del robot, si el administrador la activo.
     pasos: RegistradorPasos | None = None
 
 
@@ -270,6 +270,14 @@ async def _procesar_enviar_lote_susalud(
         await RepositorioTrabajosSql(sesion).marcar_completado(trabajo.id)
 
 
+# La plataforma cuya sesion asistida necesita cada trabajo del robot.
+_PLATAFORMA_DEL_TRABAJO = {
+    TIPO_TRABAJO_CONSULTAR_COBERTURA: "acredita_salud",
+    TIPO_TRABAJO_CARGAR_LOTE_VALIDADOR: "tedef_web",
+    TIPO_TRABAJO_ENVIAR_LOTE_SUSALUD: "tedef_web",
+}
+
+
 async def manejar_error(
     fabrica_sesiones: async_sessionmaker[AsyncSession], trabajo: TrabajoPendiente, error: Exception
 ) -> None:
@@ -299,6 +307,11 @@ async def manejar_error(
     if isinstance(error, ErrorSesionNoDisponible):
         async with fabrica_sesiones() as sesion:
             await RepositorioTrabajosSql(sesion).marcar_requiere_sesion(trabajo.id, str(error))
+            # La plataforma ya no acepta la sesion guardada: deja de contar
+            # como ACTIVA, para que se pueda pedir otra (2026-11-18).
+            plataforma = _PLATAFORMA_DEL_TRABAJO.get(trabajo.tipo)
+            if plataforma is not None:
+                await RepositorioSesionPlataformaSql(sesion).expirar_activas(plataforma)
         registro.info("trabajo_requiere_sesion", trabajo_id=trabajo.id, motivo=str(error))
         return
 

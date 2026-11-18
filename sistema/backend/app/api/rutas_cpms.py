@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencias import obtener_reloj, requiere_rol
 from app.api.dependencias_cpms import (
@@ -20,6 +21,7 @@ from app.api.esquemas_cpms import (
     RespuestaSugerenciaCpms,
     SolicitudCargarCatalogoCpms,
     SolicitudConfirmarProcedimiento,
+    UltimoPrecioRespuesta,
     VersionCpmsRespuesta,
 )
 from app.compartido.errores import ErrorAplicacion
@@ -36,7 +38,11 @@ from app.dominio.cpms.puertos import ErrorCodigoCpmsInexistente
 from app.dominio.cpms.valores import FiltrosSugerencia
 from app.dominio.puertos_comunes import Reloj
 from app.infraestructura.cpms.cargar_catalogo_cpms import CargarCatalogoCpms, ErrorSinArchivosCpms
-from app.infraestructura.persistencia.repositorio_cpms_sql import ErrorRepositorioCpms
+from app.infraestructura.persistencia.base import obtener_sesion
+from app.infraestructura.persistencia.repositorio_cpms_sql import (
+    ErrorRepositorioCpms,
+    RepositorioCpmsSql,
+)
 
 router = APIRouter(tags=["cpms"])
 _SOLO_AUDITOR = requiere_rol(NombreRol.AUDITOR)
@@ -106,6 +112,20 @@ async def confirmar_procedimiento(
             "CATALOGO_CPMS_VACIO", str(error), estado_http=status.HTTP_409_CONFLICT
         ) from error
     return RespuestaProcedimientoConfirmado(procedimiento_id=procedimiento_id)
+
+
+@router.get(
+    "/cuentas/{cuenta_id}/procedimientos/ultimo-precio", response_model=UltimoPrecioRespuesta
+)
+async def ultimo_precio_procedimiento(
+    cuenta_id: int,
+    codigo: str,
+    sesion: AsyncSession = Depends(obtener_sesion),
+    _actor: CargaSesion = Depends(_SOLO_AUDITOR),
+) -> UltimoPrecioRespuesta:
+    """El precio que se propone al confirmar un procedimiento."""
+    monto = await RepositorioCpmsSql(sesion).ultimo_monto_unitario(codigo, cuenta_id)
+    return UltimoPrecioRespuesta(monto_unitario=monto)
 
 
 @router.get("/catalogo-cpms/versiones", response_model=list[VersionCpmsRespuesta])

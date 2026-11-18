@@ -25,6 +25,7 @@ _RUTAS_LECTURA = (
 _RUTAS_SOLO_ANALISTA = (
     ("POST", "/cuentas/1/cobertura"),
     ("GET", "/cuentas/1/acreditacion"),
+    ("POST", "/cuentas/asegurado/buscar"),
 )
 
 

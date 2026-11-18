@@ -3,6 +3,8 @@ import { Outlet, useNavigate } from "react-router-dom";
 import { BarraLateral } from "./componentes_base/barra_lateral";
 import { Cabecera } from "./componentes_base/cabecera";
 import { IconoMenu } from "./componentes_base/iconos_navegacion";
+import { RobotEnVivo } from "./componentes_base/robot_en_vivo";
+import { DialogoCambiarClave } from "./modulos/acceso/cambio_clave";
 import { CampanaAvisos } from "./modulos/avisos/campana_avisos";
 import estilos from "./disenio_principal.module.css";
 import { usar_sesion } from "./sesion/contexto_sesion";
@@ -67,15 +69,30 @@ function RinconMenu({
   );
 }
 
-export function DisenioPrincipal() {
-  const { sesion, cerrar_sesion } = usar_sesion();
-  const navegar = useNavigate();
-  const [barra_abierta, set_barra_abierta] = useState(leer_preferencia_barra);
+function usar_tema() {
   const [tema, set_tema] = useState<Tema>(leer_preferencia_tema);
 
   useEffect(() => {
     document.documentElement.dataset.theme = tema === "oscuro" ? "dark" : "light";
   }, [tema]);
+
+  const alternar_tema = () => {
+    set_tema((anterior) => {
+      const nuevo_valor: Tema = anterior === "oscuro" ? "claro" : "oscuro";
+      guardar_preferencia_tema(nuevo_valor);
+      return nuevo_valor;
+    });
+  };
+
+  return { tema, alternar_tema };
+}
+
+export function DisenioPrincipal() {
+  const { sesion, cerrar_sesion } = usar_sesion();
+  const navegar = useNavigate();
+  const [barra_abierta, set_barra_abierta] = useState(leer_preferencia_barra);
+  const { tema, alternar_tema } = usar_tema();
+  const [cambiando_clave, set_cambiando_clave] = useState(false);
 
   const manejar_salida = () => {
     void cerrar_sesion().then(() => navegar("/ingreso", { replace: true }));
@@ -85,14 +102,6 @@ export function DisenioPrincipal() {
     set_barra_abierta((anterior) => {
       const nuevo_valor = !anterior;
       guardar_preferencia_barra(nuevo_valor);
-      return nuevo_valor;
-    });
-  };
-
-  const alternar_tema = () => {
-    set_tema((anterior) => {
-      const nuevo_valor: Tema = anterior === "oscuro" ? "claro" : "oscuro";
-      guardar_preferencia_tema(nuevo_valor);
       return nuevo_valor;
     });
   };
@@ -110,12 +119,17 @@ export function DisenioPrincipal() {
           nombre_usuario={sesion.nombre_usuario}
           roles={sesion.roles}
           al_salir={manejar_salida}
+          al_cambiar_clave={() => set_cambiando_clave(true)}
           accion_avisos={<CampanaAvisos />}
         />
         <main className={estilos.contenido}>
           <Outlet />
         </main>
       </div>
+      <RobotEnVivo />
+      {cambiando_clave ? (
+        <DialogoCambiarClave al_cerrar={() => set_cambiando_clave(false)} />
+      ) : null}
     </div>
   );
 }

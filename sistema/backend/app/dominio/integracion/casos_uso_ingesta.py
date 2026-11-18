@@ -6,6 +6,7 @@ distinto (alta de la cuenta, no consulta de trabajos)."""
 from __future__ import annotations
 
 from app.dominio.integracion.puertos_ingesta import (
+    AseguradoRegistrado,
     DatosNuevaCuenta,
     PiezaCompletitud,
     RepositorioCompletitudCuenta,
@@ -45,11 +46,29 @@ class RegistrarCuentaMedica:
         return cuenta_id
 
 
+class BuscarAseguradoRegistrado:
+    """Al registrar una cuenta (2026-11-18): con el documento, devuelve
+    los nombres y la IAFAS del asegurado si la clinica ya lo atendio, para
+    no volver a escribirlos. Un asegurado nuevo se escribe una sola vez:
+    queda registrado al crear su primera cuenta."""
+
+    def __init__(self, repositorio: RepositorioIngestaCuentas) -> None:
+        self._repositorio = repositorio
+
+    async def ejecutar(
+        self, tipo_documento: str, numero_documento: str
+    ) -> AseguradoRegistrado | None:
+        return await self._repositorio.buscar_asegurado(
+            tipo_documento.strip(), numero_documento.strip()
+        )
+
+
 # Piezas fijas de la adenda (punto 2 de la tabla): la de "paciente e IAFAS
 # asignada" no se evalua contra la base de datos porque una cuenta_medica
 # no puede existir sin ambos (columnas NOT NULL) -- siempre esta completa.
 _ETIQUETA_PACIENTE = "Paciente e IAFAS asignada"
 _ETIQUETA_COBERTURA = "Asegurado acreditado en ACREDITA SALUD"
+_ETIQUETA_DIAGNOSTICO = "Diagnóstico principal (CIE-10)"
 _ETIQUETA_CODIFICACION = "Al menos un procedimiento confirmado (CPMS)"
 _ETIQUETA_COMPROBANTE = "Comprobante de pago aceptado"
 
@@ -90,18 +109,30 @@ class ConsultarCompletitudCuenta:
             return None
 
         cobertura_ok = estado_piezas.tiene_acreditacion
+        diagnostico_ok = estado_piezas.tiene_diagnostico
         codificacion_ok = estado_piezas.cantidad_procedimientos > 0
         comprobante_ok = estado_piezas.tiene_comprobante
         estado_cuenta = estado_piezas.estado_cuenta
 
-        if estado_cuenta == "REGISTRADA" and cobertura_ok and codificacion_ok and comprobante_ok:
+        listo = cobertura_ok and diagnostico_ok and codificacion_ok and comprobante_ok
+        if estado_cuenta == "REGISTRADA" and listo:
             await self._facturar(cuenta_id, actor)
             estado_cuenta = "FACTURADA"
 
         return ResultadoCompletitud(
             cuenta_id=cuenta_id,
             estado_cuenta=estado_cuenta,
-            piezas=_construir_piezas(cobertura_ok, codificacion_ok, comprobante_ok),
+            piezas=(
+                *_construir_piezas(cobertura_ok, codificacion_ok, comprobante_ok),
+                PiezaCompletitud(
+                    clave="diagnostico",
+                    etiqueta=_ETIQUETA_DIAGNOSTICO,
+                    completa=diagnostico_ok,
+                    bloquea=True,
+                    accion=None if diagnostico_ok else "registrar_diagnostico",
+                ),
+            ),
+            lote=estado_piezas.lote,
         )
 
     async def _facturar(self, cuenta_id: int, actor: str) -> None:

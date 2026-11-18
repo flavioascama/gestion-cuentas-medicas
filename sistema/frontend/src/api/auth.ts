@@ -7,6 +7,8 @@ export interface CargaSesion {
   usuario_id: number;
   nombre_usuario: string;
   roles: NombreRol[];
+  // La contraseña la puso el administrador: hay que cambiarla antes de entrar.
+  debe_cambiar_clave: boolean;
 }
 
 // El backend firma el JWT (GestorSesionJwt); el frontend solo lee sus
@@ -37,6 +39,7 @@ function decodificar_carga(token: string): CargaSesion | null {
     usuario_id: Number(carga.sub),
     nombre_usuario: carga.nombre_usuario,
     roles: carga.roles as NombreRol[],
+    debe_cambiar_clave: carga.cambiar_clave === true,
   };
 }
 
@@ -68,6 +71,17 @@ export async function iniciar_sesion(
   );
   guardar_token(respuesta.token);
   return respuesta;
+}
+
+// El servidor revoca la credencial con la que se hizo el cambio y entrega
+// una nueva.
+export async function cambiar_clave(clave_actual: string, clave_nueva: string): Promise<void> {
+  const respuesta = await enviar<components["schemas"]["RespuestaInicioSesion"]>(
+    "PUT",
+    "/auth/clave",
+    { clave_actual, clave_nueva },
+  );
+  guardar_token(respuesta.token);
 }
 
 export async function cerrar_sesion(): Promise<void> {

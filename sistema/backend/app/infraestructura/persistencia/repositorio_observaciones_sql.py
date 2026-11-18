@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import datetime
 
 import sqlalchemy as sa
@@ -16,6 +17,7 @@ from app.dominio.observaciones.valores import (
     Naturaleza,
     Observacion,
 )
+from app.infraestructura.persistencia.modelos_acceso import UsuarioModelo
 from app.infraestructura.persistencia.modelos_observaciones import (
     CatalogoMotivoObservacionModelo,
     ObservacionModelo,
@@ -101,18 +103,16 @@ class RepositorioObservacionesSql(RepositorioObservaciones):
         return None if modelo is None else _a_observacion(modelo)
 
     async def listar_por_cuenta(self, cuenta_medica_id: int) -> list[Observacion]:
-        modelos = (
-            (
-                await self._sesion.execute(
-                    sa.select(ObservacionModelo)
-                    .where(ObservacionModelo.cuenta_medica_id == cuenta_medica_id)
-                    .order_by(ObservacionModelo.registrado_en)
-                )
-            )
-            .scalars()
-            .all()
+        filas = await self._sesion.execute(
+            sa.select(ObservacionModelo, UsuarioModelo.nombres)
+            .outerjoin(UsuarioModelo, UsuarioModelo.id == ObservacionModelo.responsable_usuario_id)
+            .where(ObservacionModelo.cuenta_medica_id == cuenta_medica_id)
+            .order_by(ObservacionModelo.registrado_en)
         )
-        return [_a_observacion(m) for m in modelos]
+        return [
+            replace(_a_observacion(modelo), responsable_nombres=nombres)
+            for modelo, nombres in filas.all()
+        ]
 
     async def reasignar(
         self,

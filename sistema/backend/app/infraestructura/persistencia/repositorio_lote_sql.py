@@ -37,6 +37,16 @@ from app.infraestructura.tedef.carga_esquema import version_esquema
 from app.infraestructura.tedef.carga_mapeo import version_mapeo
 
 _DOS_DECIMALES = Decimal("0.01")
+_CERO = Decimal("0.00")
+
+
+def _coaseguro(monto: Decimal, acreditacion: object) -> Decimal:
+    """Lo que asume el asegurado por coaseguro sobre `monto`; 0.00 si su
+    acreditacion no fija un porcentaje."""
+    porcentaje = acreditacion.porcentaje_coaseguro  # type: ignore[attr-defined]
+    if acreditacion.tipo_copago != "coaseguro" or not porcentaje:  # type: ignore[attr-defined]
+        return _CERO
+    return (monto * Decimal(porcentaje) / Decimal(100)).quantize(_DOS_DECIMALES)
 
 
 class RepositorioLoteFacturacionSql(RepositorioLoteFacturacion):
@@ -168,7 +178,7 @@ class RepositorioLoteFacturacionSql(RepositorioLoteFacturacion):
             hora_prestacion=cuenta.hora_prestacion,
             diagnostico_principal_cie10=cuenta.diagnostico_principal_cie10,
             procedimientos=procedimientos,
-            productos=tuple(self._a_producto_lote(p) for p in productos),
+            productos=tuple(self._a_producto_lote(p, acreditacion) for p in productos),
         )
         return DocumentoLote(
             documento_id=cuenta.documento.id,
@@ -195,11 +205,7 @@ class RepositorioLoteFacturacionSql(RepositorioLoteFacturacion):
         monto_unitario = procedimiento.monto_unitario  # type: ignore[attr-defined]
         monto_presentado = (Decimal(cantidad) * monto_unitario).quantize(_DOS_DECIMALES)
 
-        copago_variable = Decimal("0.00")
-        if acreditacion.tipo_copago == "coaseguro" and acreditacion.porcentaje_coaseguro:  # type: ignore[attr-defined]
-            copago_variable = (
-                monto_presentado * Decimal(acreditacion.porcentaje_coaseguro) / Decimal(100)  # type: ignore[attr-defined]
-            ).quantize(_DOS_DECIMALES)
+        copago_variable = _coaseguro(monto_presentado, acreditacion)
 
         copago_fijo = Decimal("0.00")
         if (
@@ -221,7 +227,12 @@ class RepositorioLoteFacturacionSql(RepositorioLoteFacturacion):
         )
 
     @staticmethod
-    def _a_producto_lote(producto: ProductoFacturadoModelo) -> ProductoLote:
+    def _a_producto_lote(producto: ProductoFacturadoModelo, acreditacion: object) -> ProductoLote:
+        # El copago del producto (T4 campo 14) sale de la acreditacion, igual
+        # que el coaseguro de un procedimiento, sobre lo que la IAFAS cubre
+        # (2026-11-18: antes se escribia a mano). El copago fijo ya va entero
+        # en el primer procedimiento.
+        cubierto = producto.monto_presentado - producto.monto_no_cubierto
         return ProductoLote(
             correlativo=producto.correlativo,
             tipo_producto=producto.tipo_producto,
@@ -231,7 +242,7 @@ class RepositorioLoteFacturacionSql(RepositorioLoteFacturacion):
             cantidad_venta=producto.cantidad_venta,
             tipo_unidad_dispensacion=producto.tipo_unidad_dispensacion,
             monto_unitario=producto.monto_unitario_sin_impuesto,
-            copago=producto.copago,
+            copago=_coaseguro(cubierto, acreditacion),
             monto_no_cubierto=producto.monto_no_cubierto,
             diagnostico_asociado_cie10=producto.diagnostico_asociado_cie10,
             exento_igv=producto.exento_igv,

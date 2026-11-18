@@ -1,0 +1,89 @@
+"""Registrar el diagnostico principal de una cuenta despues de crearla
+(2026-11-18).
+
+Al registrar la cuenta el diagnostico es opcional, porque en la admision no
+siempre se conoce; pero el estandar TEDEF lo exige (T2, campo 18). Antes no
+habia forma de completarlo: una cuenta sin diagnostico llegaba a FACTURADA y
+su lote nunca salia conforme. Ahora se puede registrar, y la cuenta no pasa a
+FACTURADA sin el (ConsultarCompletitudCuenta)."""
+
+from __future__ import annotations
+
+from typing import Protocol
+
+from app.dominio.puertos_comunes import Evento, RegistroEventos
+
+TIPO_EVENTO_DIAGNOSTICO_REGISTRADO = "DIAGNOSTICO_REGISTRADO"
+# Antes de facturar y al corregir una cuenta rechazada se puede cambiar. En
+# una cuenta ya facturada solo se completa si faltaba: esas cuentas no
+# pueden estar en un lote, porque sin diagnostico el lote no sale conforme.
+_ESTADOS_EDITABLES = frozenset({"REGISTRADA", "RECHAZADA"})
+_ESTADO_SOLO_COMPLETAR = "FACTURADA"
+
+
+class ErrorDiagnostico(Exception):
+    """Base de los errores de este caso de uso."""
+
+
+class ErrorCuentaInexistenteDiagnostico(ErrorDiagnostico):
+    def __init__(self, cuenta_id: int) -> None:
+        super().__init__(f"No existe la cuenta medica {cuenta_id}.")
+
+
+class ErrorDiagnosticoNoAdmitido(ErrorDiagnostico):
+    def __init__(self, estado: str) -> None:
+        super().__init__(f"El diagnóstico ya no se puede cambiar en una cuenta en estado {estado}.")
+
+
+class ErrorCie10Inexistente(ErrorDiagnostico):
+    def __init__(self, codigo: str) -> None:
+        super().__init__(f"El código {codigo} no está en el catálogo CIE-10.")
+
+
+class RepositorioDiagnosticoCuenta(Protocol):
+    async def estado_y_diagnostico(self, cuenta_id: int) -> tuple[str, str | None] | None:
+        """(estado, diagnostico actual) de la cuenta; None si no existe."""
+        ...
+
+    async def existe_cie10(self, codigo: str) -> bool: ...
+
+    async def fijar_diagnostico(self, cuenta_id: int, codigo: str) -> None: ...
+
+
+def admite_diagnostico(estado: str, diagnostico_actual: str | None) -> bool:
+    if estado in _ESTADOS_EDITABLES:
+        return True
+    return estado == _ESTADO_SOLO_COMPLETAR and not diagnostico_actual
+
+
+class RegistrarDiagnosticoPrincipal:
+    def __init__(
+        self, repositorio: RepositorioDiagnosticoCuenta, registro_eventos: RegistroEventos
+    ) -> None:
+        self._repositorio = repositorio
+        self._registro_eventos = registro_eventos
+
+    async def ejecutar(self, cuenta_id: int, codigo: str, actor: str) -> str:
+        codigo = codigo.strip().upper()
+        actual = await self._repositorio.estado_y_diagnostico(cuenta_id)
+        if actual is None:
+            raise ErrorCuentaInexistenteDiagnostico(cuenta_id)
+        estado, diagnostico = actual
+        if not admite_diagnostico(estado, diagnostico):
+            raise ErrorDiagnosticoNoAdmitido(estado)
+        if not await self._repositorio.existe_cie10(codigo):
+            raise ErrorCie10Inexistente(codigo)
+        await self._repositorio.fijar_diagnostico(cuenta_id, codigo)
+        # Sin el codigo en el evento: el diagnostico es un dato clinico y no
+        # va en el historial (control C-11).
+        await self._registro_eventos.registrar(
+            Evento(
+                cuenta_medica_id=cuenta_id,
+                tipo_evento=TIPO_EVENTO_DIAGNOSTICO_REGISTRADO,
+                actor=actor,
+                estado_previo=None,
+                estado_nuevo=None,
+                datos={},
+            )
+        )
+        return codigo

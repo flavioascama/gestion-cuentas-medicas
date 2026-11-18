@@ -52,6 +52,7 @@ from trabajador.soporte.cifrado import AlmacenSesionesCifrado
 from trabajador.soporte.evidencias import AlmacenEvidenciasCifrado
 from trabajador.soporte.navegador import GestorNavegador
 from trabajador.soporte.pasos import RegistradorPasos
+from trabajador.soporte.turno import TurnoRobot
 
 registro = structlog.get_logger(__name__)
 
@@ -67,11 +68,15 @@ _TIPOS_ATENDIDOS = (
 
 
 async def _ciclo(
-    fabrica_sesiones: async_sessionmaker[AsyncSession], adaptadores: Adaptadores
+    fabrica_sesiones: async_sessionmaker[AsyncSession],
+    adaptadores: Adaptadores,
+    turno: TurnoRobot,
 ) -> bool:
     """Devuelve True si tomo y proceso un trabajo (exitoso o no); False si
-    no habia ninguno pendiente."""
+    no habia ninguno pendiente o si la cola le toca al otro robot."""
 
+    if not await turno.me_toca():
+        return False
     async with fabrica_sesiones() as sesion:
         trabajo = await RepositorioTrabajosSql(sesion).tomar_siguiente(_TIPOS_ATENDIDOS)
     if trabajo is None:
@@ -85,7 +90,7 @@ async def _ciclo(
         await manejar_error(fabrica_sesiones, trabajo, error)
     finally:
         if adaptadores.pasos is not None:
-            adaptadores.pasos.terminar()
+            await adaptadores.pasos.terminar()
     return True
 
 
@@ -133,7 +138,12 @@ def _construir_adaptadores(
     consultor_receptor: ConsultorRespuestaReceptorHttp,
 ) -> Adaptadores:
     configuracion_asistente = _construir_configuracion_asistente()
-    pasos = RegistradorPasos(fabrica_sesiones, RelojSistema())
+    pasos = RegistradorPasos(
+        fabrica_sesiones,
+        RelojSistema(),
+        gestor_navegador,
+        intervalo_cuadro_segundos=configuracion.intervalo_cuadro_robot_ms / 1000,
+    )
     return Adaptadores(
         pasos=pasos,
         acreditacion=AdaptadorAcreditacionWeb(
@@ -176,6 +186,8 @@ async def main(una_vez: bool) -> None:
         gestor_navegador = GestorNavegador(
             playwright,
             configuracion.reinicios_navegador_cada_n_trabajos,
+            configuracion.pausa_robot_visible_ms,
+            hay_pantalla=configuracion.robot_con_pantalla,
         )
         almacen_sesiones = AlmacenSesionesCifrado(
             configuracion.ruta_sesiones_plataformas, configuracion.clave_cifrado_sesiones
@@ -184,10 +196,14 @@ async def main(una_vez: bool) -> None:
             gestor_navegador, almacen_sesiones, fabrica_sesiones, consultor_receptor
         )
 
-        registro.info("trabajador_iniciado", una_vez=una_vez)
+        turno = TurnoRobot(fabrica_sesiones, RelojSistema(), configuracion.robot_con_pantalla)
+        latido = asyncio.create_task(turno.latir()) if configuracion.robot_con_pantalla else None
+        registro.info(
+            "trabajador_iniciado", una_vez=una_vez, con_pantalla=configuracion.robot_con_pantalla
+        )
         try:
             while True:
-                proceso_algo = await _ciclo(fabrica_sesiones, adaptadores)
+                proceso_algo = await _ciclo(fabrica_sesiones, adaptadores, turno)
                 if una_vez and proceso_algo:
                     break
                 if not proceso_algo:
@@ -196,6 +212,8 @@ async def main(una_vez: bool) -> None:
                         break
                     await asyncio.sleep(configuracion.intervalo_poll_segundos)
         finally:
+            if latido is not None:
+                latido.cancel()
             await gestor_navegador.cerrar()
             await motor.dispose()
 

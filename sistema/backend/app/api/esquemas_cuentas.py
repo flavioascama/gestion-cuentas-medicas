@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import date, time
+from decimal import Decimal
 
 from pydantic import BaseModel, Field
 
@@ -57,9 +58,12 @@ class ResumenCuentaRespuesta(BaseModel):
 
 
 class ProcedimientoRespuesta(BaseModel):
+    id: int
     codigo_asignado: str
     descripcion_registrada: str
     cantidad: int
+    monto_unitario: Decimal
+    fecha: date | None
 
 
 class ProductoRespuesta(BaseModel):
@@ -122,6 +126,19 @@ class SolicitudNuevaCuenta(BaseModel):
         return DatosNuevaCuenta(**self.model_dump())
 
 
+class SolicitudBuscarAsegurado(BaseModel):
+    # Va en el cuerpo y no en la direccion: el documento del asegurado no
+    # debe quedar en los registros de acceso.
+    tipo_documento: str = Field(min_length=1, max_length=1)
+    numero_documento: str = Field(min_length=1, max_length=15)
+
+
+class AseguradoRegistradoRespuesta(BaseModel):
+    nombres: str
+    apellidos: str
+    iafas_id: int
+
+
 class RespuestaCuentaCreada(BaseModel):
     cuenta_id: int
 
@@ -156,11 +173,27 @@ class PiezaCompletitudRespuesta(BaseModel):
         return PiezaCompletitudRespuesta(**campos(valor))
 
 
+class LoteDeCuentaRespuesta(BaseModel):
+    lote_id: int
+    numero: str
+    estado: str
+
+
+class SolicitudDiagnostico(BaseModel):
+    codigo_cie10: str = Field(min_length=3, max_length=5)
+
+
+class RespuestaDiagnostico(BaseModel):
+    codigo_cie10: str
+
+
 class RespuestaCompletitudCuenta(BaseModel):
     cuenta_id: int
     estado_cuenta: str
     completa: bool
     piezas: list[PiezaCompletitudRespuesta]
+    # El lote mas reciente en que entro la cuenta, si entro en alguno.
+    lote: LoteDeCuentaRespuesta | None = None
 
     @staticmethod
     def desde_valor(valor: ResultadoCompletitud) -> RespuestaCompletitudCuenta:
@@ -169,6 +202,7 @@ class RespuestaCompletitudCuenta(BaseModel):
             estado_cuenta=valor.estado_cuenta,
             completa=valor.completa,
             piezas=[PiezaCompletitudRespuesta.desde_valor(p) for p in valor.piezas],
+            lote=LoteDeCuentaRespuesta(**campos(valor.lote)) if valor.lote else None,
         )
 
 

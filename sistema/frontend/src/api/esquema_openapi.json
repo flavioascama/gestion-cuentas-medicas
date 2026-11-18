@@ -89,6 +89,53 @@
         ]
       }
     },
+    "/auth/clave": {
+      "put": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Cambiar Clave",
+        "description": "Devuelve una credencial nueva: la anterior queda revocada.",
+        "operationId": "cambiar_clave_auth_clave_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SolicitudCambioClave"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespuestaInicioSesion"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/avisos": {
       "get": {
         "tags": [
@@ -272,6 +319,61 @@
             }
           }
         }
+      }
+    },
+    "/cuentas/asegurado/buscar": {
+      "post": {
+        "tags": [
+          "cuentas"
+        ],
+        "summary": "Buscar Asegurado",
+        "description": "Al registrar una cuenta: nombres e IAFAS del asegurado, si la clinica\nya lo atendio. `null` si es la primera vez.",
+        "operationId": "buscar_asegurado_cuentas_asegurado_buscar_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SolicitudBuscarAsegurado"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AseguradoRegistradoRespuesta"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Buscar Asegurado Cuentas Asegurado Buscar Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/cuentas": {
@@ -666,6 +768,64 @@
         }
       }
     },
+    "/cuentas/{cuenta_id}/diagnostico": {
+      "put": {
+        "tags": [
+          "cuentas"
+        ],
+        "summary": "Registrar Diagnostico",
+        "description": "Completa el diagnostico principal de una cuenta ya registrada: sin\nel la cuenta no se factura ni puede entrar a un lote (T2, campo 18).",
+        "operationId": "registrar_diagnostico_cuentas__cuenta_id__diagnostico_put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cuenta_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Cuenta Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SolicitudDiagnostico"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespuestaDiagnostico"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/cuentas/{cuenta_id}/acreditacion": {
       "get": {
         "tags": [
@@ -946,6 +1106,63 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RespuestaProcedimientoConfirmado"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cuentas/{cuenta_id}/procedimientos/ultimo-precio": {
+      "get": {
+        "tags": [
+          "cpms"
+        ],
+        "summary": "Ultimo Precio Procedimiento",
+        "description": "El precio que se propone al confirmar un procedimiento.",
+        "operationId": "ultimo_precio_procedimiento_cuentas__cuenta_id__procedimientos_ultimo_precio_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cuenta_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Cuenta Id"
+            }
+          },
+          {
+            "name": "codigo",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Codigo"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UltimoPrecioRespuesta"
                 }
               }
             }
@@ -1758,6 +1975,37 @@
                   },
                   "type": "array",
                   "title": "Response Listar Motivos Observaciones Motivos Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/observaciones/responsables": {
+      "get": {
+        "tags": [
+          "observaciones"
+        ],
+        "summary": "Listar Responsables Posibles",
+        "description": "CU-09: las personas entre las que el jefe elige al responsable.",
+        "operationId": "listar_responsables_posibles_observaciones_responsables_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ResponsablePosibleRespuesta"
+                  },
+                  "type": "array",
+                  "title": "Response Listar Responsables Posibles Observaciones Responsables Get"
                 }
               }
             }
@@ -4339,7 +4587,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/OpcionNavegacion"
+                  "$ref": "#/components/schemas/EstadoNavegacion"
                 }
               }
             }
@@ -4373,7 +4621,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/OpcionNavegacion"
+                  "$ref": "#/components/schemas/EstadoNavegacion"
                 }
               }
             }
@@ -4402,7 +4650,7 @@
           "robot"
         ],
         "summary": "Listar Actividad",
-        "description": "Trabajos del robot que dejaron capturas, el mas reciente primero.",
+        "description": "Registro del robot, lo mas reciente primero. Solo el administrador\n(pedido del usuario, 2026-11-18).",
         "operationId": "listar_actividad_robot_actividad_get",
         "responses": {
           "200": {
@@ -4478,13 +4726,48 @@
         }
       }
     },
-    "/robot/trabajos/{trabajo_id}/pasos/{orden}/captura": {
+    "/robot/en-vivo": {
       "get": {
         "tags": [
           "robot"
         ],
-        "summary": "Obtener Captura",
-        "operationId": "obtener_captura_robot_trabajos__trabajo_id__pasos__orden__captura_get",
+        "summary": "Consultar En Vivo",
+        "description": "La tarea que el robot esta haciendo ahora a pedido de quien consulta.",
+        "operationId": "consultar_en_vivo_robot_en_vivo_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/TrabajoEnVivoRespuesta"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Consultar En Vivo Robot En Vivo Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/robot/en-vivo/{trabajo_id}/cuadro": {
+      "get": {
+        "tags": [
+          "robot"
+        ],
+        "summary": "Obtener Cuadro En Vivo",
+        "operationId": "obtener_cuadro_en_vivo_robot_en_vivo__trabajo_id__cuadro_get",
         "security": [
           {
             "HTTPBearer": []
@@ -4501,12 +4784,13 @@
             }
           },
           {
-            "name": "orden",
-            "in": "path",
-            "required": true,
+            "name": "primera",
+            "in": "query",
+            "required": false,
             "schema": {
-              "type": "integer",
-              "title": "Orden"
+              "type": "boolean",
+              "default": false,
+              "title": "Primera"
             }
           }
         ],
@@ -4674,6 +4958,10 @@
             "type": "string",
             "title": "Estado"
           },
+          "usuario": {
+            "type": "string",
+            "title": "Usuario"
+          },
           "iniciado_en": {
             "type": "string",
             "format": "date-time",
@@ -4689,6 +4977,7 @@
           "trabajo_id",
           "tipo",
           "estado",
+          "usuario",
           "iniciado_en",
           "pasos"
         ],
@@ -4743,6 +5032,29 @@
           "motivo_omision"
         ],
         "title": "AdjuntoCorreoRespuesta"
+      },
+      "AseguradoRegistradoRespuesta": {
+        "properties": {
+          "nombres": {
+            "type": "string",
+            "title": "Nombres"
+          },
+          "apellidos": {
+            "type": "string",
+            "title": "Apellidos"
+          },
+          "iafas_id": {
+            "type": "integer",
+            "title": "Iafas Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "nombres",
+          "apellidos",
+          "iafas_id"
+        ],
+        "title": "AseguradoRegistradoRespuesta"
       },
       "AvisoRespuesta": {
         "properties": {
@@ -5042,6 +5354,42 @@
             "type": "string",
             "format": "date",
             "title": "Fecha Emision"
+          },
+          "valor_venta": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valor Venta"
+          },
+          "igv": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Igv"
+          },
+          "total": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total"
           }
         },
         "type": "object",
@@ -5636,6 +5984,14 @@
             "type": "string",
             "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
             "title": "Monto"
+          },
+          "pendientes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Pendientes",
+            "default": []
           }
         },
         "type": "object",
@@ -6037,6 +6393,33 @@
           "reemplazados"
         ],
         "title": "DocumentosPagoRespuesta"
+      },
+      "EstadoNavegacion": {
+        "properties": {
+          "activa": {
+            "type": "boolean",
+            "title": "Activa"
+          },
+          "modo": {
+            "type": "string",
+            "enum": [
+              "ventana",
+              "sistema"
+            ],
+            "title": "Modo",
+            "default": "sistema"
+          },
+          "robot_con_pantalla": {
+            "type": "boolean",
+            "title": "Robot Con Pantalla",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "activa"
+        ],
+        "title": "EstadoNavegacion"
       },
       "EtapaCiclo": {
         "type": "string",
@@ -6494,6 +6877,29 @@
         ],
         "title": "LiquidacionRespuesta"
       },
+      "LoteDeCuentaRespuesta": {
+        "properties": {
+          "lote_id": {
+            "type": "integer",
+            "title": "Lote Id"
+          },
+          "numero": {
+            "type": "string",
+            "title": "Numero"
+          },
+          "estado": {
+            "type": "string",
+            "title": "Estado"
+          }
+        },
+        "type": "object",
+        "required": [
+          "lote_id",
+          "numero",
+          "estado"
+        ],
+        "title": "LoteDeCuentaRespuesta"
+      },
       "LoteSugeridoRespuesta": {
         "properties": {
           "iafas_id": {
@@ -6523,6 +6929,14 @@
             },
             "type": "array",
             "title": "Cuentas"
+          },
+          "cuentas_con_pendientes": {
+            "items": {
+              "$ref": "#/components/schemas/CuentaPorLotearRespuesta"
+            },
+            "type": "array",
+            "title": "Cuentas Con Pendientes",
+            "default": []
           }
         },
         "type": "object",
@@ -6720,6 +7134,28 @@
           "descripcion": {
             "type": "string",
             "title": "Descripcion"
+          },
+          "cuenta_medica_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cuenta Medica Id"
+          },
+          "identificacion_interna": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Identificacion Interna"
           }
         },
         "type": "object",
@@ -6824,6 +7260,17 @@
               }
             ],
             "title": "Respondido En"
+          },
+          "responsable_nombres": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Responsable Nombres"
           }
         },
         "type": "object",
@@ -6849,6 +7296,15 @@
           "activa": {
             "type": "boolean",
             "title": "Activa"
+          },
+          "modo": {
+            "type": "string",
+            "enum": [
+              "ventana",
+              "sistema"
+            ],
+            "title": "Modo",
+            "default": "sistema"
           }
         },
         "type": "object",
@@ -6969,6 +7425,33 @@
         ],
         "title": "PasoRobotRespuesta"
       },
+      "PendientesCuentaRespuesta": {
+        "properties": {
+          "cuenta_id": {
+            "type": "integer",
+            "title": "Cuenta Id"
+          },
+          "identificacion_interna": {
+            "type": "string",
+            "title": "Identificacion Interna"
+          },
+          "pendientes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Pendientes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "cuenta_id",
+          "identificacion_interna",
+          "pendientes"
+        ],
+        "title": "PendientesCuentaRespuesta",
+        "description": "Una cuenta que impidio generar el lote y que le falta, en simple."
+      },
       "PiezaCompletitudRespuesta": {
         "properties": {
           "clave": {
@@ -7011,6 +7494,10 @@
       },
       "ProcedimientoRespuesta": {
         "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
           "codigo_asignado": {
             "type": "string",
             "title": "Codigo Asignado"
@@ -7022,13 +7509,33 @@
           "cantidad": {
             "type": "integer",
             "title": "Cantidad"
+          },
+          "monto_unitario": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Monto Unitario"
+          },
+          "fecha": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fecha"
           }
         },
         "type": "object",
         "required": [
+          "id",
           "codigo_asignado",
           "descripcion_registrada",
-          "cantidad"
+          "cantidad",
+          "monto_unitario",
+          "fecha"
         ],
         "title": "ProcedimientoRespuesta"
       },
@@ -7355,6 +7862,33 @@
         ],
         "title": "RegistrosContingenciaRespuesta"
       },
+      "ResponsablePosibleRespuesta": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "nombres": {
+            "type": "string",
+            "title": "Nombres"
+          },
+          "roles": {
+            "items": {
+              "$ref": "#/components/schemas/NombreRol"
+            },
+            "type": "array",
+            "title": "Roles"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "nombres",
+          "roles"
+        ],
+        "title": "ResponsablePosibleRespuesta",
+        "description": "A quien se puede asignar una observacion: solo el nombre y los\nroles que responden observaciones."
+      },
       "RespuestaCatalogoCpmsCargado": {
         "properties": {
           "version_id": {
@@ -7424,6 +7958,16 @@
             },
             "type": "array",
             "title": "Piezas"
+          },
+          "lote": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LoteDeCuentaRespuesta"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -7514,6 +8058,19 @@
         ],
         "title": "RespuestaCuentaCreada"
       },
+      "RespuestaDiagnostico": {
+        "properties": {
+          "codigo_cie10": {
+            "type": "string",
+            "title": "Codigo Cie10"
+          }
+        },
+        "type": "object",
+        "required": [
+          "codigo_cie10"
+        ],
+        "title": "RespuestaDiagnostico"
+      },
       "RespuestaEnvioSusalud": {
         "properties": {
           "trabajo_id": {
@@ -7575,6 +8132,14 @@
               }
             ],
             "title": "Rutas Archivos"
+          },
+          "cuentas_con_pendientes": {
+            "items": {
+              "$ref": "#/components/schemas/PendientesCuentaRespuesta"
+            },
+            "type": "array",
+            "title": "Cuentas Con Pendientes",
+            "default": []
           }
         },
         "type": "object",
@@ -8299,6 +8864,28 @@
               }
             ],
             "title": "Resuelto En"
+          },
+          "identificacion_interna": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Identificacion Interna"
+          },
+          "asegurado": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Asegurado"
           }
         },
         "type": "object",
@@ -8341,6 +8928,50 @@
         "type": "object",
         "title": "SolicitudAsignacionObservacion",
         "description": "CU-09: ambos campos son opcionales -- el jefe puede confirmar sin\ncambiar nada mas que el responsable, o corregir tambien la\nnaturaleza (lo que recalcula el rol responsable)."
+      },
+      "SolicitudBuscarAsegurado": {
+        "properties": {
+          "tipo_documento": {
+            "type": "string",
+            "maxLength": 1,
+            "minLength": 1,
+            "title": "Tipo Documento"
+          },
+          "numero_documento": {
+            "type": "string",
+            "maxLength": 15,
+            "minLength": 1,
+            "title": "Numero Documento"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tipo_documento",
+          "numero_documento"
+        ],
+        "title": "SolicitudBuscarAsegurado"
+      },
+      "SolicitudCambioClave": {
+        "properties": {
+          "clave_actual": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Clave Actual"
+          },
+          "clave_nueva": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 12,
+            "title": "Clave Nueva"
+          }
+        },
+        "type": "object",
+        "required": [
+          "clave_actual",
+          "clave_nueva"
+        ],
+        "title": "SolicitudCambioClave"
       },
       "SolicitudCargarCatalogoCpms": {
         "properties": {
@@ -8616,6 +9247,21 @@
         ],
         "title": "SolicitudDescarte"
       },
+      "SolicitudDiagnostico": {
+        "properties": {
+          "codigo_cie10": {
+            "type": "string",
+            "maxLength": 5,
+            "minLength": 3,
+            "title": "Codigo Cie10"
+          }
+        },
+        "type": "object",
+        "required": [
+          "codigo_cie10"
+        ],
+        "title": "SolicitudDiagnostico"
+      },
       "SolicitudEnvioSusalud": {
         "properties": {
           "periodo": {
@@ -8702,18 +9348,6 @@
             "minLength": 1,
             "title": "Tipo"
           },
-          "serie": {
-            "type": "string",
-            "maxLength": 4,
-            "minLength": 4,
-            "title": "Serie"
-          },
-          "numero": {
-            "type": "string",
-            "maxLength": 8,
-            "minLength": 1,
-            "title": "Numero"
-          },
           "monto": {
             "anyOf": [
               {
@@ -8727,11 +9361,6 @@
             ],
             "title": "Monto"
           },
-          "fecha": {
-            "type": "string",
-            "format": "date",
-            "title": "Fecha"
-          },
           "motivo": {
             "type": "string",
             "maxLength": 1,
@@ -8742,13 +9371,11 @@
         "type": "object",
         "required": [
           "tipo",
-          "serie",
-          "numero",
           "monto",
-          "fecha",
           "motivo"
         ],
-        "title": "SolicitudNota"
+        "title": "SolicitudNota",
+        "description": "La serie, el numero y la fecha los da el PSE al emitir la nota."
       },
       "SolicitudNuevaAnulacion": {
         "properties": {
@@ -8939,20 +9566,6 @@
               }
             ],
             "title": "Monto Unitario"
-          },
-          "copago": {
-            "anyOf": [
-              {
-                "type": "number",
-                "minimum": 0.0
-              },
-              {
-                "type": "string",
-                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,10}|(?=[\\d.]{1,13}0*$)\\d{0,10}\\.\\d{0,2}0*$)"
-              }
-            ],
-            "title": "Copago",
-            "default": "0"
           },
           "monto_no_cubierto": {
             "anyOf": [
@@ -9311,6 +9924,35 @@
         ],
         "title": "TiempoEtapaRespuesta"
       },
+      "TrabajoEnVivoRespuesta": {
+        "properties": {
+          "trabajo_id": {
+            "type": "integer",
+            "title": "Trabajo Id"
+          },
+          "tipo": {
+            "type": "string",
+            "title": "Tipo"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "actualizado_en": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Actualizado En"
+          }
+        },
+        "type": "object",
+        "required": [
+          "trabajo_id",
+          "tipo",
+          "url",
+          "actualizado_en"
+        ],
+        "title": "TrabajoEnVivoRespuesta"
+      },
       "UltimaConsultaCoberturaRespuesta": {
         "properties": {
           "resultado": {
@@ -9352,6 +9994,27 @@
           "mensaje"
         ],
         "title": "UltimaConsultaCoberturaRespuesta"
+      },
+      "UltimoPrecioRespuesta": {
+        "properties": {
+          "monto_unitario": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Monto Unitario"
+          }
+        },
+        "type": "object",
+        "required": [
+          "monto_unitario"
+        ],
+        "title": "UltimoPrecioRespuesta"
       },
       "ValidationError": {
         "properties": {

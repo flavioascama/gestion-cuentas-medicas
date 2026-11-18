@@ -45,12 +45,21 @@ class HallazgoRespuesta(BaseModel):
         return HallazgoRespuesta(**campos(valor))
 
 
+class PendientesCuentaRespuesta(BaseModel):
+    """Una cuenta que impidio generar el lote y que le falta, en simple."""
+
+    cuenta_id: int
+    identificacion_interna: str
+    pendientes: list[str]
+
+
 class RespuestaGenerarLote(BaseModel):
     conforme: bool
     numero_lote: str
     hallazgos: list[HallazgoRespuesta]
     lote_id: int | None
     rutas_archivos: list[str] | None
+    cuentas_con_pendientes: list[PendientesCuentaRespuesta] = []
 
     @staticmethod
     def desde_valor(valor: ResultadoGenerarLote) -> RespuestaGenerarLote:
@@ -60,6 +69,14 @@ class RespuestaGenerarLote(BaseModel):
             hallazgos=[HallazgoRespuesta.desde_valor(h) for h in valor.informe.hallazgos],
             lote_id=valor.lote_id,
             rutas_archivos=list(valor.rutas_archivos) if valor.rutas_archivos else None,
+            cuentas_con_pendientes=[
+                PendientesCuentaRespuesta(
+                    cuenta_id=p.cuenta_medica_id,
+                    identificacion_interna=p.identificacion_interna,
+                    pendientes=list(p.pendientes),
+                )
+                for p in valor.pendientes
+            ],
         )
 
 
@@ -122,6 +139,8 @@ class ObservacionOficialRespuesta(BaseModel):
     valor_observado: str | None
     codigo_error: str
     descripcion: str
+    cuenta_medica_id: int | None = None
+    identificacion_interna: str | None = None
 
     @staticmethod
     def desde_valor(valor: ObservacionOficial) -> ObservacionOficialRespuesta:
@@ -204,6 +223,7 @@ class CuentaPorLotearRespuesta(BaseModel):
     apellidos_asegurado: str
     fecha_emision: date
     monto: Decimal
+    pendientes: list[str] = []
 
     @staticmethod
     def desde_valor(valor: CuentaPorLotear) -> CuentaPorLotearRespuesta:
@@ -214,6 +234,7 @@ class CuentaPorLotearRespuesta(BaseModel):
             apellidos_asegurado=valor.apellidos_asegurado,
             fecha_emision=valor.fecha_emision,
             monto=valor.monto,
+            pendientes=list(valor.pendientes),
         )
 
 
@@ -227,6 +248,7 @@ class LoteSugeridoRespuesta(BaseModel):
     periodo: str
     monto_total: Decimal
     cuentas: list[CuentaPorLotearRespuesta]
+    cuentas_con_pendientes: list[CuentaPorLotearRespuesta] = []
 
     @staticmethod
     def desde_valor(valor: LoteSugerido) -> LoteSugeridoRespuesta:
@@ -237,4 +259,7 @@ class LoteSugeridoRespuesta(BaseModel):
             periodo=valor.periodo,
             monto_total=valor.monto_total,
             cuentas=[CuentaPorLotearRespuesta.desde_valor(c) for c in valor.cuentas],
+            cuentas_con_pendientes=[
+                CuentaPorLotearRespuesta.desde_valor(c) for c in valor.con_pendientes
+            ],
         )

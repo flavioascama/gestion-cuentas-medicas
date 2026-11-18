@@ -7,6 +7,7 @@ export type AcreditacionRespuesta = components["schemas"]["AcreditacionRespuesta
 export type RespuestaTrabajoEncolado = components["schemas"]["RespuestaTrabajoEncolado"];
 export type SolicitudNuevaCuenta = components["schemas"]["SolicitudNuevaCuenta"];
 export type RespuestaCuentaCreada = components["schemas"]["RespuestaCuentaCreada"];
+export type AseguradoRegistrado = components["schemas"]["AseguradoRegistradoRespuesta"];
 export type RespuestaCompletitudCuenta = components["schemas"]["RespuestaCompletitudCuenta"];
 export type RespuestaComprobantePago = components["schemas"]["RespuestaComprobantePago"];
 
@@ -38,8 +39,25 @@ export function obtener_acreditacion(cuenta_id: number): Promise<AcreditacionRes
   return obtener<AcreditacionRespuesta>(`/cuentas/${cuenta_id}/acreditacion`);
 }
 
+// Nombres e IAFAS del asegurado, si la clinica ya lo atendio. El documento
+// va en el cuerpo, no en la direccion.
+export function buscar_asegurado(
+  tipo_documento: string,
+  numero_documento: string,
+): Promise<AseguradoRegistrado | null> {
+  return enviar<AseguradoRegistrado | null>("POST", "/cuentas/asegurado/buscar", {
+    tipo_documento,
+    numero_documento,
+  });
+}
+
 export function registrar_cuenta(datos: SolicitudNuevaCuenta): Promise<RespuestaCuentaCreada> {
   return enviar<RespuestaCuentaCreada>("POST", "/cuentas", datos);
+}
+
+// Completa el diagnostico principal de una cuenta ya registrada.
+export function registrar_diagnostico(cuenta_id: number, codigo_cie10: string): Promise<void> {
+  return enviar<void>("PUT", `/cuentas/${cuenta_id}/diagnostico`, { codigo_cie10 });
 }
 
 export function consultar_completitud(cuenta_id: number): Promise<RespuestaCompletitudCuenta> {

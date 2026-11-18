@@ -4,23 +4,22 @@ import { ErrorApi } from "../../api/cliente_http";
 import { ultima_consulta_cobertura, type UltimaConsultaCobertura } from "../../api/contingencia";
 import { solicitar_verificacion_cobertura, type AcreditacionRespuesta } from "../../api/cuentas";
 import { Boton } from "../../componentes_base/boton";
-import { GestorSesionPlataforma } from "../../componentes_base/gestor_sesion_plataforma";
 import { Mensaje } from "../../componentes_base/mensaje";
 import { usar_sesion } from "../../sesion/contexto_sesion";
 import { formatear_fecha, formatear_fecha_hora } from "../../utilidades/formato";
 import { AccionCoberturaContingencia } from "../contingencia/accion_cobertura_contingencia";
+import { SesionPlataforma } from "../plataformas/sesion_plataforma";
 import { usar_acreditacion_cuenta } from "./usar_cuentas";
 import estilos from "./detalle_cuenta.module.css";
 import propios from "./seccion_acreditacion.module.css";
 
-// "Acreditacion del asegurado" (rediseno del 2026-11-12, pedido del
-// usuario). En el TO-BE de la tesis la cuenta se registra en la admision
-// (actividad 1) y enseguida se acredita al asegurado en ACREDITA SALUD
-// (actividad 2): no es un tramite posterior a la atencion, es la pieza de
-// la admision que la facturacion necesita. La seccion lo dice asi, muestra
-// como termino la ultima consulta en lenguaje de la clinica (nunca el
-// texto interno del robot) y, si el portal no encontro al asegurado, lleva
-// al mismo portal para consultarlo a mano.
+// Acreditacion del asegurado. En el TO-BE de la tesis la cuenta se registra
+// en la admision (actividad 1) y enseguida se acredita al asegurado en
+// ACREDITA SALUD (actividad 2). Desde el 2026-11-18 es un paso de la linea
+// de la cuenta, con un solo boton: la sesion con ACREDITA SALUD se maneja
+// sola y la persona solo responde el codigo de verificacion cuando hace
+// falta. Muestra como termino la ultima consulta en lenguaje de la clinica
+// (nunca el texto interno del robot).
 
 const _URL_PORTAL =
   (import.meta.env.VITE_URL_PORTAL_ACREDITA_SALUD as string | undefined) ?? "http://localhost:8100";
@@ -37,31 +36,27 @@ function ResultadoAcreditacion({ acreditacion }: { acreditacion: AcreditacionRes
       etiqueta: "Vigente hasta",
       valor: acreditacion.vigente_hasta ? formatear_fecha(acreditacion.vigente_hasta) : "—",
     },
+    {
+      etiqueta: "Origen",
+      valor: manual ? "Registrada en modo de contingencia" : "Obtenida de ACREDITA SALUD",
+    },
   ];
   return (
-    <div className={estilos.lista_compacta}>
+    <div className={estilos.datos_en_linea}>
       {datos.map((dato) => (
         <div key={dato.etiqueta} className={estilos.campo_dato}>
           <span className={estilos.etiqueta_dato}>{dato.etiqueta}</span>
           <span className={estilos.valor_dato}>{dato.valor}</span>
         </div>
       ))}
-      <span className={propios.origen}>
-        {manual ? "Registrada en modo de contingencia." : "Obtenida de ACREDITA SALUD."}
-      </span>
     </div>
   );
 }
 
 function EstadoUltimaConsulta({ ultima }: { ultima: UltimaConsultaCobertura | null | undefined }) {
   if (!ultima) return null;
-  if (ultima.resultado === "EN_CURSO") {
-    return (
-      <p className={propios.estado}>Consultando ACREDITA SALUD… (intento {ultima.intentos + 1})</p>
-    );
-  }
-  if (ultima.resultado === "REQUIERE_SESION") {
-    return <Mensaje tipo="advertencia" texto="Esperando sesión en ACREDITA SALUD." />;
+  if (_EN_CURSO.has(ultima.resultado)) {
+    return <p className={propios.estado}>Consultando la acreditación…</p>;
   }
   if (ultima.resultado === "SIN_RESPUESTA") {
     return (
@@ -132,7 +127,7 @@ function PendienteAcreditacion({ cuenta_id }: { cuenta_id: number }) {
           onClick={() => mutacion.mutate()}
           disabled={mutacion.isPending || en_curso}
         >
-          Consultar en ACREDITA SALUD
+          Consultar acreditación
         </Boton>
       </div>
       {mutacion.isError ? (
@@ -144,25 +139,25 @@ function PendienteAcreditacion({ cuenta_id }: { cuenta_id: number }) {
         />
       ) : null}
       <EstadoUltimaConsulta ultima={consulta.data} />
+      {/* La sesion se pide solo cuando el robot dice que la necesita: pedirla
+          antes dejaria al robot esperando un codigo que quiza no hacia falta. */}
+      <SesionPlataforma
+        plataforma="acredita_salud"
+        nombre="ACREDITA SALUD"
+        necesita={consulta.data?.resultado === "REQUIERE_SESION"}
+      />
       <AccionCoberturaContingencia cuenta_id={cuenta_id} />
-      <GestorSesionPlataforma plataforma="acredita_salud" nombre_visible="ACREDITA SALUD" />
     </>
   );
 }
 
-export function SeccionAcreditacion({ cuenta_id }: { cuenta_id: number }) {
+export function ContenidoAcreditacion({ cuenta_id }: { cuenta_id: number }) {
   const { sesion } = usar_sesion();
   const consulta_acreditacion = usar_acreditacion_cuenta(cuenta_id);
-  if (!sesion?.roles.includes("analista")) return null;
-
-  return (
-    <div className={estilos.seccion}>
-      <div className={estilos.titulo_seccion}>Acreditación del asegurado</div>
-      {consulta_acreditacion.data ? (
-        <ResultadoAcreditacion acreditacion={consulta_acreditacion.data} />
-      ) : consulta_acreditacion.isLoading ? null : (
-        <PendienteAcreditacion cuenta_id={cuenta_id} />
-      )}
-    </div>
+  if (!sesion?.roles.includes("analista") || consulta_acreditacion.isLoading) return null;
+  return consulta_acreditacion.data ? (
+    <ResultadoAcreditacion acreditacion={consulta_acreditacion.data} />
+  ) : (
+    <PendienteAcreditacion cuenta_id={cuenta_id} />
   );
 }

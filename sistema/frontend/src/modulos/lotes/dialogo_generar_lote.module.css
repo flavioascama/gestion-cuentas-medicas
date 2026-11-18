@@ -79,3 +79,42 @@
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
+
+/* Cuentas que todavia no pueden entrar a un lote: cual, que le falta y
+   el enlace para completarlo. */
+.lista_pendientes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 180px;
+  overflow-y: auto;
+  border: 1px solid var(--color_borde);
+  border-radius: var(--radio_borde);
+}
+
+.fila_pendiente {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) auto;
+  align-items: center;
+  gap: var(--espacio_3);
+  padding: var(--espacio_2) var(--espacio_3);
+}
+
+.fila_pendiente + .fila_pendiente {
+  border-top: 1px solid var(--color_borde);
+}
+
+.motivo_pendiente {
+  color: var(--color_advertencia);
+}
+
+.detalle_tecnico {
+  margin-top: var(--espacio_4);
+}
+
+.detalle_tecnico > summary {
+  cursor: pointer;
+  font-size: var(--tamano_metadato);
+  color: var(--color_texto_secundario);
+  margin-bottom: var(--espacio_2);
+}

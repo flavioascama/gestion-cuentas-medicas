@@ -35,3 +35,23 @@ def prueba_cada_emision_incrementa_el_numero(tmp_path: Path) -> None:
     )
     assert primera.json()["numero"] == "00000001"
     assert segunda.json()["numero"] == "00000002"
+
+
+def prueba_emitir_nota_da_serie_y_numero_segun_el_tipo(tmp_path: Path) -> None:
+    cliente = _cliente(tmp_path)
+    datos = {"ruc_ipress": "20123456789", "codigo_ipress": "15995250"}
+    credito = cliente.post("/notas", json={**datos, "tipo": "C"})
+    otra = cliente.post("/notas", json={**datos, "tipo": "C"})
+    debito = cliente.post("/notas", json={**datos, "tipo": "D"})
+    assert credito.status_code == 201, credito.text
+    assert (credito.json()["serie"], credito.json()["numero"]) == ("EC01", "00000001")
+    assert otra.json()["numero"] == "00000002"
+    assert (debito.json()["serie"], debito.json()["numero"]) == ("ED01", "00000001")
+    assert credito.json()["fecha_emision"]
+
+
+def prueba_emitir_nota_rechaza_un_tipo_desconocido(tmp_path: Path) -> None:
+    respuesta = _cliente(tmp_path).post(
+        "/notas", json={"ruc_ipress": "20123456789", "codigo_ipress": "15995250", "tipo": "N"}
+    )
+    assert respuesta.status_code == 422

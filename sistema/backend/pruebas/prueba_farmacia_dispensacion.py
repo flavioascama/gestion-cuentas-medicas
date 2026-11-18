@@ -45,7 +45,6 @@ _DATOS = DatosProductoDispensado(
     cantidad_venta=Decimal("2"),
     tipo_unidad_dispensacion="1",
     monto_unitario=Decimal("12.50"),
-    copago=Decimal("0"),
     monto_no_cubierto=Decimal("0"),
     exento_igv="A",
 )
@@ -119,7 +118,7 @@ async def prueba_registra_el_producto_con_su_tipo_y_monto_presentado() -> None:
     [
         {"fecha_dispensacion": date(2026, 9, 9)},
         {"cantidad_venta": Decimal("0")},
-        {"copago": Decimal("-1")},
+        {"monto_no_cubierto": Decimal("25.01")},
         {"tipo_unidad_dispensacion": "3"},
         {"exento_igv": "X"},
         {"guia_farmacia": "1234567890123"},

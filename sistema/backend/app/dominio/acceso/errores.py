@@ -64,6 +64,16 @@ class ClaveDebilError(ErrorAcceso):
         )
 
 
+class ClaveActualIncorrectaError(ErrorAcceso):
+    def __init__(self) -> None:
+        super().__init__("La clave actual no es correcta.")
+
+
+class ClaveRepetidaError(ErrorAcceso):
+    def __init__(self) -> None:
+        super().__init__("La clave nueva debe ser distinta de la actual.")
+
+
 class CuentaBloqueadaError(ErrorAcceso):
     """Control C-01: se agotaron los cinco intentos y la cuenta quedo
     bloqueada por quince minutos (Seccion 5.2.7, Tabla 28)."""

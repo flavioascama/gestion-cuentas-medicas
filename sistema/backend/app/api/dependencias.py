@@ -6,6 +6,7 @@ transversal de autorizacion que exige AD-06.
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
+from dataclasses import replace
 
 import structlog
 from fastapi import Depends, Request, status
@@ -14,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.compartido.configuracion import Configuracion, obtener_configuracion
 from app.compartido.errores import ErrorAplicacion
+from app.dominio.acceso.cambio_clave import CambiarClavePropia, ColaboradoresCambioClave
 from app.dominio.acceso.casos_uso import (
     ActualizarUsuario,
     CerrarSesion,
@@ -23,7 +25,7 @@ from app.dominio.acceso.casos_uso import (
     PoliticaBloqueoSesion,
     RegistrarUsuario,
 )
-from app.dominio.acceso.entidades import NombreRol
+from app.dominio.acceso.entidades import NombreRol, Usuario
 from app.dominio.acceso.errores import (
     SesionExpiradaError,
     SesionInvalidaError,
@@ -116,7 +118,8 @@ def construir_registrar_usuario(
     verificador: VerificadorClave = Depends(obtener_verificador_clave),
     registro_eventos: RegistroEventos = Depends(obtener_registro_eventos),
 ) -> RegistrarUsuario:
-    return RegistrarUsuario(repositorio, verificador, registro_eventos)
+    # La clave que pone el administrador es temporal: se cambia al ingresar.
+    return RegistrarUsuario(repositorio, verificador, registro_eventos, clave_temporal=True)
 
 
 def construir_listar_usuarios(
@@ -139,7 +142,29 @@ def construir_cerrar_sesion(
     return CerrarSesion(registro_eventos, registro_revocaciones)
 
 
-async def obtener_usuario_actual(
+def obtener_colaboradores_cambio_clave(
+    gestor_sesion: GestorSesion = Depends(obtener_gestor_sesion),
+    registro_eventos: RegistroEventos = Depends(obtener_registro_eventos),
+    registro_revocaciones: RegistroRevocaciones = Depends(obtener_repositorio_revocaciones),
+) -> ColaboradoresCambioClave:
+    return ColaboradoresCambioClave(gestor_sesion, registro_eventos, registro_revocaciones)
+
+
+def construir_cambiar_clave(
+    repositorio: RepositorioUsuarios = Depends(obtener_repositorio_usuarios),
+    verificador: VerificadorClave = Depends(obtener_verificador_clave),
+    colaboradores: ColaboradoresCambioClave = Depends(obtener_colaboradores_cambio_clave),
+    reloj: Reloj = Depends(obtener_reloj),
+    configuracion: Configuracion = Depends(obtener_configuracion),
+) -> CambiarClavePropia:
+    politica = PoliticaBloqueoSesion(
+        maximo_intentos_fallidos=configuracion.maximo_intentos_fallidos_sesion,
+        duracion_bloqueo_minutos=configuracion.duracion_bloqueo_sesion_minutos,
+    )
+    return CambiarClavePropia(repositorio, verificador, colaboradores, reloj, politica)
+
+
+async def autenticar_sesion(
     credencial: HTTPAuthorizationCredentials | None = Depends(_esquema_portador),
     gestor_sesion: GestorSesion = Depends(obtener_gestor_sesion),
     registro_revocaciones: RegistroRevocaciones = Depends(obtener_repositorio_revocaciones),
@@ -151,7 +176,10 @@ async def obtener_usuario_actual(
     no basta. Esta dependencia ademas rechaza la credencial si su `jti`
     esta en la lista de revocacion (se cerro sesion con ella) o si el
     usuario que la emitio ya no esta activo (se le desactivo despues) --
-    las dos formas de revocacion que exige el control."""
+    las dos formas de revocacion que exige el control.
+
+    Solo autentica: las operaciones usan `obtener_usuario_actual`, que
+    ademas exige que la persona ya haya cambiado su clave temporal."""
 
     if credencial is None:
         raise ErrorAplicacion(
@@ -171,13 +199,29 @@ async def obtener_usuario_actual(
         ) from error
 
     try:
-        await _verificar_no_revocada(carga, registro_revocaciones, repositorio_usuarios)
+        usuario = await _verificar_no_revocada(carga, registro_revocaciones, repositorio_usuarios)
     except SesionRevocadaError as error:
         raise ErrorAplicacion(
             "SESION_REVOCADA", str(error), estado_http=status.HTTP_401_UNAUTHORIZED
         ) from error
 
     structlog.contextvars.bind_contextvars(actor=carga.nombre_usuario)
+    # Manda el dato del usuario, no el que viaja en la credencial.
+    return replace(carga, debe_cambiar_clave=usuario.debe_cambiar_clave)
+
+
+async def obtener_usuario_actual(
+    carga: CargaSesion = Depends(autenticar_sesion),
+) -> CargaSesion:
+    """Quien todavia tiene la clave que le puso el administrador solo puede
+    cambiarla o cerrar sesion (2026-11-18): cualquier otra operacion se
+    rechaza aqui, no solo en la pantalla."""
+    if carga.debe_cambiar_clave:
+        raise ErrorAplicacion(
+            "CAMBIO_DE_CLAVE_REQUERIDO",
+            "Debe cambiar su clave antes de continuar.",
+            estado_http=status.HTTP_403_FORBIDDEN,
+        )
     return carga
 
 
@@ -185,12 +229,13 @@ async def _verificar_no_revocada(
     carga: CargaSesion,
     registro_revocaciones: RegistroRevocaciones,
     repositorio_usuarios: RepositorioUsuarios,
-) -> None:
+) -> Usuario:
     if await registro_revocaciones.esta_revocado(carga.jti):
         raise SesionRevocadaError("La sesion fue cerrada; vuelva a iniciar sesion.")
     usuario = await repositorio_usuarios.obtener_por_id(carga.usuario_id)
     if usuario is None or not usuario.activo:
         raise SesionRevocadaError("El usuario ya no tiene acceso; vuelva a iniciar sesion.")
+    return usuario
 
 
 def requiere_rol(

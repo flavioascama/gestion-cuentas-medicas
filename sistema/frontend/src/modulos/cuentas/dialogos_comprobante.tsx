@@ -67,14 +67,8 @@ export function DialogoReemplazo({
   );
 }
 
-const _NOTA_VACIA: SolicitudNota = {
-  tipo: "C",
-  serie: "",
-  numero: "",
-  monto: "",
-  fecha: "",
-  motivo: "D",
-};
+// La serie, el numero y la fecha los da el PSE al emitirla (2026-11-18).
+const _NOTA_VACIA: SolicitudNota = { tipo: "C", monto: "", motivo: "D" };
 
 function a_opciones(mapa: Record<string, string>) {
   return Object.entries(mapa).map(([valor, etiqueta]) => ({ valor, etiqueta }));
@@ -94,31 +88,12 @@ function CamposNota(props: {
         onChange={(e) => cambiar({ tipo: e.target.value })}
       />
       <CampoTexto
-        etiqueta="Serie"
-        maxLength={4}
-        value={nota.serie}
-        onChange={(e) => cambiar({ serie: e.target.value.toUpperCase() })}
-      />
-      <CampoTexto
-        etiqueta="Número"
-        maxLength={8}
-        inputMode="numeric"
-        value={nota.numero}
-        onChange={(e) => cambiar({ numero: e.target.value })}
-      />
-      <CampoTexto
         etiqueta="Monto sin IGV (S/)"
         type="number"
         min="0.01"
         step="0.01"
         value={String(nota.monto)}
         onChange={(e) => cambiar({ monto: e.target.value })}
-      />
-      <CampoTexto
-        etiqueta="Fecha"
-        type="date"
-        value={nota.fecha}
-        onChange={(e) => cambiar({ fecha: e.target.value })}
       />
       <Selector
         etiqueta="Motivo"
@@ -142,7 +117,7 @@ export function DialogoNota({
     mutationFn: () => registrar_nota(cuenta_id, nota),
     onSuccess: usar_invalidar(cuenta_id, al_cerrar),
   });
-  const completa = [nota.serie, nota.numero, String(nota.monto), nota.fecha].every((v) => v !== "");
+  const completa = String(nota.monto) !== "";
   return (
     <Dialogo
       titulo="Nota de crédito o débito"

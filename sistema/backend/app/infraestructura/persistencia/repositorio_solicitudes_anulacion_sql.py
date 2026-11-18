@@ -3,6 +3,7 @@ Fase 28)."""
 
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import datetime
 
 import sqlalchemy as sa
@@ -13,6 +14,10 @@ from app.dominio.cierre.valores import (
     DatosNuevaSolicitudAnulacion,
     EstadoSolicitudAnulacion,
     SolicitudAnulacion,
+)
+from app.infraestructura.persistencia.modelos_integracion import (
+    AseguradoModelo,
+    CuentaMedicaModelo,
 )
 from app.infraestructura.persistencia.modelos_liquidacion import SolicitudAnulacionModelo
 
@@ -64,14 +69,24 @@ class RepositorioSolicitudesAnulacionSql(RepositorioSolicitudesAnulacion):
         return None if fila is None else _a_valor(fila)
 
     async def listar_pendientes(self) -> list[SolicitudAnulacion]:
-        filas = (
-            await self._sesion.execute(
-                sa.select(SolicitudAnulacionModelo)
-                .where(SolicitudAnulacionModelo.estado == EstadoSolicitudAnulacion.PENDIENTE.value)
-                .order_by(SolicitudAnulacionModelo.solicitado_en)
+        filas = await self._sesion.execute(
+            sa.select(SolicitudAnulacionModelo, CuentaMedicaModelo, AseguradoModelo)
+            .join(
+                CuentaMedicaModelo,
+                CuentaMedicaModelo.id == SolicitudAnulacionModelo.cuenta_medica_id,
             )
-        ).scalars()
-        return [_a_valor(fila) for fila in filas]
+            .join(AseguradoModelo, AseguradoModelo.id == CuentaMedicaModelo.asegurado_id)
+            .where(SolicitudAnulacionModelo.estado == EstadoSolicitudAnulacion.PENDIENTE.value)
+            .order_by(SolicitudAnulacionModelo.solicitado_en)
+        )
+        return [
+            replace(
+                _a_valor(solicitud),
+                identificacion_interna=cuenta.identificacion_interna,
+                asegurado=f"{asegurado.nombres} {asegurado.apellidos}",
+            )
+            for solicitud, cuenta, asegurado in filas.all()
+        ]
 
     async def resolver(
         self, solicitud_id: int, aprobada: bool, resuelto_por: str, resuelto_en: datetime

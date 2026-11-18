@@ -1,5 +1,11 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { IconoCerrarSesion, IconoChevron, IconoLuna, IconoSol } from "./iconos_navegacion";
+import {
+  IconoCandado,
+  IconoCerrarSesion,
+  IconoChevron,
+  IconoLuna,
+  IconoSol,
+} from "./iconos_navegacion";
 import { etiquetas_roles } from "./mapa_roles";
 import estilos from "./cabecera.module.css";
 
@@ -7,6 +13,27 @@ function obtener_iniciales(nombre: string): string {
   const partes = nombre.trim().split(/\s+/).filter(Boolean);
   const iniciales = partes.slice(0, 2).map((parte) => parte[0]?.toUpperCase() ?? "");
   return iniciales.join("") || "?";
+}
+
+function MenuPerfil({
+  al_salir,
+  al_cambiar_clave,
+}: {
+  al_salir: () => void;
+  al_cambiar_clave: () => void;
+}) {
+  return (
+    <div className={estilos.menu_perfil} role="menu">
+      <button type="button" className={estilos.boton_cerrar_sesion} onClick={al_cambiar_clave}>
+        <IconoCandado />
+        <span>Cambiar contraseña</span>
+      </button>
+      <button type="button" className={estilos.boton_cerrar_sesion} onClick={al_salir}>
+        <IconoCerrarSesion />
+        <span>Cerrar sesión</span>
+      </button>
+    </div>
+  );
 }
 
 // Rediseno pedido por el usuario (2026-11-11): perfil, tema y salir
@@ -17,10 +44,12 @@ function PerfilCabecera({
   nombre_usuario,
   roles,
   al_salir,
+  al_cambiar_clave,
 }: {
   nombre_usuario: string;
   roles: string[];
   al_salir: () => void;
+  al_cambiar_clave: () => void;
 }) {
   const [abierto, set_abierto] = useState(false);
   const contenedor = useRef<HTMLDivElement>(null);
@@ -51,12 +80,13 @@ function PerfilCabecera({
         <IconoChevron className={abierto ? estilos.chevron_abierto : estilos.chevron_cerrado} />
       </button>
       {abierto ? (
-        <div className={estilos.menu_perfil} role="menu">
-          <button type="button" className={estilos.boton_cerrar_sesion} onClick={al_salir}>
-            <IconoCerrarSesion />
-            <span>Cerrar sesión</span>
-          </button>
-        </div>
+        <MenuPerfil
+          al_salir={al_salir}
+          al_cambiar_clave={() => {
+            set_abierto(false);
+            al_cambiar_clave();
+          }}
+        />
       ) : null}
     </div>
   );
@@ -68,6 +98,7 @@ interface Propiedades {
   nombre_usuario: string;
   roles: string[];
   al_salir: () => void;
+  al_cambiar_clave: () => void;
   // La campana de avisos vive en modulos/avisos (consulta la API): se
   // recibe ya armada para que componentes_base no dependa de un modulo.
   accion_avisos?: ReactNode;
@@ -79,6 +110,7 @@ export function Cabecera({
   nombre_usuario,
   roles,
   al_salir,
+  al_cambiar_clave,
   accion_avisos,
 }: Propiedades) {
   const etiqueta_tema = tema === "oscuro" ? "Activar modo claro" : "Activar modo oscuro";
@@ -96,7 +128,12 @@ export function Cabecera({
         >
           {tema === "oscuro" ? <IconoSol /> : <IconoLuna />}
         </button>
-        <PerfilCabecera nombre_usuario={nombre_usuario} roles={roles} al_salir={al_salir} />
+        <PerfilCabecera
+          nombre_usuario={nombre_usuario}
+          roles={roles}
+          al_salir={al_salir}
+          al_cambiar_clave={al_cambiar_clave}
+        />
       </div>
     </header>
   );

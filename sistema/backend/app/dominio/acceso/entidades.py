@@ -37,7 +37,11 @@ class Usuario:
     Seccion 5.2.7 de la tesis ("tras cinco intentos fallidos la cuenta se
     bloquea durante quince minutos"): se incrementan y se fijan desde
     `IniciarSesion`, nunca desde la pantalla de administracion de usuarios
-    (ver `ActualizarUsuario`, que no los toca)."""
+    (ver `ActualizarUsuario`, que no los toca).
+
+    `debe_cambiar_clave` (2026-11-18): la clave la puso el administrador y
+    la persona todavia no la cambio; hasta que lo haga solo puede cambiarla
+    o salir (`app.dominio.acceso.cambio_clave`)."""
 
     id: int | None
     nombre_usuario: str
@@ -47,6 +51,7 @@ class Usuario:
     roles: frozenset[NombreRol] = field(default_factory=frozenset)
     intentos_fallidos: int = 0
     bloqueado_hasta: datetime | None = None
+    debe_cambiar_clave: bool = False
 
     def tiene_alguno(self, roles: frozenset[NombreRol]) -> bool:
         return bool(self.roles & roles)

@@ -81,7 +81,7 @@ class AdaptadorAcreditacionWeb(AcreditacionWeb):
 
     async def _paso(self, pagina: Page, descripcion: str) -> None:
         if self._pasos is not None:
-            await self._pasos.capturar(pagina, _PLATAFORMA, descripcion)
+            await self._pasos.anotar(pagina, _PLATAFORMA, descripcion)
 
     async def verificar_cobertura(
         self, contexto: ContextoCuentaAcreditacion, trabajo_id: int

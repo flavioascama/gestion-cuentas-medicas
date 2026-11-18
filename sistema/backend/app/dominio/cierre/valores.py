@@ -37,3 +37,6 @@ class SolicitudAnulacion:
     solicitado_en: datetime
     resuelto_por: str | None
     resuelto_en: datetime | None
+    # Para la bandeja (2026-11-18): antes solo se veia el id interno.
+    identificacion_interna: str | None = None
+    asegurado: str | None = None

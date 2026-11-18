@@ -29,7 +29,7 @@ from app.dominio.pse.documentos import (
     ReemplazarComprobantePago,
     RegistrarNotaDocumento,
 )
-from app.dominio.pse.puertos import ComprobantePse
+from app.dominio.pse.puertos import ComprobantePse, NotaPse
 from app.dominio.puertos_comunes import Evento
 from app.infraestructura.persistencia.registro_eventos_sql import RegistroEventosSql
 from app.infraestructura.tedef.constructor_lote import construir_t1, construir_t2
@@ -44,14 +44,7 @@ _VIGENTE = ComprobanteVigente(
     numero="00000123",
     fecha_emision=date(2026, 9, 12),
 )
-_NOTA = DatosNota(
-    tipo="C",
-    serie="FC01",
-    numero="45",
-    monto=Decimal("80.00"),
-    fecha=date(2026, 11, 10),
-    motivo="D",
-)
+_NOTA = DatosNota(tipo="C", monto=Decimal("80.00"), motivo="D")
 
 
 class _Reloj:
@@ -99,6 +92,12 @@ class _Comprobantes:
 class _Emisor:
     async def emitir(self, ruc_ipress: str, codigo_ipress: str) -> ComprobantePse:
         return ComprobantePse("01", "F001", "00000999", date(2026, 11, 13))
+
+    async def emitir_nota(self, ruc_ipress: str, codigo_ipress: str, tipo: str) -> NotaPse:
+        return NotaPse("EC01" if tipo == "C" else "ED01", "45", date(2026, 11, 13))
+
+
+_EMISION = EmisionPse(_Comprobantes(), _Emisor())
 
 
 @dataclass
@@ -157,16 +156,17 @@ async def prueba_un_comprobante_con_nota_no_se_reemplaza() -> None:
 async def prueba_registra_la_nota_con_el_numero_completo() -> None:
     documentos, registro = _Documentos(), _Registro()
     caso_uso = RegistrarNotaDocumento(
-        documentos, _EstadoFijo("GLOSADA_PARCIAL"), registro, _Reloj()
+        documentos, _EMISION, _EstadoFijo("GLOSADA_PARCIAL"), registro, _Reloj()
     )
 
     nota = await caso_uso.ejecutar(7, _NOTA, "ana.analista")
 
-    assert nota.numero == "00000045"
+    # La serie, el numero y la fecha son los que dio el PSE.
+    assert (nota.serie, nota.numero, nota.fecha) == ("EC01", "00000045", date(2026, 11, 13))
     assert documentos.notas_guardadas == [nota]
     (evento,) = registro.eventos
     assert evento.tipo_evento == "NOTA_DOCUMENTO_REGISTRADA"
-    assert evento.datos["numero"] == "FC0100000045"
+    assert evento.datos["numero"] == "EC0100000045"
 
 
 @pytest.mark.parametrize(
@@ -174,22 +174,20 @@ async def prueba_registra_la_nota_con_el_numero_completo() -> None:
     [
         {"tipo": "N"},
         {"motivo": "X"},
-        {"serie": "F1"},
-        {"numero": "123456789"},
         {"monto": Decimal("0")},
-        {"fecha": date(2026, 9, 1)},
-        {"fecha": date(2026, 11, 14)},
     ],
 )
 async def prueba_rechaza_una_nota_fuera_de_la_tabla_1(cambios: dict[str, Any]) -> None:
-    caso_uso = RegistrarNotaDocumento(_Documentos(), _EstadoFijo(), _Registro(), _Reloj())
+    caso_uso = RegistrarNotaDocumento(_Documentos(), _EMISION, _EstadoFijo(), _Registro(), _Reloj())
     with pytest.raises(ErrorNotaInvalida):
         await caso_uso.ejecutar(7, replace(_NOTA, **cambios), "ana.analista")
 
 
 async def prueba_una_sola_nota_por_comprobante() -> None:
     nota = NotaDocumento("C", "FC01", "00000045", Decimal("1"), date(2026, 11, 1), "D", _AHORA, "x")
-    caso_uso = RegistrarNotaDocumento(_Documentos(nota=nota), _EstadoFijo(), _Registro(), _Reloj())
+    caso_uso = RegistrarNotaDocumento(
+        _Documentos(nota=nota), _EMISION, _EstadoFijo(), _Registro(), _Reloj()
+    )
     with pytest.raises(ErrorNotaYaRegistrada):
         await caso_uso.ejecutar(7, _NOTA, "ana.analista")
 

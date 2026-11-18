@@ -19,7 +19,11 @@ class ProductoFacturadoModelo(Base):
     """T4, Seccion 10: un producto de farmacia dispensado en una cuenta
     medica. `catalogo_gtin_version_id` solo se puebla cuando `catalogo`
     vale '1' (GTIN, Seccion 16 supuesto 5: el unico catalogo con
-    productos transcritos en este prototipo)."""
+    productos transcritos en este prototipo).
+
+    `copago` ya no se llena desde la pantalla (2026-11-18): el copago de
+    cada producto se calcula de la acreditacion al armar el lote y el
+    comprobante (`repositorio_lote_sql._a_producto_lote`)."""
 
     __tablename__ = "producto_facturado"
 

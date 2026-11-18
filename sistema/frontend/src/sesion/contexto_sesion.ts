@@ -3,10 +3,9 @@ import type { CargaSesion } from "../api/auth";
 
 export interface ValorSesion {
   sesion: CargaSesion | null;
-  // La sesion anterior se cerro sola porque vencio: el ingreso lo dice.
-  sesion_vencida: boolean;
   iniciar_sesion: (nombre_usuario: string, clave: string) => Promise<void>;
   cerrar_sesion: () => Promise<void>;
+  cambiar_clave: (clave_actual: string, clave_nueva: string) => Promise<void>;
 }
 
 export const ContextoSesion = createContext<ValorSesion | null>(null);

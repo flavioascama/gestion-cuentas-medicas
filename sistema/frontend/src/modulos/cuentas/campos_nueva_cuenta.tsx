@@ -12,6 +12,8 @@ const _OPCIONES_TIPO_DOCUMENTO = [
 type Formulario = ReturnType<typeof usar_formulario_nueva_cuenta>;
 
 function CamposAsegurado({ formulario }: { formulario: Formulario }) {
+  // Un asegurado que la clinica ya atendio trae sus nombres del registro.
+  const registrado = Boolean(formulario.asegurado_registrado);
   return (
     <>
       <Selector
@@ -31,12 +33,14 @@ function CamposAsegurado({ formulario }: { formulario: Formulario }) {
         value={formulario.nombres_asegurado}
         onChange={(evento) => formulario.set_nombres_asegurado(evento.target.value)}
         maxLength={150}
+        disabled={registrado}
       />
       <CampoTexto
         etiqueta="Apellidos del asegurado"
         value={formulario.apellidos_asegurado}
         onChange={(evento) => formulario.set_apellidos_asegurado(evento.target.value)}
         maxLength={150}
+        disabled={registrado}
       />
     </>
   );

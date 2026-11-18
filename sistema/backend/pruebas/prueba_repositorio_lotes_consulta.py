@@ -29,6 +29,10 @@ from app.infraestructura.persistencia.modelos_integracion import (
     LoteFacturacionModelo,
     ProcedimientoFacturadoModelo,
 )
+from app.infraestructura.persistencia.modelos_plataformas import (
+    ObservacionValidadorModelo,
+    ValidacionOficialModelo,
+)
 from app.infraestructura.persistencia.repositorio_lotes_consulta_sql import (
     RepositorioLotesConsultaSql,
 )
@@ -266,3 +270,41 @@ async def prueba_obtener_ruta_s01_devuelve_la_ruta_guardada(
 
         repositorio = RepositorioLotesConsultaSql(sesion)
         assert await repositorio.obtener_ruta_s01(lote_id) == "/datos/lotes/0000001.S01"
+
+
+async def prueba_la_observacion_del_validador_dice_de_que_cuenta_es(
+    fabrica_sesiones: async_sessionmaker[AsyncSession],
+) -> None:
+    # El validador observa por tabla y linea (2026-11-18): T1 lleva una linea
+    # por cuenta, T4 una por producto; una observacion sin tabla es del lote.
+    async with fabrica_sesiones() as sesion:
+        lote_id = await _sembrar_lote_con_monto(sesion)
+        validacion = ValidacionOficialModelo(
+            lote_id=lote_id,
+            etapa="DETALLADA",
+            resultado="OBSERVADO",
+            registrado_en=datetime(2026, 9, 26, 9, 0, 0),
+        )
+        sesion.add(validacion)
+        await sesion.flush()
+        for tabla, linea in (("T1", 2), ("T4", 1), ("T3", 9), (None, None)):
+            sesion.add(
+                ObservacionValidadorModelo(
+                    validacion_oficial_id=validacion.id,
+                    tabla=tabla,
+                    numero_linea=linea,
+                    codigo_error="E-01",
+                    descripcion="Observacion de prueba",
+                )
+            )
+        await sesion.commit()
+        resultados = await RepositorioLotesConsultaSql(sesion).obtener_validacion_oficial(lote_id)
+
+    (resultado,) = resultados
+    por_tabla = {
+        (o.tabla, o.numero_linea): o.identificacion_interna for o in resultado.observaciones
+    }
+    assert por_tabla[("T1", 2)] == "CTA-000002"
+    assert por_tabla[("T4", 1)] == "CTA-000002"  # el unico producto es de la segunda cuenta
+    assert por_tabla[("T3", 9)] is None  # la linea no existe en el lote
+    assert por_tabla[(None, None)] is None

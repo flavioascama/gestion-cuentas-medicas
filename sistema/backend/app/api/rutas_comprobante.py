@@ -59,6 +59,9 @@ class ComprobanteVigenteRespuesta(BaseModel):
     serie: str
     numero: str
     fecha_emision: date
+    valor_venta: Decimal | None = None
+    igv: Decimal | None = None
+    total: Decimal | None = None
 
 
 class NotaDocumentoRespuesta(BaseModel):
@@ -101,11 +104,10 @@ class SolicitudReemplazo(BaseModel):
 
 
 class SolicitudNota(BaseModel):
+    """La serie, el numero y la fecha los da el PSE al emitir la nota."""
+
     tipo: str = Field(min_length=1, max_length=1)
-    serie: str = Field(min_length=4, max_length=4)
-    numero: str = Field(min_length=1, max_length=8)
     monto: Decimal = Field(gt=0, max_digits=12, decimal_places=2)
-    fecha: date
     motivo: str = Field(min_length=1, max_length=1)
 
 
@@ -162,20 +164,27 @@ async def reemplazar_comprobante(
     return ComprobanteVigenteRespuesta(**campos(vigente))
 
 
-@router.post("/nota", response_model=NotaDocumentoRespuesta, status_code=status.HTTP_201_CREATED)
-async def registrar_nota(
-    cuenta_id: int,
-    solicitud: SolicitudNota,
+def construir_registrar_nota(
     sesion: AsyncSession = Depends(obtener_sesion),
+    emisor: EmisorPse = Depends(obtener_emisor_pse),
     reloj: Reloj = Depends(obtener_reloj),
-    actor: CargaSesion = Depends(_SOLO_ANALISTA),
-) -> NotaDocumentoRespuesta:
-    caso_uso = RegistrarNotaDocumento(
+) -> RegistrarNotaDocumento:
+    return RegistrarNotaDocumento(
         RepositorioDocumentosPagoSql(sesion),
+        EmisionPse(RepositorioComprobantePagoSql(sesion), emisor),
         RepositorioEstadoCuentaSql(sesion),
         RegistroEventosSql(sesion),
         reloj,
     )
+
+
+@router.post("/nota", response_model=NotaDocumentoRespuesta, status_code=status.HTTP_201_CREATED)
+async def registrar_nota(
+    cuenta_id: int,
+    solicitud: SolicitudNota,
+    caso_uso: RegistrarNotaDocumento = Depends(construir_registrar_nota),
+    actor: CargaSesion = Depends(_SOLO_ANALISTA),
+) -> NotaDocumentoRespuesta:
     datos = DatosNota(**solicitud.model_dump())
     try:
         nota = await caso_uso.ejecutar(cuenta_id, datos, actor.nombre_usuario)

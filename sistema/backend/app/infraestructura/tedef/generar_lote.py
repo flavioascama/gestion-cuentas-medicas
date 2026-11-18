@@ -20,6 +20,7 @@ from app.dominio.integracion.esquema import TablaEsquema
 from app.dominio.integracion.hallazgos import Hallazgo
 from app.dominio.integracion.lote import ContextoLote, DocumentoLote
 from app.dominio.integracion.lotes_sugeridos import periodo_unico
+from app.dominio.integracion.pendientes_lote import PendientesCuenta, explicar_errores
 from app.dominio.integracion.puertos import DatosLoteConforme, RepositorioLoteFacturacion
 from app.dominio.puertos_comunes import (
     Evento,
@@ -96,6 +97,31 @@ def _construir_filas(
     return filas_t1, filas_t2, filas_t3, filas_t4
 
 
+def _pendientes_por_cuenta(
+    esquema: dict[str, TablaEsquema], contexto: ContextoLote, documentos: list[DocumentoLote]
+) -> tuple[PendientesCuenta, ...]:
+    """Cuando el lote no sale conforme: que cuenta lo impide y que le falta,
+    en simple (2026-11-18). Valida los registros de cada cuenta por
+    separado, con los mismos constructores y reglas del lote."""
+    pendientes = []
+    for documento in documentos:
+        filas = _construir_filas(esquema, contexto, [documento])
+        hallazgos: list[Hallazgo] = []
+        for tabla, registros in zip(("T1", "T2", "T3", "T4"), filas, strict=True):
+            for registro in registros:
+                hallazgos.extend(validar_registro(esquema[tabla], registro))
+        explicados = explicar_errores(hallazgos)
+        if explicados:
+            pendientes.append(
+                PendientesCuenta(
+                    cuenta_medica_id=documento.cuenta_medica_id,
+                    identificacion_interna=documento.prestacion.codigo_prestacion_interno,
+                    pendientes=explicados,
+                )
+            )
+    return tuple(pendientes)
+
+
 def _validar_filas(esquema: dict[str, TablaEsquema], filas: Filas) -> list[Hallazgo]:
     filas_t1, filas_t2, filas_t3, filas_t4 = filas
     hallazgos: list[Hallazgo] = []
@@ -120,6 +146,8 @@ class ResultadoGenerarLote:
     # comprimido, sino los `.txt` sin comprimir tal como los produce este
     # sistema -- el `.S01` lo arma y cifra el validador TEDEF Web (Fase 16).
     rutas_archivos: tuple[str, ...] | None
+    # Solo si no es conforme: las cuentas que lo impiden y que les falta.
+    pendientes: tuple[PendientesCuenta, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -186,7 +214,11 @@ class GenerarLote:
             # 24), asi que el resultado queda solo en la medicion de
             # arriba, que ya distingue "conforme"/"no_conforme".
             return ResultadoGenerarLote(
-                conforme=False, informe=informe, lote_id=None, rutas_archivos=None
+                conforme=False,
+                informe=informe,
+                lote_id=None,
+                rutas_archivos=None,
+                pendientes=_pendientes_por_cuenta(esquema, contexto, documentos),
             )
 
         return await self._persistir_lote_conforme(lote, informe, actor)

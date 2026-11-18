@@ -80,6 +80,10 @@ class SolicitudConfirmarProcedimiento(BaseModel):
     inicio_sugerencia: datetime
 
 
+class UltimoPrecioRespuesta(BaseModel):
+    monto_unitario: Decimal | None
+
+
 class RespuestaProcedimientoConfirmado(BaseModel):
     procedimiento_id: int
 

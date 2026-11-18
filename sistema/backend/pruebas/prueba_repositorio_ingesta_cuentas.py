@@ -90,6 +90,25 @@ async def prueba_crear_cuenta_reutiliza_asegurado_existente(
         assert primera.asegurado_id == segunda.asegurado_id
 
 
+async def prueba_buscar_asegurado_lo_encuentra_solo_si_ya_tiene_una_cuenta(
+    fabrica_sesiones: async_sessionmaker[AsyncSession],
+) -> None:
+    async with fabrica_sesiones() as sesion:
+        iafas_id = await _sembrar_iafas_e_ipress(sesion)
+        await sesion.commit()
+        repositorio = RepositorioIngestaCuentasSql(sesion)
+
+        assert await repositorio.buscar_asegurado("1", "12345678") is None
+        await repositorio.crear_cuenta(_datos_cuenta(iafas_id))
+
+        asegurado = await repositorio.buscar_asegurado("1", "12345678")
+        assert asegurado is not None
+        assert (asegurado.nombres, asegurado.apellidos) == ("Ana", "Perez")
+        assert asegurado.iafas_id == iafas_id
+        # Otro tipo de documento con el mismo numero es otra persona.
+        assert await repositorio.buscar_asegurado("2", "12345678") is None
+
+
 async def prueba_crear_cuenta_con_iafas_inexistente_falla(
     fabrica_sesiones: async_sessionmaker[AsyncSession],
 ) -> None:

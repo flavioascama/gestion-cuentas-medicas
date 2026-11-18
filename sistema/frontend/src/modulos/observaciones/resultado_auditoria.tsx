@@ -7,6 +7,7 @@ import {
 import { Boton } from "../../componentes_base/boton";
 import { Dialogo } from "../../componentes_base/dialogo";
 import { MensajeErrorMutacion } from "../../componentes_base/mensaje_error_mutacion";
+import { RegistroManual } from "../../componentes_base/registro_manual";
 import { formatear_fecha_hora } from "../../utilidades/formato";
 import estilos from "../cuentas/detalle_cuenta.module.css";
 
@@ -90,12 +91,14 @@ export function ResultadoAuditoria(propiedades: Propiedades) {
   if (!puede_registrar || consulta.isPending) return null;
   return (
     <div className={estilos.fila_accion}>
-      <Boton variante="primario" onClick={al_registrar_observacion}>
-        Registrar observación de la IAFAS
-      </Boton>
-      <Boton variante="secundario" onClick={() => set_confirmar(true)}>
-        Registrar conformidad de la IAFAS
-      </Boton>
+      <RegistroManual>
+        <Boton variante="secundario" onClick={al_registrar_observacion}>
+          Registrar observación de la IAFAS
+        </Boton>
+        <Boton variante="secundario" onClick={() => set_confirmar(true)}>
+          Registrar conformidad de la IAFAS
+        </Boton>
+      </RegistroManual>
       {confirmar ? (
         <DialogoConformidad cuenta_id={cuenta_id} al_cerrar={() => set_confirmar(false)} />
       ) : null}

@@ -12,14 +12,14 @@ import { MensajeErrorMutacion } from "../../componentes_base/mensaje_error_mutac
 import { Selector } from "../../componentes_base/selector";
 
 // RI-17 y CU-06: un producto dispensado, tomado del catalogo GTIN vigente,
-// con los campos de la Tabla 4 del Anexo 1.
+// con los campos de la Tabla 4 del Anexo 1. El copago no se pide: sale de
+// la acreditacion del asegurado (2026-11-18).
 interface Formulario {
   codigo_producto: string;
   fecha_dispensacion: string;
   cantidad_venta: string;
   tipo_unidad_dispensacion: string;
   monto_unitario: string;
-  copago: string;
   monto_no_cubierto: string;
   exento_igv: string;
   guia_farmacia: string;
@@ -43,7 +43,6 @@ function inicial(fecha_prestacion: string): Formulario {
     cantidad_venta: "",
     tipo_unidad_dispensacion: "1",
     monto_unitario: "",
-    copago: "0",
     monto_no_cubierto: "0",
     exento_igv: "A",
     guia_farmacia: "",
@@ -59,7 +58,6 @@ function completo(f: Formulario): boolean {
 function a_solicitud(f: Formulario): SolicitudProductoDispensado {
   return {
     ...f,
-    copago: f.copago || "0",
     monto_no_cubierto: f.monto_no_cubierto || "0",
     guia_farmacia: f.guia_farmacia.trim() || null,
   };
@@ -139,12 +137,6 @@ function CamposMontosAdicionales({
   const monto = { type: "number", min: "0", step: "0.01" } as const;
   return (
     <>
-      <CampoTexto
-        etiqueta="Copago (S/)"
-        {...monto}
-        value={formulario.copago}
-        onChange={cambiar("copago")}
-      />
       <CampoTexto
         etiqueta="Monto no cubierto (S/)"
         {...monto}

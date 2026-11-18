@@ -14,7 +14,11 @@ export function usar_formulario_generar_lote() {
   const [clave_elegida, set_clave_elegida] = useState<string | null>(null);
   const [excluidas, set_excluidas] = useState<number[]>([]);
 
-  const sugeridos = consulta.data ?? [];
+  const grupos = consulta.data ?? [];
+  // Un grupo se puede generar si tiene al menos una cuenta lista; las que
+  // tienen algo pendiente se muestran aparte, con lo que les falta.
+  const sugeridos = grupos.filter((grupo) => grupo.cuentas.length > 0);
+  const con_pendientes = grupos.flatMap((grupo) => grupo.cuentas_con_pendientes ?? []);
   // Con un solo grupo no hay nada que elegir: queda seleccionado.
   const unico = sugeridos.length === 1 ? sugeridos[0] : undefined;
   const elegido = sugeridos.find((s) => clave_lote_sugerido(s) === clave_elegida) ?? unico;
@@ -39,6 +43,7 @@ export function usar_formulario_generar_lote() {
   return {
     consulta,
     sugeridos,
+    con_pendientes,
     elegido,
     cuenta_ids,
     excluidas,

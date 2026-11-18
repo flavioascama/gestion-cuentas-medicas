@@ -35,6 +35,15 @@ export function confirmar_procedimiento(
   );
 }
 
+// El precio con que se facturo por ultima vez ese codigo a la IAFAS de la
+// cuenta; null si nunca se facturo.
+export function ultimo_precio_procedimiento(
+  cuenta_id: number,
+  codigo: string,
+): Promise<components["schemas"]["UltimoPrecioRespuesta"]> {
+  return obtener(`/cuentas/${cuenta_id}/procedimientos/ultimo-precio`, { codigo });
+}
+
 export function listar_versiones_cpms(): Promise<VersionCpms[]> {
   return obtener<VersionCpms[]>("/catalogo-cpms/versiones");
 }

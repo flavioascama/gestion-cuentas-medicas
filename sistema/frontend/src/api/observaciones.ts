@@ -10,9 +10,15 @@ export type SolicitudAsignacionObservacion =
   components["schemas"]["SolicitudAsignacionObservacion"];
 export type SolicitudRespuestaObservacion = components["schemas"]["SolicitudRespuestaObservacion"];
 export type ConformidadAuditoria = components["schemas"]["ConformidadAuditoriaRespuesta"];
+export type ResponsablePosible = components["schemas"]["ResponsablePosibleRespuesta"];
 
 export function listar_observaciones(cuenta_id: number): Promise<Observacion[]> {
   return obtener<Observacion[]>(`/cuentas/${cuenta_id}/observaciones`);
+}
+
+// Las personas a las que el jefe puede asignar una observacion.
+export function listar_responsables_posibles(): Promise<ResponsablePosible[]> {
+  return obtener<ResponsablePosible[]>("/observaciones/responsables");
 }
 
 export function listar_motivos_observacion(): Promise<MotivoObservacion[]> {

@@ -17,6 +17,12 @@ class RespuestaInicioSesion(BaseModel):
     tipo: str = "bearer"
 
 
+class SolicitudCambioClave(BaseModel):
+    clave_actual: str = Field(min_length=1, max_length=200)
+    # La politica completa (control C-01) la valida el dominio.
+    clave_nueva: str = Field(min_length=12, max_length=200)
+
+
 class SolicitudCrearUsuario(BaseModel):
     nombre_usuario: str = Field(min_length=3, max_length=50)
     # min_length=12 es solo la cota estructural (falla rapido con un 422

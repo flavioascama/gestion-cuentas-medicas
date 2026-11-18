@@ -16,8 +16,7 @@ _LARGO_MINIMO_CLAVE = 12
 
 def validar_politica_clave(clave: str) -> None:
     """Lanza ClaveDebilError si `clave` no cumple el control C-01. La usan
-    RegistrarUsuario (CU-18) y, en el futuro, cualquier caso de uso que
-    permita cambiar la clave de un usuario existente."""
+    RegistrarUsuario (CU-18) y CambiarClavePropia (cambio_clave.py)."""
 
     cumple = (
         len(clave) >= _LARGO_MINIMO_CLAVE

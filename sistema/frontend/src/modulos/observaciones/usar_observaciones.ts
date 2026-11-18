@@ -20,9 +20,17 @@ export function usar_observaciones_cuenta(cuenta_id: number) {
   });
 }
 
-export function usar_motivos_observacion() {
+export function usar_motivos_observacion(habilitada = true) {
   return useQuery({
     queryKey: ["observaciones", "motivos"],
     queryFn: listar_motivos_observacion,
+    enabled: habilitada,
   });
+}
+
+// La descripcion de cada motivo por su codigo (2026-11-18): las tablas
+// mostraban solo el codigo. Solo se consulta con un rol que ve el catalogo.
+export function usar_descripciones_motivos(habilitada: boolean): Map<string, string> {
+  const consulta = usar_motivos_observacion(habilitada);
+  return new Map((consulta.data ?? []).map((motivo) => [motivo.codigo, motivo.descripcion]));
 }

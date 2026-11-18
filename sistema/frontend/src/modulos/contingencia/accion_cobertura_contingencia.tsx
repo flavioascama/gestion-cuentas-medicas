@@ -9,6 +9,7 @@ import { Boton } from "../../componentes_base/boton";
 import { CampoTexto } from "../../componentes_base/campo_texto";
 import { Dialogo } from "../../componentes_base/dialogo";
 import { MensajeErrorMutacion } from "../../componentes_base/mensaje_error_mutacion";
+import { Selector, type OpcionSelector } from "../../componentes_base/selector";
 import estilos from "./contingencia.module.css";
 
 // CU-01, flujo alternativo (RF-23, AD-13, C-18): ACREDITA SALUD no
@@ -28,6 +29,34 @@ const _INICIAL: SolicitudCoberturaContingencia = {
 
 type Campo = keyof SolicitudCoberturaContingencia;
 
+// Los valores que admite cada dato (2026-11-18): antes se escribian los
+// codigos a mano. Tipo de documento y de afiliacion son los del estandar
+// TEDEF (Tabla 2, campos 12 y 7).
+const _CONDICIONES: OpcionSelector[] = [
+  { valor: "ACREDITABLE", etiqueta: "Acreditable" },
+  { valor: "NO ACREDITABLE", etiqueta: "No acreditable" },
+];
+const _DOCUMENTOS_AUTORIZACION: OpcionSelector[] = [
+  { valor: "01", etiqueta: "Solicitud de atención médica (SITEDS)" },
+  { valor: "02", etiqueta: "Solicitud de chequeo médico (SITEDS)" },
+  { valor: "03", etiqueta: "Carta de garantía" },
+  { valor: "04", etiqueta: "Por código" },
+  { valor: "06", etiqueta: "Otro tipo de autorización" },
+  { valor: "07", etiqueta: "Declaración de accidente" },
+  { valor: "99", etiqueta: "No aplica" },
+];
+const _AFILIACIONES: OpcionSelector[] = [
+  { valor: "1", etiqueta: "Regular" },
+  { valor: "2", etiqueta: "SCTR" },
+  { valor: "3", etiqueta: "Potestativo (independiente)" },
+  { valor: "4", etiqueta: "SCTR independiente" },
+  { valor: "5", etiqueta: "Otros contributivos y complementario" },
+  { valor: "6", etiqueta: "SOAT" },
+  { valor: "7", etiqueta: "AFOCAT" },
+  { valor: "8", etiqueta: "SIS subsidiado" },
+  { valor: "9", etiqueta: "Semicontributivo" },
+];
+
 function CamposCobertura({
   datos,
   al_cambiar,
@@ -35,21 +64,32 @@ function CamposCobertura({
   datos: SolicitudCoberturaContingencia;
   al_cambiar: (campo: Campo, valor: string) => void;
 }) {
-  const campo = (clave: Campo, etiqueta: string, ayuda?: string) => (
+  const campo = (clave: Campo, etiqueta: string) => (
     <CampoTexto
       etiqueta={etiqueta}
-      ayuda={ayuda}
+      value={datos[clave] ?? ""}
+      onChange={(evento) => al_cambiar(clave, evento.target.value)}
+    />
+  );
+  const lista = (clave: Campo, etiqueta: string, opciones: OpcionSelector[]) => (
+    <Selector
+      etiqueta={etiqueta}
+      opciones={opciones}
       value={datos[clave] ?? ""}
       onChange={(evento) => al_cambiar(clave, evento.target.value)}
     />
   );
   return (
     <div className={estilos.formulario}>
-      {campo("condicion_cobertura", "Condición de cobertura")}
+      {lista("condicion_cobertura", "Condición de cobertura", _CONDICIONES)}
       {campo("codigo_autorizacion", "Código de acreditación")}
-      {campo("tipo_documento_autorizacion", "Tipo de documento de autorización")}
+      {lista(
+        "tipo_documento_autorizacion",
+        "Tipo de documento de autorización",
+        _DOCUMENTOS_AUTORIZACION,
+      )}
       {campo("codigo_asegurado", "Código del asegurado en la IAFAS")}
-      {campo("tipo_afiliacion", "Tipo de afiliación")}
+      {lista("tipo_afiliacion", "Tipo de afiliación", _AFILIACIONES)}
       <CampoTexto
         etiqueta="Vigente hasta (opcional)"
         type="date"

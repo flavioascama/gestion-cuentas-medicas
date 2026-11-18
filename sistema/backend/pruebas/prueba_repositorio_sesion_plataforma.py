@@ -68,6 +68,23 @@ async def prueba_obtener_activa_expira_una_vencida(
         assert fila.estado == "EXPIRADA"
 
 
+async def prueba_expirar_activas_deja_pedir_otra_sesion(
+    fabrica_sesiones: async_sessionmaker[AsyncSession],
+) -> None:
+    async with fabrica_sesiones() as sesion:
+        repositorio = RepositorioSesionPlataformaSql(sesion)
+        sesion_id = await repositorio.crear_solicitud("acredita_salud", "analista")
+        await repositorio.activar(sesion_id, datetime.now(UTC) + timedelta(minutes=30))
+        otra_id = await repositorio.crear_solicitud("tedef_web", "analista")
+        await repositorio.activar(otra_id, datetime.now(UTC) + timedelta(minutes=30))
+
+        await repositorio.expirar_activas("acredita_salud")
+
+        assert await repositorio.obtener_activa("acredita_salud") is None
+        # La de la otra plataforma no se toca.
+        assert await repositorio.obtener_activa("tedef_web") is not None
+
+
 async def prueba_listar_sanea_una_activa_vencida(
     fabrica_sesiones: async_sessionmaker[AsyncSession],
 ) -> None:

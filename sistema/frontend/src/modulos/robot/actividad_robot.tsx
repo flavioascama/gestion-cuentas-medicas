@@ -2,17 +2,18 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { listar_actividad_robot, type ActividadRobot } from "../../api/robot";
 import { EtiquetaEstado } from "../../componentes_base/etiqueta_estado";
-import { DialogoNavegacionRobot } from "../../componentes_base/navegacion_robot";
 import { ConPaginacion } from "../../componentes_base/paginacion";
 import { usar_pagina_cliente } from "../../componentes_base/paginar";
 import { TablaDatos, type ColumnaTabla } from "../../componentes_base/tabla_datos";
 import { TituloPagina } from "../../componentes_base/titulo_pagina";
 import { formatear_fecha_hora } from "../../utilidades/formato";
+import { DialogoPasosRobot } from "./dialogo_pasos_robot";
 import estilos from "./actividad_robot.module.css";
 
-// Trabajos del robot que dejaron capturas de su navegacion (2026-11-17):
-// existen solo mientras el administrador tiene activa la opcion, y se
-// borran a los siete dias.
+// Registro de lo que hizo el robot (2026-11-18): que tarea, a pedido de que
+// usuario y a que hora. Solo lo ve el administrador, y sin imagenes: lo
+// que el robot tiene en pantalla son datos del asegurado, que su rol no
+// consulta.
 const _TAREAS: Record<string, string> = {
   INICIAR_SESION_PLATAFORMA: "Inicio de sesión en la plataforma",
   CONSULTAR_COBERTURA: "Verificación de cobertura",
@@ -20,23 +21,22 @@ const _TAREAS: Record<string, string> = {
   ENVIAR_LOTE_SUSALUD: "Envío a SUSALUD",
 };
 
-const _ESTADOS_TERMINALES = new Set(["COMPLETADO", "AGOTADO"]);
-
 const _COLUMNAS: ColumnaTabla<ActividadRobot>[] = [
   {
     clave: "tipo",
     encabezado: "Tarea del robot",
     formatear: (fila) => _TAREAS[fila.tipo] ?? fila.tipo,
   },
+  { clave: "usuario", encabezado: "Usuario" },
+  {
+    clave: "iniciado_en",
+    encabezado: "Fecha y hora",
+    formatear: (fila) => formatear_fecha_hora(fila.iniciado_en),
+  },
   {
     clave: "estado",
     encabezado: "Estado",
     formatear: (fila) => <EtiquetaEstado estado={fila.estado} />,
-  },
-  {
-    clave: "iniciado_en",
-    encabezado: "Inicio",
-    formatear: (fila) => formatear_fecha_hora(fila.iniciado_en),
   },
   { clave: "pasos", encabezado: "Pasos", alinear_centro: true },
 ];
@@ -67,14 +67,14 @@ export function BandejaActividadRobot() {
           obtener_clave={(fila) => fila.trabajo_id}
           cargando={consulta.isPending}
           error={consulta.error}
-          mensaje_vacio="No hay navegación del robot registrada."
+          mensaje_vacio="No hay actividad del robot registrada."
           al_hacer_clic_fila={set_abierta}
         />
       </ConPaginacion>
       {abierta ? (
-        <DialogoNavegacionRobot
+        <DialogoPasosRobot
           trabajo_id={abierta.trabajo_id}
-          en_curso={!_ESTADOS_TERMINALES.has(abierta.estado)}
+          titulo={`${_TAREAS[abierta.tipo] ?? abierta.tipo} · ${abierta.usuario}`}
           al_cerrar={() => set_abierta(null)}
         />
       ) : null}

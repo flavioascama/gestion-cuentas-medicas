@@ -18,6 +18,7 @@ from app.dominio.integracion.casos_uso_consulta import (
     ObtenerCuenta,
 )
 from app.dominio.integracion.casos_uso_ingesta import (
+    BuscarAseguradoRegistrado,
     ConsultarCompletitudCuenta,
     RegistrarCuentaMedica,
 )
@@ -136,6 +137,12 @@ def obtener_repositorio_completitud_cuenta(
     sesion: AsyncSession = Depends(obtener_sesion),
 ) -> RepositorioCompletitudCuenta:
     return RepositorioCompletitudCuentaSql(sesion)
+
+
+def construir_buscar_asegurado(
+    repositorio: RepositorioIngestaCuentas = Depends(obtener_repositorio_ingesta_cuentas),
+) -> BuscarAseguradoRegistrado:
+    return BuscarAseguradoRegistrado(repositorio)
 
 
 def construir_registrar_cuenta(

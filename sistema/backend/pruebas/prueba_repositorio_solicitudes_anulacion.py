@@ -133,6 +133,28 @@ async def prueba_resolver_aprobada_y_rechazada(
         assert await repositorio.obtener_pendiente_por_cuenta(cuenta_id) is None
 
 
+async def prueba_listar_pendientes_dice_la_cuenta_y_el_asegurado(
+    fabrica_sesiones: async_sessionmaker[AsyncSession],
+) -> None:
+    async with fabrica_sesiones() as sesion:
+        cuenta_id = await _sembrar_cuenta(sesion)
+        repositorio = RepositorioSolicitudesAnulacionSql(sesion)
+        await repositorio.crear(
+            DatosNuevaSolicitudAnulacion(
+                cuenta_medica_id=cuenta_id,
+                motivo="duplicada",
+                solicitado_por="ana.analista",
+                solicitado_en=_AHORA,
+            )
+        )
+        await sesion.commit()
+        (pendiente,) = await repositorio.listar_pendientes()
+
+    assert pendiente.identificacion_interna is not None
+    assert pendiente.identificacion_interna.startswith("CTA")
+    assert pendiente.asegurado == "Ana Perez"
+
+
 async def prueba_listar_pendientes_excluye_las_ya_resueltas(
     fabrica_sesiones: async_sessionmaker[AsyncSession],
 ) -> None:

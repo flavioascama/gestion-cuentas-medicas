@@ -39,6 +39,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/clave": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Cambiar Clave
+         * @description Devuelve una credencial nueva: la anterior queda revocada.
+         */
+        put: operations["cambiar_clave_auth_clave_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/avisos": {
         parameters: {
             query?: never;
@@ -89,6 +109,27 @@ export interface paths {
         head?: never;
         /** Actualizar Usuario */
         patch: operations["actualizar_usuario_usuarios__usuario_id__patch"];
+        trace?: never;
+    };
+    "/cuentas/asegurado/buscar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Buscar Asegurado
+         * @description Al registrar una cuenta: nombres e IAFAS del asegurado, si la clinica
+         *     ya lo atendio. `null` si es la primera vez.
+         */
+        post: operations["buscar_asegurado_cuentas_asegurado_buscar_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/cuentas": {
@@ -178,6 +219,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/cuentas/{cuenta_id}/diagnostico": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Registrar Diagnostico
+         * @description Completa el diagnostico principal de una cuenta ya registrada: sin
+         *     el la cuenta no se factura ni puede entrar a un lote (T2, campo 18).
+         */
+        put: operations["registrar_diagnostico_cuentas__cuenta_id__diagnostico_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/cuentas/{cuenta_id}/acreditacion": {
         parameters: {
             query?: never;
@@ -257,6 +319,26 @@ export interface paths {
         put?: never;
         /** Confirmar Procedimiento */
         post: operations["confirmar_procedimiento_cuentas__cuenta_id__procedimientos_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/cuentas/{cuenta_id}/procedimientos/ultimo-precio": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Ultimo Precio Procedimiento
+         * @description El precio que se propone al confirmar un procedimiento.
+         */
+        get: operations["ultimo_precio_procedimiento_cuentas__cuenta_id__procedimientos_ultimo_precio_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -499,6 +581,26 @@ export interface paths {
         };
         /** Listar Motivos */
         get: operations["listar_motivos_observaciones_motivos_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/observaciones/responsables": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Listar Responsables Posibles
+         * @description CU-09: las personas entre las que el jefe elige al responsable.
+         */
+        get: operations["listar_responsables_posibles_observaciones_responsables_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1320,7 +1422,8 @@ export interface paths {
         };
         /**
          * Listar Actividad
-         * @description Trabajos del robot que dejaron capturas, el mas reciente primero.
+         * @description Registro del robot, lo mas reciente primero. Solo el administrador
+         *     (pedido del usuario, 2026-11-18).
          */
         get: operations["listar_actividad_robot_actividad_get"];
         put?: never;
@@ -1348,15 +1451,35 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/robot/trabajos/{trabajo_id}/pasos/{orden}/captura": {
+    "/robot/en-vivo": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Obtener Captura */
-        get: operations["obtener_captura_robot_trabajos__trabajo_id__pasos__orden__captura_get"];
+        /**
+         * Consultar En Vivo
+         * @description La tarea que el robot esta haciendo ahora a pedido de quien consulta.
+         */
+        get: operations["consultar_en_vivo_robot_en_vivo_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/robot/en-vivo/{trabajo_id}/cuadro": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Obtener Cuadro En Vivo */
+        get: operations["obtener_cuadro_en_vivo_robot_en_vivo__trabajo_id__cuadro_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1410,6 +1533,8 @@ export interface components {
             tipo: string;
             /** Estado */
             estado: string;
+            /** Usuario */
+            usuario: string;
             /**
              * Iniciado En
              * Format: date-time
@@ -1434,6 +1559,15 @@ export interface components {
             almacenado: boolean;
             /** Motivo Omision */
             motivo_omision: string | null;
+        };
+        /** AseguradoRegistradoRespuesta */
+        AseguradoRegistradoRespuesta: {
+            /** Nombres */
+            nombres: string;
+            /** Apellidos */
+            apellidos: string;
+            /** Iafas Id */
+            iafas_id: number;
         };
         /** AvisoRespuesta */
         AvisoRespuesta: {
@@ -1565,6 +1699,12 @@ export interface components {
              * Format: date
              */
             fecha_emision: string;
+            /** Valor Venta */
+            valor_venta?: string | null;
+            /** Igv */
+            igv?: string | null;
+            /** Total */
+            total?: string | null;
         };
         /** ComunicacionIafasRespuesta */
         ComunicacionIafasRespuesta: {
@@ -1741,6 +1881,11 @@ export interface components {
             fecha_emision: string;
             /** Monto */
             monto: string;
+            /**
+             * Pendientes
+             * @default []
+             */
+            pendientes: string[];
         };
         /** DetalleCuentaRespuesta */
         DetalleCuentaRespuesta: {
@@ -1876,6 +2021,22 @@ export interface components {
             nota: components["schemas"]["NotaDocumentoRespuesta"] | null;
             /** Reemplazados */
             reemplazados: components["schemas"]["ComprobanteReemplazadoRespuesta"][];
+        };
+        /** EstadoNavegacion */
+        EstadoNavegacion: {
+            /** Activa */
+            activa: boolean;
+            /**
+             * Modo
+             * @default sistema
+             * @enum {string}
+             */
+            modo: "ventana" | "sistema";
+            /**
+             * Robot Con Pantalla
+             * @default false
+             */
+            robot_con_pantalla: boolean;
         };
         /**
          * EtapaCiclo
@@ -2044,6 +2205,15 @@ export interface components {
             /** Conciliado En */
             conciliado_en: string | null;
         };
+        /** LoteDeCuentaRespuesta */
+        LoteDeCuentaRespuesta: {
+            /** Lote Id */
+            lote_id: number;
+            /** Numero */
+            numero: string;
+            /** Estado */
+            estado: string;
+        };
         /**
          * LoteSugeridoRespuesta
          * @description Un grupo de cuentas facturadas de una IAFAS y un periodo (el mes de
@@ -2062,6 +2232,11 @@ export interface components {
             monto_total: string;
             /** Cuentas */
             cuentas: components["schemas"]["CuentaPorLotearRespuesta"][];
+            /**
+             * Cuentas Con Pendientes
+             * @default []
+             */
+            cuentas_con_pendientes: components["schemas"]["CuentaPorLotearRespuesta"][];
         };
         /** LotesPeriodoEstadoRespuesta */
         LotesPeriodoEstadoRespuesta: {
@@ -2134,6 +2309,10 @@ export interface components {
             codigo_error: string;
             /** Descripcion */
             descripcion: string;
+            /** Cuenta Medica Id */
+            cuenta_medica_id?: number | null;
+            /** Identificacion Interna */
+            identificacion_interna?: string | null;
         };
         /** ObservacionRespuesta */
         ObservacionRespuesta: {
@@ -2166,11 +2345,19 @@ export interface components {
             registrado_en: string;
             /** Respondido En */
             respondido_en: string | null;
+            /** Responsable Nombres */
+            responsable_nombres?: string | null;
         };
         /** OpcionNavegacion */
         OpcionNavegacion: {
             /** Activa */
             activa: boolean;
+            /**
+             * Modo
+             * @default sistema
+             * @enum {string}
+             */
+            modo: "ventana" | "sistema";
         };
         /** ParametroSistemaRespuesta */
         ParametroSistemaRespuesta: {
@@ -2216,6 +2403,18 @@ export interface components {
              */
             capturado_en: string;
         };
+        /**
+         * PendientesCuentaRespuesta
+         * @description Una cuenta que impidio generar el lote y que le falta, en simple.
+         */
+        PendientesCuentaRespuesta: {
+            /** Cuenta Id */
+            cuenta_id: number;
+            /** Identificacion Interna */
+            identificacion_interna: string;
+            /** Pendientes */
+            pendientes: string[];
+        };
         /** PiezaCompletitudRespuesta */
         PiezaCompletitudRespuesta: {
             /** Clave */
@@ -2231,12 +2430,18 @@ export interface components {
         };
         /** ProcedimientoRespuesta */
         ProcedimientoRespuesta: {
+            /** Id */
+            id: number;
             /** Codigo Asignado */
             codigo_asignado: string;
             /** Descripcion Registrada */
             descripcion_registrada: string;
             /** Cantidad */
             cantidad: number;
+            /** Monto Unitario */
+            monto_unitario: string;
+            /** Fecha */
+            fecha: string | null;
         };
         /** ProductoCatalogoRespuesta */
         ProductoCatalogoRespuesta: {
@@ -2331,6 +2536,19 @@ export interface components {
             /** Pendientes Revision */
             pendientes_revision: number;
         };
+        /**
+         * ResponsablePosibleRespuesta
+         * @description A quien se puede asignar una observacion: solo el nombre y los
+         *     roles que responden observaciones.
+         */
+        ResponsablePosibleRespuesta: {
+            /** Id */
+            id: number;
+            /** Nombres */
+            nombres: string;
+            /** Roles */
+            roles: components["schemas"]["NombreRol"][];
+        };
         /** RespuestaCatalogoCpmsCargado */
         RespuestaCatalogoCpmsCargado: {
             /** Version Id */
@@ -2360,6 +2578,7 @@ export interface components {
             completa: boolean;
             /** Piezas */
             piezas: components["schemas"]["PiezaCompletitudRespuesta"][];
+            lote?: components["schemas"]["LoteDeCuentaRespuesta"] | null;
         };
         /** RespuestaComprobantePago */
         RespuestaComprobantePago: {
@@ -2394,6 +2613,11 @@ export interface components {
             /** Cuenta Id */
             cuenta_id: number;
         };
+        /** RespuestaDiagnostico */
+        RespuestaDiagnostico: {
+            /** Codigo Cie10 */
+            codigo_cie10: string;
+        };
         /** RespuestaEnvioSusalud */
         RespuestaEnvioSusalud: {
             /** Trabajo Id */
@@ -2411,6 +2635,11 @@ export interface components {
             lote_id: number | null;
             /** Rutas Archivos */
             rutas_archivos: string[] | null;
+            /**
+             * Cuentas Con Pendientes
+             * @default []
+             */
+            cuentas_con_pendientes: components["schemas"]["PendientesCuentaRespuesta"][];
         };
         /** RespuestaInicioSesion */
         RespuestaInicioSesion: {
@@ -2678,6 +2907,10 @@ export interface components {
             resuelto_por: string | null;
             /** Resuelto En */
             resuelto_en: string | null;
+            /** Identificacion Interna */
+            identificacion_interna?: string | null;
+            /** Asegurado */
+            asegurado?: string | null;
         };
         /**
          * SolicitudAsignacionObservacion
@@ -2689,6 +2922,20 @@ export interface components {
             /** Responsable Usuario Id */
             responsable_usuario_id?: number | null;
             naturaleza_corregida?: components["schemas"]["Naturaleza"] | null;
+        };
+        /** SolicitudBuscarAsegurado */
+        SolicitudBuscarAsegurado: {
+            /** Tipo Documento */
+            tipo_documento: string;
+            /** Numero Documento */
+            numero_documento: string;
+        };
+        /** SolicitudCambioClave */
+        SolicitudCambioClave: {
+            /** Clave Actual */
+            clave_actual: string;
+            /** Clave Nueva */
+            clave_nueva: string;
         };
         /** SolicitudCargarCatalogoCpms */
         SolicitudCargarCatalogoCpms: {
@@ -2778,6 +3025,11 @@ export interface components {
             /** Motivo */
             motivo: string;
         };
+        /** SolicitudDiagnostico */
+        SolicitudDiagnostico: {
+            /** Codigo Cie10 */
+            codigo_cie10: string;
+        };
         /** SolicitudEnvioSusalud */
         SolicitudEnvioSusalud: {
             /** Periodo */
@@ -2804,21 +3056,15 @@ export interface components {
             /** Clave */
             clave: string;
         };
-        /** SolicitudNota */
+        /**
+         * SolicitudNota
+         * @description La serie, el numero y la fecha los da el PSE al emitir la nota.
+         */
         SolicitudNota: {
             /** Tipo */
             tipo: string;
-            /** Serie */
-            serie: string;
-            /** Numero */
-            numero: string;
             /** Monto */
             monto: number | string;
-            /**
-             * Fecha
-             * Format: date
-             */
-            fecha: string;
             /** Motivo */
             motivo: string;
         };
@@ -2880,11 +3126,6 @@ export interface components {
             tipo_unidad_dispensacion: string;
             /** Monto Unitario */
             monto_unitario: number | string;
-            /**
-             * Copago
-             * @default 0
-             */
-            copago: number | string;
             /**
              * Monto No Cubierto
              * @default 0
@@ -2987,6 +3228,20 @@ export interface components {
             /** Transiciones */
             transiciones: number;
         };
+        /** TrabajoEnVivoRespuesta */
+        TrabajoEnVivoRespuesta: {
+            /** Trabajo Id */
+            trabajo_id: number;
+            /** Tipo */
+            tipo: string;
+            /** Url */
+            url: string;
+            /**
+             * Actualizado En
+             * Format: date-time
+             */
+            actualizado_en: string;
+        };
         /** UltimaConsultaCoberturaRespuesta */
         UltimaConsultaCoberturaRespuesta: {
             /** Resultado */
@@ -3005,6 +3260,11 @@ export interface components {
             actualizada_en: string;
             /** Mensaje */
             mensaje: string | null;
+        };
+        /** UltimoPrecioRespuesta */
+        UltimoPrecioRespuesta: {
+            /** Monto Unitario */
+            monto_unitario: string | null;
         };
         /** ValidationError */
         ValidationError: {
@@ -3149,6 +3409,39 @@ export interface operations {
             };
         };
     };
+    cambiar_clave_auth_clave_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SolicitudCambioClave"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaInicioSesion"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     listar_avisos_avisos_get: {
         parameters: {
             query?: {
@@ -3255,6 +3548,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RespuestaUsuario"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    buscar_asegurado_cuentas_asegurado_buscar_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SolicitudBuscarAsegurado"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AseguradoRegistradoRespuesta"] | null;
                 };
             };
             /** @description Validation Error */
@@ -3490,6 +3816,41 @@ export interface operations {
             };
         };
     };
+    registrar_diagnostico_cuentas__cuenta_id__diagnostico_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cuenta_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SolicitudDiagnostico"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaDiagnostico"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     obtener_acreditacion_cuentas__cuenta_id__acreditacion_get: {
         parameters: {
             query?: never;
@@ -3629,6 +3990,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RespuestaProcedimientoConfirmado"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    ultimo_precio_procedimiento_cuentas__cuenta_id__procedimientos_ultimo_precio_get: {
+        parameters: {
+            query: {
+                codigo: string;
+            };
+            header?: never;
+            path: {
+                cuenta_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UltimoPrecioRespuesta"];
                 };
             };
             /** @description Validation Error */
@@ -4144,6 +4538,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MotivoObservacionRespuesta"][];
+                };
+            };
+        };
+    };
+    listar_responsables_posibles_observaciones_responsables_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResponsablePosibleRespuesta"][];
                 };
             };
         };
@@ -5748,7 +6162,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OpcionNavegacion"];
+                    "application/json": components["schemas"]["EstadoNavegacion"];
                 };
             };
         };
@@ -5772,7 +6186,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OpcionNavegacion"];
+                    "application/json": components["schemas"]["EstadoNavegacion"];
                 };
             };
             /** @description Validation Error */
@@ -5837,13 +6251,34 @@ export interface operations {
             };
         };
     };
-    obtener_captura_robot_trabajos__trabajo_id__pasos__orden__captura_get: {
+    consultar_en_vivo_robot_en_vivo_get: {
         parameters: {
             query?: never;
             header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrabajoEnVivoRespuesta"] | null;
+                };
+            };
+        };
+    };
+    obtener_cuadro_en_vivo_robot_en_vivo__trabajo_id__cuadro_get: {
+        parameters: {
+            query?: {
+                primera?: boolean;
+            };
+            header?: never;
             path: {
                 trabajo_id: number;
-                orden: number;
             };
             cookie?: never;
         };

@@ -40,10 +40,7 @@ export function DialogoConfirmarCierre({ cuenta_id, al_cerrar, al_confirmar }: P
         </>
       }
     >
-      <p>
-        La cuenta pasará a un estado terminal y no admitirá nuevos eventos. Esta acción no se puede
-        revertir.
-      </p>
+      <p>La cuenta quedará cerrada y ya no se podrá modificar. Esta acción no se puede deshacer.</p>
       <MensajeErrorMutacion error={mutacion.error} texto_por_defecto="No se pudo cerrar." />
     </Dialogo>
   );

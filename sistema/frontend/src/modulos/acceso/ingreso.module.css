@@ -7,11 +7,11 @@
   padding: var(--espacio_4);
 }
 
-/* La tarjeta completa se ve un 50 % mas grande (pedido del usuario,
-   2026-11-17): `zoom` escala texto, campos y espacios a la vez. En
-   pantallas chicas vuelve a un tamano que entra sin recortarse. */
+/* Tamano de la tarjeta completa (texto, campos y espacios a la vez). El
+   2026-11-17 se amplio un 50 %; el 2026-11-18 el usuario pidio reducir
+   ese tamano un 35 %: 1.5 x 0.65. */
 .tarjeta {
-  zoom: 1.5;
+  zoom: 0.975;
   width: 100%;
   max-width: 400px;
   background-image: radial-gradient(
@@ -49,10 +49,4 @@
   margin: 0;
   font-size: var(--tamano_metadato);
   color: var(--color_texto_secundario);
-}
-
-@media (max-height: 660px), (max-width: 520px) {
-  .tarjeta {
-    zoom: 1.15;
-  }
 }

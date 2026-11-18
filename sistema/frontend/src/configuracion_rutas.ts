@@ -33,9 +33,6 @@ export const CONFIGURACION_RUTAS: DefinicionRuta[] = [
   // CU-13/RF-21 (Fase 28, 31): bandeja del jefe para aprobar o rechazar
   // las solicitudes de anulacion -- no vive dentro de una cuenta porque
   // reune solicitudes de cualquier cuenta.
-  // Capturas de la navegacion del robot (2026-11-17): el administrador
-  // activa la opcion; las ven quienes operan, no el.
-  { ruta: "/robot", etiqueta: "Actividad del robot", roles: ["analista", "jefe"] },
   { ruta: "/anulaciones", etiqueta: "Anulaciones", roles: ["jefe"] },
   // C-18 (verificacion de cumplimiento, 2026-11-12): revision posterior de
   // los resultados registrados en modo de contingencia.
@@ -50,6 +47,9 @@ export const CONFIGURACION_RUTAS: DefinicionRuta[] = [
   { ruta: "/administracion/aseguradoras", etiqueta: "Aseguradoras", roles: ["administrador"] },
   { ruta: "/administracion/parametros", etiqueta: "Parámetros", roles: ["administrador"] },
   { ruta: "/administracion/catalogos", etiqueta: "Catálogos", roles: ["administrador"] },
+  // Registro de lo que hizo el robot: tarea, usuario que la pidio y hora.
+  // Solo el administrador (2026-11-18); no es parte del trabajo diario.
+  { ruta: "/robot", etiqueta: "Actividad del robot", roles: ["administrador"] },
   { ruta: "/administracion", roles: ["administrador"] },
   // Bandeja de avisos (verificacion de cumplimiento, 2026-11-12): sin
   // etiqueta, se abre desde la campana de la cabecera. Mismos roles que

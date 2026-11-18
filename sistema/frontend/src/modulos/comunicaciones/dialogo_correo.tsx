@@ -8,6 +8,7 @@ import {
   type AdjuntoCorreo,
   type CorreoIafasDetalle,
 } from "../../api/correos_iafas";
+import type { ResumenCuenta } from "../../api/cuentas";
 import { Boton } from "../../componentes_base/boton";
 import { CampoTexto } from "../../componentes_base/campo_texto";
 import { Dialogo } from "../../componentes_base/dialogo";
@@ -16,6 +17,7 @@ import { Mensaje } from "../../componentes_base/mensaje";
 import { MensajeErrorMutacion } from "../../componentes_base/mensaje_error_mutacion";
 import { usar_sesion } from "../../sesion/contexto_sesion";
 import { formatear_fecha_hora } from "../../utilidades/formato";
+import { BuscadorCuenta } from "../cuentas/buscador_cuenta";
 import { MOTIVOS_OMISION, MOTIVOS_REVISION } from "./etiquetas_correos";
 import estilos from "./comunicaciones.module.css";
 
@@ -118,25 +120,28 @@ interface PropiedadesResolver {
   al_terminar: () => Promise<void>;
 }
 
-function VincularCorreo({ correo_id, al_terminar }: PropiedadesResolver) {
-  const [cuenta, set_cuenta] = useState("");
+function VincularCorreo({
+  correo_id,
+  codigo_iafas,
+  al_terminar,
+}: PropiedadesResolver & { codigo_iafas: string | null }) {
+  const [cuenta, set_cuenta] = useState<ResumenCuenta | null>(null);
   const vinculacion = useMutation({
-    mutationFn: () => vincular_correo_iafas(correo_id, cuenta.trim()),
+    mutationFn: () => vincular_correo_iafas(correo_id, cuenta?.identificacion_interna ?? ""),
     onSuccess: al_terminar,
   });
   return (
     <>
       <div className={estilos.fila_resolver}>
-        <CampoTexto
-          etiqueta="Cuenta"
-          value={cuenta}
-          maxLength={10}
-          onChange={(evento) => set_cuenta(evento.target.value)}
+        <BuscadorCuenta
+          iafas_codigo={codigo_iafas ?? undefined}
+          elegida={cuenta}
+          al_elegir={set_cuenta}
         />
         <Boton
           variante="primario"
           onClick={() => vinculacion.mutate()}
-          disabled={vinculacion.isPending || cuenta.trim().length === 0}
+          disabled={vinculacion.isPending || cuenta === null}
         >
           Vincular a la cuenta
         </Boton>
@@ -174,7 +179,15 @@ function DescartarCorreo({ correo_id, al_terminar }: PropiedadesResolver) {
   );
 }
 
-function ResolverCorreo({ correo_id, al_cerrar }: { correo_id: number; al_cerrar: () => void }) {
+function ResolverCorreo({
+  correo_id,
+  codigo_iafas,
+  al_cerrar,
+}: {
+  correo_id: number;
+  codigo_iafas: string | null;
+  al_cerrar: () => void;
+}) {
   const cliente = useQueryClient();
   const al_terminar = async () => {
     await cliente.invalidateQueries();
@@ -182,7 +195,7 @@ function ResolverCorreo({ correo_id, al_cerrar }: { correo_id: number; al_cerrar
   };
   return (
     <div className={estilos.resolver}>
-      <VincularCorreo correo_id={correo_id} al_terminar={al_terminar} />
+      <VincularCorreo correo_id={correo_id} codigo_iafas={codigo_iafas} al_terminar={al_terminar} />
       <DescartarCorreo correo_id={correo_id} al_terminar={al_terminar} />
     </div>
   );
@@ -216,7 +229,11 @@ export function DialogoCorreo({ correo_id, al_cerrar }: Propiedades) {
       {consulta.isError ? <Mensaje tipo="error" texto="No se pudo obtener el correo." /> : null}
       {correo ? <ContenidoCorreo correo={correo} /> : null}
       {correo && correo.estado === "POR_REVISAR" && puede_revisar ? (
-        <ResolverCorreo correo_id={correo_id} al_cerrar={al_cerrar} />
+        <ResolverCorreo
+          correo_id={correo_id}
+          codigo_iafas={correo.codigo_iafas ?? null}
+          al_cerrar={al_cerrar}
+        />
       ) : null}
     </Dialogo>
   );

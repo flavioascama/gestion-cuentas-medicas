@@ -12,6 +12,11 @@ class ErrorObservacionInexistente(Exception):
     reasignar o responder."""
 
 
+class ErrorResponsableNoValido(Exception):
+    """CU-09: la persona elegida no existe, no esta activa o no tiene el
+    rol que responde esa naturaleza de observacion."""
+
+
 class ErrorObservacionYaRespondida(Exception):
     """CU-10: no se puede responder dos veces la misma observacion (una
     nueva objecion de la aseguradora sobre la respuesta es una

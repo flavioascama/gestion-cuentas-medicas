@@ -235,6 +235,11 @@ class DocumentoFacturadorModelo(Base):
     fecha_emision: Mapped[date] = mapped_column(sa.Date, nullable=False)
     fecha_primer_envio: Mapped[date | None] = mapped_column(sa.Date, nullable=True)
     correlativo_prestacion: Mapped[int | None] = mapped_column(sa.Integer, nullable=True)
+    # Lo que factura el comprobante (2026-11-18), con la regla de T1. Nulo en
+    # los comprobantes anteriores: su monto se calcula al consultarlos.
+    valor_venta: Mapped[Decimal | None] = mapped_column(sa.Numeric(12, 2), nullable=True)
+    igv: Mapped[Decimal | None] = mapped_column(sa.Numeric(12, 2), nullable=True)
+    total: Mapped[Decimal | None] = mapped_column(sa.Numeric(12, 2), nullable=True)
 
     cuenta: Mapped[CuentaMedicaModelo] = relationship(back_populates="documento")
 

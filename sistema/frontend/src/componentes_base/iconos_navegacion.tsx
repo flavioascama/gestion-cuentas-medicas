@@ -118,6 +118,15 @@ export function IconoAdministracion(props: SVGProps<SVGSVGElement>) {
   );
 }
 
+export function IconoCandado(props: SVGProps<SVGSVGElement>) {
+  return (
+    <IconoBase {...props}>
+      <rect x="5" y="11" width="14" height="9" rx="1.5" />
+      <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+    </IconoBase>
+  );
+}
+
 export function IconoCerrarSesion(props: SVGProps<SVGSVGElement>) {
   return (
     <IconoBase {...props}>

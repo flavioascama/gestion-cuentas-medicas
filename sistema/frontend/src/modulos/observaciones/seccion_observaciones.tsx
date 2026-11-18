@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { Observacion } from "../../api/observaciones";
 import { Boton } from "../../componentes_base/boton";
+import { etiqueta_rol } from "../../componentes_base/mapa_roles";
 import { TablaDatos, type ColumnaTabla } from "../../componentes_base/tabla_datos";
 import { usar_sesion } from "../../sesion/contexto_sesion";
 import { formatear_fecha_hora } from "../../utilidades/formato";
@@ -9,7 +10,11 @@ import { DialogoAsignarObservacion } from "./dialogo_asignar_observacion";
 import { DialogoRegistrarObservacion } from "./dialogo_registrar_observacion";
 import { DialogoResponderObservacion } from "./dialogo_responder_observacion";
 import { ResultadoAuditoria } from "./resultado_auditoria";
-import { usar_observaciones_cuenta, tiene_acceso_observaciones } from "./usar_observaciones";
+import {
+  usar_descripciones_motivos,
+  usar_observaciones_cuenta,
+  tiene_acceso_observaciones,
+} from "./usar_observaciones";
 
 const _ETIQUETA_NATURALEZA: Record<string, string> = {
   ADMINISTRATIVA: "Administrativa",
@@ -52,35 +57,53 @@ function AccionesObservacion({
   );
 }
 
+const _COLUMNAS_FECHAS: ColumnaTabla<Observacion>[] = [
+  {
+    clave: "registrado_en",
+    encabezado: "Registrada",
+    formatear: (fila) => formatear_fecha_hora(fila.registrado_en),
+  },
+  {
+    clave: "respondido_en",
+    encabezado: "Respondida",
+    formatear: (fila) => (fila.respondido_en ? formatear_fecha_hora(fila.respondido_en) : "—"),
+  },
+];
+
+interface Permisos {
+  puede_asignar: boolean;
+  puede_responder: boolean;
+}
+
 function crear_columnas(
-  puede_asignar: boolean,
-  puede_responder: boolean,
+  permisos: Permisos,
+  motivos: Map<string, string>,
   al_abrir_asignar: (id: number) => void,
   al_abrir_responder: (id: number) => void,
 ): ColumnaTabla<Observacion>[] {
+  const { puede_asignar, puede_responder } = permisos;
   return [
     {
       clave: "naturaleza",
       encabezado: "Naturaleza",
       formatear: (fila) => _ETIQUETA_NATURALEZA[fila.naturaleza] ?? fila.naturaleza,
     },
-    { clave: "motivo_codigo", encabezado: "Motivo" },
+    {
+      clave: "motivo_codigo",
+      encabezado: "Motivo",
+      formatear: (fila) => motivos.get(fila.motivo_codigo) ?? fila.motivo_codigo,
+    },
     {
       clave: "estado",
       encabezado: "Estado",
       formatear: (fila) => _ETIQUETA_ESTADO[fila.estado] ?? fila.estado,
     },
-    { clave: "responsable_rol", encabezado: "Responsable" },
     {
-      clave: "registrado_en",
-      encabezado: "Registrada",
-      formatear: (fila) => formatear_fecha_hora(fila.registrado_en),
+      clave: "responsable_rol",
+      encabezado: "Responsable",
+      formatear: (fila) => fila.responsable_nombres ?? etiqueta_rol(fila.responsable_rol),
     },
-    {
-      clave: "respondido_en",
-      encabezado: "Respondida",
-      formatear: (fila) => (fila.respondido_en ? formatear_fecha_hora(fila.respondido_en) : "—"),
-    },
+    ..._COLUMNAS_FECHAS,
     {
       clave: "id",
       encabezado: "Acciones",
@@ -109,10 +132,13 @@ interface EstadoDialogos {
 function DialogosObservaciones({
   cuenta_id,
   estado,
+  observaciones,
 }: {
   cuenta_id: number;
   estado: EstadoDialogos;
+  observaciones: Observacion[];
 }) {
+  const por_asignar = observaciones.find((o) => o.id === estado.asignar_observacion_id);
   return (
     <>
       {estado.mostrar_registro ? (
@@ -122,10 +148,10 @@ function DialogosObservaciones({
           al_registrar={() => estado.set_mostrar_registro(false)}
         />
       ) : null}
-      {estado.asignar_observacion_id !== null ? (
+      {por_asignar ? (
         <DialogoAsignarObservacion
           cuenta_id={cuenta_id}
-          observacion_id={estado.asignar_observacion_id}
+          observacion={por_asignar}
           al_cerrar={() => estado.set_asignar_observacion_id(null)}
           al_asignar={() => estado.set_asignar_observacion_id(null)}
         />
@@ -145,6 +171,7 @@ function DialogosObservaciones({
 export function SeccionObservaciones({ cuenta_id, estado }: { cuenta_id: number; estado: string }) {
   const { sesion } = usar_sesion();
   const consulta = usar_observaciones_cuenta(cuenta_id);
+  const motivos = usar_descripciones_motivos(tiene_acceso_observaciones(sesion));
   const [mostrar_registro, set_mostrar_registro] = useState(false);
   const [asignar_observacion_id, set_asignar_observacion_id] = useState<number | null>(null);
   const [responder_observacion_id, set_responder_observacion_id] = useState<number | null>(null);
@@ -153,8 +180,11 @@ export function SeccionObservaciones({ cuenta_id, estado }: { cuenta_id: number;
 
   const puede_registrar = sesion.roles.includes("analista");
   const columnas = crear_columnas(
-    sesion.roles.includes("jefe"),
-    sesion.roles.includes("analista") || sesion.roles.includes("auditor"),
+    {
+      puede_asignar: sesion.roles.includes("jefe"),
+      puede_responder: sesion.roles.includes("analista") || sesion.roles.includes("auditor"),
+    },
+    motivos,
     set_asignar_observacion_id,
     set_responder_observacion_id,
   );
@@ -178,6 +208,7 @@ export function SeccionObservaciones({ cuenta_id, estado }: { cuenta_id: number;
       />
       <DialogosObservaciones
         cuenta_id={cuenta_id}
+        observaciones={consulta.data ?? []}
         estado={{
           mostrar_registro,
           set_mostrar_registro,

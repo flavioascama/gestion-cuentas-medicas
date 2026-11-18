@@ -1,29 +1,41 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { consultar_documentos_pago } from "../../api/comprobante";
 import { conciliar_pago, registrar_liquidacion, type Liquidacion } from "../../api/liquidacion";
 import { Boton } from "../../componentes_base/boton";
 import { CampoTexto } from "../../componentes_base/campo_texto";
 import { MensajeErrorMutacion } from "../../componentes_base/mensaje_error_mutacion";
+import { RegistroManual } from "../../componentes_base/registro_manual";
 import { usar_sesion } from "../../sesion/contexto_sesion";
 import { formatear_fecha_hora, formatear_monto } from "../../utilidades/formato";
 import estilos from "../cuentas/detalle_cuenta.module.css";
 import { usar_liquidacion_cuenta } from "./usar_liquidacion";
 
+// Lo facturado a la IAFAS, como referencia de lo que liquida y paga
+// (2026-11-18): es el total del comprobante vigente.
+function usar_total_facturado(cuenta_id: number): string | null {
+  const consulta = useQuery({
+    queryKey: ["cuentas", cuenta_id, "comprobante"],
+    queryFn: () => consultar_documentos_pago(cuenta_id),
+  });
+  const total = consulta.data?.vigente.total;
+  return total != null ? formatear_monto(total) : null;
+}
+
 function DatosLiquidacion({
-  monto_liquidado,
-  monto_pagado,
-  diferencia,
-  conciliado_en,
+  facturado,
+  liquidacion,
 }: {
-  monto_liquidado: string;
-  monto_pagado: string | null;
-  diferencia: string | null;
-  conciliado_en: string | null;
+  facturado: string | null;
+  liquidacion: Liquidacion | null;
 }) {
+  const monto = (valor: string | null | undefined) => (valor ? formatear_monto(valor) : "—");
+  const conciliado_en = liquidacion?.conciliado_en;
   const datos = [
-    { etiqueta: "Liquidado por la IAFAS", valor: formatear_monto(monto_liquidado) },
-    { etiqueta: "Pagado por la IAFAS", valor: monto_pagado ? formatear_monto(monto_pagado) : "—" },
-    { etiqueta: "Diferencia", valor: diferencia ? formatear_monto(diferencia) : "—" },
+    { etiqueta: "Total facturado", valor: facturado ?? "—" },
+    { etiqueta: "Liquidado por la IAFAS", valor: monto(liquidacion?.monto_liquidado) },
+    { etiqueta: "Pagado por la IAFAS", valor: monto(liquidacion?.monto_pagado) },
+    { etiqueta: "Diferencia", valor: monto(liquidacion?.diferencia) },
     { etiqueta: "Conciliado", valor: conciliado_en ? formatear_fecha_hora(conciliado_en) : "—" },
   ];
   return (
@@ -125,14 +137,22 @@ function FormulariosTesoreria({
 }) {
   const { sesion } = usar_sesion();
   if (!sesion?.roles.includes("tesoreria")) return null;
+  // La liquidacion y el pago que la IAFAS comunica se registran solos: el
+  // formulario queda para lo que llegue por otro medio.
   if (liquidacion === null) {
-    if (_LIQUIDABLES.has(estado)) return <FormularioRegistrarLiquidacion cuenta_id={cuenta_id} />;
-    return null;
+    if (!_LIQUIDABLES.has(estado)) return null;
+    return (
+      <RegistroManual>
+        <FormularioRegistrarLiquidacion cuenta_id={cuenta_id} />
+      </RegistroManual>
+    );
   }
-  if (!liquidacion.conciliado_en && _PAGABLES.has(estado)) {
-    return <FormularioConciliarPago cuenta_id={cuenta_id} />;
-  }
-  return null;
+  if (liquidacion.conciliado_en || !_PAGABLES.has(estado)) return null;
+  return (
+    <RegistroManual>
+      <FormularioConciliarPago cuenta_id={cuenta_id} />
+    </RegistroManual>
+  );
 }
 
 function tiene_acceso_lectura(sesion: ReturnType<typeof usar_sesion>["sesion"]): boolean {
@@ -144,6 +164,7 @@ function tiene_acceso_lectura(sesion: ReturnType<typeof usar_sesion>["sesion"]):
 export function SeccionLiquidacion({ cuenta_id, estado }: { cuenta_id: number; estado: string }) {
   const { sesion } = usar_sesion();
   const consulta = usar_liquidacion_cuenta(cuenta_id);
+  const facturado = usar_total_facturado(cuenta_id);
 
   if (!tiene_acceso_lectura(sesion) || consulta.isPending) return null;
 
@@ -152,16 +173,7 @@ export function SeccionLiquidacion({ cuenta_id, estado }: { cuenta_id: number; e
   return (
     <div className={estilos.seccion}>
       <div className={estilos.titulo_seccion}>Liquidación y pago de la IAFAS</div>
-      {liquidacion ? (
-        <DatosLiquidacion
-          monto_liquidado={liquidacion.monto_liquidado}
-          monto_pagado={liquidacion.monto_pagado}
-          diferencia={liquidacion.diferencia}
-          conciliado_en={liquidacion.conciliado_en}
-        />
-      ) : (
-        <p>La IAFAS todavía no ha liquidado esta cuenta.</p>
-      )}
+      <DatosLiquidacion facturado={facturado} liquidacion={liquidacion} />
       <FormulariosTesoreria cuenta_id={cuenta_id} estado={estado} liquidacion={liquidacion} />
     </div>
   );

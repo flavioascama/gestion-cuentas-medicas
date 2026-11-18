@@ -3,6 +3,7 @@ import { Dialogo } from "../../componentes_base/dialogo";
 import { Mensaje } from "../../componentes_base/mensaje";
 import { MensajeErrorMutacion } from "../../componentes_base/mensaje_error_mutacion";
 import { MensajeVacio } from "../../componentes_base/mensaje_vacio";
+import { CuentasConPendientes } from "./cuentas_con_pendientes";
 import { SelectorCuentasElegibles } from "./selector_cuentas_elegibles";
 import { SelectorLotesSugeridos } from "./selector_lotes_sugeridos";
 import type { usar_formulario_generar_lote } from "./usar_formulario_generar_lote";
@@ -23,8 +24,24 @@ function LotesSugeridos({ formulario }: { formulario: Formulario }) {
   if (formulario.consulta.isError) {
     return <Mensaje tipo="error" texto="No se pudieron consultar las cuentas facturadas." />;
   }
+  const pendientes = (
+    <CuentasConPendientes
+      titulo="Cuentas con datos pendientes"
+      cuentas={formulario.con_pendientes.map((cuenta) => ({
+        cuenta_id: cuenta.cuenta_id,
+        identificacion_interna: cuenta.identificacion_interna,
+        nombre: `${cuenta.nombres_asegurado} ${cuenta.apellidos_asegurado}`,
+        pendientes: cuenta.pendientes ?? [],
+      }))}
+    />
+  );
   if (formulario.sugeridos.length === 0) {
-    return <MensajeVacio texto="No hay cuentas facturadas por incluir en un lote." />;
+    return (
+      <>
+        <MensajeVacio texto="No hay cuentas listas para incluir en un lote." />
+        {pendientes}
+      </>
+    );
   }
   return (
     <>
@@ -41,6 +58,7 @@ function LotesSugeridos({ formulario }: { formulario: Formulario }) {
           al_alternar_todas={formulario.alternar_todas}
         />
       ) : null}
+      {pendientes}
     </>
   );
 }

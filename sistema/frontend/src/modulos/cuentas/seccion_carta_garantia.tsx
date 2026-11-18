@@ -124,7 +124,7 @@ function DatosCarta({ carta }: { carta: CartaGarantia }) {
     { etiqueta: "Monto", valor: formatear_monto(carta.monto) },
   ];
   return (
-    <div className={estilos.lista_compacta}>
+    <div className={estilos.datos_en_linea}>
       {datos.map((dato) => (
         <div key={dato.etiqueta} className={estilos.campo_dato}>
           <span className={estilos.etiqueta_dato}>{dato.etiqueta}</span>
@@ -135,7 +135,14 @@ function DatosCarta({ carta }: { carta: CartaGarantia }) {
   );
 }
 
-export function SeccionCartaGarantia({ cuenta_id, estado }: { cuenta_id: number; estado: string }) {
+// Paso "Carta de garantia" de la linea de la cuenta.
+export function ContenidoCartaGarantia({
+  cuenta_id,
+  estado,
+}: {
+  cuenta_id: number;
+  estado: string;
+}) {
   const { sesion } = usar_sesion();
   const consulta = useQuery({
     queryKey: ["cuentas", cuenta_id, "carta-garantia"],
@@ -149,8 +156,7 @@ export function SeccionCartaGarantia({ cuenta_id, estado }: { cuenta_id: number;
   if (consulta.isPending || (!carta && !puede_registrar)) return null;
 
   return (
-    <div className={estilos.seccion}>
-      <div className={estilos.titulo_seccion}>Carta de garantía</div>
+    <>
       {carta ? (
         <DatosCarta carta={carta} />
       ) : (
@@ -163,6 +169,6 @@ export function SeccionCartaGarantia({ cuenta_id, estado }: { cuenta_id: number;
       {registrar ? (
         <DialogoCartaGarantia cuenta_id={cuenta_id} al_cerrar={() => set_registrar(false)} />
       ) : null}
-    </div>
+    </>
   );
 }

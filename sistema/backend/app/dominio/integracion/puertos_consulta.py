@@ -68,6 +68,10 @@ class ProcedimientoResumen:
     codigo_asignado: str
     descripcion_registrada: str
     cantidad: int
+    # Lo que el auditor registro al codificar: es lo que se factura.
+    monto_unitario: Decimal = Decimal("0.00")
+    fecha: date | None = None
+    id: int = 0
 
 
 @dataclass(frozen=True, slots=True)
@@ -202,6 +206,10 @@ class ObservacionOficial:
     valor_observado: str | None
     codigo_error: str
     descripcion: str
+    # La cuenta de esa linea del lote; None si la observacion es de todo
+    # el lote (2026-11-18).
+    cuenta_medica_id: int | None = None
+    identificacion_interna: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

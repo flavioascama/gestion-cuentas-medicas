@@ -44,6 +44,11 @@ class UsuarioModelo(Base):
     bloqueado_hasta: Mapped[datetime | None] = mapped_column(
         sa.DateTime(timezone=True), nullable=True
     )
+    # La clave la puso el administrador y la persona aun no la cambio
+    # (2026-11-18).
+    debe_cambiar_clave: Mapped[bool] = mapped_column(
+        sa.Boolean, nullable=False, default=False, server_default=sa.false()
+    )
     roles: Mapped[list[RolModelo]] = relationship(secondary=tabla_usuario_rol, lazy="selectin")
 
 

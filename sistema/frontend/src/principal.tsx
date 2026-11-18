@@ -10,7 +10,8 @@ import "./estilos/base.css";
 // ingreso (fuera de DisenioPrincipal, que es quien alterna el tema en
 // caliente) también respeta la preferencia guardada desde el primer pintado.
 try {
-  document.documentElement.dataset.theme = localStorage.getItem("tema_interfaz") === "oscuro" ? "dark" : "light";
+  document.documentElement.dataset.theme =
+    localStorage.getItem("tema_interfaz") === "oscuro" ? "dark" : "light";
 } catch {
   // Almacenamiento no disponible (navegación privada, etc.): se mantiene el tema claro por defecto.
 }

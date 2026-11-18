@@ -26,7 +26,7 @@ class GestorSesionJwt(GestorSesion):
     def emitir(self, usuario: Usuario) -> str:
         assert usuario.id is not None, "No se puede emitir sesion para un usuario sin persistir"
         ahora = self._reloj.ahora()
-        carga = {
+        carga: dict[str, object] = {
             "sub": str(usuario.id),
             "nombre_usuario": usuario.nombre_usuario,
             "roles": [rol.value for rol in usuario.roles],
@@ -38,6 +38,10 @@ class GestorSesionJwt(GestorSesion):
             "iat": ahora,
             "exp": ahora + timedelta(minutes=self._duracion_minutos),
         }
+        # Solo va cuando hace falta: la pantalla lleva a cambiar la clave. El
+        # servidor no confia en este dato, lee el del usuario en cada pedido.
+        if usuario.debe_cambiar_clave:
+            carga["cambiar_clave"] = True
         return jwt.encode(carga, self._clave_firma, algorithm=_ALGORITMO)
 
     def verificar(self, token: str) -> CargaSesion:
@@ -56,6 +60,7 @@ class GestorSesionJwt(GestorSesion):
                 roles=roles,
                 jti=carga["jti"],
                 expira_en=datetime.fromtimestamp(carga["exp"], tz=UTC),
+                debe_cambiar_clave=carga.get("cambiar_clave") is True,
             )
         except (KeyError, ValueError) as error:
             raise SesionInvalidaError("La credencial de sesion no es valida.") from error

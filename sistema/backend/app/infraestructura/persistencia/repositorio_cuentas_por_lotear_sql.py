@@ -7,6 +7,7 @@ import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dominio.integracion.lotes_sugeridos import CuentaPorLotear, RepositorioCuentasPorLotear
+from app.dominio.integracion.pendientes_lote import pendientes_para_lotear
 from app.infraestructura.persistencia.modelos_integracion import (
     AseguradoModelo,
     CuentaMedicaModelo,
@@ -67,6 +68,9 @@ class RepositorioCuentasPorLotearSql(RepositorioCuentasPorLotear):
                 iafas_razon_social=iafas.razon_social,
                 fecha_emision=fecha_emision,
                 monto=montos[cuenta.id],
+                # Una cuenta facturada siempre tiene procedimientos: lo que puede
+                # faltarle, en las anteriores al 2026-11-18, es el diagnostico.
+                pendientes=pendientes_para_lotear(bool(cuenta.diagnostico_principal_cie10), 1),
             )
             for cuenta, asegurado, iafas, fecha_emision in filas
         ]

@@ -9,20 +9,6 @@ import { IconoCandado, IconoEscudo, IconoFlechaDerecha, IconoPersona } from "./i
 import { usar_formulario_ingreso } from "./usar_formulario_ingreso";
 import estilos from "./ingreso.module.css";
 
-// Un solo aviso sobre el formulario: el error del intento o, si no hay,
-// que la sesion anterior se cerro porque vencio.
-function AvisoIngreso({
-  error,
-  sesion_vencida,
-}: {
-  error: string | null;
-  sesion_vencida: boolean;
-}) {
-  if (error) return <Mensaje tipo="error" texto={error} />;
-  if (sesion_vencida) return <Mensaje tipo="advertencia" texto="La sesión venció." />;
-  return null;
-}
-
 function NotaConfianza() {
   return (
     <p className={estilos.confianza}>
@@ -33,7 +19,7 @@ function NotaConfianza() {
 }
 
 export function Ingreso() {
-  const { sesion, sesion_vencida } = usar_sesion();
+  const { sesion } = usar_sesion();
   const navegar = useNavigate();
   const ubicacion = useLocation();
   const formulario = usar_formulario_ingreso(() => {
@@ -51,7 +37,7 @@ export function Ingreso() {
     <div className={estilos.envoltorio}>
       <form className={estilos.tarjeta} onSubmit={formulario.manejar_envio}>
         <div className={estilos.titulo}>Gestión de cuentas médicas</div>
-        <AvisoIngreso error={formulario.error} sesion_vencida={sesion_vencida} />
+        {formulario.error ? <Mensaje tipo="error" texto={formulario.error} /> : null}
         <CampoTexto
           etiqueta="Usuario"
           icono={<IconoPersona />}

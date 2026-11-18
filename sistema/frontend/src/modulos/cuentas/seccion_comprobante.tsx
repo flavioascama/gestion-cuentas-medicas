@@ -20,6 +20,14 @@ function datos_documentos(documentos: DocumentosPago): { etiqueta: string; valor
     { etiqueta: "Comprobante", valor: `${vigente.serie}-${vigente.numero}` },
     { etiqueta: "Emitido", valor: formatear_fecha(vigente.fecha_emision) },
   ];
+  // Lo que factura el comprobante, con la misma regla que el lote.
+  if (vigente.total != null) {
+    datos.push(
+      { etiqueta: "Valor de venta", valor: formatear_monto(vigente.valor_venta ?? 0) },
+      { etiqueta: "IGV (18 %)", valor: formatear_monto(vigente.igv ?? 0) },
+      { etiqueta: "Total", valor: formatear_monto(vigente.total) },
+    );
+  }
   if (nota) {
     datos.push(
       {
@@ -62,7 +70,11 @@ function AccionesDocumentos(props: { cuenta_id: number; estado: string; con_nota
   );
 }
 
-function EmitirComprobante({ cuenta_id }: { cuenta_id: number }) {
+const _LISTA = new Intl.ListFormat("es", { type: "conjunction" });
+
+// El comprobante va al final: sin acreditacion, diagnostico y al menos un
+// procedimiento no hay nada que facturar (2026-11-18).
+function EmitirComprobante({ cuenta_id, faltantes }: { cuenta_id: number; faltantes: string[] }) {
   const cliente_consultas = useQueryClient();
   const mutacion = useMutation({
     mutationFn: () => emitir_comprobante_pago(cuenta_id),
@@ -71,16 +83,30 @@ function EmitirComprobante({ cuenta_id }: { cuenta_id: number }) {
   return (
     <>
       <div className={estilos.fila_accion}>
-        <Boton variante="primario" onClick={() => mutacion.mutate()} disabled={mutacion.isPending}>
+        <Boton
+          variante="primario"
+          onClick={() => mutacion.mutate()}
+          disabled={mutacion.isPending || faltantes.length > 0}
+        >
           Emitir comprobante de pago
         </Boton>
+        {faltantes.length > 0 ? <span>Antes falta: {_LISTA.format(faltantes)}.</span> : null}
       </div>
       <MensajeErrorMutacion error={mutacion.error} texto_por_defecto="No se pudo emitir." />
     </>
   );
 }
 
-export function SeccionComprobante({ cuenta_id, estado }: { cuenta_id: number; estado: string }) {
+// Paso "Comprobante de pago" de la linea de la cuenta.
+export function ContenidoComprobante({
+  cuenta_id,
+  estado,
+  faltantes,
+}: {
+  cuenta_id: number;
+  estado: string;
+  faltantes: string[];
+}) {
   const { sesion } = usar_sesion();
   const consulta = useQuery({
     queryKey: ["cuentas", cuenta_id, "comprobante"],
@@ -91,10 +117,9 @@ export function SeccionComprobante({ cuenta_id, estado }: { cuenta_id: number; e
   if (consulta.isPending || (!documentos && !es_analista)) return null;
 
   return (
-    <div className={estilos.seccion}>
-      <div className={estilos.titulo_seccion}>Comprobante de pago</div>
+    <>
       {documentos ? (
-        <div className={estilos.lista_compacta}>
+        <div className={estilos.datos_en_linea}>
           {datos_documentos(documentos).map((dato, indice) => (
             <div key={`${dato.etiqueta}-${indice}`} className={estilos.campo_dato}>
               <span className={estilos.etiqueta_dato}>{dato.etiqueta}</span>
@@ -103,7 +128,7 @@ export function SeccionComprobante({ cuenta_id, estado }: { cuenta_id: number; e
           ))}
         </div>
       ) : (
-        <EmitirComprobante cuenta_id={cuenta_id} />
+        <EmitirComprobante cuenta_id={cuenta_id} faltantes={faltantes} />
       )}
       {documentos && es_analista ? (
         <AccionesDocumentos
@@ -112,6 +137,6 @@ export function SeccionComprobante({ cuenta_id, estado }: { cuenta_id: number; e
           con_nota={Boolean(documentos.nota)}
         />
       ) : null}
-    </div>
+    </>
   );
 }

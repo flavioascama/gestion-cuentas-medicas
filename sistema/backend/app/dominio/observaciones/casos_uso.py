@@ -8,11 +8,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from app.dominio.acceso.entidades import NombreRol
+from app.dominio.acceso.entidades import NombreRol, Usuario
+from app.dominio.acceso.puertos import RepositorioUsuarios
 from app.dominio.observaciones.errores import (
     ErrorMotivoInexistente,
     ErrorObservacionInexistente,
     ErrorObservacionYaRespondida,
+    ErrorResponsableNoValido,
 )
 from app.dominio.observaciones.puertos import RepositorioCatalogoMotivos, RepositorioObservaciones
 from app.dominio.observaciones.valores import (
@@ -122,13 +124,21 @@ class RegistrarObservacion:
 class AsignarResponsableObservacion:
     """CU-09 (RF-10, RF-16): el jefe confirma o reasigna. Si corrige la
     naturaleza, el responsable propuesto se recalcula (Seccion 5.2.4.2);
-    no mueve el estado de la cuenta, por eso no pasa por el motor."""
+    no mueve el estado de la cuenta, por eso no pasa por el motor.
+
+    Con `usuarios` (2026-11-18) comprueba que la persona elegida exista,
+    este activa y tenga el rol que responde esa naturaleza: antes se
+    aceptaba cualquier numero de usuario."""
 
     def __init__(
-        self, repositorio: RepositorioObservaciones, observabilidad: Observabilidad
+        self,
+        repositorio: RepositorioObservaciones,
+        observabilidad: Observabilidad,
+        usuarios: RepositorioUsuarios | None = None,
     ) -> None:
         self._repositorio = repositorio
         self._observabilidad = observabilidad
+        self._usuarios = usuarios
 
     async def ejecutar(
         self,
@@ -143,6 +153,7 @@ class AsignarResponsableObservacion:
 
         naturaleza_final = naturaleza_corregida or observacion.naturaleza
         responsable_rol = ROL_RESPONSABLE_POR_NATURALEZA[naturaleza_final]
+        await self._exigir_responsable_valido(responsable_usuario_id, responsable_rol)
         await self._repositorio.reasignar(
             observacion_id, naturaleza_final, responsable_rol, responsable_usuario_id
         )
@@ -162,6 +173,29 @@ class AsignarResponsableObservacion:
                 },
             )
         )
+
+    async def _exigir_responsable_valido(self, usuario_id: int | None, rol: NombreRol) -> None:
+        if usuario_id is None or self._usuarios is None:
+            return
+        usuario = await self._usuarios.obtener_por_id(usuario_id)
+        if usuario is None or not usuario.activo or rol not in usuario.roles:
+            raise ErrorResponsableNoValido(
+                f"El responsable debe ser un usuario activo con el rol {rol.value}."
+            )
+
+
+class ListarResponsablesPosibles:
+    """CU-09: las personas a las que el jefe puede asignar una observacion
+    (2026-11-18: antes escribia el numero interno del usuario). Son los
+    usuarios activos con un rol que responde observaciones (Tabla 60)."""
+
+    def __init__(self, usuarios: RepositorioUsuarios) -> None:
+        self._usuarios = usuarios
+
+    async def ejecutar(self) -> list[Usuario]:
+        roles = frozenset(ROL_RESPONSABLE_POR_NATURALEZA.values())
+        usuarios = await self._usuarios.listar()
+        return [u for u in usuarios if u.activo and u.tiene_alguno(roles)]
 
 
 class ResponderObservacion:

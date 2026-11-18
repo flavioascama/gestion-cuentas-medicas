@@ -1,16 +1,17 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { remitir_lote, solicitar_carga_en_validador } from "../../api/lotes";
+import { obtener_trabajo } from "../../api/trabajos";
 import { Boton } from "../../componentes_base/boton";
-import { GestorSesionPlataforma } from "../../componentes_base/gestor_sesion_plataforma";
 import { MensajeErrorMutacion } from "../../componentes_base/mensaje_error_mutacion";
 import { ProgresoTrabajo } from "../../componentes_base/progreso_trabajo";
 import { usar_sesion } from "../../sesion/contexto_sesion";
+import { SesionPlataforma } from "../plataformas/sesion_plataforma";
 
 // Las mutaciones viven en un solo hook (no uno por boton) porque el
 // boton -- ahora en la cabecera, junto al titulo -- y su contenido
-// secundario (progreso, mensaje de error, el gestor de sesion de TEDEF
-// Web) -- debajo del stepper, lejos en el arbol -- necesitan ver el
+// secundario (progreso, mensaje de error, el codigo de verificacion de
+// TEDEF Web) -- debajo del stepper, lejos en el arbol -- necesitan ver el
 // mismo estado de mutacion; declarar un useMutation en cada uno los
 // desincronizaria.
 export function usar_acciones_lote(lote_id: number) {
@@ -73,11 +74,18 @@ export function BotonAccionLote({ estado, acciones }: { estado: string; acciones
 }
 
 function ContenidoCargaValidador({ acciones }: { acciones: AccionesLote }) {
+  // El mismo trabajo que muestra ProgresoTrabajo (misma clave de consulta).
+  const trabajo = useQuery({
+    queryKey: ["trabajo", acciones.trabajo_id],
+    queryFn: () => obtener_trabajo(acciones.trabajo_id ?? 0),
+    enabled: acciones.trabajo_id !== null,
+  });
   return (
     <div>
       {acciones.trabajo_id !== null ? (
         <ProgresoTrabajo
           trabajo_id={acciones.trabajo_id}
+          texto_en_curso="Cargando en el validador"
           al_completar={acciones.al_completar_carga}
         />
       ) : null}
@@ -85,7 +93,13 @@ function ContenidoCargaValidador({ acciones }: { acciones: AccionesLote }) {
         error={acciones.cargar_validador.error}
         texto_por_defecto="No se pudo encolar la carga."
       />
-      <GestorSesionPlataforma plataforma="tedef_web" nombre_visible="TEDEF Web" />
+      {/* La sesion con TEDEF Web se maneja sola (2026-11-18): se pide cuando
+          la carga la necesita y la persona solo responde el codigo. */}
+      <SesionPlataforma
+        plataforma="tedef_web"
+        nombre="TEDEF Web"
+        necesita={trabajo.data?.estado === "REQUIERE_SESION"}
+      />
     </div>
   );
 }

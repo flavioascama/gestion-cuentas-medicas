@@ -6,11 +6,16 @@ from __future__ import annotations
 
 from datetime import date
 
+import pytest
+
 from app.dominio.pse.casos_uso import EmitirComprobantePago
 from app.dominio.pse.puertos import (
     ComprobantePse,
     EmisorPse,
+    ErrorFaltaParaFacturar,
+    NotaPse,
     RepositorioComprobantePago,
+    RequisitosComprobante,
 )
 from app.dominio.puertos_comunes import Evento, RegistroEventos
 
@@ -24,6 +29,9 @@ class EmisorPseFalso(EmisorPse):
         self._comprobante = comprobante
         self.llamadas: list[tuple[str, str]] = []
 
+    async def emitir_nota(self, ruc_ipress: str, codigo_ipress: str, tipo: str) -> NotaPse:
+        raise AssertionError("estas pruebas no emiten notas")
+
     async def emitir(self, ruc_ipress: str, codigo_ipress: str) -> ComprobantePse:
         self.llamadas.append((ruc_ipress, codigo_ipress))
         return self._comprobante
@@ -32,9 +40,15 @@ class EmisorPseFalso(EmisorPse):
 class RepositorioComprobanteFalso(RepositorioComprobantePago):
     def __init__(self) -> None:
         self.guardado: tuple[int, ComprobantePse] | None = None
+        self.requisitos: RequisitosComprobante | None = RequisitosComprobante(
+            acreditada=True, con_diagnostico=True, procedimientos=1
+        )
 
     async def obtener_ipress_propia(self) -> tuple[str, str]:
         return "20123456789", "15995250"
+
+    async def requisitos_para_facturar(self, cuenta_id: int) -> RequisitosComprobante | None:
+        return self.requisitos
 
     async def guardar_comprobante(self, cuenta_id: int, comprobante: ComprobantePse) -> int:
         self.guardado = (cuenta_id, comprobante)
@@ -61,6 +75,22 @@ async def prueba_emitir_comprobante_pago_usa_la_ipress_propia_y_persiste() -> No
     assert resultado.comprobante == _COMPROBANTE
     assert emisor.llamadas == [("20123456789", "15995250")]
     assert repositorio.guardado == (79, _COMPROBANTE)
+
+
+async def prueba_no_se_emite_un_comprobante_sin_nada_que_facturar() -> None:
+    repositorio = RepositorioComprobanteFalso()
+    repositorio.requisitos = RequisitosComprobante(
+        acreditada=True, con_diagnostico=False, procedimientos=0
+    )
+    emisor = EmisorPseFalso()
+    caso_uso = EmitirComprobantePago(repositorio, emisor, RegistroEventosFalso())
+
+    with pytest.raises(ErrorFaltaParaFacturar) as error:
+        await caso_uso.ejecutar(79, "ana.analista")
+
+    assert error.value.faltantes == ("el diagnóstico principal", "al menos un procedimiento")
+    # No se le pide un numero al PSE ni se guarda nada.
+    assert emisor.llamadas == [] and repositorio.guardado is None
 
 
 async def prueba_emitir_comprobante_pago_registra_evento() -> None:

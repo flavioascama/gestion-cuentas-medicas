@@ -47,6 +47,9 @@ class CuentaPorLotear:
     iafas_razon_social: str
     fecha_emision: date
     monto: Decimal
+    # Lo que le falta para entrar a un lote, en palabras simples; vacio si
+    # esta lista (dominio/integracion/pendientes_lote.py).
+    pendientes: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -56,6 +59,8 @@ class LoteSugerido:
     iafas_razon_social: str
     periodo: str
     cuentas: tuple[CuentaPorLotear, ...]
+    # Cuentas del mismo grupo que todavia no pueden entrar (2026-11-18).
+    con_pendientes: tuple[CuentaPorLotear, ...] = ()
 
     @property
     def monto_total(self) -> Decimal:
@@ -78,13 +83,15 @@ def agrupar_en_lotes_sugeridos(cuentas: Iterable[CuentaPorLotear]) -> list[LoteS
     sugeridos: list[LoteSugerido] = []
     for (periodo, _codigo), miembros in sorted(grupos.items()):
         primera = miembros[0]
+        ordenadas = sorted(miembros, key=lambda c: c.identificacion_interna)
         sugeridos.append(
             LoteSugerido(
                 iafas_id=primera.iafas_id,
                 iafas_codigo=primera.iafas_codigo,
                 iafas_razon_social=primera.iafas_razon_social,
                 periodo=periodo,
-                cuentas=tuple(sorted(miembros, key=lambda c: c.identificacion_interna)),
+                cuentas=tuple(c for c in ordenadas if not c.pendientes),
+                con_pendientes=tuple(c for c in ordenadas if c.pendientes),
             )
         )
     return sugeridos

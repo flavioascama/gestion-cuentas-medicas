@@ -85,6 +85,15 @@ class Configuracion:
 
     intervalo_poll_segundos: int = _entero("INTERVALO_POLL_SEGUNDOS", 5)
 
+    # Navegacion visible del robot (2026-11-18), solo si el administrador
+    # la activo: pausa entre acciones del navegador, para que se vea cada
+    # una, y cada cuanto se publica lo que muestra.
+    # Este robot corre en un equipo con pantalla (ejecutar_con_ventana.ps1):
+    # es el unico que puede abrir la ventana real del navegador.
+    robot_con_pantalla: bool = os.environ.get("ROBOT_CON_PANTALLA", "false").lower() == "true"
+    pausa_robot_visible_ms: int = _entero("ROBOT_VISIBLE_PAUSA_MS", 600)
+    intervalo_cuadro_robot_ms: int = _entero("ROBOT_VISIBLE_INTERVALO_CUADRO_MS", 350)
+
     # Seccion 8.4 (Fase 15): protocolo de sesion asistida con CAPTCHA.
     ruta_sesiones_plataformas: Path = Path(
         os.environ.get("RUTA_SESIONES_PLATAFORMAS", "/sesiones_plataformas")

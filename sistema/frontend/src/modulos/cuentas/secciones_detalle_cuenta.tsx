@@ -30,7 +30,7 @@ export function DatosCuenta({ cuenta }: { cuenta: DetalleCuentaTipo }) {
   return (
     <div className={estilos.seccion}>
       <div className={estilos.titulo_seccion}>Datos de la cuenta</div>
-      <div className={estilos.rejilla}>
+      <div className={estilos.rejilla_cuatro}>
         {datos.map((dato) => (
           <div key={dato.etiqueta} className={estilos.campo_dato}>
             <span className={estilos.etiqueta_dato}>{dato.etiqueta}</span>

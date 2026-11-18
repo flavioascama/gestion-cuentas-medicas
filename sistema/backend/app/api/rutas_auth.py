@@ -1,19 +1,34 @@
 """POST /auth/sesion (Seccion 10.1, CU-17), publica. DELETE /auth/sesion
-(Seccion 11, Fase 18), autenticada."""
+(Seccion 11, Fase 18) y PUT /auth/clave (2026-11-18), autenticadas: son
+las dos unicas operaciones que admite quien aun debe cambiar su clave
+temporal."""
 
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, status
 
 from app.api.dependencias import (
+    autenticar_sesion,
+    construir_cambiar_clave,
     construir_cerrar_sesion,
     construir_iniciar_sesion,
-    obtener_usuario_actual,
 )
-from app.api.esquemas_acceso import RespuestaInicioSesion, SolicitudInicioSesion
+from app.api.esquemas_acceso import (
+    RespuestaInicioSesion,
+    SolicitudCambioClave,
+    SolicitudInicioSesion,
+)
 from app.compartido.errores import ErrorAplicacion
+from app.dominio.acceso.cambio_clave import CambiarClavePropia
 from app.dominio.acceso.casos_uso import CerrarSesion, IniciarSesion
-from app.dominio.acceso.errores import CredencialesInvalidasError, CuentaBloqueadaError
+from app.dominio.acceso.errores import (
+    ClaveActualIncorrectaError,
+    ClaveDebilError,
+    ClaveRepetidaError,
+    CredencialesInvalidasError,
+    CuentaBloqueadaError,
+    ErrorAcceso,
+)
 from app.dominio.acceso.puertos import CargaSesion
 from app.infraestructura.observabilidad.registro import obtener_registrador
 
@@ -58,7 +73,36 @@ async def iniciar_sesion(
 @router.delete("/sesion", status_code=status.HTTP_204_NO_CONTENT)
 async def cerrar_sesion(
     caso_uso: CerrarSesion = Depends(construir_cerrar_sesion),
-    actor: CargaSesion = Depends(obtener_usuario_actual),
+    actor: CargaSesion = Depends(autenticar_sesion),
 ) -> None:
     await caso_uso.ejecutar(actor.nombre_usuario, actor.usuario_id, actor.jti, actor.expira_en)
     _registrador.info("sesion_cerrada", caso_uso="cerrar_sesion", actor=actor.nombre_usuario)
+
+
+_CODIGOS_CAMBIO_CLAVE: dict[type[ErrorAcceso], str] = {
+    ClaveActualIncorrectaError: "CLAVE_ACTUAL_INCORRECTA",
+    ClaveRepetidaError: "CLAVE_REPETIDA",
+    ClaveDebilError: "CLAVE_DEBIL",
+}
+
+
+@router.put("/clave", response_model=RespuestaInicioSesion)
+async def cambiar_clave(
+    solicitud: SolicitudCambioClave,
+    caso_uso: CambiarClavePropia = Depends(construir_cambiar_clave),
+    actor: CargaSesion = Depends(autenticar_sesion),
+) -> RespuestaInicioSesion:
+    """Devuelve una credencial nueva: la anterior queda revocada."""
+    try:
+        token = await caso_uso.ejecutar(actor, solicitud.clave_actual, solicitud.clave_nueva)
+    except CuentaBloqueadaError as error:
+        raise ErrorAplicacion("CUENTA_BLOQUEADA", str(error), estado_http=423) from error
+    except (ClaveActualIncorrectaError, ClaveRepetidaError, ClaveDebilError) as error:
+        # 400 y no 401: la credencial es valida, lo que falla es el dato.
+        raise ErrorAplicacion(
+            _CODIGOS_CAMBIO_CLAVE[type(error)],
+            str(error),
+            estado_http=status.HTTP_400_BAD_REQUEST,
+        ) from error
+    _registrador.info("clave_cambiada", caso_uso="cambiar_clave", actor=actor.nombre_usuario)
+    return RespuestaInicioSesion(token=token)

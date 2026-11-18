@@ -3,10 +3,9 @@ import { useEffect, useState } from "react";
 import { obtener_trabajo, type DetalleTrabajo } from "../api/trabajos";
 import { formatear_duracion } from "../utilidades/formato";
 import { resolver_estado } from "./mapa_estados";
-import { BotonNavegacionRobot } from "./navegacion_robot";
 
 // REQUIERE_SESION no es terminal: en cuanto el usuario resuelve la sesion
-// asistida (GestorSesionPlataforma), el backend reactiva este mismo trabajo
+// asistida (SesionPlataforma), el backend reactiva este mismo trabajo
 // a PENDIENTE por su cuenta (IniciarSesionPlataforma.ejecutar ->
 // reactivar_requieren_sesion) sin que nadie vuelva a pulsar el boton de
 // aqui. Si se dejara de sondear en REQUIERE_SESION, como antes, la tarjeta
@@ -15,21 +14,16 @@ import { BotonNavegacionRobot } from "./navegacion_robot";
 // apariencia, porque `al_completar` (que invalida la completitud de la
 // cuenta) tampoco llegaria a dispararse.
 const _ESTADOS_TERMINALES = new Set(["COMPLETADO", "AGOTADO"]);
-// Trabajos que el robot hace con su navegador: solo esos pueden mostrar
-// su navegacion (los de correo y de consulta por programa no la tienen).
-const _TIPOS_CON_NAVEGADOR = new Set([
-  "INICIAR_SESION_PLATAFORMA",
-  "CONSULTAR_COBERTURA",
-  "CARGAR_LOTE_VALIDADOR",
-  "ENVIAR_LOTE_SUSALUD",
-]);
 
 interface Propiedades {
   trabajo_id: number;
   al_completar?: (trabajo: DetalleTrabajo) => void;
+  // Lo que se dice mientras el trabajo no termina, en vez de su estado
+  // interno (pendiente, requiere sesion...).
+  texto_en_curso?: string;
 }
 
-export function ProgresoTrabajo({ trabajo_id, al_completar }: Propiedades) {
+export function ProgresoTrabajo({ trabajo_id, al_completar, texto_en_curso }: Propiedades) {
   const [ahora, set_ahora] = useState(() => Date.now());
 
   const consulta = useQuery({
@@ -53,21 +47,19 @@ export function ProgresoTrabajo({ trabajo_id, al_completar }: Propiedades) {
 
   const trabajo = consulta.data;
   const transcurrido = formatear_duracion((ahora - new Date(trabajo.creado_en).getTime()) / 1000);
+  if (texto_en_curso && !_ESTADOS_TERMINALES.has(trabajo.estado)) {
+    return (
+      <span>
+        {texto_en_curso}, {transcurrido}
+      </span>
+    );
+  }
   const definicion = resolver_estado(trabajo.estado);
 
   return (
     <span>
       {definicion.texto}, {transcurrido}
       {trabajo.error ? ` — ${trabajo.error}` : ""}
-      {_TIPOS_CON_NAVEGADOR.has(trabajo.tipo) ? (
-        <>
-          {" "}
-          <BotonNavegacionRobot
-            trabajo_id={trabajo_id}
-            en_curso={!_ESTADOS_TERMINALES.has(trabajo.estado)}
-          />
-        </>
-      ) : null}
     </span>
   );
 }

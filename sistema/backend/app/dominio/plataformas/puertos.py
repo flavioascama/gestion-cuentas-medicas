@@ -48,6 +48,12 @@ class RepositorioSesionPlataforma(Protocol):
         devolver None."""
         ...
 
+    async def expirar_activas(self, plataforma: str) -> None:
+        """Deja EXPIRADA la sesion ACTIVA de la plataforma: el robot
+        comprobo que la plataforma ya no la acepta, aunque su plazo no
+        haya vencido (2026-11-18). Asi se puede pedir otra."""
+        ...
+
     async def registrar_captcha(self, sesion_id: int, imagen: bytes) -> None:
         """Pasa a ESPERANDO_CAPTCHA (Seccion 8.4, punto 2)."""
         ...

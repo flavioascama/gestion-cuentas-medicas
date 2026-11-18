@@ -115,7 +115,6 @@ class RepositorioDispensacionSql(RepositorioDispensacion):
             cantidad_venta=datos.cantidad_venta,
             tipo_unidad_dispensacion=datos.tipo_unidad_dispensacion,
             monto_unitario_sin_impuesto=datos.monto_unitario,
-            copago=datos.copago,
             monto_presentado=producto.monto_presentado,
             monto_no_cubierto=datos.monto_no_cubierto,
             diagnostico_asociado_cie10=datos.diagnostico_asociado_cie10 or None,

@@ -17,9 +17,6 @@ docs/PENDIENTES.md), por lo que "RUC de Entidad de Referencia" (T2 campo
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from decimal import ROUND_HALF_UP, Decimal
-
 from app.dominio.integracion.esquema import CampoEsquema, TablaEsquema
 from app.dominio.integracion.lote import (
     ContextoLote,
@@ -35,33 +32,15 @@ from app.infraestructura.tedef.escritor_ancho_fijo import (
     formatear_monto,
     formatear_numerico_con_ceros,
 )
-
-_CERO = Decimal("0.00")
-_DOS_DECIMALES = Decimal("0.01")
-
-# Tipos de Documento de Pago autorizados por la SUNAT via FUA/Codigo Unico
-# (Seccion 7.9, T1 criterio C6 del campo 22 y 24): fuerzan monto 0.00.
-_TIPOS_DOCUMENTO_SIN_MONTO = {"10", "11"}
-
-
-def _monto_presentado(procedimiento: ProcedimientoLote) -> Decimal:
-    """T3 campo 19, formula literal de la descripcion del campo: cantidad
-    multiplicada por monto unitario."""
-
-    return (Decimal(procedimiento.cantidad) * procedimiento.monto_unitario).quantize(
-        _DOS_DECIMALES, rounding=ROUND_HALF_UP
-    )
-
-
-def _monto_no_cubierto(procedimiento: ProcedimientoLote) -> Decimal:
-    """T3 campo 20: lo que no cubre la IAFAS es lo que asume el paciente
-    via copagos (docs/DECISIONES.md, correccion del 2026-09-16)."""
-
-    return procedimiento.copago_variable + procedimiento.copago_fijo
-
-
-def _monto_cubierto(procedimiento: ProcedimientoLote) -> Decimal:
-    return _monto_presentado(procedimiento) - _monto_no_cubierto(procedimiento)
+from app.infraestructura.tedef.montos_lote import (
+    CERO,
+    calcular_gastos,
+    calcular_montos_t1,
+    campos_montos_t2,
+    monto_no_cubierto,
+    monto_presentado,
+    monto_presentado_producto,
+)
 
 
 def construir_t3(
@@ -71,8 +50,8 @@ def construir_t3(
     procedimiento: ProcedimientoLote,
 ) -> dict[int, str]:
     campo = {c.numero: c for c in tabla.campos}
-    monto_presentado = _monto_presentado(procedimiento)
-    monto_no_cubierto = _monto_no_cubierto(procedimiento)
+    presentado = monto_presentado(procedimiento)
+    no_cubierto = monto_no_cubierto(procedimiento)
 
     return {
         1: formatear_numerico_con_ceros(contexto.ruc_ipress, campo[1]),
@@ -96,8 +75,8 @@ def construir_t3(
         16: formatear_monto(procedimiento.monto_unitario, campo[16]),
         17: formatear_monto(procedimiento.copago_variable, campo[17]),
         18: formatear_monto(procedimiento.copago_fijo, campo[18]),
-        19: formatear_monto(monto_presentado, campo[19]),
-        20: formatear_monto(monto_no_cubierto, campo[20]),
+        19: formatear_monto(presentado, campo[19]),
+        20: formatear_monto(no_cubierto, campo[20]),
         21: " " * campo[21].longitud,  # Diagnostico Asociado: en blanco (CIE-10 no disponible)
         22: formatear_alfanumerico("A", campo[22]),  # Servicio Exento de Impuestos
         23: formatear_numerico_con_ceros("02", campo[23]),  # Codigo Rubro fijo (ver mapeo T3-23)
@@ -118,9 +97,7 @@ def construir_t4(
     prestacion sin productos simplemente no aporta filas a T4."""
 
     campo = {c.numero: c for c in tabla.campos}
-    monto_presentado = (producto.cantidad_venta * producto.monto_unitario).quantize(
-        _DOS_DECIMALES, rounding=ROUND_HALF_UP
-    )
+    presentado = monto_presentado_producto(producto)
     # Campo 17: "de no tenerse se consignara el diagnostico principal"
     # (criterio del propio campo, Seccion 8.1 del plan v3).
     diagnostico = (
@@ -146,7 +123,7 @@ def construir_t4(
         12: formatear_numerico_con_ceros(producto.tipo_unidad_dispensacion, campo[12]),
         13: formatear_monto(producto.monto_unitario, campo[13]),
         14: formatear_monto(producto.copago, campo[14]),
-        15: formatear_monto(monto_presentado, campo[15]),
+        15: formatear_monto(presentado, campo[15]),
         16: formatear_monto(producto.monto_no_cubierto, campo[16]),
         17: formatear_alfanumerico(diagnostico, campo[17]),
         18: formatear_alfanumerico(producto.exento_igv, campo[18]),
@@ -154,36 +131,6 @@ def construir_t4(
         # Cantidad prescrita: opcional, en blanco (mismo supuesto que T3
         # campo 24: no se distingue de la cantidad vendida en este prototipo).
         20: " " * campo[20].longitud,
-    }
-
-
-def _campos_montos_t2(
-    procedimientos: tuple[ProcedimientoLote, ...], campo: dict[int, CampoEsquema]
-) -> dict[int, str]:
-    """Campos 35 a 48 (grupos de gasto): el grupo 1 es la suma de lo
-    cubierto por procedimiento; los demas grupos dan 0.00 porque este
-    prototipo no modela otras fuentes de cobertura (docs/DECISIONES.md)."""
-
-    gasto_grupo1 = sum((_monto_cubierto(p) for p in procedimientos), _CERO)
-    copago_fijo_afecto = sum((p.copago_fijo for p in procedimientos), _CERO)
-    copago_variable_afecto = sum((p.copago_variable for p in procedimientos), _CERO)
-    total_gastos_cubiertos = gasto_grupo1  # los demas grupos dan 0.00 (ver notas de mapeo)
-
-    return {
-        35: formatear_monto(gasto_grupo1, campo[35]),
-        36: formatear_monto(_CERO, campo[36]),
-        37: formatear_monto(_CERO, campo[37]),
-        38: formatear_monto(_CERO, campo[38]),
-        39: formatear_monto(_CERO, campo[39]),
-        40: formatear_monto(_CERO, campo[40]),
-        41: formatear_monto(_CERO, campo[41]),
-        42: formatear_monto(_CERO, campo[42]),
-        43: formatear_monto(_CERO, campo[43]),
-        44: formatear_monto(copago_fijo_afecto, campo[44]),
-        45: formatear_monto(_CERO, campo[45]),
-        46: formatear_monto(copago_variable_afecto, campo[46]),
-        47: formatear_monto(_CERO, campo[47]),
-        48: formatear_monto(total_gastos_cubiertos, campo[48]),
     }
 
 
@@ -234,66 +181,9 @@ def construir_t2(
         33: " " * campo[33].longitud,
         34: " " * campo[34].longitud,
     }
-    campos.update(_campos_montos_t2(procedimientos, campo))
+    # Grupos de gasto: los procedimientos y, desde el 2026-11-18, la farmacia.
+    campos.update(campos_montos_t2(calcular_gastos(procedimientos, prestacion.productos), campo))
     return campos
-
-
-@dataclass(frozen=True, slots=True)
-class _MontosT1:
-    """Objeto de parametros (GUIA_ESTILO_CODIGO.md, Seccion 2.2): los
-    montos de T1 (campos 17 a 24), todos derivados de los grupos de gasto
-    ya calculados en T2 -- separarlos de `construir_t1` deja esa funcion
-    dentro del limite de lineas por funcion (Seccion 3)."""
-
-    exonerado_igv: Decimal
-    copago_fijo_afecto: Decimal
-    copago_fijo_exonerado: Decimal
-    copago_variable_afecto: Decimal
-    copago_variable_exonerado: Decimal
-    base_imponible: Decimal
-    igv: Decimal
-    total_facturado: Decimal
-
-
-def _calcular_montos_t1(
-    documento: DocumentoLote, contexto: ContextoLote, valores_t2: dict[int, str]
-) -> _MontosT1:
-    def _monto_t2(numero: int) -> Decimal:
-        return Decimal(valores_t2[numero].strip())
-
-    exonerado_igv = _monto_t2(42)
-    copago_fijo_afecto = _monto_t2(44)
-    copago_fijo_exonerado = _monto_t2(45)
-    copago_variable_afecto = _monto_t2(46)
-    copago_variable_exonerado = _monto_t2(47)
-    total_gastos_cubiertos = _monto_t2(48)
-
-    base_imponible = (
-        total_gastos_cubiertos - exonerado_igv - (copago_fijo_afecto + copago_variable_afecto)
-    )
-    if base_imponible < 0:
-        base_imponible = _CERO  # criterio C4
-    if documento.tipo_documento_pago in _TIPOS_DOCUMENTO_SIN_MONTO:
-        base_imponible = _CERO  # criterio C6
-
-    igv = (base_imponible * contexto.tasa_igv).quantize(_DOS_DECIMALES, rounding=ROUND_HALF_UP)
-
-    total_facturado = (
-        base_imponible + igv + exonerado_igv - (copago_fijo_exonerado + copago_variable_exonerado)
-    )
-    if documento.tipo_documento_pago in _TIPOS_DOCUMENTO_SIN_MONTO:
-        total_facturado = _CERO
-
-    return _MontosT1(
-        exonerado_igv=exonerado_igv,
-        copago_fijo_afecto=copago_fijo_afecto,
-        copago_fijo_exonerado=copago_fijo_exonerado,
-        copago_variable_afecto=copago_variable_afecto,
-        copago_variable_exonerado=copago_variable_exonerado,
-        base_imponible=base_imponible,
-        igv=igv,
-        total_facturado=total_facturado,
-    )
 
 
 def _campos_nota_t1(nota: NotaLote | None, campo: dict[int, CampoEsquema]) -> dict[int, str]:
@@ -320,7 +210,7 @@ def construir_t1(
     valores_t2: dict[int, str],
 ) -> dict[int, str]:
     campo = {c.numero: c for c in tabla.campos}
-    m = _calcular_montos_t1(documento, contexto, valores_t2)
+    m = calcular_montos_t1(documento, contexto, valores_t2)
 
     return {
         1: formatear_fecha(contexto.generado_en.date(), campo[1]),
@@ -336,7 +226,7 @@ def construir_t1(
         11: formatear_numerico_con_ceros("1", campo[11]),  # una prestacion por documento
         12: formatear_numerico_con_ceros("01", campo[12]),  # pago por servicio
         13: formatear_numerico_con_ceros("999", campo[13]),
-        14: formatear_monto(_CERO, campo[14]),
+        14: formatear_monto(CERO, campo[14]),
         15: " " * campo[15].longitud,
         16: formatear_numerico_con_ceros("1", campo[16]),  # soles
         17: formatear_monto(m.exonerado_igv, campo[17]),

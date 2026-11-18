@@ -15,6 +15,7 @@ from app.dominio.integracion.puertos_consulta import (
     RepositorioCuentasConsulta,
     ResumenCuenta,
 )
+from app.dominio.orquestacion.valores import ESTADOS_TERMINALES
 from app.infraestructura.persistencia.modelos_catalogo_gtin import CatalogoGtinProductoModelo
 from app.infraestructura.persistencia.modelos_farmacia import ProductoFacturadoModelo
 from app.infraestructura.persistencia.modelos_integracion import CuentaMedicaModelo, IafasModelo
@@ -38,7 +39,12 @@ class RepositorioCuentasConsultaSql(RepositorioCuentasConsulta):
                 selectinload(CuentaMedicaModelo.asegurado),
                 contains_eager(CuentaMedicaModelo.iafas),
             )
-            .order_by(CuentaMedicaModelo.creado_en.desc())
+            # Las cuentas que ya terminaron su ciclo (cerradas y anuladas) van al
+            # final: primero lo que todavia tiene trabajo (2026-11-18).
+            .order_by(
+                CuentaMedicaModelo.estado.in_(sorted(ESTADOS_TERMINALES)).asc(),
+                CuentaMedicaModelo.creado_en.desc(),
+            )
         )
         if estado is not None:
             consulta = consulta.where(CuentaMedicaModelo.estado == estado)
@@ -97,6 +103,9 @@ class RepositorioCuentasConsultaSql(RepositorioCuentasConsulta):
                     codigo_asignado=p.codigo_asignado,
                     descripcion_registrada=p.descripcion_registrada,
                     cantidad=p.cantidad,
+                    monto_unitario=p.monto_unitario,
+                    fecha=p.fecha,
+                    id=p.id,
                 )
                 for p in cuenta.procedimientos
             ),

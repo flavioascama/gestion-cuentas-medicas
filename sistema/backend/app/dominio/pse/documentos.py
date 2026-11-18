@@ -10,13 +10,14 @@ y la nota que lo ajusta.
   de nota por documento (campos 25 a 29: tipo C o D, numero serie+numero,
   monto sin IGV, fecha y motivo R, A o D); por eso se admite una nota por
   comprobante, que el lote siguiente transmite. Sin nota, el lote sigue
-  transmitiendo "N" y los campos en blanco.
+  transmitiendo "N" y los campos en blanco. La serie, el numero y la fecha
+  de la nota los da el PSE al emitirla, igual que los del comprobante
+  (2026-11-18: antes se escribian a mano).
 
 Un comprobante con nota no se reemplaza: la nota es de ese comprobante."""
 
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from decimal import Decimal
@@ -30,8 +31,6 @@ ESTADOS_CON_REEMPLAZO = frozenset({"RECHAZADA", "GLOSADA", "GLOSADA_PARCIAL"})
 ESTADOS_CON_NOTA = frozenset({"FACTURADA", "RECHAZADA", "GLOSADA", "GLOSADA_PARCIAL"})
 TIPOS_NOTA = frozenset({"C", "D"})
 MOTIVOS_NOTA = frozenset({"R", "A", "D"})
-_SERIE = re.compile(r"[A-Z0-9]{4}")
-_NUMERO = re.compile(r"[0-9]{1,8}")
 
 
 class ErrorDocumentoPago(Exception):
@@ -69,15 +68,18 @@ class ComprobanteVigente:
     serie: str
     numero: str
     fecha_emision: date
+    # Lo que factura (2026-11-18): valor de venta, IGV y total.
+    valor_venta: Decimal | None = None
+    igv: Decimal | None = None
+    total: Decimal | None = None
 
 
 @dataclass(frozen=True, slots=True)
 class DatosNota:
+    """Lo que decide la persona; la serie, el numero y la fecha son del PSE."""
+
     tipo: str
-    serie: str
-    numero: str
     monto: Decimal
-    fecha: date
     motivo: str
 
 
@@ -139,20 +141,14 @@ async def _estado_exigido(
     return estado
 
 
-def _validar_nota(datos: DatosNota, vigente: ComprobanteVigente, hoy: date) -> None:
+def _validar_nota(datos: DatosNota) -> None:
     errores: list[str] = []
     if datos.tipo not in TIPOS_NOTA:
         errores.append("tipo de nota fuera del dominio (C o D)")
     if datos.motivo not in MOTIVOS_NOTA:
         errores.append("motivo fuera del dominio (R, A o D)")
-    if not _SERIE.fullmatch(datos.serie):
-        errores.append("la serie tiene cuatro caracteres alfanumericos")
-    if not _NUMERO.fullmatch(datos.numero):
-        errores.append("el numero tiene hasta ocho digitos")
     if datos.monto <= 0:
         errores.append("el monto debe ser mayor que cero")
-    if not vigente.fecha_emision <= datos.fecha <= hoy:
-        errores.append("la fecha debe estar entre la emision del comprobante y hoy")
     if errores:
         raise ErrorNotaInvalida("; ".join(errores).capitalize() + ".")
 
@@ -165,15 +161,27 @@ class ConsultarDocumentosPago:
         return await self._repositorio.documentos(cuenta_medica_id)
 
 
+@dataclass(frozen=True, slots=True)
+class EmisionPse:
+    """Objeto de parametros (GUIA_ESTILO_CODIGO.md, Seccion 2.2): lo que
+    hace falta para pedir un comprobante al PSE."""
+
+    comprobantes: RepositorioComprobantePago
+    emisor: EmisorPse
+
+
 class RegistrarNotaDocumento:
     def __init__(
         self,
         repositorio: RepositorioDocumentosPago,
+        emision: EmisionPse,
         estado_cuenta: RepositorioEstadoCuenta,
         registro_eventos: RegistroEventos,
         reloj: Reloj,
     ) -> None:
         self._repositorio = repositorio
+        self._comprobantes = emision.comprobantes
+        self._emisor = emision.emisor
         self._estado_cuenta = estado_cuenta
         self._registro_eventos = registro_eventos
         self._reloj = reloj
@@ -185,14 +193,16 @@ class RegistrarNotaDocumento:
             raise ErrorSinComprobante(f"La cuenta {cuenta_medica_id} no tiene comprobante.")
         if documentos.nota is not None:
             raise ErrorNotaYaRegistrada("El comprobante ya tiene una nota registrada.")
+        _validar_nota(datos)
+        ruc_ipress, codigo_ipress = await self._comprobantes.obtener_ipress_propia()
+        emitida = await self._emisor.emitir_nota(ruc_ipress, codigo_ipress, datos.tipo)
         ahora = self._reloj.ahora()
-        _validar_nota(datos, documentos.vigente, ahora.date())
         nota = NotaDocumento(
             tipo=datos.tipo,
-            serie=datos.serie,
-            numero=datos.numero.zfill(8),
+            serie=emitida.serie,
+            numero=emitida.numero.zfill(8),
             monto=datos.monto,
-            fecha=datos.fecha,
+            fecha=emitida.fecha_emision,
             motivo=datos.motivo,
             registrado_en=ahora,
             registrado_por=actor,
@@ -215,15 +225,6 @@ class RegistrarNotaDocumento:
             )
         )
         return nota
-
-
-@dataclass(frozen=True, slots=True)
-class EmisionPse:
-    """Objeto de parametros (GUIA_ESTILO_CODIGO.md, Seccion 2.2): lo que
-    hace falta para pedir un comprobante al PSE."""
-
-    comprobantes: RepositorioComprobantePago
-    emisor: EmisorPse
 
 
 class ReemplazarComprobantePago:

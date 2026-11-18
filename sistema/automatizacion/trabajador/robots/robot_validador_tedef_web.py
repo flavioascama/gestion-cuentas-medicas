@@ -105,7 +105,7 @@ class AdaptadorValidadorTedefWeb(ValidadorTedefWeb):
 
     async def _paso(self, pagina: Page, descripcion: str) -> None:
         if self._pasos is not None:
-            await self._pasos.capturar(pagina, _PLATAFORMA, descripcion)
+            await self._pasos.anotar(pagina, _PLATAFORMA, descripcion)
 
     @asynccontextmanager
     async def _pagina_autenticada(self) -> AsyncIterator[Page]:

@@ -199,3 +199,57 @@ async def prueba_cerrar_sesion_con_cualquier_rol_autenticado_devuelve_204(
     respuesta = await cliente.delete("/auth/sesion", headers={"Authorization": f"Bearer {token}"})
 
     assert respuesta.status_code == 204
+
+
+# --- Clave temporal (2026-11-18) ------------------------------------------
+
+
+async def prueba_con_clave_temporal_solo_se_puede_cambiarla(
+    cliente: AsyncClient, token_administrador: str
+) -> None:
+    admin = {"Authorization": f"Bearer {token_administrador}"}
+    creado = await cliente.post(
+        "/usuarios",
+        headers=admin,
+        json={
+            "nombre_usuario": "nueva.analista",
+            "clave": _CLAVE,
+            "nombres": "Nueva Analista",
+            "roles": ["analista"],
+        },
+    )
+    assert creado.status_code == 201
+    ingreso = await cliente.post(
+        "/auth/sesion", json={"nombre_usuario": "nueva.analista", "clave": _CLAVE}
+    )
+    temporal = {"Authorization": f"Bearer {ingreso.json()['token']}"}
+
+    # Con la clave que puso el administrador no se opera.
+    bloqueada = await cliente.get("/cuentas", headers=temporal)
+    assert bloqueada.status_code == 403
+    assert bloqueada.json()["codigo"] == "CAMBIO_DE_CLAVE_REQUERIDO"
+
+    equivocada = await cliente.put(
+        "/auth/clave",
+        headers=temporal,
+        json={"clave_actual": "Otra-Clave-0000", "clave_nueva": "Propia-Clave-2027"},
+    )
+    assert equivocada.status_code == 400
+    assert equivocada.json()["codigo"] == "CLAVE_ACTUAL_INCORRECTA"
+
+    cambio = await cliente.put(
+        "/auth/clave",
+        headers=temporal,
+        json={"clave_actual": _CLAVE, "clave_nueva": "Propia-Clave-2027"},
+    )
+    assert cambio.status_code == 200
+    propia = {"Authorization": f"Bearer {cambio.json()['token']}"}
+
+    assert (await cliente.get("/cuentas", headers=propia)).status_code == 200
+    # La credencial con la que se hizo el cambio queda revocada.
+    assert (await cliente.get("/cuentas", headers=temporal)).status_code == 401
+    # Y la clave anterior ya no sirve para ingresar.
+    viejo = await cliente.post(
+        "/auth/sesion", json={"nombre_usuario": "nueva.analista", "clave": _CLAVE}
+    )
+    assert viejo.status_code == 401

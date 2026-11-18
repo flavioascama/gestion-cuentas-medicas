@@ -40,6 +40,8 @@ class SolicitudAnulacionRespuesta(BaseModel):
     solicitado_en: datetime
     resuelto_por: str | None
     resuelto_en: datetime | None
+    identificacion_interna: str | None = None
+    asegurado: str | None = None
 
     @staticmethod
     def desde_valor(valor: SolicitudAnulacion) -> SolicitudAnulacionRespuesta:

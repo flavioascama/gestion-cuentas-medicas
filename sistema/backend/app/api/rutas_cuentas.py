@@ -15,9 +15,11 @@ from __future__ import annotations
 from datetime import date
 
 from fastapi import APIRouter, Depends, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencias import obtener_usuario_actual, requiere_rol
 from app.api.dependencias_cuentas import (
+    construir_buscar_asegurado,
     construir_buscar_cie10,
     construir_consultar_completitud,
     construir_emitir_comprobante_pago,
@@ -30,14 +32,18 @@ from app.api.dependencias_cuentas import (
 )
 from app.api.esquemas_cuentas import (
     AcreditacionRespuesta,
+    AseguradoRegistradoRespuesta,
     DetalleCuentaRespuesta,
     RespuestaCompletitudCuenta,
     RespuestaComprobantePago,
     RespuestaCuentaCreada,
+    RespuestaDiagnostico,
     RespuestaTrabajoEncolado,
     ResumenCie10Respuesta,
     ResumenCuentaRespuesta,
     ResumenIafasRespuesta,
+    SolicitudBuscarAsegurado,
+    SolicitudDiagnostico,
     SolicitudNuevaCuenta,
 )
 from app.compartido.errores import ErrorAplicacion
@@ -53,15 +59,27 @@ from app.dominio.integracion.casos_uso_consulta import (
     ObtenerCuenta,
 )
 from app.dominio.integracion.casos_uso_ingesta import (
+    BuscarAseguradoRegistrado,
     ConsultarCompletitudCuenta,
     RegistrarCuentaMedica,
+)
+from app.dominio.integracion.diagnostico_cuenta import (
+    ErrorCie10Inexistente,
+    ErrorCuentaInexistenteDiagnostico,
+    ErrorDiagnostico,
+    RegistrarDiagnosticoPrincipal,
 )
 from app.dominio.integracion.puertos_ingesta import ErrorIafasInexistente
 from app.dominio.orquestacion.valores import EtapaCiclo
 from app.dominio.pse.casos_uso import EmitirComprobantePago, ErrorCuentaCerradaComprobante
-from app.dominio.pse.puertos import ErrorComprobanteYaExiste
+from app.dominio.pse.puertos import ErrorComprobanteYaExiste, ErrorFaltaParaFacturar
 from app.dominio.pse.puertos import ErrorCuentaNoEncontrada as ErrorCuentaNoEncontradaPse
 from app.infraestructura.observabilidad.registro import obtener_registrador
+from app.infraestructura.persistencia.base import obtener_sesion
+from app.infraestructura.persistencia.registro_eventos_sql import RegistroEventosSql
+from app.infraestructura.persistencia.repositorio_diagnostico_cuenta_sql import (
+    RepositorioDiagnosticoCuentaSql,
+)
 
 router = APIRouter(prefix="/cuentas", tags=["cuentas"])
 router_iafas = APIRouter(tags=["cuentas"])
@@ -69,6 +87,8 @@ _registrador = obtener_registrador("api.cuentas")
 
 _LECTURA = requiere_rol(NombreRol.ANALISTA, NombreRol.AUDITOR, NombreRol.JEFE, NombreRol.TESORERIA)
 _SOLO_ANALISTA = requiere_rol(NombreRol.ANALISTA)
+# El diagnostico lo registra la admision y lo confirma el auditor medico.
+_REGISTRA_DIAGNOSTICO = requiere_rol(NombreRol.ANALISTA, NombreRol.AUDITOR)
 
 
 @router_iafas.get("/iafas", response_model=list[ResumenIafasRespuesta])
@@ -88,6 +108,22 @@ async def buscar_cie10(
 ) -> list[ResumenCie10Respuesta]:
     resultados = await caso_uso.ejecutar(q)
     return [ResumenCie10Respuesta.desde_valor(r) for r in resultados]
+
+
+@router.post("/asegurado/buscar", response_model=AseguradoRegistradoRespuesta | None)
+async def buscar_asegurado(
+    solicitud: SolicitudBuscarAsegurado,
+    caso_uso: BuscarAseguradoRegistrado = Depends(construir_buscar_asegurado),
+    _actor: CargaSesion = Depends(_SOLO_ANALISTA),
+) -> AseguradoRegistradoRespuesta | None:
+    """Al registrar una cuenta: nombres e IAFAS del asegurado, si la clinica
+    ya lo atendio. `null` si es la primera vez."""
+    asegurado = await caso_uso.ejecutar(solicitud.tipo_documento, solicitud.numero_documento)
+    if asegurado is None:
+        return None
+    return AseguradoRegistradoRespuesta(
+        nombres=asegurado.nombres, apellidos=asegurado.apellidos, iafas_id=asegurado.iafas_id
+    )
 
 
 @router.post("", response_model=RespuestaCuentaCreada, status_code=status.HTTP_201_CREATED)
@@ -200,7 +236,41 @@ async def emitir_comprobante_pago(
         raise ErrorAplicacion(
             "CUENTA_CERRADA", str(error), estado_http=status.HTTP_409_CONFLICT
         ) from error
+    except ErrorFaltaParaFacturar as error:
+        raise ErrorAplicacion(
+            "FALTA_PARA_FACTURAR", str(error), estado_http=status.HTTP_409_CONFLICT
+        ) from error
     return RespuestaComprobantePago.desde_valor(resultado)
+
+
+@router.put("/{cuenta_id}/diagnostico", response_model=RespuestaDiagnostico)
+async def registrar_diagnostico(
+    cuenta_id: int,
+    solicitud: SolicitudDiagnostico,
+    sesion: AsyncSession = Depends(obtener_sesion),
+    actor: CargaSesion = Depends(_REGISTRA_DIAGNOSTICO),
+) -> RespuestaDiagnostico:
+    """Completa el diagnostico principal de una cuenta ya registrada: sin
+    el la cuenta no se factura ni puede entrar a un lote (T2, campo 18)."""
+    caso_uso = RegistrarDiagnosticoPrincipal(
+        RepositorioDiagnosticoCuentaSql(sesion), RegistroEventosSql(sesion)
+    )
+    try:
+        codigo = await caso_uso.ejecutar(cuenta_id, solicitud.codigo_cie10, actor.nombre_usuario)
+    except ErrorCuentaInexistenteDiagnostico as error:
+        raise ErrorAplicacion(
+            "CUENTA_NO_ENCONTRADA", str(error), estado_http=status.HTTP_404_NOT_FOUND
+        ) from error
+    except ErrorCie10Inexistente as error:
+        raise ErrorAplicacion(
+            "CIE10_INEXISTENTE", str(error), estado_http=status.HTTP_400_BAD_REQUEST
+        ) from error
+    except ErrorDiagnostico as error:
+        raise ErrorAplicacion(
+            "DIAGNOSTICO_NO_ADMITIDO", str(error), estado_http=status.HTTP_409_CONFLICT
+        ) from error
+    await sesion.commit()
+    return RespuestaDiagnostico(codigo_cie10=codigo)
 
 
 @router.get("/{cuenta_id}/acreditacion", response_model=AcreditacionRespuesta)

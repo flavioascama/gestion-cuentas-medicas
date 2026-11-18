@@ -11,18 +11,20 @@ interface Propiedades {
   sesion_id: number;
   plataforma: string;
   al_cerrar: () => void;
+  // Si se indica, se llama al aceptarse la respuesta en lugar de al_cerrar.
+  al_responder?: () => void;
 }
 
-export function DialogoCaptcha({ sesion_id, plataforma, al_cerrar }: Propiedades) {
+export function DialogoCaptcha({ sesion_id, plataforma, al_cerrar, al_responder }: Propiedades) {
   const [respuesta, set_respuesta] = useState("");
   const url_imagen = usar_imagen_captcha(sesion_id);
-  const mutacion = usar_responder_captcha(sesion_id, plataforma, al_cerrar, () =>
+  const mutacion = usar_responder_captcha(sesion_id, plataforma, al_responder ?? al_cerrar, () =>
     set_respuesta(""),
   );
 
   return (
     <Dialogo
-      titulo="Responder CAPTCHA"
+      titulo="Código de verificación"
       al_cerrar={al_cerrar}
       acciones={
         <>

@@ -92,3 +92,5 @@ class Observacion:
     respuesta_sustento: str | None
     registrado_en: datetime
     respondido_en: datetime | None
+    # Nombre de la persona asignada, para mostrarlo (2026-11-18).
+    responsable_nombres: str | None = None

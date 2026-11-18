@@ -1,4 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
+import type { ReactNode } from "react";
+import { Link } from "react-router-dom";
 import {
   obtener_archivo_s01_lote,
   type DetalleLote,
@@ -11,13 +13,22 @@ import { formatear_fecha_hora } from "../../utilidades/formato";
 import { IconoCheck, IconoDescarga } from "./iconos_detalle_lote";
 import estilos from "./detalle_lote.module.css";
 
+// El validador observa por tabla y linea; aqui se dice de que cuenta se
+// trata, con el enlace para ir a corregirla (2026-11-18).
+function cuenta_observada(fila: ObservacionOficial): ReactNode {
+  if (fila.cuenta_medica_id) {
+    return <Link to={`/cuentas/${fila.cuenta_medica_id}`}>{fila.identificacion_interna}</Link>;
+  }
+  if (fila.tabla && fila.numero_linea) return `${fila.tabla}, línea ${fila.numero_linea}`;
+  return "Todo el lote";
+}
+
 const _COLUMNAS_OBSERVACIONES: ColumnaTabla<ObservacionOficial>[] = [
-  { clave: "tabla", encabezado: "Tabla" },
-  { clave: "numero_linea", encabezado: "Línea", alinear_derecha: true },
+  { clave: "cuenta_medica_id", encabezado: "Cuenta", formatear: cuenta_observada },
+  { clave: "descripcion", encabezado: "Observación" },
   { clave: "campo", encabezado: "Campo" },
   { clave: "valor_observado", encabezado: "Valor observado" },
   { clave: "codigo_error", encabezado: "Código" },
-  { clave: "descripcion", encabezado: "Descripción" },
 ];
 
 const _COLUMNAS_ACUSES: ColumnaTabla<ResumenAcuse>[] = [

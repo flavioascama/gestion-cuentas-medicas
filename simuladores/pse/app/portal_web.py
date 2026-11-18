@@ -1,5 +1,6 @@
 """API del simulador PSE: emision sincrona de un comprobante de pago
-(adenda de ingesta y completitud). A diferencia de ACREDITA SALUD y TEDEF
+(adenda de ingesta y completitud) y, desde el 2026-11-18, de su nota de
+credito o de debito. A diferencia de ACREDITA SALUD y TEDEF
 Web, un PSE real es una integracion API-a-API entre sistemas (SUNAT/el
 proveedor de facturacion electronica), no un portal que un humano navega
 -- por eso este simulador no tiene sesion asistida ni CAPTCHA, solo una
@@ -8,6 +9,7 @@ respuesta HTTP directa."""
 from __future__ import annotations
 
 from datetime import date
+from typing import Literal
 
 from fastapi import FastAPI
 from pydantic import BaseModel, Field
@@ -23,6 +25,8 @@ from app.almacenamiento import AlmacenamientoPse
 # backend sin tener que coordinar rangos entre los dos generadores.
 _SERIE = "E001"
 _TIPO_DOCUMENTO_PAGO = "01"  # Factura (mismo valor que la carga sintetica).
+# Una serie por tipo de nota (C credito, D debito), con su propio correlativo.
+_SERIE_NOTA = {"C": "EC01", "D": "ED01"}
 
 
 class SolicitudEmision(BaseModel):
@@ -37,6 +41,18 @@ class ComprobanteEmitido(BaseModel):
     fecha_emision: date
 
 
+class SolicitudNota(BaseModel):
+    ruc_ipress: str = Field(min_length=1)
+    codigo_ipress: str = Field(min_length=1)
+    tipo: Literal["C", "D"]
+
+
+class NotaEmitida(BaseModel):
+    serie: str
+    numero: str
+    fecha_emision: date
+
+
 def construir_app(almacenamiento: AlmacenamientoPse) -> FastAPI:
     app = FastAPI(title="Simulador PSE")
 
@@ -46,6 +62,15 @@ def construir_app(almacenamiento: AlmacenamientoPse) -> FastAPI:
             tipo_documento_pago=_TIPO_DOCUMENTO_PAGO,
             serie=_SERIE,
             numero=almacenamiento.siguiente_numero(),
+            fecha_emision=date.today(),
+        )
+
+    @app.post("/notas", response_model=NotaEmitida, status_code=201)
+    def emitir_nota(solicitud: SolicitudNota) -> NotaEmitida:
+        serie = _SERIE_NOTA[solicitud.tipo]
+        return NotaEmitida(
+            serie=serie,
+            numero=almacenamiento.siguiente_numero_nota(serie),
             fecha_emision=date.today(),
         )
 

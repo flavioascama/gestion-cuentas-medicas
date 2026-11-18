@@ -9,6 +9,8 @@ from app.dominio.orquestacion.puertos import RepositorioEstadoCuenta
 from app.dominio.orquestacion.valores import ESTADOS_TERMINALES
 from app.dominio.pse.puertos import (
     EmisorPse,
+    ErrorCuentaNoEncontrada,
+    ErrorFaltaParaFacturar,
     RepositorioComprobantePago,
     ResultadoEmisionComprobante,
 )
@@ -40,6 +42,14 @@ class EmitirComprobantePago:
                 raise ErrorCuentaCerradaComprobante(
                     f"La cuenta {cuenta_id} esta en estado {estado!r}: no admite comprobante."
                 )
+        # El comprobante va al final (2026-11-18): antes se podia emitir sin
+        # nada que facturar.
+        requisitos = await self._repositorio.requisitos_para_facturar(cuenta_id)
+        if requisitos is None:
+            raise ErrorCuentaNoEncontrada(cuenta_id)
+        faltantes = requisitos.faltantes()
+        if faltantes:
+            raise ErrorFaltaParaFacturar(faltantes)
         ruc_ipress, codigo_ipress = await self._repositorio.obtener_ipress_propia()
         comprobante = await self._emisor.emitir(ruc_ipress, codigo_ipress)
         documento_id = await self._repositorio.guardar_comprobante(cuenta_id, comprobante)

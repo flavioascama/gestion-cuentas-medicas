@@ -14,12 +14,14 @@ from app.api.dependencias_observaciones import (
     construir_asignar_responsable_observacion,
     construir_listar_catalogo_motivos,
     construir_listar_observaciones_por_cuenta,
+    construir_listar_responsables_posibles,
     construir_registrar_observacion,
     construir_responder_observacion,
 )
 from app.api.esquemas_observaciones import (
     MotivoObservacionRespuesta,
     ObservacionRespuesta,
+    ResponsablePosibleRespuesta,
     RespuestaObservacionRegistrada,
     SolicitudAsignacionObservacion,
     SolicitudRegistroObservacion,
@@ -33,6 +35,7 @@ from app.dominio.observaciones.casos_uso import (
     AsignarResponsableObservacion,
     ListarCatalogoMotivos,
     ListarObservacionesPorCuenta,
+    ListarResponsablesPosibles,
     RegistrarObservacion,
     ResponderObservacion,
 )
@@ -40,8 +43,12 @@ from app.dominio.observaciones.errores import (
     ErrorMotivoInexistente,
     ErrorObservacionInexistente,
     ErrorObservacionYaRespondida,
+    ErrorResponsableNoValido,
 )
-from app.dominio.observaciones.valores import DatosRegistroObservacion
+from app.dominio.observaciones.valores import (
+    ROL_RESPONSABLE_POR_NATURALEZA,
+    DatosRegistroObservacion,
+)
 from app.dominio.orquestacion.errores import ErrorTransicionNoDefinida
 
 router = APIRouter(prefix="/cuentas/{cuenta_id}/observaciones", tags=["observaciones"])
@@ -101,6 +108,17 @@ async def listar_motivos(
     return [MotivoObservacionRespuesta.desde_valor(m) for m in motivos]
 
 
+@router_item.get("/responsables", response_model=list[ResponsablePosibleRespuesta])
+async def listar_responsables_posibles(
+    caso_uso: ListarResponsablesPosibles = Depends(construir_listar_responsables_posibles),
+    _actor: CargaSesion = Depends(_SOLO_JEFE),
+) -> list[ResponsablePosibleRespuesta]:
+    """CU-09: las personas entre las que el jefe elige al responsable."""
+    roles = frozenset(ROL_RESPONSABLE_POR_NATURALEZA.values())
+    usuarios = await caso_uso.ejecutar()
+    return [ResponsablePosibleRespuesta.desde_usuario(u, roles) for u in usuarios]
+
+
 @router_item.patch("/{observacion_id}/asignacion", status_code=status.HTTP_204_NO_CONTENT)
 async def asignar_responsable(
     observacion_id: int,
@@ -118,6 +136,10 @@ async def asignar_responsable(
     except ErrorObservacionInexistente as error:
         raise ErrorAplicacion(
             "OBSERVACION_NO_ENCONTRADA", str(error), estado_http=status.HTTP_404_NOT_FOUND
+        ) from error
+    except ErrorResponsableNoValido as error:
+        raise ErrorAplicacion(
+            "RESPONSABLE_NO_VALIDO", str(error), estado_http=status.HTTP_400_BAD_REQUEST
         ) from error
 
 

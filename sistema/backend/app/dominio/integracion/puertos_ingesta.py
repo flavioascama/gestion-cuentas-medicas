@@ -35,7 +35,23 @@ class DatosNuevaCuenta:
     diagnostico_principal_cie10: str | None
 
 
+@dataclass(frozen=True, slots=True)
+class AseguradoRegistrado:
+    """Un asegurado que la clinica ya atendio antes."""
+
+    nombres: str
+    apellidos: str
+    iafas_id: int
+
+
 class RepositorioIngestaCuentas(Protocol):
+    async def buscar_asegurado(
+        self, tipo_documento: str, numero_documento: str
+    ) -> AseguradoRegistrado | None:
+        """El asegurado con ese documento, si ya esta en el registro de la
+        clinica. El documento esta cifrado: se busca por su indice ciego."""
+        ...
+
     async def crear_cuenta(self, datos: DatosNuevaCuenta) -> int:
         """Busca el asegurado por (tipo_documento, numero_documento); si no
         existe lo crea (marcado ficticio=True, igual que los datos
@@ -59,10 +75,20 @@ class PiezaCompletitud:
 
 
 @dataclass(frozen=True, slots=True)
+class LoteDeCuenta:
+    """El lote mas reciente en que entro la cuenta."""
+
+    lote_id: int
+    numero: str
+    estado: str
+
+
+@dataclass(frozen=True, slots=True)
 class ResultadoCompletitud:
     cuenta_id: int
     estado_cuenta: str
     piezas: tuple[PiezaCompletitud, ...]
+    lote: LoteDeCuenta | None = None
 
     @property
     def completa(self) -> bool:
@@ -78,6 +104,10 @@ class EstadoPiezasCuenta:
     tiene_acreditacion: bool
     cantidad_procedimientos: int
     tiene_comprobante: bool
+    # El estandar TEDEF exige el diagnostico (T2, campo 18): desde el
+    # 2026-11-18 es una pieza mas de la completitud.
+    tiene_diagnostico: bool = True
+    lote: LoteDeCuenta | None = None
 
 
 class RepositorioCompletitudCuenta(Protocol):

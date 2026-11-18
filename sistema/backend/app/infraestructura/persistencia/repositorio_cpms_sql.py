@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict
+from decimal import Decimal
 
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,7 +11,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.dominio.cpms.puertos import DatosConfirmacionCodigo, RepositorioCpms, VersionCpms
 from app.dominio.cpms.valores import CandidatoCpms, ProcedimientoCpms
 from app.infraestructura.persistencia.modelos_cpms import CpmsProcedimientoModelo, CpmsVersionModelo
-from app.infraestructura.persistencia.modelos_integracion import ProcedimientoFacturadoModelo
+from app.infraestructura.persistencia.modelos_integracion import (
+    CuentaMedicaModelo,
+    ProcedimientoFacturadoModelo,
+)
 
 
 class ErrorRepositorioCpms(Exception):
@@ -33,6 +37,30 @@ def _a_procedimiento_cpms(modelo: CpmsProcedimientoModelo) -> ProcedimientoCpms:
 class RepositorioCpmsSql(RepositorioCpms):
     def __init__(self, sesion: AsyncSession) -> None:
         self._sesion = sesion
+
+    async def ultimo_monto_unitario(self, codigo: str, cuenta_medica_id: int) -> Decimal | None:
+        """El precio con que se facturo por ultima vez ese codigo a la IAFAS
+        de la cuenta (2026-11-18): se propone al confirmar el procedimiento,
+        en vez de escribirlo cada vez. None si nunca se facturo."""
+        iafas_de_la_cuenta = (
+            sa.select(CuentaMedicaModelo.iafas_id)
+            .where(CuentaMedicaModelo.id == cuenta_medica_id)
+            .scalar_subquery()
+        )
+        monto: Decimal | None = await self._sesion.scalar(
+            sa.select(ProcedimientoFacturadoModelo.monto_unitario)
+            .join(
+                CuentaMedicaModelo,
+                CuentaMedicaModelo.id == ProcedimientoFacturadoModelo.cuenta_id,
+            )
+            .where(
+                ProcedimientoFacturadoModelo.codigo_asignado == codigo,
+                CuentaMedicaModelo.iafas_id == iafas_de_la_cuenta,
+            )
+            .order_by(ProcedimientoFacturadoModelo.id.desc())
+            .limit(1)
+        )
+        return monto
 
     async def version_vigente(self) -> tuple[int, str]:
         resultado = await self._sesion.execute(

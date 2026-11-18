@@ -7,10 +7,11 @@ catalogo UNSPSC y el SISMED no estan disponibles en el entorno de prueba),
 que fija el tipo de producto (T4 campo 7). El resto de campos son los de
 la Tabla 4 del Anexo 1: fecha de dispensacion (no anterior a la prestacion,
 criterio C2 del campo 10), cantidad, tipo de unidad (1 empaque, 2
-fraccion), monto unitario sin impuesto, copago, monto no cubierto,
-exoneracion de IGV (A o D), guia y diagnostico asociado opcionales. El
-monto presentado es cantidad x monto unitario, la misma regla con la que
-el constructor del lote arma la T4.
+fraccion), monto unitario sin impuesto, monto no cubierto, exoneracion de
+IGV (A o D), guia y diagnostico asociado opcionales. El monto presentado
+es cantidad x monto unitario, la misma regla con la que el constructor del
+lote arma la T4. El copago no se pide (2026-11-18): sale de la
+acreditacion del asegurado al armar el lote y el comprobante.
 
 Se registra y se retira en los mismos estados en que se codifica la cuenta
 (antes de facturar, al corregir una rechazada y al refacturar una glosa)."""
@@ -75,7 +76,6 @@ class DatosProductoDispensado:
     cantidad_venta: Decimal
     tipo_unidad_dispensacion: str
     monto_unitario: Decimal
-    copago: Decimal
     monto_no_cubierto: Decimal
     exento_igv: str
     guia_farmacia: str | None = None
@@ -121,8 +121,10 @@ def _validar(datos: DatosProductoDispensado, fecha_prestacion: date) -> None:
         errores.append("la fecha de dispensacion es anterior a la prestacion")
     if datos.cantidad_venta <= 0:
         errores.append("la cantidad debe ser mayor que cero")
-    if min(datos.monto_unitario, datos.copago, datos.monto_no_cubierto) < 0:
+    if min(datos.monto_unitario, datos.monto_no_cubierto) < 0:
         errores.append("los montos no pueden ser negativos")
+    if datos.monto_no_cubierto > datos.cantidad_venta * datos.monto_unitario:
+        errores.append("el monto no cubierto supera el monto del producto")
     if datos.tipo_unidad_dispensacion not in TIPOS_UNIDAD_DISPENSACION:
         errores.append("tipo de unidad de dispensacion fuera del dominio (1 o 2)")
     if datos.exento_igv not in INDICADORES_EXONERACION_IGV:

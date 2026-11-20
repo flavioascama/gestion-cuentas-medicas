@@ -19,6 +19,10 @@ from app.dominio.integracion.lotes_sugeridos import (
     agrupar_en_lotes_sugeridos,
     periodo_unico,
 )
+from app.dominio.integracion.pendientes_lote import (
+    COMPROBANTE_DESFASADO,
+    pendientes_para_lotear,
+)
 from app.infraestructura.persistencia.modelos_cpms import CpmsVersionModelo
 from app.infraestructura.persistencia.modelos_integracion import (
     AseguradoModelo,
@@ -228,3 +232,8 @@ async def prueba_generar_sin_periodo_y_sin_cuentas_facturadas_responde_409(
     )
     assert respuesta.status_code == 409
     assert "LOTE_NO_GENERABLE" in respuesta.text
+
+
+def prueba_un_comprobante_desfasado_es_pendiente_para_lotear() -> None:
+    assert pendientes_para_lotear(True, 1, comprobante_desfasado=True) == (COMPROBANTE_DESFASADO,)
+    assert pendientes_para_lotear(True, 1) == ()

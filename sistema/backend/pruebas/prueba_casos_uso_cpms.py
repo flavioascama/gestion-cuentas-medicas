@@ -15,11 +15,13 @@ from app.dominio.cpms.casos_uso import (
     ConfirmacionCodigoCpms,
     ConfirmarCodigoCpms,
     ErrorCuentaNoCodificable,
+    ErrorProcedimientoInexistente,
+    QuitarProcedimiento,
     SugerirCodigoCpms,
 )
 from app.dominio.cpms.puertos import DatosConfirmacionCodigo, ErrorCodigoCpmsInexistente
 from app.dominio.cpms.valores import CandidatoCpms, FiltrosSugerencia
-from app.dominio.puertos_comunes import MedicionPaso
+from app.dominio.puertos_comunes import Evento, MedicionPaso
 
 _VERSION_ID = 1
 _VERSION_ETIQUETA = "2023-06-05"
@@ -72,6 +74,11 @@ class _MotorFalso:
 class _RepositorioFalso:
     codigos_existentes: dict[str, CandidatoCpms]
     confirmaciones: list[DatosConfirmacionCodigo] = field(default_factory=list)
+    quitados: list[int] = field(default_factory=list)
+    fecha_minima: date | None = None
+
+    async def fecha_minima_procedimiento(self, cuenta_id: int) -> date | None:
+        return self.fecha_minima
 
     async def version_vigente(self) -> tuple[int, str]:
         return _VERSION_ID, _VERSION_ETIQUETA
@@ -82,6 +89,12 @@ class _RepositorioFalso:
     async def confirmar_codigo(self, datos: DatosConfirmacionCodigo) -> int:
         self.confirmaciones.append(datos)
         return len(self.confirmaciones)
+
+    async def quitar_procedimiento(self, cuenta_id: int, procedimiento_id: int) -> str | None:
+        if procedimiento_id != 41:
+            return None
+        self.quitados.append(procedimiento_id)
+        return "99201"
 
 
 async def prueba_sugerir_con_codigo_existente_no_consulta_al_motor() -> None:
@@ -228,14 +241,18 @@ async def prueba_confirmar_codigo_inexistente_se_rechaza_sin_persistir() -> None
 
 
 class _EstadoCuentaFijo:
-    def __init__(self, estado: str) -> None:
+    def __init__(self, estado: str, en_correccion: bool = False) -> None:
         self._estado = estado
+        self._en_correccion = en_correccion
 
     async def obtener_estado(self, cuenta_medica_id: int) -> str | None:
         return self._estado
 
     async def fijar_estado(self, cuenta_medica_id: int, estado_nuevo: str) -> None:
         raise AssertionError("no se usa")
+
+    async def en_correccion_validador(self, cuenta_medica_id: int) -> bool:
+        return self._en_correccion
 
 
 @pytest.mark.parametrize("estado", ["FACTURADA", "ENVIADA", "CERRADA", "ANULADA"])
@@ -267,3 +284,44 @@ async def prueba_no_se_codifica_una_cuenta_fuera_de_los_estados_codificables(
             inicio_sugerencia=datetime(2026, 9, 16, 10, 0, 0),
         )
     assert repositorio.confirmaciones == []
+
+
+@dataclass
+class _RegistroEventosFalso:
+    eventos: list[Evento] = field(default_factory=list)
+
+    async def registrar(self, evento: Evento) -> None:
+        self.eventos.append(evento)
+
+
+async def prueba_quitar_un_procedimiento_deja_su_evento() -> None:
+    repositorio, registro = _RepositorioFalso(codigos_existentes={}), _RegistroEventosFalso()
+    caso_uso = QuitarProcedimiento(
+        repositorio,  # type: ignore[arg-type]
+        _EstadoCuentaFijo("RECHAZADA"),
+        registro,
+    )
+
+    await caso_uso.ejecutar(7, 41, actor="carlos.auditor")
+    with pytest.raises(ErrorProcedimientoInexistente):
+        await caso_uso.ejecutar(7, 99, actor="carlos.auditor")
+
+    assert repositorio.quitados == [41]
+    (evento,) = registro.eventos
+    assert evento.tipo_evento == "PROCEDIMIENTO_RETIRADO"
+    assert evento.datos == {"procedimiento_id": 41, "codigo_asignado": "99201"}
+
+
+@pytest.mark.parametrize("estado", ["FACTURADA", "ENVIADA", "CERRADA", "ANULADA"])
+async def prueba_no_se_quita_un_procedimiento_fuera_de_los_estados_codificables(
+    estado: str,
+) -> None:
+    repositorio = _RepositorioFalso(codigos_existentes={})
+    caso_uso = QuitarProcedimiento(
+        repositorio,  # type: ignore[arg-type]
+        _EstadoCuentaFijo(estado),
+        _RegistroEventosFalso(),
+    )
+    with pytest.raises(ErrorCuentaNoCodificable):
+        await caso_uso.ejecutar(7, 41, actor="carlos.auditor")
+    assert repositorio.quitados == []

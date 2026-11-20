@@ -1,6 +1,7 @@
 """RI-17 y CU-06: productos de farmacia de una cuenta y busqueda en el
-catalogo GTIN vigente. Registra y retira el analista (registra la cuenta,
-Tabla 46); buscan en el catalogo los roles que trabajan la cuenta."""
+catalogo GTIN vigente. Registran y retiran el analista (registra la cuenta,
+Tabla 46) y el auditor medico; buscan en el catalogo los roles que trabajan
+la cuenta."""
 
 from __future__ import annotations
 
@@ -39,7 +40,8 @@ from app.infraestructura.persistencia.repositorio_estado_cuenta_sql import (
 
 router = APIRouter(tags=["farmacia"])
 
-_SOLO_ANALISTA = requiere_rol(NombreRol.ANALISTA)
+# 2026-11-19: el auditor medico tambien registra y quita productos.
+_REGISTRA_FARMACIA = requiere_rol(NombreRol.ANALISTA, NombreRol.AUDITOR)
 _CATALOGO = requiere_rol(NombreRol.ANALISTA, NombreRol.AUDITOR, NombreRol.ADMINISTRADOR)
 
 
@@ -133,7 +135,7 @@ async def registrar_producto(
     cuenta_id: int,
     solicitud: SolicitudProductoDispensado,
     caso_uso: RegistrarProductoDispensado = Depends(construir_registrar),
-    actor: CargaSesion = Depends(_SOLO_ANALISTA),
+    actor: CargaSesion = Depends(_REGISTRA_FARMACIA),
 ) -> ProductoRegistradoRespuesta:
     datos = DatosProductoDispensado(**solicitud.model_dump())
     try:
@@ -150,7 +152,7 @@ async def quitar_producto(
     cuenta_id: int,
     producto_id: int,
     caso_uso: QuitarProductoDispensado = Depends(construir_quitar),
-    actor: CargaSesion = Depends(_SOLO_ANALISTA),
+    actor: CargaSesion = Depends(_REGISTRA_FARMACIA),
 ) -> None:
     try:
         await caso_uso.ejecutar(cuenta_id, producto_id, actor.nombre_usuario)

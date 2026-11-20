@@ -57,6 +57,20 @@ export const CONFIGURACION_RUTAS: DefinicionRuta[] = [
   { ruta: "/avisos", roles: ["analista", "auditor", "jefe", "tesoreria", "administrador"] },
 ];
 
+// Si el usuario puede abrir una ruta concreta ("/cuentas/7"): la de un
+// aviso solo se enlaza si su destino es una pantalla de sus roles
+// (2026-11-19).
+export function ruta_permitida(destino: string, roles_usuario: NombreRol[]): boolean {
+  const partes = destino.split("/");
+  return CONFIGURACION_RUTAS.some((definicion) => {
+    const patron = definicion.ruta.split("/");
+    const coincide =
+      patron.length === partes.length &&
+      patron.every((parte, indice) => parte.startsWith(":") || parte === partes[indice]);
+    return coincide && (definicion.roles?.some((rol) => roles_usuario.includes(rol)) ?? true);
+  });
+}
+
 // La pantalla de inicio no puede ser siempre "/cuentas": administrador
 // y gerente no tienen ese rol en su lista de roles permitidos, y caer
 // ahi los deja viendo "su rol no tiene permiso" apenas inician sesion.

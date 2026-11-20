@@ -14,6 +14,8 @@ from dataclasses import dataclass
 from datetime import date, datetime, time
 from decimal import Decimal
 
+from app.dominio.pse.puertos import MontosComprobante
+
 
 @dataclass(frozen=True, slots=True)
 class ProcedimientoLote:
@@ -25,6 +27,9 @@ class ProcedimientoLote:
     monto_unitario: Decimal
     copago_variable: Decimal
     copago_fijo: Decimal
+    # PROCEDIMIENTO, LABORATORIO o IMAGENES: decide el Codigo Rubro (T3
+    # campo 23) y el grupo de gasto de T2 (campos 35, 38 y 39).
+    area: str = "PROCEDIMIENTO"
 
 
 @dataclass(frozen=True, slots=True)
@@ -72,6 +77,16 @@ class PrestacionLote:
     # solo se genera "para las prestaciones que tengan productos
     # registrados" (Anexo 3).
     productos: tuple[ProductoLote, ...] = ()
+    # Carta de garantia registrada de la cuenta: segundo documento de
+    # autorizacion (T2 campos 14 y 15).
+    numero_carta_garantia: str | None = None
+    # Atencion importada del sistema hospitalario (2026-11-19). La cuenta
+    # manual queda ambulatoria, sin medico ni diagnosticos secundarios.
+    tipo_atencion: str = "AMBULATORIA"
+    colegiatura_medico: str | None = None
+    diagnosticos_secundarios_cie10: tuple[str, ...] = ()
+    fecha_ingreso_hospitalario: date | None = None
+    fecha_alta_hospitalaria: date | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -98,6 +113,9 @@ class DocumentoLote:
     fecha_primer_envio: date | None
     prestacion: PrestacionLote
     nota: NotaLote | None = None
+    # Lo que guardo el comprobante al emitirse; None en los anteriores al
+    # 2026-11-18. Sirve para detectar un comprobante desfasado.
+    montos_comprobante: MontosComprobante | None = None
 
 
 @dataclass(frozen=True, slots=True)

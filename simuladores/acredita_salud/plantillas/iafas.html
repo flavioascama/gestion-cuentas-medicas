@@ -26,6 +26,8 @@
     <table>
       <tr><th>Nombre</th><td>{{ asegurado.nombre_completo }}</td></tr>
       <tr><th>IAFAS</th><td>{{ nombre_iafas }}</td></tr>
+      <tr><th>Código de asegurado</th><td>{{ afiliado.codigo_asegurado }}</td></tr>
+      <tr><th>Tipo de afiliación</th><td>{{ afiliado.nombre_tipo_afiliacion }}</td></tr>
       <tr><th>Estado de afiliación</th>
           <td class="{{ asegurado.estado_afiliacion }}" data-testid="iafas-estado">{{ asegurado.estado_afiliacion }}</td></tr>
       {% for etiqueta, valor in detalle %}
@@ -37,6 +39,10 @@
       <dd data-testid="iafas-vigente-desde">{{ campos.vigente_desde or "" }}</dd>
       <dd data-testid="iafas-vigente-hasta">{{ campos.vigente_hasta or "" }}</dd>
       <dd data-testid="iafas-preexistencias">{{ campos.preexistencias or "" }}</dd>
+      <dd data-testid="iafas-codigo-asegurado">{{ afiliado.codigo_asegurado }}</dd>
+      <dd data-testid="iafas-tipo-afiliacion">{{ afiliado.tipo_afiliacion }}</dd>
+      <dd data-testid="iafas-codigo-iafas">{{ afiliado.codigo_iafas }}</dd>
+      <dd data-testid="iafas-nombre-iafas">{{ afiliado.nombre_iafas }}</dd>
     </dl>
     <p>
       <a href="/acreditacion/evaluar?tipo_documento={{ asegurado.tipo_documento }}&numero_documento={{ asegurado.numero_documento }}"

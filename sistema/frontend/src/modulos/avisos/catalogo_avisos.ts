@@ -1,4 +1,6 @@
 import type { Aviso } from "../../api/avisos";
+import type { NombreRol } from "../../api/auth";
+import { ruta_permitida } from "../../configuracion_rutas";
 import {
   CANALES_COMUNICACION,
   TIPOS_COMUNICACION,
@@ -172,8 +174,16 @@ function referencia_de(aviso: Aviso): string | null {
   return null;
 }
 
-export function describir_aviso(aviso: Aviso): DescripcionAviso {
+// El aviso se muestra igual; el enlace, solo si el usuario puede abrir
+// el destino (el administrador recibe la ruptura de la cadena y el acceso
+// denegado, pero no abre la cuenta).
+export function describir_aviso(aviso: Aviso, roles: NombreRol[]): DescripcionAviso {
   const describir = _CATALOGO[aviso.tipo_evento.toLowerCase()];
   const base = describir ? describir(aviso) : { titulo: aviso.titulo, que_paso: "" };
-  return { ...base, destino: destino_de(aviso), referencia: referencia_de(aviso) };
+  const destino = destino_de(aviso);
+  return {
+    ...base,
+    destino: destino && ruta_permitida(destino, roles) ? destino : null,
+    referencia: referencia_de(aviso),
+  };
 }

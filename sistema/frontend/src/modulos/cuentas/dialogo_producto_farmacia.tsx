@@ -1,7 +1,8 @@
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import {
   buscar_productos_catalogo,
+  type ProductoCatalogo,
   registrar_producto,
   type SolicitudProductoDispensado,
 } from "../../api/farmacia";
@@ -10,6 +11,8 @@ import { CampoTexto } from "../../componentes_base/campo_texto";
 import { Dialogo } from "../../componentes_base/dialogo";
 import { MensajeErrorMutacion } from "../../componentes_base/mensaje_error_mutacion";
 import { Selector } from "../../componentes_base/selector";
+import { usar_valor_diferido } from "../../utilidades/usar_valor_diferido";
+import estilos_campo from "./campo_cie10.module.css";
 
 // RI-17 y CU-06: un producto dispensado, tomado del catalogo GTIN vigente,
 // con los campos de la Tabla 4 del Anexo 1. El copago no se pide: sale de
@@ -63,34 +66,74 @@ function a_solicitud(f: Formulario): SolicitudProductoDispensado {
   };
 }
 
-function SelectorProducto({ valor, al_cambiar }: { valor: string; al_cambiar: Cambiar }) {
-  const [buscar, set_buscar] = useState("");
-  const consulta = useQuery({
-    queryKey: ["catalogo-gtin", "productos", buscar],
-    queryFn: () => buscar_productos_catalogo(buscar),
-    placeholderData: keepPreviousData,
-  });
-  const opciones = [
-    { valor: "", etiqueta: "—" },
-    ...(consulta.data ?? []).map((p) => ({
-      valor: p.codigo,
-      etiqueta: `${p.nombre} · ${p.denominacion_comun}${p.concentracion ? ` ${p.concentracion}` : ""} · ${p.codigo}`,
-    })),
-  ];
+function ListaProductos({
+  productos,
+  buscando,
+  al_elegir,
+}: {
+  productos: ProductoCatalogo[];
+  buscando: boolean;
+  al_elegir: (producto: ProductoCatalogo) => void;
+}) {
+  if (buscando) return <span className={estilos_campo.buscando}>Buscando…</span>;
+  if (productos.length === 0)
+    return <div className={estilos_campo.sin_resultados}>Sin coincidencias.</div>;
   return (
-    <>
+    <ul className={estilos_campo.lista} role="listbox">
+      {productos.map((p) => (
+        <li key={p.codigo}>
+          <button type="button" className={estilos_campo.opcion} onClick={() => al_elegir(p)}>
+            <span className={estilos_campo.codigo}>{p.codigo}</span>
+            <span className={estilos_campo.descripcion}>
+              {p.nombre} · {p.denominacion_comun}
+              {p.concentracion ? ` ${p.concentracion}` : ""}
+            </span>
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+// Un solo control: se escribe, se elige de las coincidencias y el campo
+// muestra el producto elegido. Volver a escribir limpia la seleccion.
+function SelectorProducto({ valor, al_elegir }: { valor: string; al_elegir: (c: string) => void }) {
+  const [texto, set_texto] = useState("");
+  const [mostrar_lista, set_mostrar_lista] = useState(false);
+  const texto_diferido = usar_valor_diferido(texto.trim());
+  const habilitada = !valor && mostrar_lista && texto_diferido.length >= 2;
+  const consulta = useQuery({
+    queryKey: ["catalogo-gtin", "productos", texto_diferido],
+    queryFn: () => buscar_productos_catalogo(texto_diferido),
+    enabled: habilitada,
+  });
+  function elegir(producto: ProductoCatalogo) {
+    set_texto(`${producto.codigo} · ${producto.nombre}`);
+    set_mostrar_lista(false);
+    al_elegir(producto.codigo);
+  }
+  return (
+    <div className={estilos_campo.contenedor}>
       <CampoTexto
-        etiqueta="Buscar en el catálogo GTIN"
-        value={buscar}
-        onChange={(evento) => set_buscar(evento.target.value)}
+        etiqueta="Producto (catálogo GTIN)"
+        value={texto}
+        onChange={(evento) => {
+          set_texto(evento.target.value);
+          set_mostrar_lista(true);
+          al_elegir("");
+        }}
+        onFocus={() => set_mostrar_lista(true)}
+        onBlur={() => setTimeout(() => set_mostrar_lista(false), 150)}
+        autoComplete="off"
       />
-      <Selector
-        etiqueta="Producto"
-        opciones={opciones}
-        value={valor}
-        onChange={al_cambiar("codigo_producto")}
-      />
-    </>
+      {habilitada ? (
+        <ListaProductos
+          productos={consulta.data ?? []}
+          buscando={consulta.isFetching}
+          al_elegir={elegir}
+        />
+      ) : null}
+    </div>
   );
 }
 
@@ -198,7 +241,10 @@ export function DialogoProductoFarmacia({ cuenta_id, fecha_prestacion, al_cerrar
         </>
       }
     >
-      <SelectorProducto valor={formulario.codigo_producto} al_cambiar={cambiar} />
+      <SelectorProducto
+        valor={formulario.codigo_producto}
+        al_elegir={(codigo) => set_formulario({ ...formulario, codigo_producto: codigo })}
+      />
       <CamposProducto formulario={formulario} cambiar={cambiar} />
       <MensajeErrorMutacion
         error={mutacion.error}

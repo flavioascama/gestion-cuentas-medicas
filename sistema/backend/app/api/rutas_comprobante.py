@@ -33,7 +33,7 @@ from app.dominio.pse.documentos import (
     ReemplazarComprobantePago,
     RegistrarNotaDocumento,
 )
-from app.dominio.pse.puertos import EmisorPse
+from app.dominio.pse.puertos import EmisorPse, ErrorFaltaParaFacturar
 from app.dominio.puertos_comunes import Reloj
 from app.infraestructura.persistencia.base import obtener_sesion
 from app.infraestructura.persistencia.registro_eventos_sql import RegistroEventosSql
@@ -161,6 +161,8 @@ async def reemplazar_comprobante(
         vigente = await caso_uso.ejecutar(cuenta_id, solicitud.motivo, actor.nombre_usuario)
     except ErrorDocumentoPago as error:
         raise _error_http(error) from error
+    except ErrorFaltaParaFacturar as error:
+        raise ErrorAplicacion("FALTA_PARA_FACTURAR", str(error), estado_http=409) from error
     return ComprobanteVigenteRespuesta(**campos(vigente))
 
 

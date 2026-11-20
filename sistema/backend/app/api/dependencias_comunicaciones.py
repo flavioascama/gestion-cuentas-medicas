@@ -12,11 +12,19 @@ from app.dominio.comunicaciones.casos_uso import (
     RepositorioComunicaciones,
     SolicitarRevisionComunicaciones,
 )
+from app.dominio.comunicaciones.entrega_respuesta import SolicitarNuevaEntregaRespuesta
 from app.dominio.puertos_comunes import Reloj, RepositorioTrabajos
 from app.infraestructura.cola.repositorio_trabajos_sql import RepositorioTrabajosSql
 from app.infraestructura.persistencia.base import obtener_sesion
+from app.infraestructura.persistencia.consulta_entregas_sql import ConsultaEntregasSql
 from app.infraestructura.persistencia.repositorio_comunicaciones_sql import (
     RepositorioComunicacionesSql,
+)
+from app.infraestructura.persistencia.repositorio_documentos_pago_sql import (
+    RepositorioDocumentosPagoSql,
+)
+from app.infraestructura.persistencia.repositorio_observaciones_sql import (
+    RepositorioObservacionesSql,
 )
 
 
@@ -50,5 +58,15 @@ def construir_encolar_respuesta_iafas(
     repositorio: RepositorioComunicaciones = Depends(obtener_repositorio_comunicaciones),
     trabajos: RepositorioTrabajos = Depends(obtener_repositorio_trabajos),
     reloj: Reloj = Depends(obtener_reloj),
+    sesion: AsyncSession = Depends(obtener_sesion),
 ) -> EncolarRespuestaIafas:
-    return EncolarRespuestaIafas(repositorio, trabajos, reloj)
+    return EncolarRespuestaIafas(repositorio, trabajos, reloj, RepositorioDocumentosPagoSql(sesion))
+
+
+def construir_solicitar_nueva_entrega(
+    encolar: EncolarRespuestaIafas = Depends(construir_encolar_respuesta_iafas),
+    sesion: AsyncSession = Depends(obtener_sesion),
+) -> SolicitarNuevaEntregaRespuesta:
+    return SolicitarNuevaEntregaRespuesta(
+        RepositorioObservacionesSql(sesion), ConsultaEntregasSql(sesion), encolar
+    )

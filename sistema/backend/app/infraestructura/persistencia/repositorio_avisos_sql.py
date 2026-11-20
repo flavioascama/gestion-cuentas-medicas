@@ -4,9 +4,13 @@ avisos TRABAJO_AGOTADO (RNF-20) salen de la cola de trabajos."""
 
 from __future__ import annotations
 
+from dataclasses import replace
+from typing import Any
+
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.dominio.avisos.destinatarios import es_aviso_de_observacion
 from app.dominio.avisos.puertos import RepositorioAvisos
 from app.dominio.avisos.valores import (
     TIPO_AVISO_CORREO_POR_REVISAR,
@@ -23,6 +27,13 @@ from app.infraestructura.persistencia.modelos_integracion import (
     LoteFacturacionModelo,
     TrabajoModelo,
 )
+from app.infraestructura.persistencia.modelos_observaciones import ObservacionModelo
+
+
+def _observacion_de(carga: dict[str, Any]) -> dict[str, Any]:
+    # La entrega de una respuesta sigue a la observacion (destinatarios.py).
+    observacion_id = carga.get("observacion_id")
+    return {} if observacion_id is None else {"observacion_id": observacion_id}
 
 
 class RepositorioAvisosSql(RepositorioAvisos):
@@ -36,7 +47,38 @@ class RepositorioAvisosSql(RepositorioAvisos):
         if TIPO_AVISO_CORREO_POR_REVISAR in tipos_evento:
             avisos.extend(await self._correos_por_revisar(limite))
         avisos.sort(key=lambda aviso: aviso.ocurrido_en, reverse=True)
-        return avisos[:limite]
+        return await self._con_responsables(avisos[:limite])
+
+    async def _con_responsables(self, avisos: list[EventoAviso]) -> list[EventoAviso]:
+        """A quien sigue cada aviso de observacion: la reasignacion, al
+        responsable que fijo; los demas, al responsable actual."""
+        ids = {
+            int(a.datos["observacion_id"])
+            for a in avisos
+            if es_aviso_de_observacion(a) and a.datos.get("observacion_id") is not None
+        }
+        if not ids:
+            return avisos
+        filas = await self._sesion.execute(
+            sa.select(
+                ObservacionModelo.id,
+                ObservacionModelo.responsable_usuario_id,
+                ObservacionModelo.responsable_rol,
+            ).where(ObservacionModelo.id.in_(ids))
+        )
+        actuales = {fila[0]: (fila[1], fila[2]) for fila in filas.all()}
+        resultado = []
+        for aviso in avisos:
+            observacion_id = aviso.datos.get("observacion_id")
+            if not es_aviso_de_observacion(aviso) or observacion_id is None:
+                resultado.append(aviso)
+                continue
+            usuario, rol = actuales.get(int(observacion_id), (None, None))
+            if aviso.tipo_evento == "OBSERVACION_REASIGNADA":
+                usuario = aviso.datos.get("responsable_usuario_id")
+                rol = aviso.datos.get("responsable_rol", rol)
+            resultado.append(replace(aviso, responsable_usuario_id=usuario, responsable_rol=rol))
+        return resultado
 
     async def evaluar_atencion(self, avisos: list[EventoAviso]) -> list[EventoAviso]:
         return await EvaluadorAtencionAvisos(self._sesion).evaluar(avisos)
@@ -114,6 +156,7 @@ class RepositorioAvisosSql(RepositorioAvisos):
                         "intentos": trabajo.intentos,
                         "error": (trabajo.error or "")[:200],
                         "plataforma": trabajo.carga_util.get("plataforma"),
+                        **_observacion_de(trabajo.carga_util),
                     },
                     cuenta_medica_id=int(cuenta_id) if cuenta_id is not None else None,
                     identificacion_interna=cuentas.get(int(cuenta_id)) if cuenta_id else None,

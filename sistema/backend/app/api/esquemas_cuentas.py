@@ -96,15 +96,25 @@ class DetalleCuentaRespuesta(BaseModel):
     procedimientos: list[ProcedimientoRespuesta]
     productos: list[ProductoRespuesta]
     datos_clinicos_reservados: bool = False
+    # Atencion importada del sistema hospitalario (2026-11-19). El medico y
+    # los diagnosticos secundarios no se muestran a tesoreria.
+    tipo_atencion: str = "AMBULATORIA"
+    atencion_origen_id: str | None = None
+    nombre_medico: str | None = None
+    colegiatura_medico: str | None = None
+    diagnosticos_secundarios_cie10: list[str] = []
+    fecha_ingreso_hospitalario: date | None = None
+    fecha_alta_hospitalaria: date | None = None
 
     @staticmethod
     def desde_valor(valor: DetalleCuenta) -> DetalleCuentaRespuesta:
-        excluidos = ("procedimientos", "productos")
+        excluidos = ("procedimientos", "productos", "diagnosticos_secundarios_cie10")
         datos = {k: v for k, v in campos(valor).items() if k not in excluidos}
         return DetalleCuentaRespuesta(
             **datos,
             procedimientos=[ProcedimientoRespuesta(**campos(p)) for p in valor.procedimientos],
             productos=[ProductoRespuesta(**campos(p)) for p in valor.productos],
+            diagnosticos_secundarios_cie10=list(valor.diagnosticos_secundarios_cie10),
         )
 
 
@@ -222,6 +232,10 @@ class AcreditacionRespuesta(BaseModel):
     monto_copago_fijo: str | None
     porcentaje_coaseguro: int | None
     preexistencias: list[str]
+    # La cuenta sigue REGISTRADA y sin comprobante: se puede volver a consultar.
+    admite_reconsulta: bool = False
+    # El robot capturo la Solicitud de Atencion Medica (no en contingencia).
+    tiene_solicitud_atencion: bool = False
 
     @staticmethod
     def desde_valor(valor: AcreditacionRegistrada) -> AcreditacionRespuesta:
@@ -242,4 +256,6 @@ class AcreditacionRespuesta(BaseModel):
             monto_copago_fijo=str(r.monto_copago_fijo) if r.monto_copago_fijo is not None else None,
             porcentaje_coaseguro=r.porcentaje_coaseguro,
             preexistencias=r.preexistencias,
+            admite_reconsulta=valor.admite_reconsulta,
+            tiene_solicitud_atencion=bool(r.ruta_evidencia),
         )

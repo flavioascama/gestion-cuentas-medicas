@@ -21,6 +21,13 @@ class RepositorioEstadoCuenta(Protocol):
 
     async def fijar_estado(self, cuenta_medica_id: int, estado_nuevo: str) -> None: ...
 
+    async def en_correccion_validador(self, cuenta_medica_id: int) -> bool:
+        """True si la cuenta esta FACTURADA y el lote mas reciente que
+        contiene su comprobante quedo OBSERVADO_VALIDADOR: ese lote no se
+        vuelve a cargar y la correccion va en un lote nuevo. Deja de serlo
+        cuando la cuenta entra a otro lote."""
+        ...
+
 
 @dataclass(frozen=True, slots=True)
 class RechazoCuenta:

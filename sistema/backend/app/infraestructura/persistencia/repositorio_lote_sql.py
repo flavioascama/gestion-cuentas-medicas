@@ -20,10 +20,14 @@ from app.dominio.integracion.puertos import (
     ErrorRepositorioLote,
     RepositorioLoteFacturacion,
 )
+from app.dominio.pse.puertos import MontosComprobante
+from app.infraestructura.persistencia.areas_procedimiento_sql import areas_de_procedimientos
+from app.infraestructura.persistencia.modelos_carta_garantia import CartaGarantiaModelo
 from app.infraestructura.persistencia.modelos_documentos_pago import NotaDocumentoModelo
 from app.infraestructura.persistencia.modelos_farmacia import ProductoFacturadoModelo
 from app.infraestructura.persistencia.modelos_integracion import (
     CuentaMedicaModelo,
+    DocumentoFacturadorModelo,
     IafasModelo,
     IpressModelo,
     LoteDocumentoModelo,
@@ -33,6 +37,7 @@ from app.infraestructura.persistencia.modelos_prevalidacion import (
     HallazgoPrevalidacionModelo,
     InformePrevalidacionModelo,
 )
+from app.infraestructura.persistencia.vigencia_lote_sql import cuentas_en_lotes_vigentes
 from app.infraestructura.tedef.carga_esquema import version_esquema
 from app.infraestructura.tedef.carga_mapeo import version_mapeo
 
@@ -49,9 +54,21 @@ def _coaseguro(monto: Decimal, acreditacion: object) -> Decimal:
     return (monto * Decimal(porcentaje) / Decimal(100)).quantize(_DOS_DECIMALES)
 
 
+def montos_guardados(documento: DocumentoFacturadorModelo) -> MontosComprobante | None:
+    """Lo que guardo el comprobante al emitirse; None si es anterior al
+    2026-11-18 y no guardo montos."""
+    if documento.valor_venta is None or documento.igv is None or documento.total is None:
+        return None
+    return MontosComprobante(
+        valor_venta=documento.valor_venta, igv=documento.igv, total=documento.total
+    )
+
+
 class RepositorioLoteFacturacionSql(RepositorioLoteFacturacion):
     def __init__(self, sesion: AsyncSession) -> None:
         self._sesion = sesion
+        # Area de cada procedimiento del lote en armado (Codigo Rubro, T3-23).
+        self._areas: dict[int, str] = {}
 
     async def obtener_ipress_propia(self) -> tuple[str, str]:
         resultado = await self._sesion.execute(sa.select(IpressModelo).limit(2))
@@ -71,6 +88,12 @@ class RepositorioLoteFacturacionSql(RepositorioLoteFacturacion):
     async def obtener_documentos_facturados(
         self, iafas_id: int, cuenta_ids: list[int]
     ) -> list[DocumentoLote]:
+        # Una cuenta que ya esta en un lote en curso y vigente no entra en otro.
+        ocupadas = await cuentas_en_lotes_vigentes(self._sesion)
+        libres = [cuenta_id for cuenta_id in cuenta_ids if cuenta_id not in ocupadas]
+        if cuenta_ids and not libres:
+            raise ErrorRepositorioLote("Las cuentas elegidas ya están en un lote en curso.")
+        cuenta_ids = libres
         consulta = (
             sa.select(CuentaMedicaModelo)
             .where(
@@ -89,6 +112,10 @@ class RepositorioLoteFacturacionSql(RepositorioLoteFacturacion):
         cuentas = (await self._sesion.execute(consulta)).scalars().all()
         productos_por_cuenta = await self._obtener_productos_por_cuenta([c.id for c in cuentas])
         notas = await self._obtener_notas([c.documento.id for c in cuentas if c.documento])
+        cartas = await self._obtener_cartas([c.id for c in cuentas])
+        self._areas = await areas_de_procedimientos(
+            self._sesion, [p.id for c in cuentas for p in c.procedimientos]
+        )
 
         documentos = []
         for cuenta in cuentas:
@@ -102,6 +129,7 @@ class RepositorioLoteFacturacionSql(RepositorioLoteFacturacion):
                     cuenta,
                     productos_por_cuenta.get(cuenta.id, ()),
                     notas.get(cuenta.documento.id),
+                    cartas.get(cuenta.id),
                 )
             )
         return documentos
@@ -125,6 +153,19 @@ class RepositorioLoteFacturacionSql(RepositorioLoteFacturacion):
         for producto in resultado.scalars().all():
             agrupados.setdefault(producto.cuenta_medica_id, []).append(producto)
         return {cuenta_id: tuple(productos) for cuenta_id, productos in agrupados.items()}
+
+    async def _obtener_cartas(self, cuenta_ids: list[int]) -> dict[int, str]:
+        """Numero de la carta de garantia de cada cuenta que la tiene (una
+        sola consulta para todo el lote)."""
+
+        if not cuenta_ids:
+            return {}
+        filas = await self._sesion.execute(
+            sa.select(CartaGarantiaModelo.cuenta_medica_id, CartaGarantiaModelo.numero).where(
+                CartaGarantiaModelo.cuenta_medica_id.in_(cuenta_ids)
+            )
+        )
+        return {cuenta_id: numero for cuenta_id, numero in filas.all()}
 
     async def _obtener_notas(self, documento_ids: list[int]) -> dict[int, NotaLote]:
         """T1 campos 25 a 29 (RI-11): la nota de cada comprobante, si tiene."""
@@ -153,19 +194,42 @@ class RepositorioLoteFacturacionSql(RepositorioLoteFacturacion):
         cuenta: CuentaMedicaModelo,
         productos: tuple[ProductoFacturadoModelo, ...],
         nota: NotaLote | None = None,
+        numero_carta_garantia: str | None = None,
     ) -> DocumentoLote:
+        assert cuenta.documento is not None
+        return DocumentoLote(
+            documento_id=cuenta.documento.id,
+            cuenta_medica_id=cuenta.id,
+            tipo_documento_pago=cuenta.documento.tipo_documento_pago,
+            serie=cuenta.documento.serie,
+            numero=cuenta.documento.numero,
+            fecha_emision=cuenta.documento.fecha_emision,
+            fecha_primer_envio=cuenta.documento.fecha_primer_envio,
+            prestacion=self._a_prestacion_lote(cuenta, productos, numero_carta_garantia),
+            nota=nota,
+            montos_comprobante=montos_guardados(cuenta.documento),
+        )
+
+    def _a_prestacion_lote(
+        self,
+        cuenta: CuentaMedicaModelo,
+        productos: tuple[ProductoFacturadoModelo, ...],
+        numero_carta_garantia: str | None,
+    ) -> PrestacionLote:
         acreditacion = cuenta.acreditacion
         assert acreditacion is not None
-        assert cuenta.documento is not None
-
         procedimientos_ordenados = sorted(cuenta.procedimientos, key=lambda p: p.id)
         procedimientos = tuple(
             self._a_procedimiento_lote(
-                indice + 1, procedimiento, acreditacion, es_el_primero=indice == 0
+                indice + 1,
+                procedimiento,
+                acreditacion,
+                es_el_primero=indice == 0,
+                area=self._areas.get(procedimiento.id, "PROCEDIMIENTO"),
             )
             for indice, procedimiento in enumerate(procedimientos_ordenados)
         )
-        prestacion = PrestacionLote(
+        return PrestacionLote(
             codigo_prestacion_interno=cuenta.identificacion_interna,
             numero_historia_clinica=cuenta.numero_historia_clinica,
             tipo_documento_paciente=cuenta.asegurado.tipo_documento,
@@ -179,22 +243,23 @@ class RepositorioLoteFacturacionSql(RepositorioLoteFacturacion):
             diagnostico_principal_cie10=cuenta.diagnostico_principal_cie10,
             procedimientos=procedimientos,
             productos=tuple(self._a_producto_lote(p, acreditacion) for p in productos),
-        )
-        return DocumentoLote(
-            documento_id=cuenta.documento.id,
-            cuenta_medica_id=cuenta.id,
-            tipo_documento_pago=cuenta.documento.tipo_documento_pago,
-            serie=cuenta.documento.serie,
-            numero=cuenta.documento.numero,
-            fecha_emision=cuenta.documento.fecha_emision,
-            fecha_primer_envio=cuenta.documento.fecha_primer_envio,
-            prestacion=prestacion,
-            nota=nota,
+            numero_carta_garantia=numero_carta_garantia,
+            tipo_atencion=cuenta.tipo_atencion,
+            colegiatura_medico=cuenta.colegiatura_medico,
+            diagnosticos_secundarios_cie10=tuple(
+                filter(None, (cuenta.diagnosticos_secundarios_cie10 or "").split(","))
+            ),
+            fecha_ingreso_hospitalario=cuenta.fecha_ingreso_hospitalario,
+            fecha_alta_hospitalaria=cuenta.fecha_alta_hospitalaria,
         )
 
     @staticmethod
     def _a_procedimiento_lote(
-        correlativo: int, procedimiento: object, acreditacion: object, es_el_primero: bool
+        correlativo: int,
+        procedimiento: object,
+        acreditacion: object,
+        es_el_primero: bool,
+        area: str = "PROCEDIMIENTO",
     ) -> ProcedimientoLote:
         # Mapeo T3 campos 17 y 18 (configuracion/mapeo/mapeo_tedef.yaml):
         # el coaseguro se calcula por procedimiento; el copago fijo, al no
@@ -224,15 +289,18 @@ class RepositorioLoteFacturacionSql(RepositorioLoteFacturacion):
             monto_unitario=monto_unitario,
             copago_variable=copago_variable,
             copago_fijo=copago_fijo,
+            area=area,
         )
 
     @staticmethod
     def _a_producto_lote(producto: ProductoFacturadoModelo, acreditacion: object) -> ProductoLote:
-        # El copago del producto (T4 campo 14) sale de la acreditacion, igual
-        # que el coaseguro de un procedimiento, sobre lo que la IAFAS cubre
-        # (2026-11-18: antes se escribia a mano). El copago fijo ya va entero
-        # en el primer procedimiento.
-        cubierto = producto.monto_presentado - producto.monto_no_cubierto
+        # Misma regla que un procedimiento (T3 campos 17 y 20): el copago
+        # (T4 campo 14) es el coaseguro de la acreditacion sobre lo presentado
+        # menos la exclusion registrada del producto, y lo no cubierto (T4
+        # campo 16) es esa exclusion mas el copago. El copago fijo ya va
+        # entero en el primer procedimiento.
+        exclusion = producto.monto_no_cubierto
+        copago = _coaseguro(producto.monto_presentado - exclusion, acreditacion)
         return ProductoLote(
             correlativo=producto.correlativo,
             tipo_producto=producto.tipo_producto,
@@ -242,8 +310,8 @@ class RepositorioLoteFacturacionSql(RepositorioLoteFacturacion):
             cantidad_venta=producto.cantidad_venta,
             tipo_unidad_dispensacion=producto.tipo_unidad_dispensacion,
             monto_unitario=producto.monto_unitario_sin_impuesto,
-            copago=_coaseguro(cubierto, acreditacion),
-            monto_no_cubierto=producto.monto_no_cubierto,
+            copago=copago,
+            monto_no_cubierto=exclusion + copago,
             diagnostico_asociado_cie10=producto.diagnostico_asociado_cie10,
             exento_igv=producto.exento_igv,
             guia_farmacia=producto.guia_farmacia,

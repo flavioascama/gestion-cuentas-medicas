@@ -25,6 +25,7 @@ from app.dominio.integracion.puertos_validacion import (
     ResultadoEtapaValidador,
     RutaArchivoLote,
 )
+from app.dominio.integracion.vigencia_lote import VigenciaLote
 from app.dominio.puertos_comunes import Evento, MedicionPaso, Observabilidad
 from app.infraestructura.tedef.cargar_lote_en_validador import (
     CargarLoteEnValidador,
@@ -48,6 +49,10 @@ class _RepositorioFalso:
     detallada_conforme_previa: bool = False
     validaciones: list[str] = field(default_factory=list)
     archivos_transmision: list[str] = field(default_factory=list)
+    vigencia: VigenciaLote | None = None
+
+    async def vigencia_lote(self, lote_id: int) -> VigenciaLote | None:
+        return self.vigencia
 
     async def obtener_lote_para_carga(self, lote_id: int) -> LoteParaCargarValidador | None:
         return LoteParaCargarValidador(

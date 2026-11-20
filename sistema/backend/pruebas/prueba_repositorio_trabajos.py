@@ -122,6 +122,23 @@ async def prueba_reactivar_requieren_sesion_solo_afecta_los_tipos_pedidos(
         assert otro is not None and otro.estado == "REQUIERE_SESION"
 
 
+async def prueba_hay_sin_terminar_distingue_lote_tipo_y_estado(
+    fabrica_sesiones: async_sessionmaker[AsyncSession],
+) -> None:
+    instante = datetime(2026, 9, 25, 10, 0, 0)
+    async with fabrica_sesiones() as sesion:
+        repositorio = RepositorioTrabajosSql(sesion)
+        assert not await repositorio.hay_sin_terminar("MONITOREAR_PRUEBA", 4001)
+
+        trabajo_id = await repositorio.encolar("MONITOREAR_PRUEBA", {"lote_id": 4001}, instante)
+        assert await repositorio.hay_sin_terminar("MONITOREAR_PRUEBA", 4001)
+        assert not await repositorio.hay_sin_terminar("MONITOREAR_PRUEBA", 4002)
+        assert not await repositorio.hay_sin_terminar("OTRO_TIPO", 4001)
+
+        await repositorio.marcar_agotado(trabajo_id, "sin respuesta")
+        assert not await repositorio.hay_sin_terminar("MONITOREAR_PRUEBA", 4001)
+
+
 async def prueba_marcar_para_reintento_trunca_el_error_muy_largo(
     fabrica_sesiones: async_sessionmaker[AsyncSession],
 ) -> None:

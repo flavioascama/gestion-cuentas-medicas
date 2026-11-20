@@ -95,7 +95,7 @@ async def _insertar_evento(
     tipo_evento: str,
     estado_nuevo: str | None,
     ocurrido_en: datetime,
-) -> None:
+) -> EventoModelo:
     """Insercion directa (ver docstring del modulo): la version solo
     necesita ser unica y creciente por cuenta dentro de esta prueba."""
 
@@ -112,21 +112,36 @@ async def _insertar_evento(
             )
         ).scalar_one()
     )
-    sesion.add(
-        EventoModelo(
-            tipo_agregado="CUENTA",
-            agregado_id=cuenta_medica_id,
-            version=version,
-            cuenta_medica_id=cuenta_medica_id,
-            tipo_evento=tipo_evento,
-            actor="prueba",
-            estado_previo=None,
-            estado_nuevo=estado_nuevo,
-            datos={},
-            ocurrido_en=ocurrido_en,
-            hash_evento=f"hash-de-prueba-{cuenta_medica_id}-{version}",
-        )
+    evento = EventoModelo(
+        tipo_agregado="CUENTA",
+        agregado_id=cuenta_medica_id,
+        version=version,
+        cuenta_medica_id=cuenta_medica_id,
+        tipo_evento=tipo_evento,
+        actor="prueba",
+        estado_previo=None,
+        estado_nuevo=estado_nuevo,
+        datos={},
+        ocurrido_en=ocurrido_en,
+        hash_evento=f"hash-de-prueba-{cuenta_medica_id}-{version}",
     )
+    sesion.add(evento)
+    await sesion.flush()
+    return evento
+
+
+async def _insertar_aviso_de_observacion(
+    sesion: AsyncSession, observacion: ObservacionModelo, ocurrido_en: datetime
+) -> None:
+    # El control de plazos busca el aviso por el observacion_id de su payload.
+    evento = await _insertar_evento(
+        sesion,
+        observacion.cuenta_medica_id,
+        "OBSERVACION_PLAZO_PROXIMO_A_VENCER",
+        None,
+        ocurrido_en,
+    )
+    evento.datos = {"observacion_id": observacion.id}
     await sesion.flush()
 
 
@@ -180,25 +195,18 @@ async def prueba_observaciones_abiertas_detecta_aviso_ya_registrado(
         cuenta_id = await _sembrar_cuenta(sesion, iafas_id, "GLOSADA")
         motivo_codigo = await _sembrar_motivo(sesion)
         abierta_desde = _AHORA - timedelta(days=6)
-        sesion.add(
-            ObservacionModelo(
-                cuenta_medica_id=cuenta_id,
-                motivo_codigo=motivo_codigo,
-                naturaleza="ADMINISTRATIVA",
-                es_parcial=False,
-                responsable_rol="analista",
-                estado="ABIERTA",
-                registrado_en=abierta_desde,
-            )
+        observacion = ObservacionModelo(
+            cuenta_medica_id=cuenta_id,
+            motivo_codigo=motivo_codigo,
+            naturaleza="ADMINISTRATIVA",
+            es_parcial=False,
+            responsable_rol="analista",
+            estado="ABIERTA",
+            registrado_en=abierta_desde,
         )
+        sesion.add(observacion)
         await sesion.flush()
-        await _insertar_evento(
-            sesion,
-            cuenta_id,
-            "OBSERVACION_PLAZO_PROXIMO_A_VENCER",
-            None,
-            abierta_desde + timedelta(days=1),
-        )
+        await _insertar_aviso_de_observacion(sesion, observacion, abierta_desde + timedelta(days=1))
         await sesion.commit()
 
         repositorio = RepositorioPlazosSql(sesion, _DIAS_PLAZO_REENVIO_LOTE_RECHAZADO)
@@ -206,6 +214,44 @@ async def prueba_observaciones_abiertas_detecta_aviso_ya_registrado(
 
         assert hito.ya_avisada is True
         assert hito.ya_escalada is False
+
+
+async def prueba_aviso_de_una_observacion_no_cuenta_para_otra_abierta(
+    fabrica_sesiones: async_sessionmaker[AsyncSession],
+) -> None:
+    """Varias observaciones ABIERTAS en la misma cuenta: el aviso de la
+    primera, posterior al registro de la segunda, no marca a la segunda."""
+    async with fabrica_sesiones() as sesion:
+        iafas_id = await _sembrar_iafas(
+            sesion,
+            dias_plazo_respuesta_observacion=7,
+            dias_plazo_comunicacion_auditoria=30,
+            dias_plazo_pago_liquidacion=30,
+        )
+        cuenta_id = await _sembrar_cuenta(sesion, iafas_id, "GLOSADA")
+        motivo_codigo = await _sembrar_motivo(sesion)
+        observaciones = [
+            ObservacionModelo(
+                cuenta_medica_id=cuenta_id,
+                motivo_codigo=motivo_codigo,
+                naturaleza="ADMINISTRATIVA",
+                es_parcial=False,
+                responsable_rol="analista",
+                estado="ABIERTA",
+                registrado_en=_AHORA - timedelta(days=dias),
+            )
+            for dias in (6, 3)
+        ]
+        sesion.add_all(observaciones)
+        await sesion.flush()
+        await _insertar_aviso_de_observacion(sesion, observaciones[0], _AHORA - timedelta(days=1))
+        await sesion.commit()
+
+        repositorio = RepositorioPlazosSql(sesion, _DIAS_PLAZO_REENVIO_LOTE_RECHAZADO)
+        hitos = {h.observacion_id: h for h in await repositorio.observaciones_abiertas()}
+
+        assert hitos[observaciones[0].id].ya_avisada is True
+        assert hitos[observaciones[1].id].ya_avisada is False
 
 
 async def prueba_cuentas_rechazadas_usa_el_plazo_del_sistema_no_el_de_la_iafas(

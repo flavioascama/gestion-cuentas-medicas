@@ -17,6 +17,24 @@ from app.infraestructura.persistencia.modelos_integracion import CuentaMedicaMod
 from app.infraestructura.persistencia.registro_eventos_sql import RegistroEventosSql
 
 
+async def liberar_cuenta_de_lotes_en_curso(sesion: AsyncSession, cuenta_id: int) -> None:
+    """Las cuentas dedicadas de un escenario se reutilizan en cada corrida
+    y una cuenta que sigue en un lote en curso no entra en otro
+    (2026-11-19). Los lotes que dejaron las corridas anteriores se dan por
+    observados, que es el estado que libera sus cuentas para un lote nuevo."""
+    await sesion.execute(
+        sa.text(
+            "update lote_facturacion set estado = 'OBSERVADO_VALIDADOR' "
+            "where estado in ('GENERADO', 'CARGADO_VALIDADOR', 'VALIDADO') and id in ("
+            "select ld.lote_id from lote_documento ld "
+            "join documento_facturador d on d.id = ld.documento_id "
+            "where d.cuenta_id = :cuenta)"
+        ),
+        {"cuenta": cuenta_id},
+    )
+    await sesion.commit()
+
+
 async def fijar_estado_de_prueba(sesion: AsyncSession, cuenta_id: int, estado: str) -> None:
     await sesion.execute(
         sa.update(CuentaMedicaModelo)

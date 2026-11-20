@@ -12,7 +12,7 @@ from app.dominio.pse.documentos import (
     NotaDocumento,
     RepositorioDocumentosPago,
 )
-from app.dominio.pse.puertos import ComprobantePse
+from app.dominio.pse.puertos import ComprobanteEmitido
 from app.infraestructura.persistencia.modelos_documentos_pago import (
     ComprobanteReemplazadoModelo,
     NotaDocumentoModelo,
@@ -120,7 +120,7 @@ class RepositorioDocumentosPagoSql(RepositorioDocumentosPago):
         await self._sesion.flush()
 
     async def reemplazar(
-        self, cuenta_medica_id: int, nuevo: ComprobantePse, reemplazo: ComprobanteReemplazado
+        self, cuenta_medica_id: int, nuevo: ComprobanteEmitido, reemplazo: ComprobanteReemplazado
     ) -> None:
         documento = await self._documento(cuenta_medica_id)
         assert documento is not None, "el caso de uso ya verifico que existe"
@@ -136,16 +136,12 @@ class RepositorioDocumentosPagoSql(RepositorioDocumentosPago):
                 motivo=reemplazo.motivo,
             )
         )
-        documento.tipo_documento_pago = nuevo.tipo_documento_pago
-        documento.serie = nuevo.serie
-        documento.numero = nuevo.numero
-        documento.fecha_emision = nuevo.fecha_emision
-        # El reemplazo factura lo que la cuenta tiene ahora.
-        montos = await montos_facturados_de_cuenta(
-            self._sesion, cuenta_medica_id, nuevo.tipo_documento_pago
-        )
-        if montos is not None:
-            documento.valor_venta = montos.valor_venta
-            documento.igv = montos.igv
-            documento.total = montos.total_facturado
+        documento.tipo_documento_pago = nuevo.comprobante.tipo_documento_pago
+        documento.serie = nuevo.comprobante.serie
+        documento.numero = nuevo.comprobante.numero
+        documento.fecha_emision = nuevo.comprobante.fecha_emision
+        # El reemplazo guarda exactamente los montos que se enviaron al PSE.
+        documento.valor_venta = nuevo.montos.valor_venta
+        documento.igv = nuevo.montos.igv
+        documento.total = nuevo.montos.total
         await self._sesion.flush()

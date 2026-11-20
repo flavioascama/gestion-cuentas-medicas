@@ -29,10 +29,12 @@ from app.dominio.contingencia.errores import (
 from app.dominio.contingencia.puertos import RepositorioContingencia
 from app.dominio.contingencia.valores import (
     TIPO_EVENTO_VALIDACION_CONTINGENCIA,
+    IdentidadLoteS01,
     ResultadoValidacionManual,
 )
 from app.dominio.integracion.puertos_validacion import ArchivoLote, RepositorioValidacionOficial
 from app.dominio.puertos_comunes import Evento, Observabilidad, Reloj
+from app.infraestructura.tedef.nombrado import PATRON_NOMBRE_S01
 
 
 @dataclass(frozen=True, slots=True)
@@ -78,7 +80,8 @@ class RegistrarValidacionContingencia:
         datos: dict[str, object] = {"modo": "contingencia", "resultado": resultado.value}
         if resultado is ResultadoValidacionManual.VALIDADO:
             estado_nuevo = "VALIDADO"
-            datos.update(await self._guardar_s01(lote_id, _exigir_s01(archivo_s01)))
+            identidad = await self._repositorio.identidad_lote_s01(lote_id)
+            datos.update(await self._guardar_s01(lote_id, _exigir_s01(archivo_s01, identidad)))
         else:
             estado_nuevo = "OBSERVADO_VALIDADOR"
             await self._repositorio.marcar_lote_observado(lote_id)
@@ -111,13 +114,39 @@ class RegistrarValidacionContingencia:
         return {"nombre_s01": archivo.nombre, "sha256_s01": huella}
 
 
-def _exigir_s01(archivo: ArchivoLote | None) -> ArchivoLote:
-    if archivo is None or not archivo.contenido:
+def s01_corresponde_al_lote(nombre: str, identidad: IdentidadLoteS01 | None) -> bool:
+    """El nombre sigue el patron del Anexo 3 (el mismo con que el sistema
+    nombra y reconoce el `.S01`) y lleva el RUC, la IPRESS, la IAFAS, el
+    numero y el periodo del lote; la fecha es la del validador."""
+    coincidencia = PATRON_NOMBRE_S01.match(nombre)
+    if coincidencia is None or identidad is None:
+        return False
+    return (
+        coincidencia["ruc"],
+        coincidencia["ipress"],
+        coincidencia["iafas"],
+        coincidencia["lote"],
+        coincidencia["periodo"],
+    ) == (
+        identidad.ruc,
+        identidad.codigo_ipress,
+        identidad.codigo_iafas,
+        identidad.numero_lote,
+        identidad.periodo,
+    )
+
+
+def _exigir_s01(archivo: ArchivoLote | None, identidad: IdentidadLoteS01 | None) -> ArchivoLote:
+    if archivo is None:
         raise ErrorArchivoS01Invalido(
             "Para registrar el lote como VALIDADO en contingencia hay que adjuntar el "
             "archivo .S01 que entrego el validador."
         )
+    if not archivo.contenido:
+        raise ErrorArchivoS01Invalido("El archivo .S01 está vacío.")
     nombre = Path(archivo.nombre).name
     if nombre != archivo.nombre or not nombre.upper().endswith(".S01"):
         raise ErrorArchivoS01Invalido(f"El archivo {archivo.nombre!r} no es un .S01 valido.")
+    if not s01_corresponde_al_lote(nombre, identidad):
+        raise ErrorArchivoS01Invalido(f"El archivo {nombre} no corresponde a este lote.")
     return archivo

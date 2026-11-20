@@ -1,9 +1,42 @@
 import type { DetalleCuenta as DetalleCuentaTipo } from "../../api/cuentas";
 import { formatear_fecha } from "../../utilidades/formato";
+import { etiqueta_tipo_atencion } from "./etiquetas_atencion";
 import estilos from "./detalle_cuenta.module.css";
 
+type Dato = { etiqueta: string; valor: string };
+
+// Solo las cuentas que vienen del sistema hospitalario; en una manual no
+// se agrega nada.
+function datos_de_atencion(cuenta: DetalleCuentaTipo): Dato[] {
+  if (!cuenta.atencion_origen_id) return [];
+  const datos: Dato[] = [
+    { etiqueta: "Tipo de atención", valor: etiqueta_tipo_atencion(cuenta.tipo_atencion) },
+    { etiqueta: "Atención de origen", valor: cuenta.atencion_origen_id },
+  ];
+  if (cuenta.nombre_medico) {
+    const colegiatura = cuenta.colegiatura_medico ? ` (CMP ${cuenta.colegiatura_medico})` : "";
+    datos.push({ etiqueta: "Médico tratante", valor: `${cuenta.nombre_medico}${colegiatura}` });
+  }
+  if (cuenta.diagnosticos_secundarios_cie10.length > 0) {
+    datos.push({
+      etiqueta: "Diagnósticos secundarios",
+      valor: cuenta.diagnosticos_secundarios_cie10.join(", "),
+    });
+  }
+  if (cuenta.fecha_ingreso_hospitalario) {
+    const alta = cuenta.fecha_alta_hospitalaria
+      ? formatear_fecha(cuenta.fecha_alta_hospitalaria)
+      : "—";
+    datos.push({
+      etiqueta: "Hospitalización",
+      valor: `${formatear_fecha(cuenta.fecha_ingreso_hospitalario)} al ${alta}`,
+    });
+  }
+  return datos;
+}
+
 export function DatosCuenta({ cuenta }: { cuenta: DetalleCuentaTipo }) {
-  const datos: { etiqueta: string; valor: string }[] = [
+  const datos: Dato[] = [
     { etiqueta: "Identificación interna", valor: cuenta.identificacion_interna },
     { etiqueta: "Fecha de prestación", valor: formatear_fecha(cuenta.fecha_prestacion) },
     { etiqueta: "Hora de prestación", valor: cuenta.hora_prestacion },
@@ -25,6 +58,7 @@ export function DatosCuenta({ cuenta }: { cuenta: DetalleCuentaTipo }) {
       valor: `${cuenta.tipo_documento_asegurado} ${cuenta.numero_documento_asegurado}`,
     },
     { etiqueta: "IAFAS", valor: cuenta.iafas_razon_social },
+    ...datos_de_atencion(cuenta),
   ];
 
   return (

@@ -28,6 +28,7 @@ from app.dominio.integracion.puertos_validacion import (
     ObservacionLectura,
     ResultadoEtapaValidador,
 )
+from app.dominio.integracion.vigencia_lote import VigenciaLote
 from app.dominio.puertos_comunes import Evento, MedicionPaso, Observabilidad
 
 _INSTANTE = datetime(2026, 9, 26, 9, 0, 0)
@@ -48,9 +49,13 @@ class _RepositorioValidacionFalso:
     validaciones: list[dict[str, object]] = field(default_factory=list)
     archivos_transmision: list[dict[str, object]] = field(default_factory=list)
     enviados_susalud: list[tuple[int, ...]] = field(default_factory=list)
+    vigencia: VigenciaLote | None = None
 
     async def obtener_estado_lote(self, lote_id: int) -> str | None:
         return self.estado_lote
+
+    async def vigencia_lote(self, lote_id: int) -> VigenciaLote | None:
+        return self.vigencia
 
     async def registrar_validacion(self, datos: DatosRegistrarValidacion) -> int:
         self.validaciones.append(

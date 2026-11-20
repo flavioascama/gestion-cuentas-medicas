@@ -47,6 +47,16 @@ class RolesRequeridosError(ErrorAcceso):
         super().__init__("El usuario debe tener al menos un rol asignado.")
 
 
+class NoPuedeCambiarSusRolesError(ErrorAcceso):
+    """Nadie cambia sus propios roles ni se desactiva: lo hace otro
+    administrador (separacion de funciones, 2026-11-19)."""
+
+    def __init__(self) -> None:
+        super().__init__(
+            "No puede cambiar sus propios roles ni desactivarse; lo hace otro administrador."
+        )
+
+
 class UsuarioNoEncontradoError(ErrorAcceso):
     def __init__(self, usuario_id: int) -> None:
         super().__init__(f"No existe el usuario {usuario_id}.")

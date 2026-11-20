@@ -1,16 +1,19 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import type { ProcedimientoPorCodificar } from "../../api/atenciones";
 import { obtener_carta_garantia } from "../../api/carta_garantia";
 import type { RespuestaCompletitudCuenta } from "../../api/cuentas";
 import { Boton } from "../../componentes_base/boton";
 import { usar_sesion } from "../../sesion/contexto_sesion";
 import { usar_puede_codificar } from "./codificacion_cuenta";
+import { ListaPorCodificar } from "./por_codificar_cuenta";
+import { texto_faltan_por_codificar, usar_por_codificar } from "./usar_por_codificar";
 import { RegistrarDiagnostico } from "./registrar_diagnostico";
 import { ContenidoAcreditacion } from "./seccion_acreditacion";
 import { ContenidoCartaGarantia } from "./seccion_carta_garantia";
 import { ContenidoComprobante } from "./seccion_comprobante";
-import { usar_completitud_cuenta } from "./usar_cuentas";
+import { usar_completitud_cuenta, usar_en_correccion_validador } from "./usar_cuentas";
 import estilos_seccion from "./detalle_cuenta.module.css";
 import estilos from "./linea_pasos_cuenta.module.css";
 
@@ -29,12 +32,17 @@ interface Paso {
   estado: string;
   // Quien mira tiene algo que ver o hacer en este paso.
   con_panel: boolean;
+  // Un paso que puede quedar sin hacerse (la carta fuera de hospitalizacion).
+  opcional?: boolean;
 }
 
 // Lo que cada panel necesita saber de la cuenta y de quien mira.
 interface Situacion {
   analista: boolean;
+  // Ve el resultado de la acreditacion (analista, auditor y jefe).
+  ve_acreditacion: boolean;
   codifica: boolean;
+  // Quien puede registrar o cambiar el diagnostico segun el estado (igual que el servidor).
   diagnostica: boolean;
   registra_carta: boolean;
   ve_lotes: boolean;
@@ -43,6 +51,9 @@ interface Situacion {
   codificada: boolean;
   facturada: boolean;
   tiene_carta: boolean;
+  // En hospitalizacion la carta de garantia es obligatoria.
+  carta_obligatoria: boolean;
+  por_codificar: ProcedimientoPorCodificar[];
   lote: RespuestaCompletitudCuenta["lote"];
   estado_cuenta: string;
 }
@@ -57,6 +68,7 @@ function texto_estado(hecho: boolean, pendiente = "Pendiente"): string {
 
 function estado_clinico(s: Situacion): string {
   if (!s.con_diagnostico) return "Falta el diagnóstico";
+  if (s.por_codificar.length > 0) return texto_faltan_por_codificar(s.por_codificar.length);
   return s.codifica ? "Faltan procedimientos" : "Pendiente del auditor médico";
 }
 
@@ -65,18 +77,20 @@ function faltantes_comprobante(s: Situacion): string[] {
   const faltantes: string[] = [];
   if (!s.acreditada) faltantes.push("la acreditación");
   if (!s.con_diagnostico) faltantes.push("el diagnóstico");
-  if (!s.codificada) faltantes.push("al menos un procedimiento");
+  if (s.por_codificar.length > 0) faltantes.push("los procedimientos por codificar");
+  else if (!s.codificada) faltantes.push("al menos un procedimiento");
+  if (s.carta_obligatoria && !s.tiene_carta) faltantes.push("la carta de garantía");
   return faltantes;
 }
 
 function paso_clinico(s: Situacion): Paso {
-  const hecho = s.con_diagnostico && s.codificada;
+  const hecho = s.con_diagnostico && s.codificada && s.por_codificar.length === 0;
   return {
     clave: "clinica",
     titulo: "Diagnóstico y procedimientos",
     hecho,
     estado: hecho ? "Hecho" : estado_clinico(s),
-    con_panel: (!s.con_diagnostico && s.diagnostica) || s.codifica,
+    con_panel: s.diagnostica || s.codifica || s.por_codificar.length > 0,
   };
 }
 
@@ -91,6 +105,11 @@ function paso_lote(s: Situacion): Paso {
   };
 }
 
+function estado_carta(s: Situacion): string {
+  if (s.tiene_carta) return "Registrada";
+  return s.carta_obligatoria ? "Falta la carta de garantía" : "Opcional";
+}
+
 function armar_pasos(s: Situacion): Paso[] {
   return [
     { clave: "registro", titulo: "Registro", hecho: true, estado: "Hecho", con_panel: false },
@@ -99,14 +118,15 @@ function armar_pasos(s: Situacion): Paso[] {
       titulo: "Acreditación",
       hecho: s.acreditada,
       estado: texto_estado(s.acreditada),
-      con_panel: s.analista,
+      con_panel: s.analista || (s.ve_acreditacion && s.acreditada),
     },
     {
       clave: "carta",
       titulo: "Carta de garantía",
       hecho: s.tiene_carta,
-      estado: s.tiene_carta ? "Registrada" : "Opcional",
+      estado: estado_carta(s),
       con_panel: s.tiene_carta || s.registra_carta,
+      opcional: !s.carta_obligatoria,
     },
     paso_clinico(s),
     {
@@ -120,16 +140,28 @@ function armar_pasos(s: Situacion): Paso[] {
   ];
 }
 
-function usar_permisos(estado: string, con_diagnostico: boolean) {
+function diagnostico_editable(
+  estado: string,
+  con_diagnostico: boolean,
+  en_correccion: boolean,
+): boolean {
+  if (en_correccion || _ESTADOS_CON_DIAGNOSTICO_EDITABLE.has(estado)) return true;
+  return estado === "FACTURADA" && !con_diagnostico;
+}
+
+function usar_permisos(cuenta_id: number, estado: string, con_diagnostico: boolean) {
   const { sesion } = usar_sesion();
+  const en_correccion = usar_en_correccion_validador(cuenta_id);
+  const codifica = usar_puede_codificar(estado, cuenta_id);
   const roles = sesion?.roles ?? [];
   const analista = roles.includes("analista");
-  const editable =
-    _ESTADOS_CON_DIAGNOSTICO_EDITABLE.has(estado) || (estado === "FACTURADA" && !con_diagnostico);
+  const con_rol = analista || roles.includes("auditor");
+  const editable = diagnostico_editable(estado, con_diagnostico, en_correccion);
   return {
     analista,
-    codifica: usar_puede_codificar(estado),
-    diagnostica: editable && (analista || roles.includes("auditor")),
+    ve_acreditacion: con_rol || roles.includes("jefe"),
+    codifica,
+    diagnostica: editable && con_rol,
     registra_carta: analista && !_ESTADOS_SIN_CARTA.has(estado),
     ve_lotes: analista || roles.includes("jefe"),
   };
@@ -142,30 +174,35 @@ function usar_situacion(cuenta_id: number, estado: string): Situacion | null {
     queryKey: ["cuentas", cuenta_id, "carta-garantia"],
     queryFn: () => obtener_carta_garantia(cuenta_id),
   });
+  const por_codificar = usar_por_codificar(cuenta_id);
   const piezas = completitud.data?.piezas ?? [];
   const hecha = (clave: string) => piezas.some((pieza) => pieza.clave === clave && pieza.completa);
   const con_diagnostico = hecha("diagnostico");
-  const permisos = usar_permisos(estado, con_diagnostico);
+  const permisos = usar_permisos(cuenta_id, estado, con_diagnostico);
   const estado_cuenta = completitud.data?.estado_cuenta;
 
-  // ConsultarCompletitudCuenta (backend) puede facturar la cuenta como
-  // efecto secundario de esta misma consulta: sin este efecto, la insignia
-  // de estado del encabezado (otra consulta) se quedaria en "Registrada"
-  // hasta el siguiente montaje de la pantalla.
+  // Si el estado cambia (la cuenta queda Facturada al emitir el comprobante),
+  // la insignia de estado del encabezado (otra consulta) se refresca tambien.
   useEffect(() => {
     if (estado_cuenta) {
       void cliente_consultas.invalidateQueries({ queryKey: ["cuentas", cuenta_id], exact: true });
     }
   }, [estado_cuenta, cuenta_id, cliente_consultas]);
 
-  if (!completitud.data || carta.isPending) return null;
+  if (!completitud.data || carta.isPending || por_codificar.cargando) return null;
+  // La cobertura queda incompleta solo por la carta: el asegurado ya esta acreditado.
+  const carta_obligatoria = piezas.some(
+    (pieza) => pieza.clave === "cobertura" && pieza.accion === "registrar_carta_garantia",
+  );
   return {
     ...permisos,
-    acreditada: hecha("cobertura"),
+    acreditada: hecha("cobertura") || carta_obligatoria,
     con_diagnostico,
     codificada: hecha("codificacion"),
     facturada: hecha("comprobante"),
     tiene_carta: Boolean(carta.data),
+    carta_obligatoria,
+    por_codificar: por_codificar.pendientes,
     lote: completitud.data.lote ?? null,
     estado_cuenta: completitud.data.estado_cuenta,
   };
@@ -223,28 +260,30 @@ interface PropiedadesLinea {
   cuenta_id: number;
   estado: string;
   al_codificar: () => void;
+  al_codificar_pendiente: (pendiente: ProcedimientoPorCodificar) => void;
 }
 
 function PanelClinico({
   cuenta_id,
   situacion,
   al_codificar,
-}: {
-  cuenta_id: number;
-  situacion: Situacion;
-  al_codificar: () => void;
-}) {
+  al_codificar_pendiente,
+}: PropiedadesLinea & { situacion: Situacion }) {
   return (
     <>
-      {!situacion.con_diagnostico && situacion.diagnostica ? (
-        <RegistrarDiagnostico cuenta_id={cuenta_id} />
-      ) : null}
+      {situacion.diagnostica ? <RegistrarDiagnostico cuenta_id={cuenta_id} /> : null}
       {situacion.codifica ? (
         <div className={estilos_seccion.fila_accion}>
           <Boton variante="primario" onClick={al_codificar}>
             Agregar procedimiento
           </Boton>
         </div>
+      ) : null}
+      {situacion.por_codificar.length > 0 ? (
+        <ListaPorCodificar
+          pendientes={situacion.por_codificar}
+          al_codificar={situacion.codifica ? al_codificar_pendiente : null}
+        />
       ) : null}
     </>
   );
@@ -266,9 +305,7 @@ function PanelPaso({
   if (clave === "acreditacion") return <ContenidoAcreditacion cuenta_id={cuenta_id} />;
   if (clave === "carta") return <ContenidoCartaGarantia cuenta_id={cuenta_id} estado={estado} />;
   if (clave === "clinica") {
-    return (
-      <PanelClinico cuenta_id={cuenta_id} situacion={situacion} al_codificar={linea.al_codificar} />
-    );
+    return <PanelClinico situacion={situacion} {...linea} />;
   }
   if (clave === "comprobante") {
     return (
@@ -285,7 +322,7 @@ function PanelPaso({
 // Al abrir la cuenta queda elegido el primer paso pendiente en el que quien
 // mira puede hacer algo; la carta de garantia es opcional y no cuenta.
 function paso_inicial(pasos: Paso[]): Clave | null {
-  const pendiente = pasos.find((paso) => !paso.hecho && paso.con_panel && paso.clave !== "carta");
+  const pendiente = pasos.find((paso) => !paso.hecho && paso.con_panel && !paso.opcional);
   return pendiente?.clave ?? null;
 }
 

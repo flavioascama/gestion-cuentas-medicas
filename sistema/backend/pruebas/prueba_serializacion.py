@@ -56,6 +56,8 @@ def prueba_detalle_trabajo_respuesta_desde_valor_no_falla_con_datos_reales() -> 
     )
     respuesta = DetalleTrabajoRespuesta.desde_valor(valor)
     assert respuesta.estado == "COMPLETADO"
+    # La carga util puede traer texto sensible: no sale por la API.
+    assert "carga_util" not in respuesta.model_dump()
 
 
 def prueba_candidato_cpms_respuesta_desde_valor_no_falla_con_datos_reales() -> None:

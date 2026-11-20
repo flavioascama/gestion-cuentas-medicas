@@ -26,6 +26,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dominio.acceso.entidades import NombreRol
 from app.infraestructura.persistencia.modelos_integracion import CuentaMedicaModelo, IpressModelo
+from pruebas_integracion.apoyo_estados import liberar_cuenta_de_lotes_en_curso
 from pruebas_integracion.conftest import esperar_hasta
 from pruebas_integracion.prueba_sesion_asistida_y_cobertura import _TokenParaRol
 
@@ -217,6 +218,7 @@ async def prueba_6_revision_de_forma_observada_codigo_ipress_ajeno(
     ipress.ruc, ipress.codigo_ipress = "10000000001", "99999999"
     await sesion.commit()
     try:
+        await liberar_cuenta_de_lotes_en_curso(sesion, _CUENTA_FORMA_OBSERVADA)
         resultado = await _generar_lote(cliente, token, iafas_id, _CUENTA_FORMA_OBSERVADA)
         assert resultado.conforme is True, resultado.cuerpo_completo
         lote_id = resultado.lote_id
@@ -260,6 +262,7 @@ async def prueba_7_validacion_detallada_observada_forzada(
 
     token = await token_para_rol(NombreRol.ANALISTA)
     iafas_id = await _iafas_de_cuenta(sesion, _CUENTA_DETALLADA_OBSERVADA)
+    await liberar_cuenta_de_lotes_en_curso(sesion, _CUENTA_DETALLADA_OBSERVADA)
     resultado = await _generar_lote(cliente, token, iafas_id, _CUENTA_DETALLADA_OBSERVADA)
     assert resultado.conforme is True, resultado.cuerpo_completo
     lote_id = resultado.lote_id
@@ -304,6 +307,7 @@ async def prueba_8_lote_conforme_descarga_s01_con_huella(
 
     token = await token_para_rol(NombreRol.ANALISTA)
     iafas_id = await _iafas_de_cuenta(sesion, _CUENTA_CONFORME)
+    await liberar_cuenta_de_lotes_en_curso(sesion, _CUENTA_CONFORME)
     resultado = await _generar_lote(cliente, token, iafas_id, _CUENTA_CONFORME)
     assert resultado.conforme is True, resultado.cuerpo_completo
     lote_id = resultado.lote_id

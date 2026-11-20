@@ -35,6 +35,10 @@ export function confirmar_procedimiento(
   );
 }
 
+export function quitar_procedimiento(cuenta_id: number, procedimiento_id: number): Promise<void> {
+  return enviar<void>("DELETE", `/cuentas/${cuenta_id}/procedimientos/${procedimiento_id}`);
+}
+
 // El precio con que se facturo por ultima vez ese codigo a la IAFAS de la
 // cuenta; null si nunca se facturo.
 export function ultimo_precio_procedimiento(

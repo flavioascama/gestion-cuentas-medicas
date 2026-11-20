@@ -321,6 +321,319 @@
         }
       }
     },
+    "/atenciones-hospitalarias": {
+      "get": {
+        "tags": [
+          "atenciones hospitalarias"
+        ],
+        "summary": "Listar Atenciones Hospitalarias",
+        "description": "Las atenciones cerradas que aun no se importaron.",
+        "operationId": "listar_atenciones_hospitalarias_atenciones_hospitalarias_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "documento",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Documento"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ResumenAtencionRespuesta"
+                  },
+                  "title": "Response Listar Atenciones Hospitalarias Atenciones Hospitalarias Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/atenciones-hospitalarias/{atencion_id}/importar": {
+      "post": {
+        "tags": [
+          "atenciones hospitalarias"
+        ],
+        "summary": "Importar Atencion Por Consulta",
+        "operationId": "importar_atencion_por_consulta_atenciones_hospitalarias__atencion_id__importar_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "atencion_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Atencion Id"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespuestaCuentaCreada"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cuentas/importar": {
+      "post": {
+        "tags": [
+          "atenciones hospitalarias"
+        ],
+        "summary": "Importar Atencion Por Archivo",
+        "description": "El cuerpo es el archivo exportado por el sistema hospitalario.",
+        "operationId": "importar_atencion_por_archivo_cuentas_importar_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtencionJson"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespuestaCuentaCreada"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/cuentas/{cuenta_id}/copago-cobrado": {
+      "get": {
+        "tags": [
+          "atenciones hospitalarias"
+        ],
+        "summary": "Consultar Copago Cobrado",
+        "description": "El copago que la clinica ya cobro al paciente; `null` si no hay.",
+        "operationId": "consultar_copago_cobrado_cuentas__cuenta_id__copago_cobrado_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cuenta_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Cuenta Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/CopagoCobradoRespuesta"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Consultar Copago Cobrado Cuentas  Cuenta Id  Copago Cobrado Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "atenciones hospitalarias"
+        ],
+        "summary": "Registrar Copago Cobrado",
+        "description": "Registro manual del cobro, con la referencia del comprobante de caja.",
+        "operationId": "registrar_copago_cobrado_cuentas__cuenta_id__copago_cobrado_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cuenta_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Cuenta Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SolicitudCopagoCobrado"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CopagoCobradoRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cuentas/{cuenta_id}/copago-asegurado": {
+      "get": {
+        "tags": [
+          "atenciones hospitalarias"
+        ],
+        "summary": "Consultar Copago Asegurado",
+        "description": "Lo que el calculo de montos atribuye al asegurado.",
+        "operationId": "consultar_copago_asegurado_cuentas__cuenta_id__copago_asegurado_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cuenta_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Cuenta Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CopagoAseguradoRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/cuentas/asegurado/buscar": {
       "post": {
         "tags": [
@@ -873,6 +1186,49 @@
         }
       }
     },
+    "/cuentas/{cuenta_id}/acreditacion/solicitud-atencion": {
+      "get": {
+        "tags": [
+          "cuentas"
+        ],
+        "summary": "Ver Solicitud Atencion",
+        "operationId": "ver_solicitud_atencion_cuentas__cuenta_id__acreditacion_solicitud_atencion_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cuenta_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Cuenta Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "image/png": {}
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/iafas": {
       "get": {
         "tags": [
@@ -1109,6 +1465,107 @@
                 }
               }
             }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cuentas/{cuenta_id}/procedimientos-por-codificar": {
+      "get": {
+        "tags": [
+          "cpms"
+        ],
+        "summary": "Listar Procedimientos Por Codificar",
+        "description": "Lo que trajo la atencion importada y aun no tiene codigo CPMS.",
+        "operationId": "listar_procedimientos_por_codificar_cuentas__cuenta_id__procedimientos_por_codificar_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cuenta_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Cuenta Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProcedimientoPorCodificarRespuesta"
+                  },
+                  "title": "Response Listar Procedimientos Por Codificar Cuentas  Cuenta Id  Procedimientos Por Codificar Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cuentas/{cuenta_id}/procedimientos/{procedimiento_id}": {
+      "delete": {
+        "tags": [
+          "cpms"
+        ],
+        "summary": "Quitar Procedimiento",
+        "operationId": "quitar_procedimiento_cuentas__cuenta_id__procedimientos__procedimiento_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cuenta_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Cuenta Id"
+            }
+          },
+          {
+            "name": "procedimiento_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Procedimiento Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
           },
           "422": {
             "description": "Validation Error",
@@ -1658,6 +2115,53 @@
         }
       }
     },
+    "/lotes/{lote_id}/monitoreo": {
+      "post": {
+        "tags": [
+          "lotes"
+        ],
+        "summary": "Solicitar Monitoreo Respuesta",
+        "operationId": "solicitar_monitoreo_respuesta_lotes__lote_id__monitoreo_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "lote_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Lote Id"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespuestaTrabajoEncolado"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/lotes/{lote_id}/acuses": {
       "get": {
         "tags": [
@@ -2105,6 +2609,54 @@
         "responses": {
           "204": {
             "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/observaciones/{observacion_id}/entrega": {
+      "post": {
+        "tags": [
+          "observaciones"
+        ],
+        "summary": "Pedir Nueva Entrega",
+        "description": "Vuelve a encolar la entrega de la respuesta a la aseguradora cuando\nla anterior agoto sus intentos (2026-11-19).",
+        "operationId": "pedir_nueva_entrega_observaciones__observacion_id__entrega_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "observacion_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Observacion Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespuestaNuevaEntrega"
+                }
+              }
+            }
           },
           "422": {
             "description": "Validation Error",
@@ -3575,6 +4127,53 @@
         ]
       }
     },
+    "/plazos/susalud/declaraciones": {
+      "post": {
+        "tags": [
+          "plazos"
+        ],
+        "summary": "Registrar Declaracion Sin Facturacion",
+        "description": "Constancia de la declaracion jurada de un mes sin lotes que reportar.",
+        "operationId": "registrar_declaracion_sin_facturacion_plazos_susalud_declaraciones_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SolicitudDeclaracionSinFacturacion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeclaracionSinFacturacionRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/anulaciones/pendientes": {
       "get": {
         "tags": [
@@ -4922,6 +5521,16 @@
             },
             "type": "array",
             "title": "Preexistencias"
+          },
+          "admite_reconsulta": {
+            "type": "boolean",
+            "title": "Admite Reconsulta",
+            "default": false
+          },
+          "tiene_solicitud_atencion": {
+            "type": "boolean",
+            "title": "Tiene Solicitud Atencion",
+            "default": false
           }
         },
         "type": "object",
@@ -5055,6 +5664,106 @@
           "iafas_id"
         ],
         "title": "AseguradoRegistradoRespuesta"
+      },
+      "AtencionJson": {
+        "properties": {
+          "atencion_id": {
+            "type": "string",
+            "maxLength": 40,
+            "minLength": 1,
+            "title": "Atencion Id"
+          },
+          "tipo_atencion": {
+            "type": "string",
+            "maxLength": 20,
+            "title": "Tipo Atencion"
+          },
+          "fecha_prestacion": {
+            "type": "string",
+            "format": "date",
+            "title": "Fecha Prestacion"
+          },
+          "hora_prestacion": {
+            "type": "string",
+            "format": "time",
+            "title": "Hora Prestacion"
+          },
+          "numero_historia_clinica": {
+            "type": "string",
+            "maxLength": 20,
+            "title": "Numero Historia Clinica"
+          },
+          "paciente": {
+            "$ref": "#/components/schemas/PacienteJson"
+          },
+          "iafas_codigo": {
+            "type": "string",
+            "maxLength": 5,
+            "title": "Iafas Codigo"
+          },
+          "profesional": {
+            "$ref": "#/components/schemas/ProfesionalJson"
+          },
+          "diagnostico_principal_cie10": {
+            "type": "string",
+            "maxLength": 5,
+            "title": "Diagnostico Principal Cie10"
+          },
+          "diagnosticos_secundarios_cie10": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Diagnosticos Secundarios Cie10"
+          },
+          "hospitalizacion": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HospitalizacionJson"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "procedimientos": {
+            "items": {
+              "$ref": "#/components/schemas/ProcedimientoJson"
+            },
+            "type": "array",
+            "title": "Procedimientos"
+          },
+          "farmacia": {
+            "items": {
+              "$ref": "#/components/schemas/ProductoJson"
+            },
+            "type": "array",
+            "title": "Farmacia"
+          },
+          "copago_cobrado": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CopagoJson"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "atencion_id",
+          "tipo_atencion",
+          "fecha_prestacion",
+          "hora_prestacion",
+          "numero_historia_clinica",
+          "paciente",
+          "iafas_codigo",
+          "profesional",
+          "diagnostico_principal_cie10"
+        ],
+        "title": "AtencionJson"
       },
       "AvisoRespuesta": {
         "properties": {
@@ -5570,6 +6279,18 @@
           "listos_envio": {
             "type": "integer",
             "title": "Listos Envio"
+          },
+          "declarada_en": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Declarada En"
           }
         },
         "type": "object",
@@ -5580,9 +6301,113 @@
           "fecha_limite",
           "ultimo_envio",
           "estado",
-          "listos_envio"
+          "listos_envio",
+          "declarada_en"
         ],
         "title": "ControlPeriodoSusaludRespuesta"
+      },
+      "CopagoAseguradoRespuesta": {
+        "properties": {
+          "monto": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Monto"
+          }
+        },
+        "type": "object",
+        "required": [
+          "monto"
+        ],
+        "title": "CopagoAseguradoRespuesta",
+        "description": "`monto` es null mientras la cuenta no tiene acreditacion."
+      },
+      "CopagoCobradoRespuesta": {
+        "properties": {
+          "monto": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Monto"
+          },
+          "fecha": {
+            "type": "string",
+            "format": "date",
+            "title": "Fecha"
+          },
+          "referencia": {
+            "type": "string",
+            "title": "Referencia"
+          },
+          "origen": {
+            "type": "string",
+            "title": "Origen"
+          },
+          "registrado_por": {
+            "type": "string",
+            "title": "Registrado Por"
+          },
+          "registrado_en": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Registrado En"
+          }
+        },
+        "type": "object",
+        "required": [
+          "monto",
+          "fecha",
+          "referencia",
+          "origen",
+          "registrado_por",
+          "registrado_en"
+        ],
+        "title": "CopagoCobradoRespuesta"
+      },
+      "CopagoJson": {
+        "properties": {
+          "monto": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              }
+            ],
+            "title": "Monto"
+          },
+          "referencia": {
+            "type": "string",
+            "maxLength": 60,
+            "title": "Referencia"
+          },
+          "fecha": {
+            "type": "string",
+            "format": "date",
+            "title": "Fecha"
+          }
+        },
+        "type": "object",
+        "required": [
+          "monto",
+          "referencia",
+          "fecha"
+        ],
+        "title": "CopagoJson"
       },
       "CorreoIafasDetalleRespuesta": {
         "properties": {
@@ -6005,6 +6830,25 @@
         ],
         "title": "CuentaPorLotearRespuesta"
       },
+      "DeclaracionSinFacturacionRespuesta": {
+        "properties": {
+          "periodo": {
+            "type": "string",
+            "title": "Periodo"
+          },
+          "registrada_en": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Registrada En"
+          }
+        },
+        "type": "object",
+        "required": [
+          "periodo",
+          "registrada_en"
+        ],
+        "title": "DeclaracionSinFacturacionRespuesta"
+      },
       "DetalleCuentaRespuesta": {
         "properties": {
           "id": {
@@ -6097,6 +6941,76 @@
             "type": "boolean",
             "title": "Datos Clinicos Reservados",
             "default": false
+          },
+          "tipo_atencion": {
+            "type": "string",
+            "title": "Tipo Atencion",
+            "default": "AMBULATORIA"
+          },
+          "atencion_origen_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Atencion Origen Id"
+          },
+          "nombre_medico": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nombre Medico"
+          },
+          "colegiatura_medico": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Colegiatura Medico"
+          },
+          "diagnosticos_secundarios_cie10": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Diagnosticos Secundarios Cie10",
+            "default": []
+          },
+          "fecha_ingreso_hospitalario": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fecha Ingreso Hospitalario"
+          },
+          "fecha_alta_hospitalaria": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fecha Alta Hospitalaria"
           }
         },
         "type": "object",
@@ -6222,6 +7136,10 @@
           "monitoreo_excedido": {
             "type": "boolean",
             "title": "Monitoreo Excedido"
+          },
+          "validacion_reintentable": {
+            "type": "boolean",
+            "title": "Validacion Reintentable"
           }
         },
         "type": "object",
@@ -6239,7 +7157,8 @@
           "enviado_susalud_en",
           "version_esquema_tedef",
           "version_mapeo",
-          "monitoreo_excedido"
+          "monitoreo_excedido",
+          "validacion_reintentable"
         ],
         "title": "DetalleLoteRespuesta"
       },
@@ -6252,11 +7171,6 @@
           "tipo": {
             "type": "string",
             "title": "Tipo"
-          },
-          "carga_util": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Carga Util"
           },
           "estado": {
             "type": "string",
@@ -6292,7 +7206,6 @@
         "required": [
           "id",
           "tipo",
-          "carga_util",
           "estado",
           "intentos",
           "error",
@@ -6646,6 +7559,36 @@
           "rupturas"
         ],
         "title": "HistorialLoteRespuesta"
+      },
+      "HospitalizacionJson": {
+        "properties": {
+          "fecha_ingreso": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fecha Ingreso"
+          },
+          "fecha_alta": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fecha Alta"
+          }
+        },
+        "type": "object",
+        "title": "HospitalizacionJson"
       },
       "IndicadoresCicloRespuesta": {
         "properties": {
@@ -7271,6 +8214,75 @@
               }
             ],
             "title": "Responsable Nombres"
+          },
+          "monto_observado": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Monto Observado"
+          },
+          "resultado": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resultado"
+          },
+          "resultado_en": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resultado En"
+          },
+          "entrega_estado": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entrega Estado"
+          },
+          "entrega_en": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entrega En"
+          },
+          "entrega_solicitada_por": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entrega Solicitada Por"
           }
         },
         "type": "object",
@@ -7312,6 +8324,70 @@
           "activa"
         ],
         "title": "OpcionNavegacion"
+      },
+      "PacienteAtencionRespuesta": {
+        "properties": {
+          "tipo_documento": {
+            "type": "string",
+            "title": "Tipo Documento"
+          },
+          "numero_documento": {
+            "type": "string",
+            "title": "Numero Documento"
+          },
+          "nombres": {
+            "type": "string",
+            "title": "Nombres"
+          },
+          "apellidos": {
+            "type": "string",
+            "title": "Apellidos"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tipo_documento",
+          "numero_documento",
+          "nombres",
+          "apellidos"
+        ],
+        "title": "PacienteAtencionRespuesta"
+      },
+      "PacienteJson": {
+        "properties": {
+          "tipo_documento": {
+            "type": "string",
+            "maxLength": 1,
+            "minLength": 1,
+            "title": "Tipo Documento"
+          },
+          "numero_documento": {
+            "type": "string",
+            "maxLength": 15,
+            "minLength": 1,
+            "title": "Numero Documento"
+          },
+          "nombres": {
+            "type": "string",
+            "maxLength": 150,
+            "minLength": 1,
+            "title": "Nombres"
+          },
+          "apellidos": {
+            "type": "string",
+            "maxLength": 150,
+            "minLength": 1,
+            "title": "Apellidos"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tipo_documento",
+          "numero_documento",
+          "nombres",
+          "apellidos"
+        ],
+        "title": "PacienteJson"
       },
       "ParametroSistemaRespuesta": {
         "properties": {
@@ -7492,6 +8568,90 @@
         ],
         "title": "PiezaCompletitudRespuesta"
       },
+      "ProcedimientoJson": {
+        "properties": {
+          "descripcion": {
+            "type": "string",
+            "maxLength": 500,
+            "title": "Descripcion"
+          },
+          "area": {
+            "type": "string",
+            "maxLength": 20,
+            "title": "Area"
+          },
+          "cantidad": {
+            "type": "integer",
+            "title": "Cantidad"
+          },
+          "monto_unitario": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              }
+            ],
+            "title": "Monto Unitario"
+          },
+          "fecha": {
+            "type": "string",
+            "format": "date",
+            "title": "Fecha"
+          }
+        },
+        "type": "object",
+        "required": [
+          "descripcion",
+          "area",
+          "cantidad",
+          "monto_unitario",
+          "fecha"
+        ],
+        "title": "ProcedimientoJson"
+      },
+      "ProcedimientoPorCodificarRespuesta": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "descripcion": {
+            "type": "string",
+            "title": "Descripcion"
+          },
+          "area": {
+            "type": "string",
+            "title": "Area"
+          },
+          "cantidad": {
+            "type": "integer",
+            "title": "Cantidad"
+          },
+          "monto_unitario": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Monto Unitario"
+          },
+          "fecha": {
+            "type": "string",
+            "format": "date",
+            "title": "Fecha"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "descripcion",
+          "area",
+          "cantidad",
+          "monto_unitario",
+          "fecha"
+        ],
+        "title": "ProcedimientoPorCodificarRespuesta"
+      },
       "ProcedimientoRespuesta": {
         "properties": {
           "id": {
@@ -7591,6 +8751,59 @@
         ],
         "title": "ProductoCatalogoRespuesta"
       },
+      "ProductoJson": {
+        "properties": {
+          "codigo_producto": {
+            "type": "string",
+            "maxLength": 13,
+            "minLength": 1,
+            "title": "Codigo Producto"
+          },
+          "cantidad": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              }
+            ],
+            "title": "Cantidad"
+          },
+          "tipo_unidad_dispensacion": {
+            "type": "string",
+            "maxLength": 1,
+            "title": "Tipo Unidad Dispensacion"
+          },
+          "monto_unitario": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              }
+            ],
+            "title": "Monto Unitario"
+          },
+          "fecha_dispensacion": {
+            "type": "string",
+            "format": "date",
+            "title": "Fecha Dispensacion"
+          }
+        },
+        "type": "object",
+        "required": [
+          "codigo_producto",
+          "cantidad",
+          "tipo_unidad_dispensacion",
+          "monto_unitario",
+          "fecha_dispensacion"
+        ],
+        "title": "ProductoJson"
+      },
       "ProductoRegistradoRespuesta": {
         "properties": {
           "producto_id": {
@@ -7671,6 +8884,27 @@
           "monto_presentado"
         ],
         "title": "ProductoRespuesta"
+      },
+      "ProfesionalJson": {
+        "properties": {
+          "numero_colegiatura": {
+            "type": "string",
+            "maxLength": 20,
+            "title": "Numero Colegiatura"
+          },
+          "nombres": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Nombres"
+          }
+        },
+        "type": "object",
+        "required": [
+          "numero_colegiatura",
+          "nombres"
+        ],
+        "title": "ProfesionalJson"
       },
       "RechazoCuentaRespuesta": {
         "properties": {
@@ -8188,6 +9422,19 @@
         ],
         "title": "RespuestaLiquidacionRegistrada"
       },
+      "RespuestaNuevaEntrega": {
+        "properties": {
+          "trabajo_id": {
+            "type": "integer",
+            "title": "Trabajo Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "trabajo_id"
+        ],
+        "title": "RespuestaNuevaEntrega"
+      },
       "RespuestaObservacionRegistrada": {
         "properties": {
           "observacion_id": {
@@ -8533,6 +9780,39 @@
           "respondido_en"
         ],
         "title": "ResumenAcuseRespuesta"
+      },
+      "ResumenAtencionRespuesta": {
+        "properties": {
+          "atencion_id": {
+            "type": "string",
+            "title": "Atencion Id"
+          },
+          "tipo_atencion": {
+            "type": "string",
+            "title": "Tipo Atencion"
+          },
+          "fecha_prestacion": {
+            "type": "string",
+            "format": "date",
+            "title": "Fecha Prestacion"
+          },
+          "paciente": {
+            "$ref": "#/components/schemas/PacienteAtencionRespuesta"
+          },
+          "iafas_codigo": {
+            "type": "string",
+            "title": "Iafas Codigo"
+          }
+        },
+        "type": "object",
+        "required": [
+          "atencion_id",
+          "tipo_atencion",
+          "fecha_prestacion",
+          "paciente",
+          "iafas_codigo"
+        ],
+        "title": "ResumenAtencionRespuesta"
       },
       "ResumenCie10Respuesta": {
         "properties": {
@@ -8886,6 +10166,39 @@
               }
             ],
             "title": "Asegurado"
+          },
+          "estado_cuenta": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estado Cuenta"
+          },
+          "comprobante": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comprobante"
+          },
+          "nota_credito": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nota Credito"
           }
         },
         "type": "object",
@@ -9080,6 +10393,57 @@
             "maxLength": 1000,
             "minLength": 1,
             "title": "Sustento"
+          },
+          "plan": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plan"
+          },
+          "tipo_copago": {
+            "type": "string",
+            "enum": [
+              "ninguno",
+              "fijo",
+              "coaseguro"
+            ],
+            "title": "Tipo Copago",
+            "default": "ninguno"
+          },
+          "monto_copago_fijo": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,10}|(?=[\\d.]{1,13}0*$)\\d{0,10}\\.\\d{0,2}0*$)"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Monto Copago Fijo"
+          },
+          "porcentaje_coaseguro": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Porcentaje Coaseguro"
           }
         },
         "type": "object",
@@ -9148,7 +10512,8 @@
           "monto_unitario": {
             "anyOf": [
               {
-                "type": "number"
+                "type": "number",
+                "exclusiveMinimum": 0.0
               },
               {
                 "type": "string",
@@ -9166,6 +10531,17 @@
             "type": "string",
             "format": "date-time",
             "title": "Inicio Sugerencia"
+          },
+          "procedimiento_por_codificar_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Procedimiento Por Codificar Id"
           }
         },
         "type": "object",
@@ -9178,6 +10554,38 @@
           "inicio_sugerencia"
         ],
         "title": "SolicitudConfirmarProcedimiento"
+      },
+      "SolicitudCopagoCobrado": {
+        "properties": {
+          "monto": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              }
+            ],
+            "title": "Monto"
+          },
+          "fecha": {
+            "type": "string",
+            "format": "date",
+            "title": "Fecha"
+          },
+          "referencia": {
+            "type": "string",
+            "title": "Referencia"
+          }
+        },
+        "type": "object",
+        "required": [
+          "monto",
+          "fecha",
+          "referencia"
+        ],
+        "title": "SolicitudCopagoCobrado"
       },
       "SolicitudCorreccionReenvio": {
         "properties": {
@@ -9231,6 +10639,20 @@
           "roles"
         ],
         "title": "SolicitudCrearUsuario"
+      },
+      "SolicitudDeclaracionSinFacturacion": {
+        "properties": {
+          "periodo": {
+            "type": "string",
+            "pattern": "^\\d{6}$",
+            "title": "Periodo"
+          }
+        },
+        "type": "object",
+        "required": [
+          "periodo"
+        ],
+        "title": "SolicitudDeclaracionSinFacturacion"
       },
       "SolicitudDescarte": {
         "properties": {
@@ -9683,6 +11105,22 @@
               }
             ],
             "title": "Detalle Campo Objetado"
+          },
+          "monto_observado": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,10}|(?=[\\d.]{1,13}0*$)\\d{0,10}\\.\\d{0,2}0*$)"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Monto Observado"
           }
         },
         "type": "object",

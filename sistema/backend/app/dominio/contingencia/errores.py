@@ -17,6 +17,10 @@ class ErrorSustentoInsuficiente(ErrorContingencia):
     """C-18: el registro en contingencia exige su sustento."""
 
 
+class ErrorCopagoIncompleto(ErrorContingencia):
+    """El tipo de copago registrado exige su valor (monto o porcentaje)."""
+
+
 class ErrorRegistroContingenciaInexistente(ErrorContingencia):
     pass
 

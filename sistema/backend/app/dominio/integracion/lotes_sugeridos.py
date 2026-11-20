@@ -70,7 +70,7 @@ class LoteSugerido:
 class RepositorioCuentasPorLotear(Protocol):
     async def cuentas_por_lotear(self) -> list[CuentaPorLotear]:
         """Cuentas FACTURADA que no estan en un lote en curso (generado,
-        cargado o validado, todavia sin remitir)."""
+        cargado o validado, todavia sin remitir) y vigente."""
         ...
 
 

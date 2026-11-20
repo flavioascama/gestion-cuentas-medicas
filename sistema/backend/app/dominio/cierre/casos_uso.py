@@ -8,7 +8,10 @@ casos de uso separados por eso, `SolicitarAnulacion` y
 
 from __future__ import annotations
 
+from dataclasses import replace
+
 from app.dominio.cierre.errores import (
+    ErrorAnulacionPropia,
     ErrorDiferenciaPendiente,
     ErrorObservacionPendiente,
     ErrorSinLiquidacion,
@@ -28,6 +31,7 @@ from app.dominio.orquestacion.errores import ErrorTransicionNoDefinida
 from app.dominio.orquestacion.motor import validar_transicion
 from app.dominio.orquestacion.puertos import RepositorioEstadoCuenta
 from app.dominio.orquestacion.valores import ESTADOS_TERMINALES, TipoTransicion
+from app.dominio.pse.documentos import RepositorioDocumentosPago
 from app.dominio.puertos_comunes import Evento, Observabilidad, Reloj
 
 
@@ -168,6 +172,10 @@ class ResolverSolicitudAnulacion:
             raise ErrorSolicitudAnulacionYaResuelta(
                 f"La solicitud {solicitud_id} ya fue {solicitud.estado.value.lower()}."
             )
+        if aprobada and solicitud.solicitado_por == actor:
+            raise ErrorAnulacionPropia(
+                "Quien solicito la anulacion no la aprueba: la aprueba otra persona."
+            )
 
         ahora = self._reloj.ahora()
         await self._repositorio.resolver(solicitud_id, aprobada, actor, ahora)
@@ -205,10 +213,31 @@ class ResolverSolicitudAnulacion:
 
 class ListarSolicitudesAnulacionPendientes:
     """La bandeja del jefe de cuentas medicas para CU-13: "el jefe
-    aprueba o rechaza" exige poder ver que hay pendiente."""
+    aprueba o rechaza" exige poder ver que hay pendiente. Con
+    `documentos` (2026-11-19) cada solicitud lleva el comprobante vigente
+    y la nota de credito de la cuenta."""
 
-    def __init__(self, repositorio: RepositorioSolicitudesAnulacion) -> None:
+    def __init__(
+        self,
+        repositorio: RepositorioSolicitudesAnulacion,
+        documentos: RepositorioDocumentosPago | None = None,
+    ) -> None:
         self._repositorio = repositorio
+        self._documentos = documentos
 
     async def ejecutar(self) -> list[SolicitudAnulacion]:
-        return await self._repositorio.listar_pendientes()
+        solicitudes = await self._repositorio.listar_pendientes()
+        if self._documentos is None:
+            return solicitudes
+        return [await self._con_documentos(s) for s in solicitudes]
+
+    async def _con_documentos(self, solicitud: SolicitudAnulacion) -> SolicitudAnulacion:
+        assert self._documentos is not None
+        documentos = await self._documentos.documentos(solicitud.cuenta_medica_id)
+        if documentos is None:
+            return solicitud
+        vigente, nota = documentos.vigente, documentos.nota
+        credito = f"{nota.serie}-{nota.numero}" if nota is not None and nota.tipo == "C" else None
+        return replace(
+            solicitud, comprobante=f"{vigente.serie}-{vigente.numero}", nota_credito=credito
+        )

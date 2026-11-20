@@ -65,6 +65,10 @@ export function remitir_lote(lote_id: number): Promise<RespuestaRemitirLote> {
   return enviar<RespuestaRemitirLote>("POST", `/lotes/${lote_id}/remision-iafas`);
 }
 
+export function solicitar_monitoreo_respuesta(lote_id: number): Promise<RespuestaTrabajoEncolado> {
+  return enviar<RespuestaTrabajoEncolado>("POST", `/lotes/${lote_id}/monitoreo`);
+}
+
 export function obtener_acuses_lote(lote_id: number): Promise<ResumenAcuse[]> {
   return obtener<ResumenAcuse[]>(`/lotes/${lote_id}/acuses`);
 }

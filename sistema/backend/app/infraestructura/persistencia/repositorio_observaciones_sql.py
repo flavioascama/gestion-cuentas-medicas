@@ -16,6 +16,7 @@ from app.dominio.observaciones.valores import (
     MotivoObservacion,
     Naturaleza,
     Observacion,
+    ResultadoObservacion,
 )
 from app.infraestructura.persistencia.modelos_acceso import UsuarioModelo
 from app.infraestructura.persistencia.modelos_observaciones import (
@@ -47,6 +48,9 @@ def _a_observacion(modelo: ObservacionModelo) -> Observacion:
         respuesta_sustento=modelo.respuesta_sustento,
         registrado_en=modelo.registrado_en,
         respondido_en=modelo.respondido_en,
+        monto_observado=modelo.monto_observado,
+        resultado=modelo.resultado,
+        resultado_en=modelo.resultado_en,
     )
 
 
@@ -93,6 +97,7 @@ class RepositorioObservacionesSql(RepositorioObservaciones):
             responsable_rol=datos.responsable_rol.value,
             estado="ABIERTA",
             registrado_en=datos.registrado_en,
+            monto_observado=datos.monto_observado,
         )
         self._sesion.add(modelo)
         await self._sesion.flush()
@@ -148,3 +153,21 @@ class RepositorioObservacionesSql(RepositorioObservaciones):
                 respondido_en=respondido_en,
             )
         )
+
+    async def fijar_resultado(
+        self, cuenta_medica_id: int, resultado: ResultadoObservacion, instante: datetime
+    ) -> list[int]:
+        filtro = sa.and_(
+            ObservacionModelo.cuenta_medica_id == cuenta_medica_id,
+            ObservacionModelo.estado == "RESPONDIDA",
+            ObservacionModelo.resultado.is_(None),
+        )
+        consulta = sa.select(ObservacionModelo.id).where(filtro)
+        ids = list((await self._sesion.execute(consulta)).scalars())
+        if ids:
+            await self._sesion.execute(
+                sa.update(ObservacionModelo)
+                .where(ObservacionModelo.id.in_(ids))
+                .values(resultado=resultado.value, resultado_en=instante)
+            )
+        return ids

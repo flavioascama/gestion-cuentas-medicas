@@ -84,6 +84,8 @@ services:
       # llama directo desde la ruta HTTP (sincrono, sin sesion asistida) --
       # el trabajador no lo necesita, por eso no esta en su bloque de abajo.
       PSE_URL_BASE: ${PSE_URL_BASE:-http://pse:8000}
+      SISTEMA_HOSPITALARIO_URL_BASE: ${SISTEMA_HOSPITALARIO_URL_BASE:-http://sistema-hospitalario:8000}
+      SISTEMA_HOSPITALARIO_CLAVE: ${SISTEMA_HOSPITALARIO_CLAVE:-}
     ports:
       - "8000:8000"
     networks:

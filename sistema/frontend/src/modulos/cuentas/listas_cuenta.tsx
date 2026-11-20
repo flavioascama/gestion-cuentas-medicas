@@ -1,5 +1,8 @@
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { quitar_procedimiento } from "../../api/cpms";
 import type { DetalleCuenta } from "../../api/cuentas";
 import { Boton } from "../../componentes_base/boton";
+import { MensajeErrorMutacion } from "../../componentes_base/mensaje_error_mutacion";
 import { TablaDatos, type ColumnaTabla } from "../../componentes_base/tabla_datos";
 import { formatear_fecha, formatear_monto } from "../../utilidades/formato";
 import { usar_puede_codificar } from "./codificacion_cuenta";
@@ -36,6 +39,25 @@ const _COLUMNAS_PROCEDIMIENTOS: ColumnaTabla<Procedimiento>[] = [
   },
 ];
 
+// Mismo "Quitar" que la farmacia: solo para quien puede codificar la cuenta.
+function columnas_procedimientos(
+  al_quitar: ((id: number) => void) | null,
+): ColumnaTabla<Procedimiento>[] {
+  if (!al_quitar) return _COLUMNAS_PROCEDIMIENTOS;
+  return [
+    ..._COLUMNAS_PROCEDIMIENTOS,
+    {
+      clave: "id",
+      encabezado: "",
+      formatear: (fila) => (
+        <Boton variante="terciario" onClick={() => al_quitar(fila.id)}>
+          Quitar
+        </Boton>
+      ),
+    },
+  ];
+}
+
 // Pestania "Procedimientos". El auditor medico agrega aqui cada procedimiento
 // con el asistente de codificacion CPMS (2026-11-18: el boton vivia solo en
 // la cabecera de la cuenta).
@@ -46,7 +68,12 @@ export function SeccionProcedimientos({
   cuenta: DetalleCuenta;
   al_codificar: () => void;
 }) {
-  const puede_codificar = usar_puede_codificar(cuenta.estado);
+  const puede_codificar = usar_puede_codificar(cuenta.estado, cuenta.id);
+  const cliente_consultas = useQueryClient();
+  const quitar = useMutation({
+    mutationFn: (procedimiento_id: number) => quitar_procedimiento(cuenta.id, procedimiento_id),
+    onSuccess: () => void cliente_consultas.invalidateQueries({ queryKey: ["cuentas", cuenta.id] }),
+  });
   const total = cuenta.procedimientos.reduce((suma, fila) => suma + importe(fila), 0);
   return (
     <div className={estilos.seccion}>
@@ -58,8 +85,12 @@ export function SeccionProcedimientos({
           </Boton>
         </div>
       ) : null}
+      <MensajeErrorMutacion
+        error={quitar.error}
+        texto_por_defecto="No se pudo quitar el procedimiento."
+      />
       <TablaDatos
-        columnas={_COLUMNAS_PROCEDIMIENTOS}
+        columnas={columnas_procedimientos(puede_codificar ? (id) => quitar.mutate(id) : null)}
         filas={cuenta.procedimientos}
         obtener_clave={(fila) => fila.id}
         mensaje_vacio="La cuenta no tiene procedimientos confirmados."

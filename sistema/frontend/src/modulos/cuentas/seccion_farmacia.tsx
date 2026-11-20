@@ -9,12 +9,14 @@ import { TablaDatos, type ColumnaTabla } from "../../componentes_base/tabla_dato
 import { usar_sesion } from "../../sesion/contexto_sesion";
 import { formatear_fecha, formatear_monto } from "../../utilidades/formato";
 import { DialogoProductoFarmacia } from "./dialogo_producto_farmacia";
+import { usar_en_correccion_validador } from "./usar_cuentas";
 import estilos from "./detalle_cuenta.module.css";
 
 type Producto = DetalleCuenta["productos"][number];
 
 // RI-17: la farmacia se edita en los mismos estados en que se codifica la
-// cuenta (antes de facturar, al corregir una rechazada, al refacturar).
+// cuenta (antes de facturar, al corregir una rechazada, al refacturar, o si
+// el validador observo su lote).
 const _ESTADOS_EDITABLES = new Set(["REGISTRADA", "RECHAZADA", "GLOSADA", "GLOSADA_PARCIAL"]);
 
 const _COLUMNAS: ColumnaTabla<Producto>[] = [
@@ -60,8 +62,10 @@ export function SeccionFarmacia({ cuenta }: { cuenta: DetalleCuenta }) {
   const { sesion } = usar_sesion();
   const cliente_consultas = useQueryClient();
   const [registrar, set_registrar] = useState(false);
-  const editable =
-    Boolean(sesion?.roles.includes("analista")) && _ESTADOS_EDITABLES.has(cuenta.estado);
+  const en_correccion = usar_en_correccion_validador(cuenta.id);
+  // Registran y quitan productos el analista y el auditor medico (2026-11-19).
+  const registra = sesion?.roles.some((rol) => rol === "analista" || rol === "auditor") ?? false;
+  const editable = registra && (_ESTADOS_EDITABLES.has(cuenta.estado) || en_correccion);
   const quitar = useMutation({
     mutationFn: (producto_id: number) => quitar_producto(cuenta.id, producto_id),
     onSuccess: () => void cliente_consultas.invalidateQueries({ queryKey: ["cuentas", cuenta.id] }),

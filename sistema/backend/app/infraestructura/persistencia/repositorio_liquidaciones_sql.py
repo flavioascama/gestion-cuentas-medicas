@@ -63,3 +63,12 @@ class RepositorioLiquidacionesSql(RepositorioLiquidaciones):
             .where(LiquidacionModelo.id == liquidacion_id)
             .values(monto_pagado=monto_pagado, diferencia=diferencia, conciliado_en=conciliado_en)
         )
+
+    async def registrar_pago_adicional(
+        self, liquidacion_id: int, monto_pagado: Decimal, diferencia: Decimal
+    ) -> None:
+        await self._sesion.execute(
+            sa.update(LiquidacionModelo)
+            .where(LiquidacionModelo.id == liquidacion_id)
+            .values(monto_pagado=monto_pagado, diferencia=diferencia)
+        )

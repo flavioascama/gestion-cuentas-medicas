@@ -7,11 +7,14 @@ el lado de la observacion y de la cuenta)."""
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime
 
 from app.dominio.acceso.entidades import NombreRol, Usuario
 from app.dominio.acceso.puertos import RepositorioUsuarios
+from app.dominio.observaciones.entrega import ConsultaEntregas, con_entrega
 from app.dominio.observaciones.errores import (
     ErrorMotivoInexistente,
+    ErrorObservacionDeOtroResponsable,
     ErrorObservacionInexistente,
     ErrorObservacionYaRespondida,
     ErrorResponsableNoValido,
@@ -24,11 +27,35 @@ from app.dominio.observaciones.valores import (
     MotivoObservacion,
     Naturaleza,
     Observacion,
+    Respondedor,
+    ResultadoObservacion,
 )
 from app.dominio.orquestacion.motor import validar_transicion
 from app.dominio.orquestacion.puertos import RepositorioEstadoCuenta
 from app.dominio.orquestacion.valores import TipoTransicion
 from app.dominio.puertos_comunes import Evento, Observabilidad, Reloj
+
+# Una cuenta ya glosada (total o parcial) puede recibir otra observacion
+# de la aseguradora: se registra igual, sin transicion, porque la Tabla 58
+# no define una y el estado ya es el que corresponde.
+_ESTADOS_GLOSADOS = frozenset({"GLOSADA", "GLOSADA_PARCIAL"})
+TIPO_EVENTO_OBSERVACION_ADICIONAL = "OBSERVACION_ADICIONAL"
+
+
+@dataclass(frozen=True, slots=True)
+class _PasoRegistro:
+    tipo_evento: str
+    estado_previo: str | None
+    estado_nuevo: str | None
+    estado_final: str
+
+
+def _paso_de_registro(estado_actual: str | None, es_parcial: bool) -> _PasoRegistro:
+    if estado_actual is not None and estado_actual in _ESTADOS_GLOSADOS:
+        return _PasoRegistro(TIPO_EVENTO_OBSERVACION_ADICIONAL, None, None, estado_actual)
+    transicion = _transicion_de_registro(estado_actual, es_parcial)
+    estado_nuevo = validar_transicion(estado_actual, transicion)
+    return _PasoRegistro(transicion.value, estado_actual, estado_nuevo, estado_nuevo)
 
 
 def _transicion_de_registro(estado_actual: str | None, es_parcial: bool) -> TipoTransicion:
@@ -55,7 +82,9 @@ class ResultadoRegistroObservacion:
 class RegistrarObservacion:
     """CU-08 (RF-09, RF-10, RF-16): clasifica por el motivo, asigna el
     responsable por naturaleza y lleva la cuenta a GLOSADA, GLOSADA_
-    PARCIAL (T-07) o de vuelta a GLOSADA desde SUBSANADA (T-09)."""
+    PARCIAL (T-07) o de vuelta a GLOSADA desde SUBSANADA (T-09). Si la
+    cuenta ya esta GLOSADA o GLOSADA_PARCIAL, la registra sin mover el
+    estado."""
 
     def __init__(
         self,
@@ -79,11 +108,11 @@ class RegistrarObservacion:
             )
 
         estado_actual = await self._estado_cuenta.obtener_estado(datos.cuenta_medica_id)
-        transicion = _transicion_de_registro(estado_actual, datos.es_parcial)
-        estado_nuevo = validar_transicion(estado_actual, transicion)
+        paso = _paso_de_registro(estado_actual, datos.es_parcial)
 
         responsable_rol = ROL_RESPONSABLE_POR_NATURALEZA[motivo.naturaleza]
         ahora = self._reloj.ahora()
+        await self._mantener_si_subsanada(datos.cuenta_medica_id, estado_actual, ahora)
         observacion_id = await self._repositorio.crear(
             DatosNuevaObservacion(
                 cuenta_medica_id=datos.cuenta_medica_id,
@@ -93,16 +122,18 @@ class RegistrarObservacion:
                 detalle_campo_objetado=datos.detalle_campo_objetado,
                 responsable_rol=responsable_rol,
                 registrado_en=ahora,
+                monto_observado=datos.monto_observado,
             )
         )
-        await self._estado_cuenta.fijar_estado(datos.cuenta_medica_id, estado_nuevo)
+        if paso.estado_nuevo is not None:
+            await self._estado_cuenta.fijar_estado(datos.cuenta_medica_id, paso.estado_nuevo)
         await self._observabilidad.eventos.registrar(
             Evento(
                 cuenta_medica_id=datos.cuenta_medica_id,
-                tipo_evento=transicion.value,
+                tipo_evento=paso.tipo_evento,
                 actor=datos.actor,
-                estado_previo=estado_actual,
-                estado_nuevo=estado_nuevo,
+                estado_previo=paso.estado_previo,
+                estado_nuevo=paso.estado_nuevo,
                 datos={
                     "observacion_id": observacion_id,
                     "motivo_codigo": motivo.codigo,
@@ -117,8 +148,17 @@ class RegistrarObservacion:
             observacion_id=observacion_id,
             naturaleza=motivo.naturaleza,
             responsable_rol=responsable_rol,
-            estado_cuenta=estado_nuevo,
+            estado_cuenta=paso.estado_final,
         )
+
+    async def _mantener_si_subsanada(
+        self, cuenta_medica_id: int, estado_actual: str | None, ahora: datetime
+    ) -> None:
+        # T-09: la aseguradora mantiene su objecion sobre lo respondido.
+        if estado_actual == "SUBSANADA":
+            await self._repositorio.fijar_resultado(
+                cuenta_medica_id, ResultadoObservacion.MANTENIDA, ahora
+            )
 
 
 class AsignarResponsableObservacion:
@@ -200,10 +240,12 @@ class ListarResponsablesPosibles:
 
 class ResponderObservacion:
     """CU-10, lado de la observacion y la cuenta (RF-08, RF-11, RF-16):
-    una observacion total cierra su control de plazo y lleva la cuenta
-    de GLOSADA a SUBSANADA (T-08); una parcial no mueve la cuenta --
-    Tabla 58/65/66 solo definen GLOSADA_PARCIAL -> LIQUIDADA_PARCIAL
-    (T-10, CU-12, a cargo de tesoreria), no un subsanada parcial propio."""
+    responder cierra el control de plazo de la observacion y, si la cuenta
+    esta GLOSADA y ya no le queda otra observacion ABIERTA, la lleva a
+    SUBSANADA (T-08), sea la respondida total o parcial: una parcial que
+    llego sobre SUBSANADA la devolvio a GLOSADA y sin esto quedaria ahi.
+    GLOSADA_PARCIAL no se mueve -- Tabla 58/65/66 solo definen GLOSADA_
+    PARCIAL -> LIQUIDADA_PARCIAL (T-10, CU-12, a cargo de tesoreria)."""
 
     def __init__(
         self,
@@ -223,7 +265,7 @@ class ResponderObservacion:
         respuesta_texto: str,
         respuesta_sustento: str | None,
         actor: str,
-        usuario_origen: str | None = None,
+        respondedor: Respondedor | None = None,
     ) -> None:
         observacion = await self._repositorio.obtener(observacion_id)
         if observacion is None:
@@ -232,12 +274,19 @@ class ResponderObservacion:
             raise ErrorObservacionYaRespondida(
                 f"La observacion {observacion_id} ya tiene una respuesta registrada."
             )
+        # Con responsable asignado, solo esa persona responde; sin el, rige el rol.
+        asignado = observacion.responsable_usuario_id
+        if asignado is not None and (respondedor is None or respondedor.usuario_id != asignado):
+            raise ErrorObservacionDeOtroResponsable(
+                "La observacion esta asignada a otra persona: la responde ella."
+            )
+        usuario_origen = respondedor.nombre_usuario if respondedor is not None else None
 
         ahora = self._reloj.ahora()
         estado_previo: str | None = None
         estado_nuevo: str | None = None
-        if not observacion.es_parcial:
-            estado_actual = await self._estado_cuenta.obtener_estado(observacion.cuenta_medica_id)
+        estado_actual = await self._estado_cuenta.obtener_estado(observacion.cuenta_medica_id)
+        if estado_actual == "GLOSADA" and not await self._quedan_otras_abiertas(observacion):
             estado_nuevo = validar_transicion(estado_actual, TipoTransicion.SUBSANACION)
             await self._estado_cuenta.fijar_estado(observacion.cuenta_medica_id, estado_nuevo)
             estado_previo = estado_actual
@@ -260,17 +309,29 @@ class ResponderObservacion:
             )
         )
 
+    async def _quedan_otras_abiertas(self, observacion: Observacion) -> bool:
+        # La cuenta sigue glosada mientras otra observacion espere respuesta.
+        otras = await self._repositorio.listar_por_cuenta(observacion.cuenta_medica_id)
+        return any(o.id != observacion.id and o.estado == "ABIERTA" for o in otras)
+
 
 class ListarObservacionesPorCuenta:
     """Consulta de solo lectura (Seccion 5.2: "ninguna regla de negocio
     en una ruta" -- hasta una consulta directa pasa por un caso de uso,
     nunca un repositorio llamado desde la ruta)."""
 
-    def __init__(self, repositorio: RepositorioObservaciones) -> None:
+    def __init__(
+        self, repositorio: RepositorioObservaciones, entregas: ConsultaEntregas | None = None
+    ) -> None:
         self._repositorio = repositorio
+        self._entregas = entregas
 
     async def ejecutar(self, cuenta_medica_id: int) -> list[Observacion]:
-        return await self._repositorio.listar_por_cuenta(cuenta_medica_id)
+        observaciones = await self._repositorio.listar_por_cuenta(cuenta_medica_id)
+        if self._entregas is None:
+            return observaciones
+        hechos = await self._entregas.hechos(cuenta_medica_id)
+        return [con_entrega(o, hechos.get(o.id)) for o in observaciones]
 
 
 class ListarCatalogoMotivos:

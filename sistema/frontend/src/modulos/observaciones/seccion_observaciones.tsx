@@ -1,4 +1,5 @@
 import { useState } from "react";
+import type { CargaSesion } from "../../api/auth";
 import type { Observacion } from "../../api/observaciones";
 import { Boton } from "../../componentes_base/boton";
 import { etiqueta_rol } from "../../componentes_base/mapa_roles";
@@ -6,6 +7,8 @@ import { TablaDatos, type ColumnaTabla } from "../../componentes_base/tabla_dato
 import { usar_sesion } from "../../sesion/contexto_sesion";
 import { formatear_fecha_hora } from "../../utilidades/formato";
 import estilos from "../cuentas/detalle_cuenta.module.css";
+import { BotonPedirEntrega } from "./boton_pedir_entrega";
+import { COLUMNAS_RESULTADO, puede_pedir_entrega } from "./columnas_resultado_observacion";
 import { DialogoAsignarObservacion } from "./dialogo_asignar_observacion";
 import { DialogoRegistrarObservacion } from "./dialogo_registrar_observacion";
 import { DialogoResponderObservacion } from "./dialogo_responder_observacion";
@@ -31,16 +34,25 @@ function AccionesObservacion({
   observacion,
   puede_asignar,
   puede_responder,
+  pide_entrega,
   al_abrir_asignar,
   al_abrir_responder,
 }: {
   observacion: Observacion;
   puede_asignar: boolean;
   puede_responder: boolean;
+  pide_entrega: boolean;
   al_abrir_asignar: (id: number) => void;
   al_abrir_responder: (id: number) => void;
 }) {
-  if (observacion.estado !== "ABIERTA") return null;
+  if (observacion.estado !== "ABIERTA") {
+    if (!pide_entrega) return null;
+    return (
+      <div className={estilos.fila_accion}>
+        <BotonPedirEntrega observacion={observacion} />
+      </div>
+    );
+  }
   return (
     <div className={estilos.fila_accion}>
       {puede_asignar ? (
@@ -73,6 +85,23 @@ const _COLUMNAS_FECHAS: ColumnaTabla<Observacion>[] = [
 interface Permisos {
   puede_asignar: boolean;
   puede_responder: boolean;
+  usuario_id: number;
+  sesion: CargaSesion;
+}
+
+function permisos_de(sesion: CargaSesion): Permisos {
+  return {
+    puede_asignar: sesion.roles.includes("jefe"),
+    puede_responder: sesion.roles.includes("analista") || sesion.roles.includes("auditor"),
+    usuario_id: sesion.usuario_id,
+    sesion,
+  };
+}
+
+// Con responsable asignado, solo esa persona responde.
+function responde(observacion: Observacion, permisos: Permisos): boolean {
+  const asignado = observacion.responsable_usuario_id;
+  return permisos.puede_responder && (asignado === null || asignado === permisos.usuario_id);
 }
 
 function crear_columnas(
@@ -81,7 +110,7 @@ function crear_columnas(
   al_abrir_asignar: (id: number) => void,
   al_abrir_responder: (id: number) => void,
 ): ColumnaTabla<Observacion>[] {
-  const { puede_asignar, puede_responder } = permisos;
+  const { puede_asignar } = permisos;
   return [
     {
       clave: "naturaleza",
@@ -104,6 +133,7 @@ function crear_columnas(
       formatear: (fila) => fila.responsable_nombres ?? etiqueta_rol(fila.responsable_rol),
     },
     ..._COLUMNAS_FECHAS,
+    ...COLUMNAS_RESULTADO,
     {
       clave: "id",
       encabezado: "Acciones",
@@ -111,7 +141,8 @@ function crear_columnas(
         <AccionesObservacion
           observacion={fila}
           puede_asignar={puede_asignar}
-          puede_responder={puede_responder}
+          puede_responder={responde(fila, permisos)}
+          pide_entrega={puede_pedir_entrega(fila, permisos.sesion)}
           al_abrir_asignar={al_abrir_asignar}
           al_abrir_responder={al_abrir_responder}
         />
@@ -180,10 +211,7 @@ export function SeccionObservaciones({ cuenta_id, estado }: { cuenta_id: number;
 
   const puede_registrar = sesion.roles.includes("analista");
   const columnas = crear_columnas(
-    {
-      puede_asignar: sesion.roles.includes("jefe"),
-      puede_responder: sesion.roles.includes("analista") || sesion.roles.includes("auditor"),
-    },
+    permisos_de(sesion),
     motivos,
     set_asignar_observacion_id,
     set_responder_observacion_id,

@@ -1,0 +1,28 @@
+# Simulador del sistema hospitalario de la clinica, independiente del stack
+# raiz (Regla 0.5). Bring-up:
+#   docker network create red_oe1_simuladores   (una sola vez, si no existe)
+#   cp .env.ejemplo .env
+#   docker compose up -d --build
+# La clave es un valor de prueba, no una clave real.
+services:
+  sistema_hospitalario:
+    build:
+      context: .
+    env_file:
+      - .env
+    ports:
+      - "${PORTAL_PUERTO_HOST:-8104}:8000"
+    volumes:
+      - ./:/app
+      - venv_sistema_hospitalario:/app/.venv
+    networks:
+      red_oe1_simuladores:
+        aliases:
+          - sistema-hospitalario
+
+networks:
+  red_oe1_simuladores:
+    external: true
+
+volumes:
+  venv_sistema_hospitalario:

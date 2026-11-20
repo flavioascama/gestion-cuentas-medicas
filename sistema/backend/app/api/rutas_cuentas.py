@@ -4,9 +4,9 @@
 en la Fase 30, al consolidar la matriz de permisos contra las fases del
 OE2/OE3); `POST /cuentas` (adenda de ingesta), `POST
 /cuentas/{id}/cobertura`, `POST /cuentas/{id}/comprobante` (adenda,
-emision via el simulador PSE) y `GET /cuentas/{id}/acreditacion` solo
-para analista (Fase 18). `GET /iafas` para cualquier autenticado (Fase
-19: selector de IAFAS de la pantalla de generacion de lotes) -- sin
+emision via el simulador PSE) solo para analista (Fase 18); `GET
+/cuentas/{id}/acreditacion` para analista, auditor y jefe. `GET /iafas` para cualquier autenticado
+(Fase 19: selector de IAFAS de la pantalla de generacion de lotes) -- sin
 prefijo `/cuentas`, por eso vive en un `APIRouter` aparte dentro de este
 mismo archivo."""
 
@@ -80,6 +80,9 @@ from app.infraestructura.persistencia.registro_eventos_sql import RegistroEvento
 from app.infraestructura.persistencia.repositorio_diagnostico_cuenta_sql import (
     RepositorioDiagnosticoCuentaSql,
 )
+from app.infraestructura.persistencia.repositorio_estado_cuenta_sql import (
+    RepositorioEstadoCuentaSql,
+)
 
 router = APIRouter(prefix="/cuentas", tags=["cuentas"])
 router_iafas = APIRouter(tags=["cuentas"])
@@ -87,6 +90,7 @@ _registrador = obtener_registrador("api.cuentas")
 
 _LECTURA = requiere_rol(NombreRol.ANALISTA, NombreRol.AUDITOR, NombreRol.JEFE, NombreRol.TESORERIA)
 _SOLO_ANALISTA = requiere_rol(NombreRol.ANALISTA)
+_VE_ACREDITACION = requiere_rol(NombreRol.ANALISTA, NombreRol.AUDITOR, NombreRol.JEFE)
 # El diagnostico lo registra la admision y lo confirma el auditor medico.
 _REGISTRA_DIAGNOSTICO = requiere_rol(NombreRol.ANALISTA, NombreRol.AUDITOR)
 
@@ -200,9 +204,9 @@ async def solicitar_verificacion_cobertura(
 async def consultar_completitud_cuenta(
     cuenta_id: int,
     caso_uso: ConsultarCompletitudCuenta = Depends(construir_consultar_completitud),
-    actor: CargaSesion = Depends(_LECTURA),
+    _actor: CargaSesion = Depends(_LECTURA),
 ) -> RespuestaCompletitudCuenta:
-    resultado = await caso_uso.ejecutar(cuenta_id, actor.nombre_usuario)
+    resultado = await caso_uso.ejecutar(cuenta_id)
     if resultado is None:
         raise ErrorAplicacion(
             "CUENTA_NO_ENCONTRADA",
@@ -253,7 +257,9 @@ async def registrar_diagnostico(
     """Completa el diagnostico principal de una cuenta ya registrada: sin
     el la cuenta no se factura ni puede entrar a un lote (T2, campo 18)."""
     caso_uso = RegistrarDiagnosticoPrincipal(
-        RepositorioDiagnosticoCuentaSql(sesion), RegistroEventosSql(sesion)
+        RepositorioDiagnosticoCuentaSql(sesion),
+        RegistroEventosSql(sesion),
+        RepositorioEstadoCuentaSql(sesion),
     )
     try:
         codigo = await caso_uso.ejecutar(cuenta_id, solicitud.codigo_cie10, actor.nombre_usuario)
@@ -277,7 +283,7 @@ async def registrar_diagnostico(
 async def obtener_acreditacion(
     cuenta_id: int,
     caso_uso: ObtenerAcreditacion = Depends(construir_obtener_acreditacion),
-    _actor: CargaSesion = Depends(_SOLO_ANALISTA),
+    _actor: CargaSesion = Depends(_VE_ACREDITACION),
 ) -> AcreditacionRespuesta:
     acreditacion = await caso_uso.ejecutar(cuenta_id)
     if acreditacion is None:

@@ -1,5 +1,5 @@
-"""Seccion 11, 8.2: `GET /cpms/sugerencias` y `POST
-/cuentas/{id}/procedimientos` para auditor; `GET`/`POST
+"""Seccion 11, 8.2: `GET /cpms/sugerencias`, `POST
+/cuentas/{id}/procedimientos` y su `DELETE` para auditor; `GET`/`POST
 /catalogo-cpms/versiones` para administrador (Fase 18)."""
 
 from __future__ import annotations
@@ -12,10 +12,12 @@ from app.api.dependencias_cpms import (
     construir_cargar_catalogo_cpms,
     construir_confirmar_codigo_cpms,
     construir_listar_versiones_cpms,
+    construir_quitar_procedimiento,
     construir_sugerir_codigo_cpms,
 )
 from app.api.esquemas_cpms import (
     ParametrosSugerenciaCpms,
+    ProcedimientoPorCodificarRespuesta,
     RespuestaCatalogoCpmsCargado,
     RespuestaProcedimientoConfirmado,
     RespuestaSugerenciaCpms,
@@ -24,6 +26,7 @@ from app.api.esquemas_cpms import (
     UltimoPrecioRespuesta,
     VersionCpmsRespuesta,
 )
+from app.api.serializacion import campos
 from app.compartido.errores import ErrorAplicacion
 from app.dominio.acceso.entidades import NombreRol
 from app.dominio.acceso.puertos import CargaSesion
@@ -31,10 +34,16 @@ from app.dominio.cpms.casos_uso import (
     ConfirmacionCodigoCpms,
     ConfirmarCodigoCpms,
     ErrorCuentaNoCodificable,
+    ErrorProcedimientoInexistente,
     ListarVersionesCpms,
+    QuitarProcedimiento,
     SugerirCodigoCpms,
 )
-from app.dominio.cpms.puertos import ErrorCodigoCpmsInexistente
+from app.dominio.cpms.por_codificar import (
+    ErrorProcedimientoPorCodificarInexistente,
+    ListarProcedimientosPorCodificar,
+)
+from app.dominio.cpms.puertos import ErrorCodigoCpmsInexistente, ErrorProcedimientoInvalido
 from app.dominio.cpms.valores import FiltrosSugerencia
 from app.dominio.puertos_comunes import Reloj
 from app.infraestructura.cpms.cargar_catalogo_cpms import CargarCatalogoCpms, ErrorSinArchivosCpms
@@ -43,10 +52,14 @@ from app.infraestructura.persistencia.repositorio_cpms_sql import (
     ErrorRepositorioCpms,
     RepositorioCpmsSql,
 )
+from app.infraestructura.persistencia.repositorio_por_codificar_sql import (
+    RepositorioProcedimientosPorCodificarSql,
+)
 
 router = APIRouter(tags=["cpms"])
 _SOLO_AUDITOR = requiere_rol(NombreRol.AUDITOR)
 _SOLO_ADMINISTRADOR = requiere_rol(NombreRol.ADMINISTRADOR)
+_LECTURA_POR_CODIFICAR = requiere_rol(NombreRol.ANALISTA, NombreRol.AUDITOR, NombreRol.JEFE)
 
 
 @router.get("/cpms/sugerencias", response_model=RespuestaSugerenciaCpms)
@@ -94,6 +107,7 @@ async def confirmar_procedimiento(
         cantidad=solicitud.cantidad,
         monto_unitario=solicitud.monto_unitario,
         fecha=solicitud.fecha,
+        procedimiento_por_codificar_id=solicitud.procedimiento_por_codificar_id,
     )
     try:
         procedimiento_id = await caso_uso.ejecutar(
@@ -107,11 +121,59 @@ async def confirmar_procedimiento(
         raise ErrorAplicacion(
             "CUENTA_NO_CODIFICABLE", str(error), estado_http=status.HTTP_409_CONFLICT
         ) from error
+    except ErrorProcedimientoInvalido as error:
+        raise ErrorAplicacion(
+            "PROCEDIMIENTO_INVALIDO", str(error), estado_http=status.HTTP_422_UNPROCESSABLE_ENTITY
+        ) from error
     except ErrorRepositorioCpms as error:
         raise ErrorAplicacion(
             "CATALOGO_CPMS_VACIO", str(error), estado_http=status.HTTP_409_CONFLICT
         ) from error
+    except ErrorProcedimientoPorCodificarInexistente as error:
+        raise ErrorAplicacion(
+            "PROCEDIMIENTO_POR_CODIFICAR_NO_ENCONTRADO",
+            str(error),
+            estado_http=status.HTTP_404_NOT_FOUND,
+        ) from error
     return RespuestaProcedimientoConfirmado(procedimiento_id=procedimiento_id)
+
+
+@router.get(
+    "/cuentas/{cuenta_id}/procedimientos-por-codificar",
+    response_model=list[ProcedimientoPorCodificarRespuesta],
+)
+async def listar_procedimientos_por_codificar(
+    cuenta_id: int,
+    sesion: AsyncSession = Depends(obtener_sesion),
+    _actor: CargaSesion = Depends(_LECTURA_POR_CODIFICAR),
+) -> list[ProcedimientoPorCodificarRespuesta]:
+    """Lo que trajo la atencion importada y aun no tiene codigo CPMS."""
+    pendientes = await ListarProcedimientosPorCodificar(
+        RepositorioProcedimientosPorCodificarSql(sesion)
+    ).ejecutar(cuenta_id)
+    return [ProcedimientoPorCodificarRespuesta(**campos(p)) for p in pendientes]
+
+
+@router.delete(
+    "/cuentas/{cuenta_id}/procedimientos/{procedimiento_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def quitar_procedimiento(
+    cuenta_id: int,
+    procedimiento_id: int,
+    caso_uso: QuitarProcedimiento = Depends(construir_quitar_procedimiento),
+    actor: CargaSesion = Depends(_SOLO_AUDITOR),
+) -> None:
+    try:
+        await caso_uso.ejecutar(cuenta_id, procedimiento_id, actor.nombre_usuario)
+    except ErrorProcedimientoInexistente as error:
+        raise ErrorAplicacion(
+            "PROCEDIMIENTO_NO_ENCONTRADO", str(error), estado_http=status.HTTP_404_NOT_FOUND
+        ) from error
+    except ErrorCuentaNoCodificable as error:
+        raise ErrorAplicacion(
+            "CUENTA_NO_CODIFICABLE", str(error), estado_http=status.HTTP_409_CONFLICT
+        ) from error
 
 
 @router.get(

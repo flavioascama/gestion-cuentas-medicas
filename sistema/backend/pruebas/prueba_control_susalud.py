@@ -56,6 +56,18 @@ class _MedicionesFalso:
 class _RepositorioFalso:
     periodos: list[LotesPeriodo] = field(default_factory=list)
     pendientes: list[LotePendienteSusalud] = field(default_factory=list)
+    declaradas: dict[str, datetime] = field(default_factory=dict)
+    avisados_sin_lotes: dict[str, frozenset[str]] = field(default_factory=dict)
+
+    async def declaraciones(self) -> dict[str, datetime]:
+        return self.declaradas
+
+    async def avisos_sin_lotes(self) -> dict[str, frozenset[str]]:
+        return self.avisados_sin_lotes
+
+    async def registrar_declaracion(self, periodo: str, registrada_por: str) -> datetime:
+        self.declaradas[periodo] = _AHORA
+        return _AHORA
 
     async def lotes_por_periodo(self) -> list[LotesPeriodo]:
         return self.periodos
@@ -78,8 +90,9 @@ def prueba_fecha_limite_descuenta_los_feriados_configurados() -> None:
 
 
 def prueba_fecha_limite_de_diciembre_cae_en_enero_del_anio_siguiente() -> None:
-    assert fecha_limite_envio_susalud("202612", frozenset()) == date(2027, 1, 14)
-    assert fecha_limite_envio_susalud("202612", frozenset({date(2027, 1, 1)})) == date(2027, 1, 15)
+    # Ultimo dia habil de enero de 2027 (el 31 es domingo).
+    assert fecha_limite_envio_susalud("202612", frozenset()) == date(2027, 1, 29)
+    assert fecha_limite_envio_susalud("202612", frozenset({date(2027, 1, 29)})) == date(2027, 1, 28)
 
 
 # --- ConsultarControlSusalud ----------------------------------------------
@@ -103,7 +116,8 @@ async def prueba_control_marca_estados_y_meses_sin_lotes() -> None:
 
     assert [(c.periodo, c.estado) for c in controles] == [
         ("202610", EstadoEnvioSusalud.POR_VENCER),
-        ("202609", EstadoEnvioSusalud.SIN_LOTES),
+        # Sin lotes y sin declaracion: corre el plazo como un reporte pendiente.
+        ("202609", EstadoEnvioSusalud.VENCIDO),
         ("202608", EstadoEnvioSusalud.ENVIADO),
         ("202607", EstadoEnvioSusalud.ENVIADO_FUERA_DE_PLAZO),
     ]
@@ -120,7 +134,7 @@ async def prueba_control_incluye_hasta_el_ultimo_mes_cerrado() -> None:
     ).ejecutar()
 
     assert [c.periodo for c in controles] == ["202610", "202609", "202608"]
-    assert controles[0].estado == EstadoEnvioSusalud.SIN_LOTES
+    assert controles[0].estado == EstadoEnvioSusalud.POR_VENCER
     assert controles[2].estado == EstadoEnvioSusalud.VENCIDO
 
 
@@ -200,6 +214,8 @@ async def prueba_repositorio_resume_periodos_y_pendientes(
         avisado = await _sembrar_lote(sesion, iafas.id, "202610", "VALIDADO", None)
         pendiente = await _sembrar_lote(sesion, iafas.id, "202610", "GENERADO", None)
         await _sembrar_lote(sesion, iafas.id, "202610", "OBSERVADO_VALIDADOR", None)
+        await _sembrar_lote(sesion, iafas.id, "202610", "REMITIDO_IAFAS", None)
+        await _sembrar_lote(sesion, iafas.id, "202610", "RECHAZADO", None)
         await RegistroEventosSql(sesion).registrar(
             Evento(
                 cuenta_medica_id=None,
@@ -218,9 +234,10 @@ async def prueba_repositorio_resume_periodos_y_pendientes(
         assert periodos["202608"].ultimo_envio is not None
         # Aceptado y ya enviado: nada queda listo para enviar.
         assert periodos["202608"].listos_envio == 0
-        assert periodos["202610"].lotes == 3
-        assert periodos["202610"].pendientes_envio == 2
-        # De los dos pendientes, el GENERADO aun no esta validado.
+        assert periodos["202610"].lotes == 5
+        assert periodos["202610"].pendientes_envio == 4
+        # Solo el REMITIDO_IAFAS esta listo: VALIDADO y GENERADO aun no se
+        # remitieron y RECHAZADO se reporta despues, en un lote nuevo.
         assert periodos["202610"].listos_envio == 1
 
         pendientes = {p.lote_id: p for p in await repositorio.lotes_pendientes_envio()}

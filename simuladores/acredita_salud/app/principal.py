@@ -32,6 +32,7 @@ from app.excel import generar_excel_historial, leer_documentos_carga_masiva
 from app.presentacion import (
     campos_estructurados_cobertura,
     condicion_cobertura,
+    datos_afiliado,
     datos_copago,
     detalle_cobertura,
 )
@@ -226,6 +227,11 @@ def construir_app(repositorio: RepositorioDatos, almacenamiento: Almacenamiento)
             "nombre_iafas": repositorio.nombre_iafas(asegurado.iafas_codigo) if asegurado else None,
             "detalle": detalle_cobertura(asegurado) if asegurado else [],
             "campos": campos_estructurados_cobertura(asegurado) if asegurado else None,
+            "afiliado": (
+                datos_afiliado(asegurado, repositorio.nombre_iafas(asegurado.iafas_codigo))
+                if asegurado
+                else None
+            ),
         }
         return plantillas.TemplateResponse(request, "iafas.html", contexto)
 

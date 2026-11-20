@@ -15,3 +15,6 @@ services:
   tedef-web:
     ports:
       - "8102:8000"
+  sistema-hospitalario:
+    ports:
+      - "8104:8000"

@@ -33,6 +33,7 @@ _RUTAS_LECTURA: tuple[tuple[str, str, dict[str, Any] | None], ...] = (
 # (metodo, ruta, cuerpo) -- solo analista.
 _RUTAS_SOLO_ANALISTA: tuple[tuple[str, str, dict[str, Any] | None], ...] = (
     ("POST", "/lotes/1/remision-iafas", None),
+    ("POST", "/lotes/1/monitoreo", None),
     ("POST", "/lotes/envio-susalud", _CUERPO_ENVIO_SUSALUD),
 )
 

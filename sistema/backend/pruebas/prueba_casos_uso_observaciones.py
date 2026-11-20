@@ -5,7 +5,7 @@ flujo completo, pruebas_integracion/)."""
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime
 
 import pytest
@@ -27,6 +27,7 @@ from app.dominio.observaciones.valores import (
     MotivoObservacion,
     Naturaleza,
     Observacion,
+    ResultadoObservacion,
 )
 from app.dominio.orquestacion.errores import ErrorTransicionNoDefinida
 from app.dominio.puertos_comunes import Evento, Observabilidad
@@ -151,6 +152,20 @@ class _ObservacionesFalso:
             registrado_en=actual.registrado_en,
             respondido_en=respondido_en,
         )
+
+    async def fijar_resultado(
+        self, cuenta_medica_id: int, resultado: ResultadoObservacion, instante: datetime
+    ) -> list[int]:
+        ids = [
+            o.id
+            for o in self.filas.values()
+            if o.cuenta_medica_id == cuenta_medica_id
+            and o.estado == "RESPONDIDA"
+            and o.resultado is None
+        ]
+        for i in ids:
+            self.filas[i] = replace(self.filas[i], resultado=resultado.value, resultado_en=instante)
+        return ids
 
 
 def _observabilidad(registro_eventos: _RegistroEventosFalso) -> Observabilidad:
@@ -414,7 +429,6 @@ async def prueba_responder_observacion_total_lleva_la_cuenta_a_subsanada() -> No
         "Se adjunta la historia clinica completa.",
         "historia_clinica.pdf",
         actor="ana.analista",
-        usuario_origen=None,
     )
 
     observacion = await repositorio.obtener(observacion_id)

@@ -8,7 +8,12 @@ import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dominio.orquestacion.puertos import RepositorioEstadoCuenta
-from app.infraestructura.persistencia.modelos_integracion import CuentaMedicaModelo
+from app.infraestructura.persistencia.modelos_integracion import (
+    CuentaMedicaModelo,
+    DocumentoFacturadorModelo,
+    LoteDocumentoModelo,
+    LoteFacturacionModelo,
+)
 
 
 class RepositorioEstadoCuentaSql(RepositorioEstadoCuenta):
@@ -30,3 +35,23 @@ class RepositorioEstadoCuentaSql(RepositorioEstadoCuenta):
             .where(CuentaMedicaModelo.id == cuenta_medica_id)
             .values(estado=estado_nuevo)
         )
+
+    async def en_correccion_validador(self, cuenta_medica_id: int) -> bool:
+        if await self.obtener_estado(cuenta_medica_id) != "FACTURADA":
+            return False
+        # El comprobante de reemplazo se guarda en la misma fila, asi que el
+        # documento de la cuenta sigue enlazado a sus lotes anteriores.
+        estado_lote = (
+            await self._sesion.execute(
+                sa.select(LoteFacturacionModelo.estado)
+                .join(LoteDocumentoModelo, LoteDocumentoModelo.lote_id == LoteFacturacionModelo.id)
+                .join(
+                    DocumentoFacturadorModelo,
+                    DocumentoFacturadorModelo.id == LoteDocumentoModelo.documento_id,
+                )
+                .where(DocumentoFacturadorModelo.cuenta_id == cuenta_medica_id)
+                .order_by(LoteFacturacionModelo.generado_en.desc(), LoteFacturacionModelo.id.desc())
+                .limit(1)
+            )
+        ).scalar_one_or_none()
+        return estado_lote == "OBSERVADO_VALIDADOR"

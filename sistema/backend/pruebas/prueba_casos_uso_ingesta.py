@@ -12,6 +12,7 @@ from app.dominio.integracion.casos_uso_ingesta import (
     RegistrarCuentaMedica,
 )
 from app.dominio.integracion.puertos_ingesta import (
+    AseguradoRegistrado,
     DatosNuevaCuenta,
     ErrorIafasInexistente,
     EstadoPiezasCuenta,
@@ -31,6 +32,11 @@ class RepositorioIngestaFalso(RepositorioIngestaCuentas):
             raise ErrorIafasInexistente(datos.iafas_id)
         self.creada = datos
         return 42
+
+    async def buscar_asegurado(
+        self, tipo_documento: str, numero_documento: str
+    ) -> AseguradoRegistrado | None:
+        return None
 
 
 class RepositorioCompletitudFalso(RepositorioCompletitudCuenta):
@@ -98,9 +104,9 @@ async def prueba_registrar_cuenta_con_iafas_inexistente_falla() -> None:
 
 async def prueba_completitud_de_cuenta_inexistente_devuelve_none() -> None:
     repositorio = RepositorioCompletitudFalso(None)
-    caso_uso = ConsultarCompletitudCuenta(repositorio, RegistroEventosFalso())
+    caso_uso = ConsultarCompletitudCuenta(repositorio)
 
-    assert await caso_uso.ejecutar(999, "ana.analista") is None
+    assert await caso_uso.ejecutar(999) is None
 
 
 async def prueba_completitud_reporta_piezas_faltantes_sin_transicionar() -> None:
@@ -111,9 +117,9 @@ async def prueba_completitud_reporta_piezas_faltantes_sin_transicionar() -> None
         tiene_comprobante=False,
     )
     repositorio = RepositorioCompletitudFalso(estado)
-    caso_uso = ConsultarCompletitudCuenta(repositorio, RegistroEventosFalso())
+    caso_uso = ConsultarCompletitudCuenta(repositorio)
 
-    resultado = await caso_uso.ejecutar(1, "ana.analista")
+    resultado = await caso_uso.ejecutar(1)
 
     assert resultado is not None
     assert resultado.estado_cuenta == "REGISTRADA"
@@ -128,31 +134,32 @@ async def prueba_completitud_reporta_piezas_faltantes_sin_transicionar() -> None
     assert pieza_comprobante.accion == "emitir_comprobante"
 
 
-async def prueba_completitud_no_transiciona_si_falta_el_comprobante() -> None:
-    """Cobertura y codificacion OK no bastan por si solas: desde que existe
-    EmitirComprobantePago (adenda, simulador PSE), la transicion exige las
-    cuatro piezas, no solo las tres que antes eran resolubles."""
-
+async def prueba_completitud_reporta_cobertura_incompleta_si_el_asegurado_no_es_acreditable() -> (
+    None
+):
     estado = EstadoPiezasCuenta(
         estado_cuenta="REGISTRADA",
         tiene_acreditacion=True,
         cantidad_procedimientos=2,
-        tiene_comprobante=False,
+        tiene_comprobante=True,
+        acreditable=False,
     )
     repositorio = RepositorioCompletitudFalso(estado)
-    eventos = RegistroEventosFalso()
-    caso_uso = ConsultarCompletitudCuenta(repositorio, eventos)
+    caso_uso = ConsultarCompletitudCuenta(repositorio)
 
-    resultado = await caso_uso.ejecutar(1, "ana.analista")
+    resultado = await caso_uso.ejecutar(1)
 
     assert resultado is not None
     assert resultado.estado_cuenta == "REGISTRADA"
     assert resultado.completa is False
     assert repositorio.veces_marcada_facturada == 0
-    assert eventos.eventos == []
 
 
-async def prueba_completitud_factura_automaticamente_cuando_las_cuatro_piezas_estan_ok() -> None:
+async def prueba_completitud_de_una_cuenta_completa_solo_lee() -> None:
+    """2026-11-19: consultar ya no factura. Una cuenta REGISTRADA con todas
+    sus piezas (las que quedaron asi antes del cambio) se reporta completa
+    y sigue REGISTRADA; la regulariza herramientas/facturar_cuentas_completas."""
+
     estado = EstadoPiezasCuenta(
         estado_cuenta="REGISTRADA",
         tiene_acreditacion=True,
@@ -160,22 +167,17 @@ async def prueba_completitud_factura_automaticamente_cuando_las_cuatro_piezas_es
         tiene_comprobante=True,
     )
     repositorio = RepositorioCompletitudFalso(estado)
-    eventos = RegistroEventosFalso()
-    caso_uso = ConsultarCompletitudCuenta(repositorio, eventos)
+    caso_uso = ConsultarCompletitudCuenta(repositorio)
 
-    resultado = await caso_uso.ejecutar(1, "ana.analista")
+    resultado = await caso_uso.ejecutar(1)
 
     assert resultado is not None
-    assert resultado.estado_cuenta == "FACTURADA"
-    assert repositorio.veces_marcada_facturada == 1
-    assert len(eventos.eventos) == 1
-    assert eventos.eventos[0].tipo_evento == "CUENTA_FACTURADA"
-    assert eventos.eventos[0].estado_previo == "REGISTRADA"
-    assert eventos.eventos[0].estado_nuevo == "FACTURADA"
+    assert resultado.estado_cuenta == "REGISTRADA"
     assert resultado.completa is True
+    assert repositorio.veces_marcada_facturada == 0
 
 
-async def prueba_completitud_no_duplica_la_transicion_si_ya_esta_facturada() -> None:
+async def prueba_completitud_devuelve_el_estado_que_tiene_la_cuenta() -> None:
     estado = EstadoPiezasCuenta(
         estado_cuenta="FACTURADA",
         tiene_acreditacion=True,
@@ -183,14 +185,13 @@ async def prueba_completitud_no_duplica_la_transicion_si_ya_esta_facturada() -> 
         tiene_comprobante=True,
     )
     repositorio = RepositorioCompletitudFalso(estado)
-    eventos = RegistroEventosFalso()
-    caso_uso = ConsultarCompletitudCuenta(repositorio, eventos)
+    caso_uso = ConsultarCompletitudCuenta(repositorio)
 
-    resultado = await caso_uso.ejecutar(1, "ana.analista")
+    resultado = await caso_uso.ejecutar(1)
 
     assert resultado is not None
+    assert resultado.estado_cuenta == "FACTURADA"
     assert repositorio.veces_marcada_facturada == 0
-    assert eventos.eventos == []
     assert resultado.completa is True
 
 
@@ -207,7 +208,7 @@ async def prueba_completitud_no_duplica_la_transicion_si_ya_esta_facturada() -> 
         (True, True, True),
     ],
 )
-async def prueba_completitud_transiciona_solo_cuando_las_tres_piezas_variables_estan_ok(
+async def prueba_completitud_reporta_cada_combinacion_de_piezas_sin_transicionar(
     cobertura_ok: bool, codificacion_ok: bool, comprobante_ok: bool
 ) -> None:
     """Adenda, Seccion 6: 'una cuenta en cada combinacion de piezas
@@ -221,17 +222,15 @@ async def prueba_completitud_transiciona_solo_cuando_las_tres_piezas_variables_e
         tiene_comprobante=comprobante_ok,
     )
     repositorio = RepositorioCompletitudFalso(estado)
-    eventos = RegistroEventosFalso()
-    caso_uso = ConsultarCompletitudCuenta(repositorio, eventos)
+    caso_uso = ConsultarCompletitudCuenta(repositorio)
 
-    resultado = await caso_uso.ejecutar(1, "ana.analista")
+    resultado = await caso_uso.ejecutar(1)
 
     assert resultado is not None
     todas_ok = cobertura_ok and codificacion_ok and comprobante_ok
-    assert resultado.estado_cuenta == ("FACTURADA" if todas_ok else "REGISTRADA")
+    assert resultado.estado_cuenta == "REGISTRADA"
     assert resultado.completa is todas_ok
-    assert repositorio.veces_marcada_facturada == (1 if todas_ok else 0)
-    assert (len(eventos.eventos) == 1) is todas_ok
+    assert repositorio.veces_marcada_facturada == 0
 
     pieza_cobertura = next(p for p in resultado.piezas if p.clave == "cobertura")
     assert pieza_cobertura.completa is cobertura_ok

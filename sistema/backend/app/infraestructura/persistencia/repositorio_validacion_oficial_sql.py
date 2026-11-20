@@ -26,6 +26,7 @@ from app.dominio.integracion.puertos_validacion import (
     RepositorioValidacionOficial,
     RutaArchivoLote,
 )
+from app.dominio.integracion.vigencia_lote import VigenciaLote
 from app.infraestructura.persistencia.modelos_farmacia import ProductoFacturadoModelo
 from app.infraestructura.persistencia.modelos_integracion import (
     DocumentoFacturadorModelo,
@@ -37,6 +38,7 @@ from app.infraestructura.persistencia.modelos_plataformas import (
     ObservacionValidadorModelo,
     ValidacionOficialModelo,
 )
+from app.infraestructura.persistencia.vigencia_lote_sql import vigencia_de_lote
 from app.infraestructura.tedef.carga_tablas_activas import cargar_tablas_activas
 from app.infraestructura.tedef.nombrado import (
     PREFIJO_ARCHIVO_POR_TABLA,
@@ -46,8 +48,11 @@ from app.infraestructura.tedef.nombrado import (
 
 _ESTADO_OBSERVADO_VALIDADOR = "OBSERVADO_VALIDADOR"
 _ESTADO_CARGADO_VALIDADOR = "CARGADO_VALIDADOR"
-# Tambien lo usa el control del envio (repositorio_control_susalud_sql).
-ESTADOS_ENVIABLES_SUSALUD = ("VALIDADO", "REMITIDO_IAFAS", "ACEPTADO", "RECHAZADO")
+# La norma pide reportar a SUSALUD los lotes remitidos a las aseguradoras:
+# un VALIDADO aun no se remitio, y un RECHAZADO se corrige y reporta despues
+# en un lote nuevo. Tambien lo usa el control del envio
+# (repositorio_control_susalud_sql).
+ESTADOS_ENVIABLES_SUSALUD = ("REMITIDO_IAFAS", "ACEPTADO")
 
 
 class RepositorioValidacionOficialSql(RepositorioValidacionOficial):
@@ -111,6 +116,9 @@ class RepositorioValidacionOficialSql(RepositorioValidacionOficial):
     async def obtener_estado_lote(self, lote_id: int) -> str | None:
         lote = await self._sesion.get(LoteFacturacionModelo, lote_id)
         return lote.estado if lote is not None else None
+
+    async def vigencia_lote(self, lote_id: int) -> VigenciaLote | None:
+        return await vigencia_de_lote(self._sesion, lote_id)
 
     async def existe_validacion_conforme(self, lote_id: int, etapa: str) -> bool:
         resultado = await self._sesion.execute(

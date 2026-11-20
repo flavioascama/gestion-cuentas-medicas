@@ -69,6 +69,19 @@ class RegistroContingencia:
 
 
 @dataclass(frozen=True, slots=True)
+class IdentidadLoteS01:
+    """Lo que el nombre del `.S01` de un lote debe llevar (Anexo 3,
+    infraestructura/tedef/nombrado.py): RUC e IPRESS propios, IAFAS, numero
+    de lote y periodo."""
+
+    ruc: str
+    codigo_ipress: str
+    codigo_iafas: str
+    numero_lote: str
+    periodo: str
+
+
+@dataclass(frozen=True, slots=True)
 class ResumenTrabajo:
     """La ultima solicitud de una operacion automatizada (de la cola)."""
 

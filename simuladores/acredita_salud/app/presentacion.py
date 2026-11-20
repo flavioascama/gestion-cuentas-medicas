@@ -121,6 +121,54 @@ def datos_copago(asegurado: Asegurado) -> DatosCopago:
     )
 
 
+# Tipo de afiliacion (dominio TEDEF, Tabla 2, campo 7). El padron no lo
+# trae: todos sus asegurados tienen un plan de salud privado, que en ese
+# dominio es "Regular" (1). Si la semilla trae `tipo_afiliacion`, manda esa.
+_TIPOS_AFILIACION = {
+    "1": "Regular",
+    "2": "SCTR",
+    "3": "Potestativo (Independiente)",
+    "4": "SCTR Independiente",
+    "5": "Otros contributivos y complementario",
+    "6": "SOAT",
+    "7": "AFOCAT",
+    "8": "SIS Subsidiado",
+    "9": "Semi contributivo",
+}
+_TIPO_AFILIACION_POR_DEFECTO = "1"
+
+
+@dataclass(frozen=True, slots=True)
+class DatosAfiliado:
+    """Lo que la consulta muestra del afiliado ante su IAFAS: el codigo con
+    que la IAFAS lo identifica, su tipo de afiliacion y la IAFAS misma."""
+
+    codigo_asegurado: str
+    tipo_afiliacion: str
+    nombre_tipo_afiliacion: str
+    codigo_iafas: str
+    nombre_iafas: str
+
+
+def datos_afiliado(asegurado: Asegurado, nombre_iafas: str) -> DatosAfiliado:
+    """El padron tampoco trae el codigo de asegurado: se deriva de forma
+    estable del codigo de la IAFAS y del documento (`<iafas>-<numero>`),
+    salvo que la semilla traiga `codigo_asegurado`."""
+
+    d = asegurado.datos
+    tipo = str(d.get("tipo_afiliacion") or _TIPO_AFILIACION_POR_DEFECTO)
+    codigo = str(
+        d.get("codigo_asegurado") or f"{asegurado.iafas_codigo}-{asegurado.numero_documento}"
+    )
+    return DatosAfiliado(
+        codigo_asegurado=codigo,
+        tipo_afiliacion=tipo,
+        nombre_tipo_afiliacion=_TIPOS_AFILIACION.get(tipo, tipo),
+        codigo_iafas=asegurado.iafas_codigo,
+        nombre_iafas=nombre_iafas,
+    )
+
+
 def condicion_cobertura(asegurado: Asegurado) -> str:
     """Seccion 6.1: 'condicion de cobertura' de AcreditacionModelo (el
     backend, Fase 7) -- el texto que este simulador devuelve para ese

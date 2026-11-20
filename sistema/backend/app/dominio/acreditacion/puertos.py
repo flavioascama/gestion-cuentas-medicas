@@ -42,8 +42,8 @@ class RepositorioAcreditacion(Protocol):
         ...
 
     async def existe_acreditacion(self, cuenta_medica_id: int) -> bool:
-        """Seccion 8.1: 'idempotencia: un reintento no duplica
-        registros' -- `acreditacion.cuenta_id` es unica (Fase 7)."""
+        """Si la cuenta tiene al menos una acreditacion (puede tener varias:
+        cada nueva consulta admitida guarda otra)."""
         ...
 
     async def guardar_acreditacion(
@@ -58,8 +58,8 @@ class RepositorioAcreditacion(Protocol):
         ...
 
     async def obtener_acreditacion(self, cuenta_medica_id: int) -> AcreditacionRegistrada | None:
-        """None si la cuenta no tiene acreditacion registrada (Fase 18,
-        `GET /cuentas/{id}/acreditacion`)."""
+        """La vigente: la mas reciente de la cuenta, o None si no tiene
+        ninguna (Fase 18, `GET /cuentas/{id}/acreditacion`)."""
         ...
 
 
@@ -76,3 +76,5 @@ class AcreditacionRegistrada:
     # Quien la obtuvo (RF-02): el robot sobre ACREDITA SALUD o el registro
     # manual en modo de contingencia (RF-23); la pantalla lo dice.
     componente_ejecutor: str = ""
+    # La cuenta sigue REGISTRADA y sin comprobante: se puede volver a consultar.
+    admite_reconsulta: bool = False

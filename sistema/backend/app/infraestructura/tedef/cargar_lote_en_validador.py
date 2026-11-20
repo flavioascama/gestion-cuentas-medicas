@@ -31,6 +31,7 @@ from app.dominio.integracion.puertos_validacion import (
     ResultadoEtapaValidador,
     ValidadorTedefWeb,
 )
+from app.dominio.integracion.vigencia_lote import exigir_lote_vigente
 from app.dominio.puertos_comunes import Reloj
 
 _ESTADO_GENERADO = "GENERADO"
@@ -86,6 +87,8 @@ class CargarLoteEnValidador:
         lote = await self._d.repositorio.obtener_lote_para_carga(lote_id)
         if lote is None:
             raise ErrorLoteNoCargable(f"No existe el lote {lote_id}.")
+        # Justo antes de tocar el validador: el lote pudo cambiar en la cola.
+        exigir_lote_vigente(await self._d.repositorio.vigencia_lote(lote_id))
         identidad = IdentidadLoteTedef(numero=lote.numero, periodo=lote.periodo)
 
         if await self._d.repositorio.existe_validacion_conforme(lote_id, "DETALLADA"):

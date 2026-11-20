@@ -21,6 +21,20 @@ from app.infraestructura.persistencia.modelos_farmacia import ProductoFacturadoM
 from app.infraestructura.persistencia.modelos_integracion import CuentaMedicaModelo, IafasModelo
 
 
+def _procedimientos(cuenta: CuentaMedicaModelo) -> tuple[ProcedimientoResumen, ...]:
+    return tuple(
+        ProcedimientoResumen(
+            codigo_asignado=p.codigo_asignado,
+            descripcion_registrada=p.descripcion_registrada,
+            cantidad=p.cantidad,
+            monto_unitario=p.monto_unitario,
+            fecha=p.fecha,
+            id=p.id,
+        )
+        for p in cuenta.procedimientos
+    )
+
+
 class RepositorioCuentasConsultaSql(RepositorioCuentasConsulta):
     def __init__(self, sesion: AsyncSession) -> None:
         self._sesion = sesion
@@ -98,18 +112,17 @@ class RepositorioCuentasConsultaSql(RepositorioCuentasConsulta):
             iafas_codigo=cuenta.iafas.codigo,
             iafas_razon_social=cuenta.iafas.razon_social,
             ipress_codigo=cuenta.ipress.codigo_ipress,
-            procedimientos=tuple(
-                ProcedimientoResumen(
-                    codigo_asignado=p.codigo_asignado,
-                    descripcion_registrada=p.descripcion_registrada,
-                    cantidad=p.cantidad,
-                    monto_unitario=p.monto_unitario,
-                    fecha=p.fecha,
-                    id=p.id,
-                )
-                for p in cuenta.procedimientos
-            ),
+            procedimientos=_procedimientos(cuenta),
             productos=await self._productos(cuenta_medica_id),
+            tipo_atencion=cuenta.tipo_atencion,
+            atencion_origen_id=cuenta.atencion_origen_id,
+            nombre_medico=cuenta.nombre_medico,
+            colegiatura_medico=cuenta.colegiatura_medico,
+            diagnosticos_secundarios_cie10=tuple(
+                filter(None, (cuenta.diagnosticos_secundarios_cie10 or "").split(","))
+            ),
+            fecha_ingreso_hospitalario=cuenta.fecha_ingreso_hospitalario,
+            fecha_alta_hospitalaria=cuenta.fecha_alta_hospitalaria,
         )
 
     async def _productos(self, cuenta_medica_id: int) -> tuple[ProductoResumen, ...]:

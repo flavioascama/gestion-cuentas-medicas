@@ -5,6 +5,7 @@ distinto (alta de la cuenta, no consulta de trabajos)."""
 
 from __future__ import annotations
 
+from app.dominio.integracion.facturacion_cuenta import cobertura, codificacion_completa
 from app.dominio.integracion.puertos_ingesta import (
     AseguradoRegistrado,
     DatosNuevaCuenta,
@@ -77,53 +78,28 @@ class ConsultarCompletitudCuenta:
     """Adenda, punto 2: por cada pieza que el flujo ya exige antes de
     generar un lote, dice si esta OK o FALTA, y la accion que la resuelve.
 
-    Las cuatro piezas ya se pueden resolver de principio a fin: la de
-    "comprobante de pago" se completa emitiendolo contra el simulador PSE
-    (EmitirComprobantePago, app/dominio/pse/), agregado en esta misma
-    adenda -- antes de eso no habia ninguna forma de completarla y esta
-    consulta la reportaba con honestidad sin bloquear la transicion de
-    abajo; ese caso ya no existe.
+    Solo lee (2026-11-19): la cuenta pasa a FACTURADA en la operacion que
+    completa su ultima pieza (FacturarCuentaCompleta, en
+    facturacion_cuenta.py), no cuando alguien abre la pantalla."""
 
-    Efecto secundario deliberado (no es una consulta pura): si las cuatro
-    piezas ya estan OK y la cuenta sigue REGISTRADA, la marca FACTURADA
-    aqui mismo. Es la unica transicion real que existe hoy hacia ese
-    estado -- antes de esta adenda ningun caso de uso la producia (los
-    datos sinteticos la fuerzan directo en la carga, sin pasar por
-    negocio). Centralizar la transicion en la consulta de completitud, en
-    vez de repartirla entre ConfirmarCodigoCpms, el robot de acreditacion
-    y EmitirComprobantePago (tres contextos de dominio distintos), evita
-    duplicar la regla en tres lugares; el costo es que la pantalla de
-    detalle de cuenta debe volver a pedir la completitud tras cada accion
-    para que la transicion se aplique, lo cual ya hace de forma natural
-    (Seccion 4 de la adenda)."""
-
-    def __init__(
-        self, repositorio: RepositorioCompletitudCuenta, registro_eventos: RegistroEventos
-    ) -> None:
+    def __init__(self, repositorio: RepositorioCompletitudCuenta) -> None:
         self._repositorio = repositorio
-        self._registro_eventos = registro_eventos
 
-    async def ejecutar(self, cuenta_id: int, actor: str) -> ResultadoCompletitud | None:
+    async def ejecutar(self, cuenta_id: int) -> ResultadoCompletitud | None:
         estado_piezas = await self._repositorio.obtener_estado_piezas(cuenta_id)
         if estado_piezas is None:
             return None
 
-        cobertura_ok = estado_piezas.tiene_acreditacion
         diagnostico_ok = estado_piezas.tiene_diagnostico
-        codificacion_ok = estado_piezas.cantidad_procedimientos > 0
-        comprobante_ok = estado_piezas.tiene_comprobante
-        estado_cuenta = estado_piezas.estado_cuenta
-
-        listo = cobertura_ok and diagnostico_ok and codificacion_ok and comprobante_ok
-        if estado_cuenta == "REGISTRADA" and listo:
-            await self._facturar(cuenta_id, actor)
-            estado_cuenta = "FACTURADA"
-
         return ResultadoCompletitud(
             cuenta_id=cuenta_id,
-            estado_cuenta=estado_cuenta,
+            estado_cuenta=estado_piezas.estado_cuenta,
             piezas=(
-                *_construir_piezas(cobertura_ok, codificacion_ok, comprobante_ok),
+                *_construir_piezas(
+                    cobertura(estado_piezas),
+                    codificacion_completa(estado_piezas),
+                    estado_piezas.tiene_comprobante,
+                ),
                 PiezaCompletitud(
                     clave="diagnostico",
                     etiqueta=_ETIQUETA_DIAGNOSTICO,
@@ -135,26 +111,11 @@ class ConsultarCompletitudCuenta:
             lote=estado_piezas.lote,
         )
 
-    async def _facturar(self, cuenta_id: int, actor: str) -> None:
-        # T-02 (Tabla 58) validada por el motor (RF-08); el repositorio
-        # conserva ademas su guarda `WHERE estado = 'REGISTRADA'`.
-        validar_transicion("REGISTRADA", TipoTransicion.FACTURACION)
-        await self._repositorio.marcar_facturada(cuenta_id)
-        await self._registro_eventos.registrar(
-            Evento(
-                cuenta_medica_id=cuenta_id,
-                tipo_evento="CUENTA_FACTURADA",
-                actor=actor,
-                estado_previo="REGISTRADA",
-                estado_nuevo="FACTURADA",
-                datos={},
-            )
-        )
-
 
 def _construir_piezas(
-    cobertura_ok: bool, codificacion_ok: bool, comprobante_ok: bool
+    cobertura: tuple[bool, str | None], codificacion_ok: bool, comprobante_ok: bool
 ) -> tuple[PiezaCompletitud, ...]:
+    cobertura_ok, accion_cobertura = cobertura
     return (
         PiezaCompletitud(
             clave="paciente_iafas",
@@ -168,7 +129,7 @@ def _construir_piezas(
             etiqueta=_ETIQUETA_COBERTURA,
             completa=cobertura_ok,
             bloquea=True,
-            accion=None if cobertura_ok else "verificar_cobertura",
+            accion=accion_cobertura,
         ),
         PiezaCompletitud(
             clave="codificacion",

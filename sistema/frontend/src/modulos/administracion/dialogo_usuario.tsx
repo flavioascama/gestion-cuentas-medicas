@@ -1,6 +1,8 @@
+import type { NombreRol } from "../../api/auth";
 import type { Usuario } from "../../api/usuarios";
 import { Boton } from "../../componentes_base/boton";
 import { Dialogo } from "../../componentes_base/dialogo";
+import { roles_de_perfiles } from "../../componentes_base/mapa_roles";
 import { MensajeErrorMutacion } from "../../componentes_base/mensaje_error_mutacion";
 import { CamposUsuario } from "./campos_usuario";
 import { usar_actualizar_usuario, usar_crear_usuario } from "./usar_usuarios";
@@ -11,6 +13,15 @@ interface Propiedades {
   al_cerrar: () => void;
 }
 
+// Sus propios roles los cambia otro administrador: solo se envia el nombre.
+function solicitud_edicion(
+  formulario: ReturnType<typeof usar_formulario_usuario>,
+  roles: NombreRol[],
+) {
+  const { nombres } = formulario;
+  return formulario.es_propio ? { nombres } : { nombres, roles };
+}
+
 export function DialogoUsuario({ usuario, al_cerrar }: Propiedades) {
   const formulario = usar_formulario_usuario(usuario);
   const mutacion_crear = usar_crear_usuario();
@@ -19,10 +30,10 @@ export function DialogoUsuario({ usuario, al_cerrar }: Propiedades) {
   const error = mutacion_crear.error ?? mutacion_actualizar.error;
 
   const guardar = () => {
-    const roles = Array.from(formulario.roles);
+    const roles = roles_de_perfiles(Array.from(formulario.roles));
     if (usuario) {
       mutacion_actualizar.mutate(
-        { usuario_id: usuario.id, solicitud: { nombres: formulario.nombres, roles } },
+        { usuario_id: usuario.id, solicitud: solicitud_edicion(formulario, roles) },
         { onSuccess: al_cerrar },
       );
     } else {

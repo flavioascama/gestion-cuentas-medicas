@@ -29,7 +29,16 @@ from app.dominio.pse.documentos import (
     ReemplazarComprobantePago,
     RegistrarNotaDocumento,
 )
-from app.dominio.pse.puertos import ComprobantePse, NotaPse
+from app.dominio.pse.puertos import (
+    ClienteComprobante,
+    ComprobanteEmitido,
+    ComprobantePse,
+    DatosFacturacion,
+    MontosComprobante,
+    NotaPse,
+    SolicitudComprobante,
+    SolicitudNota,
+)
 from app.dominio.puertos_comunes import Evento
 from app.infraestructura.persistencia.registro_eventos_sql import RegistroEventosSql
 from app.infraestructura.tedef.constructor_lote import construir_t1, construir_t2
@@ -43,8 +52,14 @@ _VIGENTE = ComprobanteVigente(
     serie="F001",
     numero="00000123",
     fecha_emision=date(2026, 9, 12),
+    valor_venta=Decimal("100.00"),
+    igv=Decimal("18.00"),
+    total=Decimal("118.00"),
 )
 _NOTA = DatosNota(tipo="C", monto=Decimal("80.00"), motivo="D")
+_MONTOS = MontosComprobante(
+    valor_venta=Decimal("150.00"), igv=Decimal("27.00"), total=Decimal("177.00")
+)
 
 
 class _Reloj:
@@ -55,6 +70,7 @@ class _Reloj:
 @dataclass
 class _EstadoFijo:
     estado: str | None = "GLOSADA"
+    en_correccion: bool = False
 
     async def obtener_estado(self, cuenta_medica_id: int) -> str | None:
         return self.estado
@@ -62,11 +78,16 @@ class _EstadoFijo:
     async def fijar_estado(self, cuenta_medica_id: int, estado_nuevo: str) -> None:
         raise AssertionError("no cambia el estado")
 
+    async def en_correccion_validador(self, cuenta_medica_id: int) -> bool:
+        return self.en_correccion
+
 
 @dataclass
 class _Documentos:
     nota: NotaDocumento | None = None
-    reemplazos: list[tuple[ComprobantePse, ComprobanteReemplazado]] = field(default_factory=list)
+    reemplazos: list[tuple[ComprobanteEmitido, ComprobanteReemplazado]] = field(
+        default_factory=list
+    )
     notas_guardadas: list[NotaDocumento] = field(default_factory=list)
 
     async def documentos(self, cuenta_medica_id: int) -> DocumentosPagoCuenta | None:
@@ -76,7 +97,7 @@ class _Documentos:
         self.notas_guardadas.append(nota)
 
     async def reemplazar(
-        self, cuenta_medica_id: int, nuevo: ComprobantePse, reemplazo: ComprobanteReemplazado
+        self, cuenta_medica_id: int, nuevo: ComprobanteEmitido, reemplazo: ComprobanteReemplazado
     ) -> None:
         self.reemplazos.append((nuevo, reemplazo))
 
@@ -85,16 +106,27 @@ class _Comprobantes:
     async def obtener_ipress_propia(self) -> tuple[str, str]:
         return "20123456789", "00001234"
 
-    async def guardar_comprobante(self, cuenta_id: int, comprobante: ComprobantePse) -> int:
+    async def datos_para_facturar(
+        self, cuenta_id: int, tipo_comprobante: str
+    ) -> DatosFacturacion | None:
+        return DatosFacturacion(ClienteComprobante("19395", "IAFAS de prueba"), _MONTOS)
+
+    async def guardar_comprobante(self, cuenta_id: int, emitido: ComprobanteEmitido) -> int:
         raise AssertionError("el reemplazo no crea otra fila")
 
 
+@dataclass
 class _Emisor:
-    async def emitir(self, ruc_ipress: str, codigo_ipress: str) -> ComprobantePse:
+    solicitudes: list[SolicitudComprobante] = field(default_factory=list)
+    notas: list[SolicitudNota] = field(default_factory=list)
+
+    async def emitir(self, solicitud: SolicitudComprobante) -> ComprobantePse:
+        self.solicitudes.append(solicitud)
         return ComprobantePse("01", "F001", "00000999", date(2026, 11, 13))
 
-    async def emitir_nota(self, ruc_ipress: str, codigo_ipress: str, tipo: str) -> NotaPse:
-        return NotaPse("EC01" if tipo == "C" else "ED01", "45", date(2026, 11, 13))
+    async def emitir_nota(self, solicitud: SolicitudNota) -> NotaPse:
+        self.notas.append(solicitud)
+        return NotaPse("EC01" if solicitud.tipo == "C" else "ED01", "45", date(2026, 11, 13))
 
 
 _EMISION = EmisionPse(_Comprobantes(), _Emisor())
@@ -129,8 +161,11 @@ async def prueba_reemplazo_emite_un_comprobante_nuevo_y_archiva_el_anterior() ->
     vigente = await caso_uso.ejecutar(7, "Refacturacion por glosa tecnica", "ana.analista")
 
     assert (vigente.documento_id, vigente.numero) == (4, "00000999")
+    assert vigente.total == Decimal("177.00")
     ((nuevo, archivado),) = documentos.reemplazos
-    assert nuevo.numero == "00000999"
+    assert nuevo.comprobante.numero == "00000999"
+    # Se guardan los montos que se enviaron al PSE.
+    assert nuevo.montos == _MONTOS
     assert (archivado.serie, archivado.numero) == ("F001", "00000123")
     assert archivado.motivo == "Refacturacion por glosa tecnica"
     (evento,) = registro.eventos
@@ -258,3 +293,40 @@ async def prueba_el_almacen_rechaza_estados_fuera_del_conjunto_o_de_la_tabla_58(
                     estado_nuevo="PERDIDO",
                 )
             )
+
+
+async def prueba_el_reemplazo_envia_al_pse_el_cliente_y_los_montos() -> None:
+    emisor = _Emisor()
+    caso_uso = ReemplazarComprobantePago(
+        _Documentos(), EmisionPse(_Comprobantes(), emisor), _EstadoFijo(), _Registro(), _Reloj()
+    )
+
+    await caso_uso.ejecutar(7, "motivo", "ana.analista")
+
+    (solicitud,) = emisor.solicitudes
+    assert solicitud.tipo_comprobante == "01"
+    assert solicitud.cliente == ClienteComprobante("19395", "IAFAS de prueba")
+    assert solicitud.montos == _MONTOS
+
+
+async def prueba_la_nota_envia_su_monto_y_el_comprobante_referido() -> None:
+    emisor = _Emisor()
+    caso_uso = RegistrarNotaDocumento(
+        _Documentos(), EmisionPse(_Comprobantes(), emisor), _EstadoFijo(), _Registro(), _Reloj()
+    )
+
+    await caso_uso.ejecutar(7, _NOTA, "ana.analista")
+
+    (solicitud,) = emisor.notas
+    assert solicitud.monto == Decimal("80.00")
+    assert (solicitud.referido.serie, solicitud.referido.numero) == ("F001", "00000123")
+
+
+async def prueba_rechaza_una_nota_mayor_que_el_valor_de_venta() -> None:
+    emisor = _Emisor()
+    caso_uso = RegistrarNotaDocumento(
+        _Documentos(), EmisionPse(_Comprobantes(), emisor), _EstadoFijo(), _Registro(), _Reloj()
+    )
+    with pytest.raises(ErrorNotaInvalida):
+        await caso_uso.ejecutar(7, replace(_NOTA, monto=Decimal("100.01")), "ana.analista")
+    assert emisor.notas == []

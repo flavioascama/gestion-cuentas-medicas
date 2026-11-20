@@ -4,14 +4,12 @@ Cada metodo resuelve, con SQL portable entre SQLite y Postgres, tres
 cosas por fila: el plazo que corresponde (columna de `iafas` o parametro
 del sistema, recibido por el constructor), el instante desde el que el
 hito esta abierto, y si ya existe un aviso o un escalamiento para la
-ocurrencia VIGENTE de ese hito. Como a lo sumo una observacion por
-cuenta esta ABIERTA a la vez (el motor rechaza una segunda GLOSA sobre
-una cuenta ya GLOSADA), y los hitos 2 a 4 se definen sobre el estado
-ACTUAL de la cuenta, filtrar el evento de aviso/escalamiento por
-`cuenta_medica_id` y por `ocurrido_en >= <inicio del hito>` basta para
-no confundirlo con una ocurrencia anterior del mismo tipo de hito sobre
-la misma cuenta -- no hace falta inspeccionar el payload JSON del
-evento."""
+ocurrencia VIGENTE de ese hito. Los hitos 2 a 4 se definen sobre el
+estado ACTUAL de la cuenta: filtrar el evento de aviso/escalamiento por
+`cuenta_medica_id` y por `ocurrido_en >= <inicio del hito>` basta. Para
+las observaciones no: una cuenta glosada puede tener varias ABIERTAS a
+la vez (2026-11-18), asi que el aviso se busca tambien por el
+`observacion_id` de su payload."""
 
 from __future__ import annotations
 
@@ -34,6 +32,7 @@ from app.infraestructura.persistencia.modelos_integracion import (
     CuentaMedicaModelo,
     EventoModelo,
     IafasModelo,
+    id_acreditacion_vigente,
 )
 from app.infraestructura.persistencia.modelos_observaciones import ObservacionModelo
 from app.infraestructura.persistencia.repositorio_conformidad_auditoria_sql import (
@@ -49,6 +48,21 @@ def _ya_existe_evento(cuenta_id_col: Any, desde_col: Any, tipo_evento: str) -> C
             evento.cuenta_medica_id == cuenta_id_col,
             evento.tipo_evento == tipo_evento,
             evento.ocurrido_en >= desde_col,
+        )
+        .exists()
+    )
+
+
+def _ya_existe_evento_de_observacion(tipo_evento: str) -> ColumnElement[bool]:
+    # Por observacion, no solo por cuenta: el aviso de una no cuenta para otra.
+    evento = aliased(EventoModelo)
+    return (
+        sa.select(sa.literal(1))
+        .where(
+            evento.cuenta_medica_id == ObservacionModelo.cuenta_medica_id,
+            evento.tipo_evento == tipo_evento,
+            evento.ocurrido_en >= ObservacionModelo.registrado_en,
+            evento.datos["observacion_id"].as_integer() == ObservacionModelo.id,
         )
         .exists()
     )
@@ -82,16 +96,8 @@ class RepositorioPlazosSql(RepositorioPlazos):
                     ObservacionModelo.cuenta_medica_id,
                     IafasModelo.dias_plazo_respuesta_observacion,
                     ObservacionModelo.registrado_en,
-                    _ya_existe_evento(
-                        ObservacionModelo.cuenta_medica_id,
-                        ObservacionModelo.registrado_en,
-                        "OBSERVACION_PLAZO_PROXIMO_A_VENCER",
-                    ),
-                    _ya_existe_evento(
-                        ObservacionModelo.cuenta_medica_id,
-                        ObservacionModelo.registrado_en,
-                        "OBSERVACION_PLAZO_VENCIDO_ESCALADO",
-                    ),
+                    _ya_existe_evento_de_observacion("OBSERVACION_PLAZO_PROXIMO_A_VENCER"),
+                    _ya_existe_evento_de_observacion("OBSERVACION_PLAZO_VENCIDO_ESCALADO"),
                 )
                 .join(
                     CuentaMedicaModelo, CuentaMedicaModelo.id == ObservacionModelo.cuenta_medica_id
@@ -202,8 +208,13 @@ class RepositorioPlazosSql(RepositorioPlazos):
                         CuentaMedicaModelo.id, desde, "CARTA_GARANTIA_PROXIMA_A_VENCER"
                     ),
                 )
+                .select_from(CuentaMedicaModelo)
                 .outerjoin(
-                    AcreditacionModelo, AcreditacionModelo.cuenta_id == CuentaMedicaModelo.id
+                    AcreditacionModelo,
+                    sa.and_(
+                        AcreditacionModelo.cuenta_id == CuentaMedicaModelo.id,
+                        AcreditacionModelo.id == id_acreditacion_vigente(CuentaMedicaModelo.id),
+                    ),
                 )
                 .outerjoin(
                     CartaGarantiaModelo,

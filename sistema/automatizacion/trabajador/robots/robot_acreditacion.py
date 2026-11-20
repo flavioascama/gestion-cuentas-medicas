@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import json
 import tempfile
+from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
@@ -28,6 +29,7 @@ from app.dominio.acreditacion.puertos import AcreditacionWeb, ErrorAcreditacion
 from app.dominio.acreditacion.valores import (
     ContextoCuentaAcreditacion,
     ResultadoAcreditacion,
+    condicion_segun_aseguradora,
     mensaje_asegurado_no_encontrado,
 )
 from playwright.async_api import Page
@@ -42,18 +44,31 @@ from trabajador.soporte.selectores import obtener_selector
 
 registro = structlog.get_logger(__name__)
 
-# Mismos supuestos que herramientas/cargar_cuentas_sinteticas.py del
-# backend (Fase 7, docs/DECISIONES.md): el simulador no modela un tipo de
-# profesional variable ni mas de un tipo de documento de autorizacion, asi
-# que el robot real reusa los mismos valores fijos que el bootstrap.
-_TIPO_DOCUMENTO_AUTORIZACION = "03"  # Carta de Garantia (dominio T2 campo 12)
-_TIPO_AFILIACION = "1"  # Regular
+# Solicitud de Atencion Medica (dominio T2 campo 12): el codigo que entrega
+# ACREDITA SALUD; la carta de garantia viaja aparte, como segundo documento.
+# El codigo de asegurado, el tipo de afiliacion y la IAFAS se leen del
+# resultado de la consulta.
+_TIPO_DOCUMENTO_AUTORIZACION = "01"
 
 _PLATAFORMA = "acredita_salud"
 
 
 class ErrorRobotAcreditacion(ErrorAcreditacion):
     pass
+
+
+@dataclass(frozen=True, slots=True)
+class DatosConsulta:
+    """Lo que el robot lee del resultado de la consulta del asegurado."""
+
+    codigo_asegurado: str
+    tipo_afiliacion: str
+    codigo_iafas: str
+    nombre_iafas: str
+    plan: str | None
+    vigente_desde: str | None
+    vigente_hasta: str | None
+    preexistencias: str | None
 
 
 class ErrorAseguradoNoEncontrado(ErrorSinResultado):
@@ -147,30 +162,20 @@ class AdaptadorAcreditacionWeb(AcreditacionWeb):
             raise ErrorAseguradoNoEncontrado(
                 contexto.tipo_documento_paciente, contexto.numero_documento_paciente
             )
-
-        plan = await self._texto_opcional(pagina, "consulta_iafas", "plan")
-        vigente_desde = await self._texto_opcional(pagina, "consulta_iafas", "vigente_desde")
-        vigente_hasta = await self._texto_opcional(pagina, "consulta_iafas", "vigente_hasta")
-        preexistencias_texto = await self._texto_opcional(
-            pagina, "consulta_iafas", "preexistencias"
-        )
+        consulta = await self.leer_consulta(pagina)
 
         await pagina.click(obtener_selector("consulta_iafas", "enlace_acreditar"))
         await pagina.wait_for_selector(obtener_selector("evaluacion", "condicion_cobertura"))
         await self._paso(pagina, "Evaluación de la cobertura")
-
-        condicion_cobertura = await self._texto_requerido(
-            pagina, "evaluacion", "condicion_cobertura"
+        # La IAFAS que responde debe ser la de la cuenta: si no, no se
+        # factura a la aseguradora equivocada.
+        condicion_cobertura = condicion_segun_aseguradora(
+            await self._texto_requerido(pagina, "evaluacion", "condicion_cobertura"),
+            contexto.codigo_iafas,
+            consulta.codigo_iafas,
+            consulta.nombre_iafas,
         )
-        tipo_copago = await self._texto_opcional(pagina, "evaluacion", "tipo_copago")
-        if tipo_copago == "Sin copago":
-            tipo_copago = None
-        monto_copago_fijo = _decimal_opcional(
-            await self._texto_opcional(pagina, "evaluacion", "monto_copago_fijo")
-        )
-        porcentaje_coaseguro = _entero_opcional(
-            await self._texto_opcional(pagina, "evaluacion", "porcentaje_coaseguro")
-        )
+        copago = await self._leer_copago(pagina)
 
         await pagina.click(obtener_selector("evaluacion", "boton_generar"))
         await pagina.wait_for_selector(obtener_selector("documento", "codigo_autorizacion"))
@@ -187,17 +192,47 @@ class AdaptadorAcreditacionWeb(AcreditacionWeb):
             condicion_cobertura=condicion_cobertura,
             codigo_autorizacion=codigo_autorizacion,
             tipo_documento_autorizacion=_TIPO_DOCUMENTO_AUTORIZACION,
-            codigo_asegurado=f"AS{contexto.numero_documento_paciente}",
-            tipo_afiliacion=_TIPO_AFILIACION,
-            plan=plan,
-            vigente_desde=date.fromisoformat(vigente_desde) if vigente_desde else None,
-            vigente_hasta=date.fromisoformat(vigente_hasta) if vigente_hasta else None,
-            tipo_copago=tipo_copago,
-            monto_copago_fijo=monto_copago_fijo,
-            porcentaje_coaseguro=porcentaje_coaseguro,
-            preexistencias=[preexistencias_texto] if preexistencias_texto else [],
+            codigo_asegurado=consulta.codigo_asegurado,
+            tipo_afiliacion=consulta.tipo_afiliacion,
+            plan=consulta.plan,
+            vigente_desde=_fecha_opcional(consulta.vigente_desde),
+            vigente_hasta=_fecha_opcional(consulta.vigente_hasta),
+            tipo_copago=copago[0],
+            monto_copago_fijo=copago[1],
+            porcentaje_coaseguro=copago[2],
+            preexistencias=[consulta.preexistencias] if consulta.preexistencias else [],
             ruta_evidencia=ruta_evidencia,
         )
+
+    async def leer_consulta(self, pagina: Page) -> DatosConsulta:
+        """Los datos del asegurado tal como los muestra el resultado de la
+        consulta (selectores con clave fija, no por posicion)."""
+        return DatosConsulta(
+            codigo_asegurado=await self._texto_requerido(
+                pagina, "consulta_iafas", "codigo_asegurado"
+            ),
+            tipo_afiliacion=await self._texto_requerido(
+                pagina, "consulta_iafas", "tipo_afiliacion"
+            ),
+            codigo_iafas=await self._texto_requerido(pagina, "consulta_iafas", "codigo_iafas"),
+            nombre_iafas=await self._texto_opcional(pagina, "consulta_iafas", "nombre_iafas") or "",
+            plan=await self._texto_opcional(pagina, "consulta_iafas", "plan"),
+            vigente_desde=await self._texto_opcional(pagina, "consulta_iafas", "vigente_desde"),
+            vigente_hasta=await self._texto_opcional(pagina, "consulta_iafas", "vigente_hasta"),
+            preexistencias=await self._texto_opcional(pagina, "consulta_iafas", "preexistencias"),
+        )
+
+    async def _leer_copago(self, pagina: Page) -> tuple[str | None, Decimal | None, int | None]:
+        tipo_copago = await self._texto_opcional(pagina, "evaluacion", "tipo_copago")
+        if tipo_copago == "Sin copago":
+            tipo_copago = None
+        monto_copago_fijo = _decimal_opcional(
+            await self._texto_opcional(pagina, "evaluacion", "monto_copago_fijo")
+        )
+        porcentaje_coaseguro = _entero_opcional(
+            await self._texto_opcional(pagina, "evaluacion", "porcentaje_coaseguro")
+        )
+        return tipo_copago, monto_copago_fijo, porcentaje_coaseguro
 
     async def _texto_opcional(self, pagina: Page, seccion: str, clave: str) -> str | None:
         locador = pagina.locator(obtener_selector(seccion, clave))
@@ -248,6 +283,10 @@ class AdaptadorAcreditacionWeb(AcreditacionWeb):
             await pagina.context.tracing.stop(path=str(archivo_traza))
             self._evidencias.guardar(f"{carpeta}/traza_playwright.zip", archivo_traza.read_bytes())
         return ruta_captura
+
+
+def _fecha_opcional(texto: str | None) -> date | None:
+    return date.fromisoformat(texto) if texto else None
 
 
 def _decimal_opcional(texto: str | None) -> Decimal | None:

@@ -9,13 +9,19 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.dependencias import obtener_reloj
 from app.compartido.errores import ErrorAplicacion
 from app.compartido.rutas import RAIZ_BACKEND
-from app.dominio.cpms.casos_uso import ConfirmarCodigoCpms, ListarVersionesCpms, SugerirCodigoCpms
+from app.dominio.cpms.casos_uso import (
+    ConfirmarCodigoCpms,
+    ListarVersionesCpms,
+    QuitarProcedimiento,
+    SugerirCodigoCpms,
+)
 from app.dominio.cpms.puertos import MotorSugerenciaCpms, RepositorioCpms
 from app.dominio.puertos_comunes import RegistroMediciones, Reloj
 from app.infraestructura.cpms.cargar_catalogo_cpms import CargarCatalogoCpms
 from app.infraestructura.cpms.configuracion_motor import cargar_configuracion_motor
 from app.infraestructura.cpms.indice import obtener_motor_vigente
 from app.infraestructura.persistencia.base import obtener_sesion
+from app.infraestructura.persistencia.registro_eventos_sql import RegistroEventosSql
 from app.infraestructura.persistencia.registro_mediciones_sql import RegistroMedicionesSql
 from app.infraestructura.persistencia.repositorio_cpms_sql import (
     ErrorRepositorioCpms,
@@ -71,7 +77,20 @@ def construir_confirmar_codigo_cpms(
     sesion: AsyncSession = Depends(obtener_sesion),
 ) -> ConfirmarCodigoCpms:
     return ConfirmarCodigoCpms(
-        repositorio, registro_mediciones, reloj, RepositorioEstadoCuentaSql(sesion)
+        repositorio,
+        registro_mediciones,
+        reloj,
+        RepositorioEstadoCuentaSql(sesion),
+        RegistroEventosSql(sesion),
+    )
+
+
+def construir_quitar_procedimiento(
+    repositorio: RepositorioCpms = Depends(obtener_repositorio_cpms),
+    sesion: AsyncSession = Depends(obtener_sesion),
+) -> QuitarProcedimiento:
+    return QuitarProcedimiento(
+        repositorio, RepositorioEstadoCuentaSql(sesion), RegistroEventosSql(sesion)
     )
 
 

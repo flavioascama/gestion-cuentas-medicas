@@ -34,6 +34,7 @@ _URLS_TLS = {
     "ACREDITA_SALUD_URL_BASE": "https://acredita.example",
     "TEDEF_WEB_URL_BASE": "https://tedef.example",
     "PSE_URL_BASE": "https://pse.example",
+    "SISTEMA_HOSPITALARIO_URL_BASE": "https://hospitalario.example",
     "RECEPTOR_IAFAS_URL_BASE": "https://receptor.example",
 }
 

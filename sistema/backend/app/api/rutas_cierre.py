@@ -31,6 +31,7 @@ from app.dominio.cierre.casos_uso import (
     SolicitarAnulacion,
 )
 from app.dominio.cierre.errores import (
+    ErrorAnulacionPropia,
     ErrorDiferenciaPendiente,
     ErrorObservacionPendiente,
     ErrorSinLiquidacion,
@@ -115,6 +116,10 @@ async def resolver_solicitud_anulacion(
     except ErrorSolicitudAnulacionInexistente as error:
         raise ErrorAplicacion(
             "SOLICITUD_ANULACION_NO_ENCONTRADA", str(error), estado_http=status.HTTP_404_NOT_FOUND
+        ) from error
+    except ErrorAnulacionPropia as error:
+        raise ErrorAplicacion(
+            "ANULACION_PROPIA", str(error), estado_http=status.HTTP_403_FORBIDDEN
         ) from error
     except ErrorSolicitudAnulacionYaResuelta as error:
         raise ErrorAplicacion(

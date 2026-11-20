@@ -66,6 +66,8 @@ services:
       ACREDITA_SALUD_URL_BASE: http://acredita-salud:8000
       TEDEF_WEB_URL_BASE: http://tedef-web:8000
       PSE_URL_BASE: http://pse:8000
+      SISTEMA_HOSPITALARIO_URL_BASE: http://sistema-hospitalario:8000
+      SISTEMA_HOSPITALARIO_CLAVE: ${SISTEMA_HOSPITALARIO_CLAVE:-}
     depends_on:
       postgres:
         condition: service_healthy
@@ -230,6 +232,16 @@ services:
       BASE_DATOS: /datos/pse.sqlite3
     volumes:
       - datos_pse:/datos
+
+  sistema-hospitalario:
+    <<: *reinicio
+    build:
+      context: ./simuladores/sistema_hospitalario
+    env_file:
+      - ./simuladores/sistema_hospitalario/.env.ejemplo
+    environment:
+      UV_NO_SYNC: "1"
+      CLAVE_API_SISTEMA_HOSPITALARIO: ${SISTEMA_HOSPITALARIO_CLAVE:-}
 
   correo:
     <<: *reinicio

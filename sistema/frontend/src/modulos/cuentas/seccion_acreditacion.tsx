@@ -1,13 +1,19 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
+import { obtener_solicitud_atencion } from "../../api/acreditacion";
 import { ErrorApi } from "../../api/cliente_http";
 import { ultima_consulta_cobertura, type UltimaConsultaCobertura } from "../../api/contingencia";
 import { solicitar_verificacion_cobertura, type AcreditacionRespuesta } from "../../api/cuentas";
 import { Boton } from "../../componentes_base/boton";
 import { Mensaje } from "../../componentes_base/mensaje";
 import { usar_sesion } from "../../sesion/contexto_sesion";
-import { formatear_fecha, formatear_fecha_hora } from "../../utilidades/formato";
+import { formatear_fecha, formatear_fecha_hora, formatear_monto } from "../../utilidades/formato";
 import { AccionCoberturaContingencia } from "../contingencia/accion_cobertura_contingencia";
+import {
+  AFILIACIONES,
+  DOCUMENTOS_AUTORIZACION,
+  nombre_en_catalogo,
+} from "../contingencia/catalogos_cobertura";
 import { SesionPlataforma } from "../plataformas/sesion_plataforma";
 import { usar_acreditacion_cuenta } from "./usar_cuentas";
 import estilos from "./detalle_cuenta.module.css";
@@ -26,12 +32,37 @@ const _URL_PORTAL =
 const _RUTA_CONSULTA = "/acreditacion/iafas";
 const _EN_CURSO = new Set(["EN_CURSO", "REQUIERE_SESION"]);
 
-function ResultadoAcreditacion({ acreditacion }: { acreditacion: AcreditacionRespuesta }) {
+function texto_copago(a: AcreditacionRespuesta): string {
+  if (a.tipo_copago === "coaseguro") return `Coaseguro ${a.porcentaje_coaseguro ?? 0} %`;
+  if (a.tipo_copago === "fijo") return `Monto fijo ${formatear_monto(a.monto_copago_fijo ?? 0)}`;
+  return "—";
+}
+
+function datos_acreditacion(acreditacion: AcreditacionRespuesta) {
   const manual = acreditacion.componente_ejecutor === "registro_manual_contingencia";
-  const datos = [
+  return [
     { etiqueta: "Condición de cobertura", valor: acreditacion.condicion_cobertura },
+    {
+      etiqueta: "Tipo de afiliación",
+      valor: nombre_en_catalogo(AFILIACIONES, acreditacion.tipo_afiliacion),
+    },
+    { etiqueta: "Código de asegurado", valor: acreditacion.codigo_asegurado },
     { etiqueta: "Código de acreditación", valor: acreditacion.codigo_autorizacion },
+    {
+      etiqueta: "Tipo de documento de autorización",
+      valor: nombre_en_catalogo(DOCUMENTOS_AUTORIZACION, acreditacion.tipo_documento_autorizacion),
+    },
+    { etiqueta: "Plan", valor: acreditacion.plan ?? "—" },
+    { etiqueta: "Copago", valor: texto_copago(acreditacion) },
+    {
+      etiqueta: "Preexistencias o restricciones",
+      valor: acreditacion.preexistencias.length > 0 ? acreditacion.preexistencias.join(", ") : "—",
+    },
     { etiqueta: "Acreditado el", valor: formatear_fecha_hora(acreditacion.instante) },
+    {
+      etiqueta: "Vigente desde",
+      valor: acreditacion.vigente_desde ? formatear_fecha(acreditacion.vigente_desde) : "—",
+    },
     {
       etiqueta: "Vigente hasta",
       valor: acreditacion.vigente_hasta ? formatear_fecha(acreditacion.vigente_hasta) : "—",
@@ -41,15 +72,59 @@ function ResultadoAcreditacion({ acreditacion }: { acreditacion: AcreditacionRes
       valor: manual ? "Registrada en modo de contingencia" : "Obtenida de ACREDITA SALUD",
     },
   ];
+}
+
+function ResultadoAcreditacion({
+  acreditacion,
+  cuenta_id,
+}: {
+  acreditacion: AcreditacionRespuesta;
+  cuenta_id: number;
+}) {
+  const datos = datos_acreditacion(acreditacion);
   return (
-    <div className={estilos.datos_en_linea}>
-      {datos.map((dato) => (
-        <div key={dato.etiqueta} className={estilos.campo_dato}>
-          <span className={estilos.etiqueta_dato}>{dato.etiqueta}</span>
-          <span className={estilos.valor_dato}>{dato.valor}</span>
-        </div>
-      ))}
-    </div>
+    <>
+      <div className={estilos.datos_en_linea}>
+        {datos.map((dato) => (
+          <div key={dato.etiqueta} className={estilos.campo_dato}>
+            <span className={estilos.etiqueta_dato}>{dato.etiqueta}</span>
+            <span className={estilos.valor_dato}>{dato.valor}</span>
+          </div>
+        ))}
+      </div>
+      {acreditacion.tiene_solicitud_atencion ? (
+        <VerSolicitudAtencion cuenta_id={cuenta_id} />
+      ) : null}
+    </>
+  );
+}
+
+function VerSolicitudAtencion({ cuenta_id }: { cuenta_id: number }) {
+  const mutacion = useMutation({
+    mutationFn: async () => {
+      const url = URL.createObjectURL(await obtener_solicitud_atencion(cuenta_id));
+      window.open(url, "_blank", "noopener");
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    },
+  });
+  return (
+    <>
+      <div className={estilos.fila_accion}>
+        <Boton
+          variante="secundario"
+          onClick={() => mutacion.mutate()}
+          disabled={mutacion.isPending}
+        >
+          Ver solicitud de atención
+        </Boton>
+      </div>
+      {mutacion.isError ? (
+        <Mensaje
+          tipo="error"
+          texto={mutacion.error instanceof ErrorApi ? mutacion.error.message : "No se pudo abrir."}
+        />
+      ) : null}
+    </>
   );
 }
 
@@ -154,10 +229,20 @@ function PendienteAcreditacion({ cuenta_id }: { cuenta_id: number }) {
 export function ContenidoAcreditacion({ cuenta_id }: { cuenta_id: number }) {
   const { sesion } = usar_sesion();
   const consulta_acreditacion = usar_acreditacion_cuenta(cuenta_id);
-  if (!sesion?.roles.includes("analista") || consulta_acreditacion.isLoading) return null;
-  return consulta_acreditacion.data ? (
-    <ResultadoAcreditacion acreditacion={consulta_acreditacion.data} />
-  ) : (
-    <PendienteAcreditacion cuenta_id={cuenta_id} />
-  );
+  const es_analista = sesion?.roles.includes("analista") ?? false;
+  if (consulta_acreditacion.isLoading) return null;
+  const acreditacion = consulta_acreditacion.data;
+  if (acreditacion) {
+    // Mientras la cuenta siga registrada y sin comprobante, se puede volver
+    // a consultar: la respuesta nueva pasa a ser la vigente.
+    return (
+      <>
+        <ResultadoAcreditacion acreditacion={acreditacion} cuenta_id={cuenta_id} />
+        {es_analista && acreditacion.admite_reconsulta ? (
+          <PendienteAcreditacion cuenta_id={cuenta_id} />
+        ) : null}
+      </>
+    );
+  }
+  return es_analista ? <PendienteAcreditacion cuenta_id={cuenta_id} /> : null;
 }

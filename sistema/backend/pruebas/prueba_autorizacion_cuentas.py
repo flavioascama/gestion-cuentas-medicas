@@ -24,7 +24,6 @@ _RUTAS_LECTURA = (
 )
 _RUTAS_SOLO_ANALISTA = (
     ("POST", "/cuentas/1/cobertura"),
-    ("GET", "/cuentas/1/acreditacion"),
     ("POST", "/cuentas/asegurado/buscar"),
 )
 
@@ -95,6 +94,30 @@ async def prueba_ruta_solo_analista_de_cuentas_con_rol_correcto_no_devuelve_401_
     token = await token_para_rol(NombreRol.ANALISTA)
     respuesta = await cliente.request(metodo, ruta, headers={"Authorization": f"Bearer {token}"})
     assert respuesta.status_code not in (401, 403)
+
+
+@pytest.mark.parametrize(
+    "rol,esperado",
+    [
+        (NombreRol.ANALISTA, True),
+        (NombreRol.AUDITOR, True),
+        (NombreRol.JEFE, True),
+        (NombreRol.TESORERIA, False),
+        (NombreRol.GERENTE, False),
+        (NombreRol.ADMINISTRADOR, False),
+    ],
+)
+async def prueba_acreditacion_de_la_cuenta_se_abre_a_analista_auditor_y_jefe(
+    cliente: AsyncClient,
+    token_para_rol: Callable[[NombreRol], Awaitable[str]],
+    rol: NombreRol,
+    esperado: bool,
+) -> None:
+    token = await token_para_rol(rol)
+    respuesta = await cliente.get(
+        "/cuentas/1/acreditacion", headers={"Authorization": f"Bearer {token}"}
+    )
+    assert (respuesta.status_code != 403) is esperado
 
 
 async def prueba_listar_iafas_sin_token_devuelve_401(cliente: AsyncClient) -> None:

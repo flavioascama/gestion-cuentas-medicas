@@ -12,10 +12,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from pathlib import Path
 
 from app.compartido.huella import huella_sha256
-from app.dominio.integracion.casos_uso import TIPO_TRABAJO_MONITOREAR_RESPUESTA_IAFAS
+from app.compartido.rutas import ruta_local_s01
+from app.dominio.integracion.casos_uso import encolar_monitoreo_respuesta
 from app.dominio.integracion.puertos import (
     ErrorLoteNoRemisible,
     LoteParaRemitir,
@@ -23,6 +23,7 @@ from app.dominio.integracion.puertos import (
     ResultadoTransmision,
     Transmisor,
 )
+from app.dominio.integracion.vigencia_lote import exigir_lote_vigente
 from app.dominio.puertos_comunes import (
     Evento,
     MedicionPaso,
@@ -122,13 +123,8 @@ class RemitirLote:
             # de esta misma remision (lote ya REMITIDO_IAFAS) nunca llegan
             # aqui de nuevo, porque el guard de estado del inicio de este
             # metodo ya lo impide.
-            await self._repositorio_trabajos.encolar(
-                tipo=TIPO_TRABAJO_MONITOREAR_RESPUESTA_IAFAS,
-                # Control C-07 (Seccion 5.2.7): LOTE_ACEPTADO/LOTE_RECHAZADO
-                # los registra el robot de monitoreo, mas tarde; se
-                # atribuyen al analista que remitio el lote.
-                carga_util={"lote_id": lote_id, "usuario_origen": actor},
-                proximo_intento=fin + INTERVALO_INICIAL_MONITOREO,
+            await encolar_monitoreo_respuesta(
+                self._repositorio_trabajos, lote_id, actor, fin + INTERVALO_INICIAL_MONITOREO
             )
 
         return ResultadoRemitirLote(
@@ -147,13 +143,15 @@ class RemitirLote:
                 f"El lote {lote_id} esta en estado {lote.estado!r}; "
                 f"solo se puede remitir un lote en estado {_ESTADO_VALIDADO!r}."
             )
+        # Antes de transferir: no se envia un lote que ya no refleja sus cuentas.
+        exigir_lote_vigente(await self._repositorio.vigencia_lote(lote_id))
         # Garantizado por RegistrarArchivoTransmision (Fase 16): ningun
         # lote llega a VALIDADO sin los tres datos del .S01 obtenido.
         assert lote.nombre_s01 is not None
         assert lote.sha256_s01 is not None
         assert lote.ruta_s01 is not None
 
-        contenido = Path(lote.ruta_s01).read_bytes()
+        contenido = ruta_local_s01(lote.ruta_s01).read_bytes()
         huella_en_disco = huella_sha256(contenido)
         if huella_en_disco != lote.sha256_s01:
             # El archivo en disco no es el que devolvio el validador

@@ -19,6 +19,7 @@ from app.dominio.integracion.puertos import (
     LoteParaRemitir,
     ResultadoTransmision,
 )
+from app.dominio.integracion.vigencia_lote import VigenciaLote
 from app.dominio.puertos_comunes import Evento, MedicionPaso, Observabilidad
 from app.infraestructura.tedef.remitir_lote import RemitirLote
 
@@ -38,9 +39,13 @@ class _RelojFijo:
 class _RepositorioFalso:
     lote: LoteParaRemitir | None
     remisiones_registradas: list[dict[str, object]] = field(default_factory=list)
+    vigencia: VigenciaLote | None = None
 
     async def obtener_lote_para_remision(self, lote_id: int) -> LoteParaRemitir | None:
         return self.lote
+
+    async def vigencia_lote(self, lote_id: int) -> VigenciaLote | None:
+        return self.vigencia
 
     async def registrar_remision(
         self,

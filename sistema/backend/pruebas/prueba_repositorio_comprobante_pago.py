@@ -4,17 +4,24 @@
 from __future__ import annotations
 
 from datetime import date, time
+from decimal import Decimal
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.dominio.integracion.puertos_ingesta import DatosNuevaCuenta
 from app.dominio.pse.puertos import (
+    ComprobanteEmitido,
     ComprobantePse,
     ErrorComprobanteYaExiste,
     ErrorCuentaNoEncontrada,
+    MontosComprobante,
 )
-from app.infraestructura.persistencia.modelos_integracion import IafasModelo, IpressModelo
+from app.infraestructura.persistencia.modelos_integracion import (
+    DocumentoFacturadorModelo,
+    IafasModelo,
+    IpressModelo,
+)
 from app.infraestructura.persistencia.repositorio_comprobante_pago_sql import (
     RepositorioComprobantePagoSql,
 )
@@ -25,6 +32,10 @@ from app.infraestructura.persistencia.repositorio_ingesta_cuentas_sql import (
 _COMPROBANTE = ComprobantePse(
     tipo_documento_pago="01", serie="F001", numero="00000001", fecha_emision=date(2026, 9, 28)
 )
+_MONTOS = MontosComprobante(
+    valor_venta=Decimal("60.00"), igv=Decimal("10.80"), total=Decimal("70.80")
+)
+_EMITIDO = ComprobanteEmitido(_COMPROBANTE, _MONTOS)
 
 
 async def _sembrar_iafas_e_ipress(sesion: AsyncSession) -> int:
@@ -79,9 +90,17 @@ async def prueba_guardar_comprobante_persiste_documento_facturador(
         cuenta_id = await _sembrar_cuenta(sesion)
         repositorio = RepositorioComprobantePagoSql(sesion)
 
-        documento_id = await repositorio.guardar_comprobante(cuenta_id, _COMPROBANTE)
+        documento_id = await repositorio.guardar_comprobante(cuenta_id, _EMITIDO)
 
         assert documento_id is not None
+        # Guarda exactamente los montos enviados al PSE.
+        documento = await sesion.get(DocumentoFacturadorModelo, documento_id)
+        assert documento is not None
+        assert (documento.valor_venta, documento.igv, documento.total) == (
+            Decimal("60.00"),
+            Decimal("10.80"),
+            Decimal("70.80"),
+        )
         estado = await repositorio.obtener_ipress_propia()
         assert estado == ("20123456789", "15995250")
 
@@ -93,7 +112,7 @@ async def prueba_guardar_comprobante_con_cuenta_inexistente_falla(
         repositorio = RepositorioComprobantePagoSql(sesion)
 
         with pytest.raises(ErrorCuentaNoEncontrada):
-            await repositorio.guardar_comprobante(999, _COMPROBANTE)
+            await repositorio.guardar_comprobante(999, _EMITIDO)
 
 
 async def prueba_guardar_comprobante_duplicado_falla(
@@ -102,10 +121,12 @@ async def prueba_guardar_comprobante_duplicado_falla(
     async with fabrica_sesiones() as sesion:
         cuenta_id = await _sembrar_cuenta(sesion)
         repositorio = RepositorioComprobantePagoSql(sesion)
-        await repositorio.guardar_comprobante(cuenta_id, _COMPROBANTE)
+        await repositorio.guardar_comprobante(cuenta_id, _EMITIDO)
 
         otro_comprobante = ComprobantePse(
             tipo_documento_pago="01", serie="F001", numero="00000002", fecha_emision=date.today()
         )
         with pytest.raises(ErrorComprobanteYaExiste):
-            await repositorio.guardar_comprobante(cuenta_id, otro_comprobante)
+            await repositorio.guardar_comprobante(
+                cuenta_id, ComprobanteEmitido(otro_comprobante, _MONTOS)
+            )

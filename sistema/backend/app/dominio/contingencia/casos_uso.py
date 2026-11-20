@@ -7,14 +7,18 @@ disco y por eso vive en infraestructura/tedef/, igual que RemitirLote."""
 
 from __future__ import annotations
 
+from decimal import Decimal
+
 from app.dominio.acreditacion.casos_uso import TIPO_TRABAJO_CONSULTAR_COBERTURA
 from app.dominio.acreditacion.puertos import ErrorCuentaNoEncontrada, RepositorioAcreditacion
 from app.dominio.acreditacion.valores import (
     ResultadoAcreditacion,
+    admite_consulta,
     mensaje_asegurado_no_encontrado,
 )
 from app.dominio.contingencia.errores import (
     ErrorContingenciaNoHabilitada,
+    ErrorCopagoIncompleto,
     ErrorRegistroContingenciaInexistente,
     ErrorRegistroContingenciaYaRevisado,
     ErrorSustentoInsuficiente,
@@ -48,6 +52,23 @@ def validar_sustento(sustento: str) -> str:
     return limpio
 
 
+def normalizar_copago(
+    tipo: str | None, monto: Decimal | None, porcentaje: int | None
+) -> tuple[str | None, Decimal | None, int | None]:
+    """El copago registrado a mano, con los mismos valores que deja el
+    robot ('fijo' con su monto, 'coaseguro' con su porcentaje, o ninguno)
+    para que el calculo de montos lo use igual."""
+    if tipo == "fijo":
+        if monto is None or monto <= 0:
+            raise ErrorCopagoIncompleto("El copago de monto fijo exige su monto.")
+        return "fijo", monto, None
+    if tipo == "coaseguro":
+        if porcentaje is None or not 0 < porcentaje <= 100:
+            raise ErrorCopagoIncompleto("El coaseguro exige su porcentaje (de 1 a 100).")
+        return "coaseguro", None, porcentaje
+    return None, None, None
+
+
 class ConsultarDisponibilidadContingencia:
     def __init__(
         self, repositorio: RepositorioContingencia, acreditaciones: RepositorioAcreditacion
@@ -56,7 +77,9 @@ class ConsultarDisponibilidadContingencia:
         self._acreditaciones = acreditaciones
 
     async def cobertura(self, cuenta_medica_id: int) -> bool:
-        if await self._acreditaciones.existe_acreditacion(cuenta_medica_id):
+        if await self._acreditaciones.existe_acreditacion(
+            cuenta_medica_id
+        ) and not await self._acreditacion_reemplazable(cuenta_medica_id):
             return False
         ultimo = await self._repositorio.ultimo_trabajo(
             TIPO_TRABAJO_CONSULTAR_COBERTURA, "cuenta_medica_id", cuenta_medica_id
@@ -64,6 +87,14 @@ class ConsultarDisponibilidadContingencia:
         # Solo una plataforma que no respondio habilita la contingencia; un
         # asegurado no encontrado es una respuesta, no una indisponibilidad.
         return ultimo is not None and clasificar_consulta(ultimo) is ResultadoConsulta.SIN_RESPUESTA
+
+    async def _acreditacion_reemplazable(self, cuenta_medica_id: int) -> bool:
+        # La acreditacion revisada no conforme admite un nuevo registro
+        # mientras la cuenta siga sin comprobante.
+        if not await self._repositorio.cobertura_vigente_no_conforme(cuenta_medica_id):
+            return False
+        contexto = await self._acreditaciones.obtener_contexto_cuenta(cuenta_medica_id)
+        return contexto is not None and admite_consulta(contexto, ya_acreditada=True)
 
     async def validacion(self, lote_id: int) -> bool:
         estado = await self._repositorio.obtener_estado_lote(lote_id)

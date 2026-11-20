@@ -7,6 +7,7 @@ from app.datos import RepositorioDatos
 from app.presentacion import (
     campos_estructurados_cobertura,
     condicion_cobertura,
+    datos_afiliado,
     datos_copago,
     detalle_cobertura,
 )
@@ -76,3 +77,14 @@ async def prueba_campos_estructurados_cobertura_sin_datos_relevantes(
     assert campos.plan is None
     assert campos.vigente_desde is None
     assert campos.preexistencias is None
+
+
+async def prueba_datos_afiliado_se_derivan_del_padron(repositorio: RepositorioDatos) -> None:
+    asegurado = repositorio.buscar_por_documento("1", "11111111")
+    assert asegurado is not None
+    afiliado = datos_afiliado(asegurado, repositorio.nombre_iafas(asegurado.iafas_codigo))
+    assert afiliado.codigo_asegurado == f"{asegurado.iafas_codigo}-11111111"
+    assert afiliado.tipo_afiliacion == "1"
+    assert afiliado.nombre_tipo_afiliacion == "Regular"
+    assert afiliado.codigo_iafas == asegurado.iafas_codigo
+    assert afiliado.nombre_iafas == repositorio.nombre_iafas(asegurado.iafas_codigo)

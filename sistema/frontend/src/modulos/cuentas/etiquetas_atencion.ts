@@ -1,0 +1,19 @@
+const _TIPOS_ATENCION: Record<string, string> = {
+  AMBULATORIA: "Ambulatoria",
+  EMERGENCIA: "Emergencia",
+  HOSPITALIZACION: "Hospitalización",
+};
+
+export function etiqueta_tipo_atencion(tipo: string): string {
+  return _TIPOS_ATENCION[tipo] ?? tipo;
+}
+
+const _AREAS_PROCEDIMIENTO: Record<string, string> = {
+  PROCEDIMIENTO: "Procedimiento",
+  LABORATORIO: "Laboratorio",
+  IMAGENES: "Imágenes",
+};
+
+export function etiqueta_area_procedimiento(area: string): string {
+  return _AREAS_PROCEDIMIENTO[area.toUpperCase()] ?? area;
+}

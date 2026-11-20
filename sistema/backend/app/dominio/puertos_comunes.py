@@ -44,6 +44,7 @@ _CLAVES_PERSONALES_PROHIBIDAS: frozenset[str] = frozenset(
         "documento_asegurado",
         "numero_historia_clinica",
         "diagnostico_principal_cie10",
+        "diagnosticos_secundarios_cie10",
         "fecha_nacimiento",
         "direccion",
         "telefono",
@@ -289,4 +290,10 @@ class RepositorioTrabajos(Protocol):
         """Seccion 8.4, punto 6: 'al activarse una sesion, los trabajos
         en REQUIERE_SESION de esa plataforma vuelven a PENDIENTE'.
         Devuelve cuantos trabajos reactivo."""
+        ...
+
+    async def hay_sin_terminar(self, tipo: str, lote_id: int) -> bool:
+        """True si ese lote tiene un trabajo de ese tipo todavia
+        PENDIENTE, EN_PROCESO o REQUIERE_SESION (evita encolar dos
+        iguales)."""
         ...

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
+import type { ProcedimientoPorCodificar } from "../../api/atenciones";
 import { BarraRecorrido } from "../../componentes_base/barra_recorrido";
 import { EtiquetaEstado } from "../../componentes_base/etiqueta_estado";
 import { Mensaje } from "../../componentes_base/mensaje";
@@ -146,8 +147,11 @@ export function DetalleCuenta() {
   const parametros = useParams<{ cuenta_id: string }>();
   const cuenta_id = Number(parametros.cuenta_id);
   const consulta = usar_detalle_cuenta(cuenta_id);
-  const [mostrar_asistente_cpms, set_mostrar_asistente_cpms] = useState(false);
-  const abrir_asistente_cpms = () => set_mostrar_asistente_cpms(true);
+  // Abierto, con el procedimiento por codificar que se esta trabajando, si lo hay.
+  const [asistente_cpms, set_asistente_cpms] = useState<{
+    pendiente: ProcedimientoPorCodificar | null;
+  } | null>(null);
+  const abrir_asistente_cpms = () => set_asistente_cpms({ pendiente: null });
   const pestanas = usar_pestanas_detalle(consulta.data, cuenta_id, abrir_asistente_cpms);
   // Abierta desde un aviso o desde un lote: migas, "volver" y anterior o
   // siguiente de esa lista (navegacion/recorrido.ts).
@@ -167,13 +171,18 @@ export function DetalleCuenta() {
         cuenta_id={cuenta_id}
         estado={cuenta.estado}
         al_codificar={abrir_asistente_cpms}
+        al_codificar_pendiente={(pendiente) => set_asistente_cpms({ pendiente })}
       />
       <Pestanas pestanas={pestanas} etiqueta_lista="Secciones de la cuenta" />
       <Link to={recorrido?.volver.ruta ?? "/cuentas"}>
         {recorrido?.volver.etiqueta ?? "Volver a la bandeja"}
       </Link>
-      {mostrar_asistente_cpms ? (
-        <AsistenteCpms cuenta_id={cuenta_id} al_cerrar={() => set_mostrar_asistente_cpms(false)} />
+      {asistente_cpms ? (
+        <AsistenteCpms
+          cuenta_id={cuenta_id}
+          pendiente={asistente_cpms.pendiente}
+          al_cerrar={() => set_asistente_cpms(null)}
+        />
       ) : null}
     </div>
   );

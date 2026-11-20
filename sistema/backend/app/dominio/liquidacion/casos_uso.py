@@ -8,7 +8,11 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from app.dominio.liquidacion.errores import ErrorLiquidacionInexistente, ErrorPagoYaConciliado
+from app.dominio.liquidacion.errores import (
+    ErrorLiquidacionInexistente,
+    ErrorPagoExcedeSaldo,
+    ErrorPagoYaConciliado,
+)
 from app.dominio.liquidacion.puertos import RepositorioLiquidaciones
 from app.dominio.liquidacion.valores import (
     DatosNuevaLiquidacion,
@@ -16,10 +20,17 @@ from app.dominio.liquidacion.valores import (
     ResultadoConciliacion,
     ResultadoLiquidacion,
 )
+from app.dominio.observaciones.puertos import RepositorioObservaciones
+from app.dominio.observaciones.valores import ResultadoObservacion
 from app.dominio.orquestacion.motor import validar_transicion
 from app.dominio.orquestacion.puertos import RepositorioEstadoCuenta
 from app.dominio.orquestacion.valores import TipoTransicion
 from app.dominio.puertos_comunes import Evento, Observabilidad, Reloj
+
+# Una cuenta pagada de menos recibe pagos adicionales sin transicion: la
+# Tabla 58 no define una y el estado ya es PAGADA o PAGADA_PARCIAL.
+_ESTADOS_PAGADOS = frozenset({"PAGADA", "PAGADA_PARCIAL"})
+TIPO_EVENTO_PAGO_ADICIONAL = "PAGO_ADICIONAL_REGISTRADO"
 
 
 def _transicion_de_liquidacion(estado_actual: str | None) -> TipoTransicion:
@@ -43,7 +54,11 @@ def _transicion_de_conciliacion(estado_actual: str | None) -> TipoTransicion:
 
 
 class RegistrarLiquidacion:
-    """CU-12, T-10 (RF-08, RF-12, RF-16)."""
+    """CU-12, T-10 (RF-08, RF-12, RF-16). Con `observaciones`
+    (2026-11-19): la liquidacion de una cuenta SUBSANADA es la aseguradora
+    aceptando lo respondido, y esas observaciones quedan LEVANTADA. Desde
+    GLOSADA_PARCIAL no se fija resultado: la liquidacion parcial no dice si
+    se acepto la respuesta."""
 
     def __init__(
         self,
@@ -51,11 +66,13 @@ class RegistrarLiquidacion:
         estado_cuenta: RepositorioEstadoCuenta,
         observabilidad: Observabilidad,
         reloj: Reloj,
+        observaciones: RepositorioObservaciones | None = None,
     ) -> None:
         self._repositorio = repositorio
         self._estado_cuenta = estado_cuenta
         self._observabilidad = observabilidad
         self._reloj = reloj
+        self._observaciones = observaciones
 
     async def ejecutar(
         self, cuenta_medica_id: int, monto_liquidado: Decimal, actor: str
@@ -74,6 +91,10 @@ class RegistrarLiquidacion:
             )
         )
         await self._estado_cuenta.fijar_estado(cuenta_medica_id, estado_nuevo)
+        if estado_actual == "SUBSANADA" and self._observaciones is not None:
+            await self._observaciones.fijar_resultado(
+                cuenta_medica_id, ResultadoObservacion.LEVANTADA, ahora
+            )
         await self._observabilidad.eventos.registrar(
             Evento(
                 cuenta_medica_id=cuenta_medica_id,
@@ -93,7 +114,9 @@ class ConciliarPago:
     seguimiento de la cartera por cobrar" (Tabla 51) -- la conciliacion
     avanza igual, la diferencia solo queda registrada para el
     seguimiento posterior (R3.4); quien bloquea el cierre ante una
-    diferencia pendiente es CerrarCuenta, no este caso de uso."""
+    diferencia pendiente es CerrarCuenta, no este caso de uso. Mientras
+    la cuenta pagada tenga saldo por pagar, admite pagos adicionales que
+    se acumulan hasta cerrar la diferencia."""
 
     def __init__(
         self,
@@ -115,12 +138,10 @@ class ConciliarPago:
             raise ErrorLiquidacionInexistente(
                 f"La cuenta {cuenta_medica_id} no tiene una liquidacion registrada."
             )
-        if liquidacion.conciliado_en is not None:
-            raise ErrorPagoYaConciliado(
-                f"La liquidacion de la cuenta {cuenta_medica_id} ya tiene un pago conciliado."
-            )
-
         estado_actual = await self._estado_cuenta.obtener_estado(cuenta_medica_id)
+        if liquidacion.conciliado_en is not None:
+            return await self._pago_adicional(liquidacion, estado_actual, monto_pagado, actor)
+
         transicion = _transicion_de_conciliacion(estado_actual)
         estado_nuevo = validar_transicion(estado_actual, transicion)
 
@@ -143,6 +164,45 @@ class ConciliarPago:
             )
         )
         return ResultadoConciliacion(estado_cuenta=estado_nuevo, diferencia=diferencia)
+
+    async def _pago_adicional(
+        self, liquidacion: Liquidacion, estado_actual: str | None, monto: Decimal, actor: str
+    ) -> ResultadoConciliacion:
+        pagado_previo = liquidacion.monto_pagado or Decimal("0")
+        if (
+            estado_actual is None
+            or estado_actual not in _ESTADOS_PAGADOS
+            or pagado_previo >= liquidacion.monto_liquidado
+        ):
+            raise ErrorPagoYaConciliado(
+                f"La liquidacion de la cuenta {liquidacion.cuenta_medica_id} ya tiene un "
+                "pago conciliado."
+            )
+        saldo = liquidacion.monto_liquidado - pagado_previo
+        if monto > saldo:
+            raise ErrorPagoExcedeSaldo(
+                f"El pago supera lo que falta por pagar de la cuenta "
+                f"{liquidacion.cuenta_medica_id} ({saldo})."
+            )
+        acumulado = pagado_previo + monto
+        diferencia = acumulado - liquidacion.monto_liquidado
+        await self._repositorio.registrar_pago_adicional(liquidacion.id, acumulado, diferencia)
+        await self._observabilidad.eventos.registrar(
+            Evento(
+                cuenta_medica_id=liquidacion.cuenta_medica_id,
+                tipo_evento=TIPO_EVENTO_PAGO_ADICIONAL,
+                actor=actor,
+                estado_previo=None,
+                estado_nuevo=None,
+                datos={
+                    "liquidacion_id": liquidacion.id,
+                    "monto_pago": str(monto),
+                    "monto_pagado_acumulado": str(acumulado),
+                    "diferencia": str(diferencia),
+                },
+            )
+        )
+        return ResultadoConciliacion(estado_cuenta=estado_actual, diferencia=diferencia)
 
 
 class ObtenerLiquidacion:

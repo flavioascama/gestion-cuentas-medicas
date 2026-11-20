@@ -12,7 +12,14 @@ from app.dominio.integracion.puertos import (
     ErrorLoteNoMonitoreable,
     RepositorioMonitoreoRespuesta,
 )
-from app.dominio.puertos_comunes import Evento, MedicionPaso, Observabilidad, Reloj
+from app.dominio.integracion.puertos_validacion import RepositorioValidacionOficial
+from app.dominio.puertos_comunes import (
+    Evento,
+    MedicionPaso,
+    Observabilidad,
+    Reloj,
+    RepositorioTrabajos,
+)
 
 TIPO_TRABAJO_MONITOREAR_RESPUESTA_IAFAS = "MONITOREAR_RESPUESTA_IAFAS"
 
@@ -20,6 +27,26 @@ _RESULTADO_RESPONDIDO = "respondido"
 _RESULTADO_SIN_RESPUESTA = "sin_respuesta"
 _RESULTADO_AGOTADO = "agotado"
 TIPO_EVENTO_MONITOREO_EXCEDIDO = "LOTE_MONITOREO_EXCEDIDO"
+TIPO_EVENTO_MONITOREO_SOLICITADO = "LOTE_MONITOREO_SOLICITADO"
+_ESTADO_REMITIDO_IAFAS = "REMITIDO_IAFAS"
+
+
+async def encolar_monitoreo_respuesta(
+    repositorio_trabajos: RepositorioTrabajos,
+    lote_id: int,
+    actor: str,
+    proximo_intento: datetime,
+) -> int:
+    """Unico lugar que arma el trabajo de monitoreo: lo usan la remision
+    (primera vez) y la reconsulta pedida por el analista."""
+    return await repositorio_trabajos.encolar(
+        tipo=TIPO_TRABAJO_MONITOREAR_RESPUESTA_IAFAS,
+        # Control C-07 (Seccion 5.2.7): LOTE_ACEPTADO/LOTE_RECHAZADO los
+        # registra el robot de monitoreo, mas tarde; se atribuyen a quien
+        # encolo el trabajo.
+        carga_util={"lote_id": lote_id, "usuario_origen": actor},
+        proximo_intento=proximo_intento,
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -40,6 +67,56 @@ class _MedicionMonitoreo:
     fin: datetime
     resultado: str
     usuario_origen: str | None
+
+
+class SolicitarMonitoreoRespuestaIafas:
+    """Reconsulta pedida por el analista: el trabajo de la remision se
+    agota si la IAFAS no responde en la ventana, y sin esto el lote
+    quedaba REMITIDO_IAFAS para siempre."""
+
+    def __init__(
+        self,
+        repositorio: RepositorioValidacionOficial,
+        repositorio_trabajos: RepositorioTrabajos,
+        observabilidad: Observabilidad,
+        reloj: Reloj,
+    ) -> None:
+        self._repositorio = repositorio
+        self._repositorio_trabajos = repositorio_trabajos
+        self._observabilidad = observabilidad
+        self._reloj = reloj
+
+    async def ejecutar(self, lote_id: int, actor: str) -> int:
+        estado = await self._repositorio.obtener_estado_lote(lote_id)
+        if estado is None:
+            raise ErrorLoteNoMonitoreable(f"No existe el lote {lote_id}.")
+        if estado != _ESTADO_REMITIDO_IAFAS:
+            raise ErrorLoteNoMonitoreable(
+                f"El lote {lote_id} esta en estado {estado!r}; solo se puede consultar la "
+                f"respuesta de un lote en estado {_ESTADO_REMITIDO_IAFAS!r}."
+            )
+        if await self._repositorio_trabajos.hay_sin_terminar(
+            TIPO_TRABAJO_MONITOREAR_RESPUESTA_IAFAS, lote_id
+        ):
+            raise ErrorLoteNoMonitoreable(
+                f"El lote {lote_id} ya tiene una consulta de la respuesta en curso."
+            )
+        ahora = self._reloj.ahora()
+        trabajo_id = await encolar_monitoreo_respuesta(
+            self._repositorio_trabajos, lote_id, actor, ahora
+        )
+        await self._observabilidad.eventos.registrar(
+            Evento(
+                cuenta_medica_id=None,
+                lote_id=lote_id,
+                tipo_evento=TIPO_EVENTO_MONITOREO_SOLICITADO,
+                actor=actor,
+                estado_previo=None,
+                estado_nuevo=None,
+                datos={"lote_id": lote_id, "trabajo_id": trabajo_id},
+            )
+        )
+        return trabajo_id
 
 
 class MonitorearRespuestaIafas:

@@ -19,6 +19,11 @@ class ErrorSinLiquidacion(Exception):
     liquidacion conciliada."""
 
 
+class ErrorAnulacionPropia(Exception):
+    """Aprobacion dual (CU-13): quien solicito la anulacion no la aprueba;
+    rechazar su propia solicitud si puede (2026-11-19)."""
+
+
 class ErrorSolicitudAnulacionInexistente(Exception):
     """CU-13: no existe la solicitud de anulacion que se quiere
     resolver."""

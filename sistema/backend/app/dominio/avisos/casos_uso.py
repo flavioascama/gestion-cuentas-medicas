@@ -6,13 +6,13 @@ actuo sobre ellos. Consulta de solo lectura."""
 from __future__ import annotations
 
 from app.dominio.acceso.entidades import NombreRol
+from app.dominio.avisos.destinatarios import es_destinatario, tipos_a_consultar
 from app.dominio.avisos.puertos import RepositorioAvisos
 from app.dominio.avisos.valores import (
     CATALOGO_AVISOS,
     Aviso,
     EventoAviso,
     clave_agrupacion,
-    tipos_para_roles,
 )
 
 # Cuantos eventos se leen antes de agrupar: los repetidos de un mismo hito
@@ -36,11 +36,15 @@ class ListarAvisos:
     def __init__(self, repositorio: RepositorioAvisos) -> None:
         self._repositorio = repositorio
 
-    async def ejecutar(self, roles: frozenset[NombreRol], limite: int) -> list[Aviso]:
-        tipos = tipos_para_roles(roles)
+    async def ejecutar(
+        self, roles: frozenset[NombreRol], limite: int, usuario_id: int | None = None
+    ) -> list[Aviso]:
+        tipos = tipos_a_consultar(roles)
         if not tipos:
             return []
-        agrupados = agrupar(await self._repositorio.listar(tipos, _EVENTOS_A_AGRUPAR))[:limite]
+        eventos = await self._repositorio.listar(tipos, _EVENTOS_A_AGRUPAR)
+        visibles = [e for e in eventos if es_destinatario(e, roles, usuario_id)]
+        agrupados = agrupar(visibles)[:limite]
         evaluados = await self._repositorio.evaluar_atencion([evento for evento, _ in agrupados])
         return [
             Aviso(

@@ -80,13 +80,17 @@ class ObtenerCuenta:
 
 
 def reservar_datos_clinicos(detalle: DetalleCuenta) -> DetalleCuenta:
-    """El detalle sin lo que revela el acto medico: diagnostico,
-    historia clinica, procedimientos y productos dispensados."""
+    """El detalle sin lo que revela el acto medico: diagnosticos,
+    historia clinica, medico tratante, procedimientos y productos
+    dispensados."""
 
     return replace(
         detalle,
         numero_historia_clinica=None,
         diagnostico_principal_cie10=None,
+        diagnosticos_secundarios_cie10=(),
+        nombre_medico=None,
+        colegiatura_medico=None,
         procedimientos=(),
         productos=(),
         datos_clinicos_reservados=True,

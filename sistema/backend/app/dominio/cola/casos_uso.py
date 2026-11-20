@@ -10,8 +10,8 @@ from app.dominio.puertos_comunes import DetalleTrabajo, RepositorioTrabajos
 
 
 class ObtenerTrabajo:
-    """Seccion 11: `GET /trabajos/{id}`, cualquier usuario autenticado
-    puede seguir el progreso de un trabajo que encolo cualquier caso de
+    """Seccion 11: `GET /trabajos/{id}`, analista, jefe y tesoreria
+    pueden seguir el progreso de un trabajo que encolo cualquier caso de
     uso (verificacion de cobertura, generacion de lote, sesion de
     plataforma, etc.)."""
 

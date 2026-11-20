@@ -15,7 +15,7 @@ Docker, se usa por defecto la posicion real del repositorio.
 from __future__ import annotations
 
 import os
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 
 RAIZ_BACKEND = Path(__file__).resolve().parents[2]  # sistema/backend/
 
@@ -53,3 +53,19 @@ def raiz_artefactos_s01() -> Path:
     trabajador al descargarlo del validador y, en modo de contingencia,
     el backend al recibirlo del analista."""
     return _resolver("RUTA_ARTEFACTOS_S01", "artefactos_s01")
+
+
+def ruta_local_s01(ruta_guardada: str) -> Path:
+    """Ruta del `.S01` de un lote tal como la ve este proceso.
+
+    La carpeta de artefactos es una sola, pero cada proceso la ve en un
+    lugar distinto: el servidor y el robot del contenedor en
+    /artefactos_s01, y el robot con ventana, que corre en la computadora
+    fuera de Docker, en la carpeta del proyecto. La ruta guardada es la
+    de quien escribio el archivo: si este proceso no la encuentra tal
+    cual, busca el mismo nombre en su propia carpeta de artefactos."""
+    directa = Path(ruta_guardada)
+    if directa.is_file():
+        return directa
+    # PureWindowsPath entiende los dos separadores, / y \\.
+    return raiz_artefactos_s01() / PureWindowsPath(ruta_guardada).name

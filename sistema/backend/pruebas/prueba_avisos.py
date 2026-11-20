@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.dominio.acceso.entidades import NombreRol
 from app.dominio.avisos.casos_uso import ListarAvisos, agrupar
+from app.dominio.avisos.destinatarios import tipos_a_consultar
 from app.dominio.avisos.valores import EventoAviso, tipos_para_roles
 from app.dominio.puertos_comunes import Evento
 from app.infraestructura.persistencia.modelos_integracion import (
@@ -73,7 +74,7 @@ async def prueba_listar_avisos_agrega_titulo_y_severidad() -> None:
 
     assert aviso.titulo == "Resultado de auditoría vencido"
     assert aviso.severidad == "escalamiento"
-    assert repositorio.tipos_pedidos == tipos_para_roles(frozenset({NombreRol.JEFE}))
+    assert repositorio.tipos_pedidos == tipos_a_consultar(frozenset({NombreRol.JEFE}))
 
 
 async def prueba_listar_avisos_sin_tipos_no_consulta() -> None:

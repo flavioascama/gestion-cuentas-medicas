@@ -21,5 +21,5 @@ async def listar_avisos(
     caso_uso: ListarAvisos = Depends(construir_listar_avisos),
     actor: CargaSesion = Depends(obtener_usuario_actual),
 ) -> list[AvisoRespuesta]:
-    avisos = await caso_uso.ejecutar(actor.roles, limite)
+    avisos = await caso_uso.ejecutar(actor.roles, limite, actor.usuario_id)
     return [AvisoRespuesta.desde_valor(a) for a in avisos]

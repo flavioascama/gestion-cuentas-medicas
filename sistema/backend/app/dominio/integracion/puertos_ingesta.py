@@ -108,6 +108,17 @@ class EstadoPiezasCuenta:
     # 2026-11-18 es una pieza mas de la completitud.
     tiene_diagnostico: bool = True
     lote: LoteDeCuenta | None = None
+    # Con acreditacion en fila pero la aseguradora no cubre al asegurado,
+    # la pieza de cobertura no esta completa.
+    acreditable: bool = True
+    # Atencion importada (2026-11-19): lo que falta codificar, y la carta de
+    # garantia, requisito solo en HOSPITALIZACION.
+    procedimientos_por_codificar: int = 0
+    exige_carta_garantia: bool = False
+    tiene_carta_garantia: bool = False
+    # Control C-18: la acreditacion vigente, registrada en contingencia, fue
+    # revisada no conforme.
+    cobertura_no_conforme: bool = False
 
 
 class RepositorioCompletitudCuenta(Protocol):
@@ -116,7 +127,6 @@ class RepositorioCompletitudCuenta(Protocol):
         ...
 
     async def marcar_facturada(self, cuenta_id: int) -> None:
-        """Transicion REGISTRADA -> FACTURADA (Seccion 6.3: la unica que
-        hoy la produce de verdad -- ver el docstring de
-        ConsultarCompletitudCuenta sobre por que vive aqui)."""
+        """Transicion REGISTRADA -> FACTURADA; la aplica
+        FacturarCuentaCompleta (facturacion_cuenta.py)."""
         ...

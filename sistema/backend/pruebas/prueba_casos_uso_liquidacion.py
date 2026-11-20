@@ -11,8 +11,13 @@ from decimal import Decimal
 
 import pytest
 
+from app.dominio.cierre.casos_uso import CerrarCuenta
 from app.dominio.liquidacion.casos_uso import ConciliarPago, RegistrarLiquidacion
-from app.dominio.liquidacion.errores import ErrorLiquidacionInexistente, ErrorPagoYaConciliado
+from app.dominio.liquidacion.errores import (
+    ErrorLiquidacionInexistente,
+    ErrorPagoExcedeSaldo,
+    ErrorPagoYaConciliado,
+)
 from app.dominio.liquidacion.valores import DatosNuevaLiquidacion, Liquidacion
 from app.dominio.orquestacion.errores import ErrorTransicionNoDefinida
 from app.dominio.puertos_comunes import Evento, Observabilidad
@@ -93,6 +98,12 @@ class _LiquidacionesFalso:
             diferencia=diferencia,
             conciliado_en=conciliado_en,
         )
+
+    async def registrar_pago_adicional(
+        self, liquidacion_id: int, monto_pagado: Decimal, diferencia: Decimal
+    ) -> None:
+        actual = self.filas[liquidacion_id]
+        await self.conciliar(liquidacion_id, monto_pagado, diferencia, actual.conciliado_en)  # type: ignore[arg-type]
 
 
 def _observabilidad(registro_eventos: _RegistroEventosFalso) -> Observabilidad:
@@ -253,3 +264,84 @@ async def prueba_conciliar_pago_dos_veces_es_rechazado() -> None:
 
     with pytest.raises(ErrorPagoYaConciliado):
         await caso_uso.ejecutar(1, Decimal("1500.00"), actor="tesoreria.prueba")
+
+
+# --- Pago adicional (cuenta pagada de menos) -------------------------------
+
+
+class _SinObservacionesFalso:
+    async def listar_por_cuenta(self, cuenta_medica_id: int) -> list[object]:
+        return []
+
+
+async def _cuenta_pagada_de_menos() -> tuple[_LiquidacionesFalso, _EstadoCuentaFalso]:
+    repositorio = _LiquidacionesFalso()
+    await repositorio.crear(
+        DatosNuevaLiquidacion(
+            cuenta_medica_id=1,
+            es_parcial=False,
+            monto_liquidado=Decimal("1500.00"),
+            registrado_en=_AHORA,
+        )
+    )
+    estado_cuenta = _EstadoCuentaFalso({1: "LIQUIDADA"})
+    caso_uso = ConciliarPago(
+        repositorio=repositorio,
+        estado_cuenta=estado_cuenta,
+        observabilidad=_observabilidad(_RegistroEventosFalso()),
+        reloj=_RelojFijo(),
+    )
+    await caso_uso.ejecutar(1, Decimal("1000.00"), actor="tesoreria.prueba")
+    return repositorio, estado_cuenta
+
+
+async def prueba_pago_adicional_hasta_diferencia_cero_permite_cerrar() -> None:
+    repositorio, estado_cuenta = await _cuenta_pagada_de_menos()
+    registro_eventos = _RegistroEventosFalso()
+    observabilidad = _observabilidad(registro_eventos)
+    caso_uso = ConciliarPago(repositorio, estado_cuenta, observabilidad, _RelojFijo())
+
+    resultado = await caso_uso.ejecutar(1, Decimal("200.00"), actor="tesoreria.prueba")
+    assert resultado.diferencia == Decimal("-300.00")
+    resultado = await caso_uso.ejecutar(1, Decimal("300.00"), actor="tesoreria.prueba")
+
+    assert resultado.estado_cuenta == "PAGADA"
+    assert resultado.diferencia == Decimal("0.00")
+    liquidacion = await repositorio.obtener_por_cuenta(1)
+    assert liquidacion is not None
+    assert liquidacion.monto_pagado == Decimal("1500.00")
+    assert estado_cuenta.estados[1] == "PAGADA"
+    evento = registro_eventos.eventos[-1]
+    assert evento.tipo_evento == "PAGO_ADICIONAL_REGISTRADO"
+    assert (evento.estado_previo, evento.estado_nuevo) == (None, None)
+    assert evento.datos["monto_pago"] == "300.00"
+    assert evento.datos["monto_pagado_acumulado"] == "1500.00"
+
+    cierre = CerrarCuenta(repositorio, _SinObservacionesFalso(), estado_cuenta, observabilidad)  # type: ignore[arg-type]
+    assert await cierre.ejecutar(1, actor="analista.prueba") == "CERRADA"
+
+
+async def prueba_pago_adicional_sin_saldo_pendiente_es_rechazado() -> None:
+    repositorio, estado_cuenta = await _cuenta_pagada_de_menos()
+    caso_uso = ConciliarPago(
+        repositorio, estado_cuenta, _observabilidad(_RegistroEventosFalso()), _RelojFijo()
+    )
+    await caso_uso.ejecutar(1, Decimal("500.00"), actor="tesoreria.prueba")
+
+    with pytest.raises(ErrorPagoYaConciliado):
+        await caso_uso.ejecutar(1, Decimal("10.00"), actor="tesoreria.prueba")
+
+
+async def prueba_pago_adicional_no_supera_lo_que_falta_por_pagar() -> None:
+    # Faltan 500.00: un pago mayor dejaria una diferencia sin forma de regularizar.
+    repositorio, estado_cuenta = await _cuenta_pagada_de_menos()
+    caso_uso = ConciliarPago(
+        repositorio, estado_cuenta, _observabilidad(_RegistroEventosFalso()), _RelojFijo()
+    )
+
+    with pytest.raises(ErrorPagoExcedeSaldo):
+        await caso_uso.ejecutar(1, Decimal("500.01"), actor="tesoreria.prueba")
+
+    liquidacion = await repositorio.obtener_por_cuenta(1)
+    assert liquidacion is not None
+    assert liquidacion.monto_pagado == Decimal("1000.00")

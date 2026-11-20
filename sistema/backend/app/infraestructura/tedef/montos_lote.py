@@ -15,6 +15,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from decimal import ROUND_HALF_UP, Decimal
 
+from app.dominio.integracion.atencion_hospitalaria import AREA_IMAGENES, AREA_LABORATORIO
 from app.dominio.integracion.esquema import CampoEsquema
 from app.dominio.integracion.lote import (
     ContextoLote,
@@ -77,9 +78,10 @@ class BasesFacturacion:
 
 @dataclass(frozen=True, slots=True)
 class GastosPrestacion:
-    """Los grupos de gasto de una prestacion (T2, campos 35 a 48). Los que
-    el prototipo no modela (36 a 39, 41 y 43) y el copago fijo exonerado
-    (45) son siempre 0.00 (docs/DECISIONES.md)."""
+    """Los grupos de gasto de una prestacion (T2, campos 35 a 48). Desde el
+    2026-11-19 los procedimientos se reparten por su area entre los campos
+    35, 38 y 39. Los que el prototipo no modela (36, 37, 41 y 43) y el
+    copago fijo exonerado (45) son siempre 0.00 (docs/DECISIONES.md)."""
 
     procedimientos: Decimal  # campo 35
     farmacia: Decimal  # campo 40
@@ -87,11 +89,19 @@ class GastosPrestacion:
     copago_fijo_afecto: Decimal  # campo 44
     copago_variable_afecto: Decimal  # campo 46
     copago_variable_exonerado: Decimal  # campo 47
+    laboratorio: Decimal = CERO  # campo 38
+    imagenes: Decimal = CERO  # campo 39
 
     @property
     def total_cubierto(self) -> Decimal:
         """Campo 48: suma de los campos 35 a 43."""
-        return self.procedimientos + self.farmacia + self.exonerado_igv
+        return (
+            self.procedimientos
+            + self.laboratorio
+            + self.imagenes
+            + self.farmacia
+            + self.exonerado_igv
+        )
 
     @property
     def bases(self) -> BasesFacturacion:
@@ -111,8 +121,19 @@ def calcular_gastos(
 
     afectos = [p for p in productos if p.exento_igv != EXONERADO_IGV]
     exonerados = [p for p in productos if p.exento_igv == EXONERADO_IGV]
+
+    def _cubierto_del_area(area: str) -> Decimal:
+        return sum((monto_cubierto(p) for p in procedimientos if p.area == area), CERO)
+
+    laboratorio = _cubierto_del_area(AREA_LABORATORIO)
+    imagenes = _cubierto_del_area(AREA_IMAGENES)
     return GastosPrestacion(
-        procedimientos=sum((monto_cubierto(p) for p in procedimientos), CERO),
+        # Campo 35: todo lo que no es laboratorio ni imagenes (grupos 4 y 5).
+        procedimientos=sum((monto_cubierto(p) for p in procedimientos), CERO)
+        - laboratorio
+        - imagenes,
+        laboratorio=laboratorio,
+        imagenes=imagenes,
         farmacia=sum((monto_cubierto_producto(p) for p in afectos), CERO),
         exonerado_igv=sum((monto_cubierto_producto(p) for p in exonerados), CERO),
         copago_fijo_afecto=sum((p.copago_fijo for p in procedimientos), CERO),
@@ -122,11 +143,21 @@ def calcular_gastos(
     )
 
 
+def copago_del_asegurado(gastos: GastosPrestacion) -> Decimal:
+    """Lo que el calculo atribuye al asegurado: los copagos de T2 (campos
+    44, 46 y 47), sin cambiar el criterio con que se calculan."""
+    return (
+        gastos.copago_fijo_afecto + gastos.copago_variable_afecto + gastos.copago_variable_exonerado
+    )
+
+
 def campos_montos_t2(gastos: GastosPrestacion, campo: dict[int, CampoEsquema]) -> dict[int, str]:
     """Campos 35 a 48 de T2, ya con el formato del estandar."""
 
     valores = {numero: CERO for numero in range(35, 49)}
     valores[35] = gastos.procedimientos
+    valores[38] = gastos.laboratorio
+    valores[39] = gastos.imagenes
     valores[40] = gastos.farmacia
     valores[42] = gastos.exonerado_igv
     valores[44] = gastos.copago_fijo_afecto

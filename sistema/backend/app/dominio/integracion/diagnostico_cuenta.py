@@ -11,12 +11,15 @@ from __future__ import annotations
 
 from typing import Protocol
 
+from app.dominio.orquestacion.correccion_validador import admite_correccion
+from app.dominio.orquestacion.puertos import RepositorioEstadoCuenta
 from app.dominio.puertos_comunes import Evento, RegistroEventos
 
 TIPO_EVENTO_DIAGNOSTICO_REGISTRADO = "DIAGNOSTICO_REGISTRADO"
 # Antes de facturar y al corregir una cuenta rechazada se puede cambiar. En
 # una cuenta ya facturada solo se completa si faltaba: esas cuentas no
 # pueden estar en un lote, porque sin diagnostico el lote no sale conforme.
+# La excepcion es la cuenta cuyo lote observo el validador (admite_correccion).
 _ESTADOS_EDITABLES = frozenset({"REGISTRADA", "RECHAZADA"})
 _ESTADO_SOLO_COMPLETAR = "FACTURADA"
 
@@ -58,10 +61,14 @@ def admite_diagnostico(estado: str, diagnostico_actual: str | None) -> bool:
 
 class RegistrarDiagnosticoPrincipal:
     def __init__(
-        self, repositorio: RepositorioDiagnosticoCuenta, registro_eventos: RegistroEventos
+        self,
+        repositorio: RepositorioDiagnosticoCuenta,
+        registro_eventos: RegistroEventos,
+        estado_cuenta: RepositorioEstadoCuenta,
     ) -> None:
         self._repositorio = repositorio
         self._registro_eventos = registro_eventos
+        self._estado_cuenta = estado_cuenta
 
     async def ejecutar(self, cuenta_id: int, codigo: str, actor: str) -> str:
         codigo = codigo.strip().upper()
@@ -69,7 +76,9 @@ class RegistrarDiagnosticoPrincipal:
         if actual is None:
             raise ErrorCuentaInexistenteDiagnostico(cuenta_id)
         estado, diagnostico = actual
-        if not admite_diagnostico(estado, diagnostico):
+        if not await admite_correccion(
+            self._estado_cuenta, cuenta_id, admite_diagnostico(estado, diagnostico)
+        ):
             raise ErrorDiagnosticoNoAdmitido(estado)
         if not await self._repositorio.existe_cie10(codigo):
             raise ErrorCie10Inexistente(codigo)

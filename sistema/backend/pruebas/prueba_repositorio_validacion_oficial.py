@@ -311,9 +311,23 @@ async def prueba_lotes_para_envio_susalud_solo_los_no_enviados_del_periodo(
             sha256_s01="deadbeef",
             instante=datetime(2026, 9, 26, 9, 10, tzinfo=UTC),
         )
+        # VALIDADO tampoco: la norma pide reportar lo ya remitido a la IAFAS.
+        assert await repositorio.obtener_lotes_para_envio_susalud("202609") == ()
+
+        lote = await sesion.get(LoteFacturacionModelo, lote_generado)
+        assert lote is not None
+        lote.estado = "REMITIDO_IAFAS"
+        await sesion.flush()
         pendientes = await repositorio.obtener_lotes_para_envio_susalud("202609")
         assert len(pendientes) == 1
         assert pendientes[0].lote_id == lote_generado
+
+        # RECHAZADO se corrige y se reporta despues, en un lote nuevo.
+        lote.estado = "RECHAZADO"
+        await sesion.flush()
+        assert await repositorio.obtener_lotes_para_envio_susalud("202609") == ()
+        lote.estado = "REMITIDO_IAFAS"
+        await sesion.flush()
 
         await repositorio.marcar_enviados_susalud(
             (lote_generado,), datetime(2026, 9, 26, 9, 20, tzinfo=UTC)

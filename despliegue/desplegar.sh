@@ -81,6 +81,11 @@ if [ ! -f .env ]; then
   fijar URL_PORTAL_ACREDITA "${URL_PORTAL_ACREDITA:-https://acredita.$DOMINIO}"
   fijar COMPOSE_FILE "$COMPOSE_FILE"
 fi
+# Clave del simulador del sistema hospitalario: se agrega tambien a un
+# despliegue que ya tenia su .env.
+if ! grep -q '^SISTEMA_HOSPITALARIO_CLAVE=.' .env; then
+  fijar SISTEMA_HOSPITALARIO_CLAVE "$(aleatoria)"
+fi
 if [ ! -f despliegue/usuarios_simuladores.caddy ]; then
   clave_simuladores="$(aleatoria 20)"
   hash_simuladores="$(docker run --rm caddy:2.8 caddy hash-password --plaintext "$clave_simuladores")"
@@ -111,6 +116,8 @@ if [ ! -f despliegue/.inicializado ]; then
   fi
   touch despliegue/.inicializado
 fi
+
+"${COMPOSE[@]}" run --rm -T backend uv run python -m herramientas.facturar_cuentas_completas
 
 echo "== 6/6 Servicios"
 "${COMPOSE[@]}" up -d

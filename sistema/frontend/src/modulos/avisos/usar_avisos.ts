@@ -39,8 +39,12 @@ export function pendientes(avisos: Aviso[]): Aviso[] {
 // Recorrido por los avisos de una lista: al abrir uno, el detalle de la
 // cuenta o del lote muestra "Aviso 3 de 12", por que se esta ahi, y deja
 // pasar al anterior o al siguiente sin volver a la bandeja.
-export function recorrido_de_avisos(avisos: Aviso[], aviso_abierto: Aviso): Recorrido | null {
-  const con_destino = avisos.filter((aviso) => describir_aviso(aviso).destino !== null);
+export function recorrido_de_avisos(
+  avisos: Aviso[],
+  aviso_abierto: Aviso,
+  roles: NombreRol[],
+): Recorrido | null {
+  const con_destino = avisos.filter((aviso) => describir_aviso(aviso, roles).destino !== null);
   const indice = con_destino.findIndex((aviso) => aviso.evento_id === aviso_abierto.evento_id);
   if (indice < 0) return null;
   return {
@@ -49,7 +53,7 @@ export function recorrido_de_avisos(avisos: Aviso[], aviso_abierto: Aviso): Reco
     nombre: "Aviso",
     indice,
     pasos: con_destino.map((aviso) => {
-      const descripcion = describir_aviso(aviso);
+      const descripcion = describir_aviso(aviso, roles);
       return {
         ruta: descripcion.destino ?? "/avisos",
         etiqueta: descripcion.titulo,

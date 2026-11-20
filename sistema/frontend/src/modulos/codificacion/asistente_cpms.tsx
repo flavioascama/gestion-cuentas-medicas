@@ -1,3 +1,4 @@
+import type { ProcedimientoPorCodificar } from "../../api/atenciones";
 import { Boton } from "../../componentes_base/boton";
 import { Dialogo } from "../../componentes_base/dialogo";
 import { ErrorApi } from "../../api/cliente_http";
@@ -9,6 +10,8 @@ import { usar_asistente_cpms } from "./usar_asistente_cpms";
 interface Propiedades {
   cuenta_id: number;
   al_cerrar: () => void;
+  // Un procedimiento que vino del sistema hospitalario sin codigo.
+  pendiente?: ProcedimientoPorCodificar | null;
 }
 
 // Popup, no pantalla aparte (Fase 21): se abre sobre el detalle de la
@@ -16,8 +19,8 @@ interface Propiedades {
 // nunca pierde el contexto de la cuenta que esta codificando, y "Cuentas"
 // en la barra lateral ya no es el unico camino de vuelta si abre esta
 // pantalla por error.
-export function AsistenteCpms({ cuenta_id, al_cerrar }: Propiedades) {
-  const asistente = usar_asistente_cpms(cuenta_id);
+export function AsistenteCpms({ cuenta_id, al_cerrar, pendiente = null }: Propiedades) {
+  const asistente = usar_asistente_cpms(cuenta_id, pendiente?.descripcion ?? "");
 
   return (
     <Dialogo
@@ -55,7 +58,11 @@ export function AsistenteCpms({ cuenta_id, al_cerrar }: Propiedades) {
           resultado={asistente.resultado}
           candidato_elegido={asistente.candidato_elegido}
           al_elegir={asistente.set_candidato_elegido}
-          al_confirmar={asistente.cerrar_confirmacion_exitosa}
+          pendiente={pendiente}
+          al_confirmar={() => {
+            asistente.cerrar_confirmacion_exitosa();
+            if (pendiente) al_cerrar();
+          }}
         />
       ) : null}
     </Dialogo>

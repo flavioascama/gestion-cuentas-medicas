@@ -1,6 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { remitir_lote, solicitar_carga_en_validador } from "../../api/lotes";
+import {
+  remitir_lote,
+  solicitar_carga_en_validador,
+  solicitar_monitoreo_respuesta,
+} from "../../api/lotes";
 import { obtener_trabajo } from "../../api/trabajos";
 import { Boton } from "../../componentes_base/boton";
 import { MensajeErrorMutacion } from "../../componentes_base/mensaje_error_mutacion";
@@ -17,6 +21,7 @@ import { SesionPlataforma } from "../plataformas/sesion_plataforma";
 export function usar_acciones_lote(lote_id: number) {
   const cliente_consultas = useQueryClient();
   const [trabajo_id, set_trabajo_id] = useState<number | null>(null);
+  const [trabajo_monitoreo_id, set_trabajo_monitoreo_id] = useState<number | null>(null);
 
   const cargar_validador = useMutation({
     mutationFn: () => solicitar_carga_en_validador(lote_id),
@@ -28,27 +33,66 @@ export function usar_acciones_lote(lote_id: number) {
     onSuccess: () => void cliente_consultas.invalidateQueries({ queryKey: ["lotes", lote_id] }),
   });
 
+  const consultar_respuesta = useMutation({
+    mutationFn: () => solicitar_monitoreo_respuesta(lote_id),
+    onSuccess: (respuesta) => set_trabajo_monitoreo_id(respuesta.trabajo_id),
+  });
+
+  // Mismo trabajo que muestra ProgresoTrabajo (misma clave de consulta): al
+  // agotarse otra vez, el boton vuelve a habilitarse.
+  const trabajo_monitoreo = useQuery({
+    queryKey: ["trabajo", trabajo_monitoreo_id],
+    queryFn: () => obtener_trabajo(trabajo_monitoreo_id ?? 0),
+    enabled: trabajo_monitoreo_id !== null,
+  });
+  const monitoreo_en_curso =
+    trabajo_monitoreo_id !== null && trabajo_monitoreo.data?.estado !== "AGOTADO";
+
   function al_completar_carga(): void {
     void cliente_consultas.invalidateQueries({ queryKey: ["lotes", lote_id] });
   }
 
-  return { cargar_validador, remitir_iafas, trabajo_id, al_completar_carga };
+  return {
+    cargar_validador,
+    remitir_iafas,
+    consultar_respuesta,
+    trabajo_id,
+    trabajo_monitoreo_id,
+    monitoreo_en_curso,
+    al_completar_carga,
+  };
 }
 
 export type AccionesLote = ReturnType<typeof usar_acciones_lote>;
 
-// Tabla 46: validar el lote (cargarlo en el validador) es del analista y del
-// jefe; remitirlo a la IAFAS, solo del analista.
+// Tabla 46: validar el lote (cargarlo en el validador, o volver a pedir la
+// validacion de uno ya cargado) es del analista y del jefe; remitirlo a la
+// IAFAS, solo del analista.
+const _ESTADOS_VALIDACION = ["GENERADO", "CARGADO_VALIDADOR"];
+
 function puede_operar(roles: readonly string[] | undefined, estado: string): boolean {
-  if (estado === "GENERADO") return Boolean(roles?.includes("analista") || roles?.includes("jefe"));
+  if (_ESTADOS_VALIDACION.includes(estado)) {
+    return Boolean(roles?.includes("analista") || roles?.includes("jefe"));
+  }
   return Boolean(roles?.includes("analista"));
 }
 
-export function BotonAccionLote({ estado, acciones }: { estado: string; acciones: AccionesLote }) {
+type LoteAccion = { estado: string; monitoreo_excedido: boolean; validacion_reintentable: boolean };
+
+// Un lote ya cargado se vuelve a validar solo si su trabajo anterior termino.
+function pide_validacion(lote: LoteAccion): boolean {
+  return (
+    lote.estado === "GENERADO" ||
+    (lote.estado === "CARGADO_VALIDADOR" && lote.validacion_reintentable)
+  );
+}
+
+export function BotonAccionLote({ lote, acciones }: { lote: LoteAccion; acciones: AccionesLote }) {
+  const { estado } = lote;
   const { sesion } = usar_sesion();
   if (!puede_operar(sesion?.roles, estado)) return null;
 
-  if (estado === "GENERADO") {
+  if (pide_validacion(lote)) {
     return (
       <Boton
         variante="primario"
@@ -67,6 +111,17 @@ export function BotonAccionLote({ estado, acciones }: { estado: string; acciones
         disabled={acciones.remitir_iafas.isPending}
       >
         Remitir a la IAFAS
+      </Boton>
+    );
+  }
+  if (estado === "REMITIDO_IAFAS" && lote.monitoreo_excedido) {
+    return (
+      <Boton
+        variante="primario"
+        onClick={() => acciones.consultar_respuesta.mutate()}
+        disabled={acciones.consultar_respuesta.isPending || acciones.monitoreo_en_curso}
+      >
+        Consultar respuesta de la IAFAS
       </Boton>
     );
   }
@@ -114,13 +169,30 @@ export function ContenidoAccionLote({
   const { sesion } = usar_sesion();
   if (!puede_operar(sesion?.roles, estado)) return null;
 
-  if (estado === "GENERADO") return <ContenidoCargaValidador acciones={acciones} />;
+  if (_ESTADOS_VALIDACION.includes(estado)) return <ContenidoCargaValidador acciones={acciones} />;
   if (estado === "VALIDADO") {
     return (
       <MensajeErrorMutacion
         error={acciones.remitir_iafas.error}
         texto_por_defecto="No se pudo remitir el lote."
       />
+    );
+  }
+  if (estado === "REMITIDO_IAFAS") {
+    return (
+      <div>
+        {acciones.trabajo_monitoreo_id !== null ? (
+          <ProgresoTrabajo
+            trabajo_id={acciones.trabajo_monitoreo_id}
+            texto_en_curso="Consultando la respuesta de la IAFAS"
+            al_completar={acciones.al_completar_carga}
+          />
+        ) : null}
+        <MensajeErrorMutacion
+          error={acciones.consultar_respuesta.error}
+          texto_por_defecto="No se pudo consultar la respuesta de la IAFAS."
+        />
+      </div>
     );
   }
   return null;

@@ -9,10 +9,11 @@ respuesta HTTP directa."""
 from __future__ import annotations
 
 from datetime import date
+from decimal import Decimal
 from typing import Literal
 
 from fastapi import FastAPI
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from app.almacenamiento import AlmacenamientoPse
 
@@ -30,8 +31,28 @@ _SERIE_NOTA = {"C": "EC01", "D": "ED01"}
 
 
 class SolicitudEmision(BaseModel):
+    """El cliente y los montos son opcionales (2026-11-18) para no romper
+    llamadas antiguas; si llegan montos, deben cuadrar."""
+
     ruc_ipress: str = Field(min_length=1)
     codigo_ipress: str = Field(min_length=1)
+    tipo_comprobante: str | None = Field(default=None, min_length=2, max_length=2)
+    codigo_cliente: str | None = None
+    razon_social_cliente: str | None = None
+    valor_venta: Decimal | None = Field(default=None, ge=0)
+    igv: Decimal | None = Field(default=None, ge=0)
+    total: Decimal | None = Field(default=None, ge=0)
+
+    @model_validator(mode="after")
+    def _total_cuadra(self) -> SolicitudEmision:
+        valor_venta, igv, total = self.valor_venta, self.igv, self.total
+        if valor_venta is None and igv is None and total is None:
+            return self
+        if valor_venta is None or igv is None or total is None:
+            raise ValueError("valor_venta, igv y total van juntos")
+        if total != valor_venta + igv:
+            raise ValueError("el total debe ser el valor de venta mas el IGV")
+        return self
 
 
 class ComprobanteEmitido(BaseModel):
@@ -41,10 +62,19 @@ class ComprobanteEmitido(BaseModel):
     fecha_emision: date
 
 
+class ComprobanteReferido(BaseModel):
+    tipo_comprobante: str = Field(min_length=2, max_length=2)
+    serie: str = Field(min_length=1)
+    numero: str = Field(min_length=1)
+
+
 class SolicitudNota(BaseModel):
     ruc_ipress: str = Field(min_length=1)
     codigo_ipress: str = Field(min_length=1)
     tipo: Literal["C", "D"]
+    # Opcionales para no romper llamadas antiguas.
+    monto: Decimal | None = Field(default=None, ge=0)
+    comprobante_referido: ComprobanteReferido | None = None
 
 
 class NotaEmitida(BaseModel):
@@ -59,7 +89,7 @@ def construir_app(almacenamiento: AlmacenamientoPse) -> FastAPI:
     @app.post("/comprobantes", response_model=ComprobanteEmitido, status_code=201)
     def emitir_comprobante(solicitud: SolicitudEmision) -> ComprobanteEmitido:
         return ComprobanteEmitido(
-            tipo_documento_pago=_TIPO_DOCUMENTO_PAGO,
+            tipo_documento_pago=solicitud.tipo_comprobante or _TIPO_DOCUMENTO_PAGO,
             serie=_SERIE,
             numero=almacenamiento.siguiente_numero(),
             fecha_emision=date.today(),

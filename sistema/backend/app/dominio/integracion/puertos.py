@@ -8,6 +8,7 @@ from typing import Protocol
 
 from app.dominio.integracion.hallazgos import Hallazgo
 from app.dominio.integracion.lote import DocumentoLote
+from app.dominio.integracion.vigencia_lote import VigenciaLote
 
 
 class ErrorRepositorioLote(Exception):
@@ -120,6 +121,11 @@ class RepositorioLoteRemision(Protocol):
 
     async def obtener_lote_para_remision(self, lote_id: int) -> LoteParaRemitir | None:
         """None si el lote_id no existe."""
+        ...
+
+    async def vigencia_lote(self, lote_id: int) -> VigenciaLote | None:
+        """Lo que hace falta para saber si el lote sigue vigente; None si
+        no existe."""
         ...
 
     async def registrar_remision(

@@ -47,6 +47,7 @@ export function CamposUsuario({
                 type="checkbox"
                 id={`rol_${rol.valor}`}
                 checked={formulario.roles.has(rol.valor)}
+                disabled={formulario.es_propio}
                 onChange={() => formulario.alternar_rol(rol.valor)}
               />
               <label htmlFor={`rol_${rol.valor}`}>{rol.etiqueta}</label>

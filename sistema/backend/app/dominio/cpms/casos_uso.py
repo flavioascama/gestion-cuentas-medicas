@@ -8,16 +8,25 @@ from datetime import date, datetime
 from decimal import Decimal
 
 from app.dominio.cpms.normalizacion import es_codigo_candidato, normalizar
+from app.dominio.cpms.por_codificar import ErrorProcedimientoPorCodificarInexistente
 from app.dominio.cpms.puertos import (
     DatosConfirmacionCodigo,
     ErrorCodigoCpmsInexistente,
+    ErrorProcedimientoInvalido,
     MotorSugerenciaCpms,
     RepositorioCpms,
     VersionCpms,
 )
 from app.dominio.cpms.valores import FiltrosSugerencia, ResultadoSugerencia
+from app.dominio.orquestacion.correccion_validador import admite_correccion
 from app.dominio.orquestacion.puertos import RepositorioEstadoCuenta
-from app.dominio.puertos_comunes import MedicionPaso, RegistroMediciones, Reloj
+from app.dominio.puertos_comunes import (
+    Evento,
+    MedicionPaso,
+    RegistroEventos,
+    RegistroMediciones,
+    Reloj,
+)
 
 _MAXIMO_CANDIDATOS_DEVUELTOS = 10
 
@@ -26,6 +35,10 @@ ESTADOS_CODIFICABLES = frozenset({"REGISTRADA", "RECHAZADA", "GLOSADA", "GLOSADA
 
 
 class ErrorCuentaNoCodificable(Exception):
+    pass
+
+
+class ErrorProcedimientoInexistente(Exception):
     pass
 
 
@@ -118,6 +131,7 @@ class ConfirmacionCodigoCpms:
     cantidad: int
     monto_unitario: Decimal
     fecha: date
+    procedimiento_por_codificar_id: int | None = None
 
 
 class ConfirmarCodigoCpms:
@@ -131,16 +145,20 @@ class ConfirmarCodigoCpms:
         registro_mediciones: RegistroMediciones,
         reloj: Reloj,
         estado_cuenta: RepositorioEstadoCuenta | None = None,
+        registro_eventos: RegistroEventos | None = None,
     ) -> None:
         self._repositorio = repositorio
         self._registro_mediciones = registro_mediciones
         self._reloj = reloj
         self._estado_cuenta = estado_cuenta
+        self._registro_eventos = registro_eventos
 
     async def ejecutar(
         self, confirmacion: ConfirmacionCodigoCpms, actor: str, inicio_sugerencia: datetime
     ) -> int:
         await self._exigir_estado_codificable(confirmacion.cuenta_medica_id)
+        await self._exigir_pendiente(confirmacion)
+        await self._exigir_fecha_valida(confirmacion)
         version_id, _ = await self._repositorio.version_vigente()
         candidato = await self._repositorio.obtener_candidato(
             version_id, confirmacion.codigo_elegido
@@ -154,19 +172,65 @@ class ConfirmarCodigoCpms:
         fin = self._reloj.ahora()
         id_creado = await self._persistir(confirmacion, version_id, fin)
         await self._medir(confirmacion, actor, inicio_sugerencia, fin, version_id)
+        await self._registrar_evento(confirmacion, id_creado, actor)
         return id_creado
+
+    async def _registrar_evento(
+        self, confirmacion: ConfirmacionCodigoCpms, procedimiento_id: int, actor: str
+    ) -> None:
+        # Mismo patron que PROCEDIMIENTO_RETIRADO: sin la descripcion clinica,
+        # el diagnostico ni datos del paciente.
+        if self._registro_eventos is None:
+            return
+        await self._registro_eventos.registrar(
+            Evento(
+                cuenta_medica_id=confirmacion.cuenta_medica_id,
+                tipo_evento="PROCEDIMIENTO_CODIFICADO",
+                actor=actor,
+                estado_previo=None,
+                estado_nuevo=None,
+                datos={
+                    "procedimiento_id": procedimiento_id,
+                    "codigo_asignado": confirmacion.codigo_elegido,
+                    "posicion_aceptada": confirmacion.posicion_aceptada,
+                },
+            )
+        )
 
     async def _exigir_estado_codificable(self, cuenta_medica_id: int) -> None:
         """Tabla 69: nada despues de CERRADA o ANULADA; tampoco se codifica
         una cuenta ya facturada o en manos de la IAFAS. Se codifica antes
         de facturar, al corregir una rechazada (T-05) y al refacturar por
-        una glosa tecnica (CU-10)."""
+        una glosa tecnica (CU-10), o si el validador observo su lote."""
         if self._estado_cuenta is None:
             return
         estado = await self._estado_cuenta.obtener_estado(cuenta_medica_id)
-        if estado not in ESTADOS_CODIFICABLES:
+        if not await admite_correccion(
+            self._estado_cuenta, cuenta_medica_id, estado in ESTADOS_CODIFICABLES
+        ):
             raise ErrorCuentaNoCodificable(
                 f"La cuenta {cuenta_medica_id} esta en estado {estado!r}: no admite codificacion."
+            )
+
+    async def _exigir_fecha_valida(self, confirmacion: ConfirmacionCodigoCpms) -> None:
+        if confirmacion.fecha > self._reloj.ahora().date():
+            raise ErrorProcedimientoInvalido("La fecha del procedimiento es posterior a hoy.")
+        minima = await self._repositorio.fecha_minima_procedimiento(confirmacion.cuenta_medica_id)
+        if minima is not None and confirmacion.fecha < minima:
+            raise ErrorProcedimientoInvalido(
+                "La fecha del procedimiento es anterior a la prestacion de la cuenta."
+            )
+
+    async def _exigir_pendiente(self, confirmacion: ConfirmacionCodigoCpms) -> None:
+        pendiente_id = confirmacion.procedimiento_por_codificar_id
+        if pendiente_id is None:
+            return
+        if not await self._repositorio.procedimiento_por_codificar_pendiente(
+            confirmacion.cuenta_medica_id, pendiente_id
+        ):
+            raise ErrorProcedimientoPorCodificarInexistente(
+                f"La cuenta {confirmacion.cuenta_medica_id} no tiene pendiente el "
+                f"procedimiento por codificar {pendiente_id}."
             )
 
     async def _persistir(
@@ -188,6 +252,7 @@ class ConfirmarCodigoCpms:
                 monto_unitario=confirmacion.monto_unitario,
                 fecha=confirmacion.fecha,
                 confirmado_en=fin,
+                procedimiento_por_codificar_id=confirmacion.procedimiento_por_codificar_id,
             )
         )
 
@@ -215,6 +280,47 @@ class ConfirmarCodigoCpms:
                     "cpms_version_id": version_id,
                     "codigo_asignado": confirmacion.codigo_elegido,
                 },
+            )
+        )
+
+
+class QuitarProcedimiento:
+    """Retira un procedimiento codificado por error, en los mismos estados en
+    que se codifica (mismo patron que QuitarProductoDispensado)."""
+
+    def __init__(
+        self,
+        repositorio: RepositorioCpms,
+        estado_cuenta: RepositorioEstadoCuenta,
+        registro_eventos: RegistroEventos,
+    ) -> None:
+        self._repositorio = repositorio
+        self._estado_cuenta = estado_cuenta
+        self._registro_eventos = registro_eventos
+
+    async def ejecutar(self, cuenta_medica_id: int, procedimiento_id: int, actor: str) -> None:
+        estado = await self._estado_cuenta.obtener_estado(cuenta_medica_id)
+        if estado is None:
+            raise ErrorProcedimientoInexistente(f"No existe la cuenta {cuenta_medica_id}.")
+        if not await admite_correccion(
+            self._estado_cuenta, cuenta_medica_id, estado in ESTADOS_CODIFICABLES
+        ):
+            raise ErrorCuentaNoCodificable(
+                f"La cuenta {cuenta_medica_id} esta en estado {estado!r}: no admite codificacion."
+            )
+        codigo = await self._repositorio.quitar_procedimiento(cuenta_medica_id, procedimiento_id)
+        if codigo is None:
+            raise ErrorProcedimientoInexistente(
+                f"La cuenta {cuenta_medica_id} no tiene el procedimiento {procedimiento_id}."
+            )
+        await self._registro_eventos.registrar(
+            Evento(
+                cuenta_medica_id=cuenta_medica_id,
+                tipo_evento="PROCEDIMIENTO_RETIRADO",
+                actor=actor,
+                estado_previo=None,
+                estado_nuevo=None,
+                datos={"procedimiento_id": procedimiento_id, "codigo_asignado": codigo},
             )
         )
 

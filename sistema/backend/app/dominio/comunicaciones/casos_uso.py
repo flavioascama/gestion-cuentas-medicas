@@ -23,6 +23,10 @@ from decimal import Decimal, InvalidOperation
 from enum import StrEnum
 from typing import Any, Protocol
 
+from app.dominio.comunicaciones.sustento_respuesta import (
+    linea_comprobante,
+    sustento_con_comprobante,
+)
 from app.dominio.liquidacion.casos_uso import ConciliarPago, RegistrarLiquidacion
 from app.dominio.liquidacion.errores import ErrorLiquidacionInexistente, ErrorPagoYaConciliado
 from app.dominio.observaciones.casos_uso import RegistrarObservacion
@@ -35,6 +39,7 @@ from app.dominio.observaciones.conformidad import (
 from app.dominio.observaciones.errores import ErrorMotivoInexistente
 from app.dominio.observaciones.valores import DatosRegistroObservacion
 from app.dominio.orquestacion.errores import ErrorContinuidadEstados, ErrorTransicionNoDefinida
+from app.dominio.pse.documentos import RepositorioDocumentosPago
 from app.dominio.puertos_comunes import Evento, RegistroEventos, Reloj, RepositorioTrabajos
 
 ACTOR_ROBOT_COMUNICACIONES = "robot_comunicaciones_iafas"
@@ -207,6 +212,9 @@ class ProcesarComunicacionIafas:
                     es_parcial=bool(datos.get("es_parcial", False)),
                     detalle_campo_objetado=str(datos.get("detalle") or "") or None,
                     actor=actor,
+                    monto_observado=(
+                        _monto(datos, "monto_glosado") if datos.get("monto_glosado") else None
+                    ),
                 )
             )
             return resultado.observacion_id
@@ -262,17 +270,29 @@ class ProcesarComunicacionIafas:
 
 class EncolarRespuestaIafas:
     """Tras registrar la respuesta a una observacion que llego de la IAFAS,
-    encola su remision al portal de la aseguradora."""
+    encola su remision al portal de la aseguradora. Si la cuenta se
+    refacturo (reemplazo o nota), el sustento entregado lleva al final el
+    comprobante vigente; lo guardado como respuesta no cambia."""
 
     def __init__(
         self,
         repositorio: RepositorioComunicaciones,
         trabajos: RepositorioTrabajos,
         reloj: Reloj,
+        documentos: RepositorioDocumentosPago | None = None,
     ) -> None:
         self._repositorio = repositorio
         self._trabajos = trabajos
         self._reloj = reloj
+        self._documentos = documentos
+
+    async def _sustento_a_entregar(
+        self, cuenta_medica_id: int | None, sustento: str | None
+    ) -> str | None:
+        if self._documentos is None or cuenta_medica_id is None:
+            return sustento
+        linea = linea_comprobante(await self._documentos.documentos(cuenta_medica_id))
+        return sustento if linea is None else sustento_con_comprobante(sustento, linea)
 
     async def ejecutar(
         self, observacion_id: int, respuesta: str, sustento: str | None, actor: str
@@ -288,7 +308,7 @@ class EncolarRespuestaIafas:
                 "cuenta_medica_id": origen.cuenta_medica_id,
                 "observacion_id": observacion_id,
                 "respuesta": respuesta,
-                "sustento": sustento,
+                "sustento": await self._sustento_a_entregar(origen.cuenta_medica_id, sustento),
                 "usuario_origen": actor,
             },
             proximo_intento=self._reloj.ahora(),

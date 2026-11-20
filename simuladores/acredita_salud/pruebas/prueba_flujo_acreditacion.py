@@ -68,6 +68,11 @@ async def prueba_consulta_iafas_muestra_vigencia_y_plan(cliente_autenticado: Asy
     # data-testid, no por la posicion que ocupan en la tabla visible.
     assert 'data-testid="iafas-plan">PLAN DE PRUEBA<' in respuesta.text
     assert 'data-testid="iafas-vigente-hasta">2027-01-01<' in respuesta.text
+    # Codigo de asegurado, tipo de afiliacion e IAFAS: los lee el robot.
+    assert 'data-testid="iafas-codigo-asegurado">00001-11111111<' in respuesta.text
+    assert 'data-testid="iafas-tipo-afiliacion">1<' in respuesta.text
+    assert 'data-testid="iafas-codigo-iafas">00001<' in respuesta.text
+    assert "<th>Tipo de afiliación</th><td>Regular</td>" in respuesta.text
 
 
 async def prueba_consulta_iafas_muestra_motivo_de_cancelacion(

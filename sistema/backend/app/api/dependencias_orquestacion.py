@@ -11,6 +11,9 @@ from app.dominio.orquestacion.casos_uso import CorregirCuentaRechazada, ObtenerR
 from app.dominio.orquestacion.puertos import RepositorioEstadoCuenta, RepositorioRechazoCuenta
 from app.dominio.puertos_comunes import Observabilidad
 from app.infraestructura.persistencia.base import obtener_sesion
+from app.infraestructura.persistencia.montos_comprobante_sql import (
+    RepositorioCotejoComprobanteSql,
+)
 from app.infraestructura.persistencia.repositorio_rechazo_cuenta_sql import (
     RepositorioRechazoCuentaSql,
 )
@@ -32,5 +35,8 @@ def construir_corregir_cuenta_rechazada(
     estado_cuenta: RepositorioEstadoCuenta = Depends(obtener_repositorio_estado_cuenta),
     rechazos: RepositorioRechazoCuenta = Depends(obtener_repositorio_rechazo_cuenta),
     observabilidad: Observabilidad = Depends(obtener_observabilidad),
+    sesion: AsyncSession = Depends(obtener_sesion),
 ) -> CorregirCuentaRechazada:
-    return CorregirCuentaRechazada(estado_cuenta, rechazos, observabilidad)
+    return CorregirCuentaRechazada(
+        estado_cuenta, rechazos, observabilidad, RepositorioCotejoComprobanteSql(sesion)
+    )

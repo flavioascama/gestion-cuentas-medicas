@@ -7,6 +7,7 @@ from __future__ import annotations
 from dataclasses import replace
 from datetime import date, datetime, time
 from decimal import Decimal
+from types import SimpleNamespace
 
 from app.dominio.integracion.lote import (
     ContextoLote,
@@ -15,6 +16,10 @@ from app.dominio.integracion.lote import (
     ProcedimientoLote,
     ProductoLote,
 )
+from app.dominio.integracion.pendientes_lote import COMPROBANTE_DESFASADO
+from app.dominio.pse.puertos import MontosComprobante
+from app.infraestructura.persistencia.modelos_farmacia import ProductoFacturadoModelo
+from app.infraestructura.persistencia.repositorio_lote_sql import RepositorioLoteFacturacionSql
 from app.infraestructura.tedef.carga_esquema import cargar_esquema
 from app.infraestructura.tedef.constructor_lote import (
     construir_t1,
@@ -23,6 +28,7 @@ from app.infraestructura.tedef.constructor_lote import (
     construir_t4,
 )
 from app.infraestructura.tedef.escritor_ancho_fijo import escribir_registro
+from app.infraestructura.tedef.generar_lote import _pendientes_por_cuenta
 from app.infraestructura.tedef.montos_lote import calcular_gastos, calcular_montos_facturados
 
 _ESQUEMA = cargar_esquema()
@@ -49,7 +55,7 @@ def _documento(procedimientos: tuple[ProcedimientoLote, ...]) -> DocumentoLote:
         codigo_asegurado="AS000001",
         tipo_afiliacion="1",
         codigo_autorizacion="AUT0000001",
-        tipo_documento_autorizacion="03",
+        tipo_documento_autorizacion="01",
         fecha_prestacion=date(2026, 9, 15),
         hora_prestacion=time(9, 0, 0),
         diagnostico_principal_cie10="E119",
@@ -179,6 +185,38 @@ def prueba_t2_se_escribe_sin_error_de_longitud() -> None:
     assert len(linea) == _ESQUEMA["T2"].longitud_registro
 
 
+def prueba_t2_sin_carta_el_segundo_documento_es_99_y_el_numero_va_en_blanco() -> None:
+    procedimiento = _procedimiento(1, "80.00")
+    documento = _documento((procedimiento,))
+    valores = construir_t2(_ESQUEMA["T2"], _contexto(), documento, (procedimiento,))
+    assert valores[12] == "01"
+    assert valores[14] == "99"
+    assert valores[15] == " " * 20
+
+
+def prueba_t2_con_carta_el_segundo_documento_es_03_con_su_numero() -> None:
+    procedimiento = _procedimiento(1, "80.00")
+    documento = _documento((procedimiento,))
+    documento = replace(
+        documento, prestacion=replace(documento.prestacion, numero_carta_garantia="CG-2026-0001")
+    )
+    valores = construir_t2(_ESQUEMA["T2"], _contexto(), documento, (procedimiento,))
+    assert valores[14] == "03"
+    assert valores[15] == "CG-2026-0001".rjust(20)
+    assert len(escribir_registro(_ESQUEMA["T2"], valores)) == _ESQUEMA["T2"].longitud_registro
+
+
+def prueba_t2_recorta_el_numero_de_carta_que_no_cabe_en_el_campo() -> None:
+    procedimiento = _procedimiento(1, "80.00")
+    documento = _documento((procedimiento,))
+    numero = "C" * 30
+    documento = replace(
+        documento, prestacion=replace(documento.prestacion, numero_carta_garantia=numero)
+    )
+    valores = construir_t2(_ESQUEMA["T2"], _contexto(), documento, (procedimiento,))
+    assert valores[15] == "C" * 20
+
+
 def prueba_t2_total_gastos_cubiertos_neta_los_copagos() -> None:
     procedimientos = (
         _procedimiento(1, "100.00", copago_variable="10.00"),
@@ -290,3 +328,69 @@ def prueba_el_comprobante_cobra_la_farmacia() -> None:
     assert montos.igv == Decimal("27.00")
     # Valor de venta mas IGV da el total aunque haya productos exonerados.
     assert montos.valor_venta + montos.igv == montos.total_facturado
+
+
+def prueba_procedimiento_y_producto_con_coaseguro_aportan_la_misma_base() -> None:
+    # Punto 3: lo no cubierto incluye el copago tanto en T3 como en T4.
+    acreditacion = SimpleNamespace(
+        tipo_copago="coaseguro", porcentaje_coaseguro=20, monto_copago_fijo=None
+    )
+    procedimiento = RepositorioLoteFacturacionSql._a_procedimiento_lote(  # noqa: SLF001
+        1,
+        SimpleNamespace(
+            cantidad=1,
+            monto_unitario=Decimal("100.00"),
+            codigo_asignado="99201",
+            descripcion_registrada="Consulta",
+            fecha=date(2026, 9, 15),
+        ),
+        acreditacion,
+        es_el_primero=True,
+    )
+    producto = RepositorioLoteFacturacionSql._a_producto_lote(  # noqa: SLF001
+        ProductoFacturadoModelo(
+            correlativo=1,
+            tipo_producto="M",
+            catalogo="1",
+            codigo_producto="0380652555906",
+            fecha_dispensacion=date(2026, 9, 15),
+            cantidad_venta=Decimal("1"),
+            tipo_unidad_dispensacion="1",
+            monto_unitario_sin_impuesto=Decimal("100.00"),
+            monto_presentado=Decimal("100.00"),
+            monto_no_cubierto=Decimal("0.00"),
+            exento_igv="A",
+        ),
+        acreditacion,
+    )
+    assert (producto.copago, producto.monto_no_cubierto) == (Decimal("20.00"), Decimal("20.00"))
+    base_procedimiento = calcular_montos_facturados(
+        "01", calcular_gastos((procedimiento,), ()), Decimal("0.18")
+    ).base_imponible
+    base_producto = calcular_montos_facturados(
+        "01", calcular_gastos((), (producto,)), Decimal("0.18")
+    ).base_imponible
+    assert base_procedimiento == base_producto == Decimal("60.00")
+
+
+def _montos_comprobante(total: str) -> MontosComprobante:
+    return MontosComprobante(
+        valor_venta=Decimal(total), igv=Decimal("18.00"), total=Decimal(total) + Decimal("18.00")
+    )
+
+
+def prueba_un_comprobante_desfasado_queda_como_pendiente_de_su_cuenta() -> None:
+    # Punto 4: el comprobante guardo 120.00 y la cuenta hoy factura 100.00.
+    documento = replace(
+        _documento((_procedimiento(1, "100.00"),)), montos_comprobante=_montos_comprobante("120.00")
+    )
+    pendientes = _pendientes_por_cuenta(_ESQUEMA, _contexto(), [documento])
+    assert [p.pendientes for p in pendientes] == [(COMPROBANTE_DESFASADO,)]
+
+
+def prueba_sin_montos_guardados_el_comprobante_no_queda_desfasado() -> None:
+    al_dia = replace(
+        _documento((_procedimiento(1, "100.00"),)), montos_comprobante=_montos_comprobante("100.00")
+    )
+    antiguo = _documento((_procedimiento(1, "100.00"),))
+    assert _pendientes_por_cuenta(_ESQUEMA, _contexto(), [al_dia, antiguo]) == ()

@@ -6,6 +6,7 @@ from __future__ import annotations
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.dominio.acreditacion.valores import es_acreditable
 from app.dominio.integracion.puertos_ingesta import (
     AseguradoRegistrado,
     DatosNuevaCuenta,
@@ -27,6 +28,13 @@ from app.infraestructura.persistencia.modelos_integracion import (
     LoteFacturacionModelo,
     ProcedimientoFacturadoModelo,
 )
+from app.infraestructura.persistencia.repositorio_por_codificar_sql import (
+    contar_por_codificar,
+    tiene_carta_garantia,
+)
+from app.infraestructura.persistencia.revision_contingencia_sql import (
+    acreditacion_vigente_no_conforme,
+)
 
 
 class RepositorioIngestaCuentasSql(RepositorioIngestaCuentas):
@@ -41,7 +49,7 @@ class RepositorioIngestaCuentasSql(RepositorioIngestaCuentas):
         ipress_id = await self._sesion.scalar(sa.select(IpressModelo.id).limit(1))
         assert ipress_id is not None, "No hay ninguna IPRESS sembrada (Seccion 6.1)."
 
-        asegurado_id = await self._obtener_o_crear_asegurado(datos)
+        asegurado_id = await self.obtener_o_crear_asegurado(datos)
 
         cuenta = CuentaMedicaModelo(
             identificacion_interna="",  # se completa abajo, ya con el id
@@ -83,7 +91,8 @@ class RepositorioIngestaCuentasSql(RepositorioIngestaCuentas):
             iafas_id=asegurado.iafas_id,
         )
 
-    async def _obtener_o_crear_asegurado(self, datos: DatosNuevaCuenta) -> int:
+    async def obtener_o_crear_asegurado(self, datos: DatosNuevaCuenta) -> int:
+        """Tambien la usa la importacion de la atencion (2026-11-19)."""
         existente = await self._asegurado(
             datos.tipo_documento_asegurado, datos.numero_documento_asegurado
         )
@@ -112,14 +121,11 @@ class RepositorioCompletitudCuentaSql(RepositorioCompletitudCuenta):
         if cuenta is None:
             return None
 
-        tiene_acreditacion = (
-            await self._sesion.scalar(
-                sa.select(sa.literal(True))
-                .select_from(AcreditacionModelo)
-                .where(AcreditacionModelo.cuenta_id == cuenta_id)
-                .limit(1)
-            )
-            or False
+        condicion = await self._sesion.scalar(
+            sa.select(AcreditacionModelo.condicion_cobertura)
+            .where(AcreditacionModelo.cuenta_id == cuenta_id)
+            .order_by(AcreditacionModelo.id.desc())  # la vigente
+            .limit(1)
         )
         cantidad_procedimientos = (
             await self._sesion.scalar(
@@ -141,11 +147,16 @@ class RepositorioCompletitudCuentaSql(RepositorioCompletitudCuenta):
 
         return EstadoPiezasCuenta(
             estado_cuenta=cuenta.estado,
-            tiene_acreditacion=tiene_acreditacion,
+            tiene_acreditacion=condicion is not None,
+            acreditable=condicion is None or es_acreditable(condicion),
             cantidad_procedimientos=cantidad_procedimientos,
             tiene_comprobante=tiene_comprobante,
             tiene_diagnostico=bool(cuenta.diagnostico_principal_cie10),
             lote=await self._lote_de(cuenta_id),
+            procedimientos_por_codificar=await contar_por_codificar(self._sesion, cuenta_id),
+            exige_carta_garantia=cuenta.tipo_atencion == "HOSPITALIZACION",
+            tiene_carta_garantia=await tiene_carta_garantia(self._sesion, cuenta_id),
+            cobertura_no_conforme=await acreditacion_vigente_no_conforme(self._sesion, cuenta_id),
         )
 
     async def _lote_de(self, cuenta_id: int) -> LoteDeCuenta | None:

@@ -26,6 +26,7 @@ from app.dominio.acceso.entidades import NombreRol
 from app.dominio.acceso.errores import (
     ClaveDebilError,
     NombreUsuarioDuplicadoError,
+    NoPuedeCambiarSusRolesError,
     RolDesconocidoError,
     RolesRequeridosError,
     UsuarioNoEncontradoError,
@@ -102,6 +103,10 @@ async def actualizar_usuario(
     except UsuarioNoEncontradoError as error:
         raise ErrorAplicacion(
             "USUARIO_NO_ENCONTRADO", str(error), estado_http=status.HTTP_404_NOT_FOUND
+        ) from error
+    except NoPuedeCambiarSusRolesError as error:
+        raise ErrorAplicacion(
+            "NO_PUEDE_CAMBIAR_SUS_ROLES", str(error), estado_http=status.HTTP_403_FORBIDDEN
         ) from error
     except RolesRequeridosError as error:
         raise ErrorAplicacion(

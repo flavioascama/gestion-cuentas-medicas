@@ -14,6 +14,10 @@ class ErrorCpms(Exception):
     pass
 
 
+class ErrorProcedimientoInvalido(ErrorCpms):
+    """La fecha del procedimiento no cuadra con la cuenta o con hoy."""
+
+
 class ErrorCodigoCpmsInexistente(ErrorCpms):
     """Seccion 8.2: 'un codigo inexistente se rechaza con error'. Sostiene
     el indicador de 100% de coincidencia del R1.3 (Seccion 1.3)."""
@@ -62,6 +66,24 @@ class RepositorioCpms(Protocol):
         del catalogo'). Devuelve el id creado."""
         ...
 
+    async def procedimiento_por_codificar_pendiente(
+        self, cuenta_id: int, procedimiento_por_codificar_id: int
+    ) -> bool:
+        """True si ese procedimiento por codificar es de la cuenta y sigue
+        pendiente."""
+        ...
+
+    async def fecha_minima_procedimiento(self, cuenta_id: int) -> date | None:
+        """Fecha desde la cual puede haber un procedimiento: el ingreso en una
+        hospitalizacion, la prestacion en cualquier otra cuenta; None si la
+        cuenta no existe."""
+        ...
+
+    async def quitar_procedimiento(self, cuenta_id: int, procedimiento_id: int) -> str | None:
+        """Borra el procedimiento de la cuenta; devuelve su codigo o None si
+        no existe en esa cuenta. Ninguna otra tabla lo referencia."""
+        ...
+
 
 @dataclass(frozen=True, slots=True)
 class VersionCpms:
@@ -94,3 +116,6 @@ class DatosConfirmacionCodigo:
     monto_unitario: Decimal
     fecha: date
     confirmado_en: datetime
+    # El procedimiento por codificar que este codigo confirma (atencion
+    # importada); None cuando el auditor lo agrega a mano.
+    procedimiento_por_codificar_id: int | None = None

@@ -20,7 +20,11 @@ from app.infraestructura.observabilidad.registro import configurar_registro
 configurar_registro(obtener_configuracion().nivel_log)
 
 from app.api.middleware_correlacion import middleware_correlacion  # noqa: E402
+from app.api.rutas_acreditacion import router as router_acreditacion  # noqa: E402
 from app.api.rutas_administracion import router as router_administracion  # noqa: E402
+from app.api.rutas_atenciones_hospitalarias import (  # noqa: E402
+    router as router_atenciones_hospitalarias,
+)
 from app.api.rutas_auditoria import router as router_auditoria  # noqa: E402
 from app.api.rutas_auth import router as router_auth  # noqa: E402
 from app.api.rutas_avisos import router as router_avisos  # noqa: E402
@@ -75,7 +79,9 @@ app.include_router(router_salud)
 app.include_router(router_auth)
 app.include_router(router_avisos)
 app.include_router(router_usuarios)
+app.include_router(router_atenciones_hospitalarias)
 app.include_router(router_cuentas)
+app.include_router(router_acreditacion)
 app.include_router(router_iafas)
 app.include_router(router_cpms)
 app.include_router(router_lotes)

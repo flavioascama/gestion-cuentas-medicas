@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import contains_eager
 
 from app.dominio.integracion.casos_uso import TIPO_EVENTO_MONITOREO_EXCEDIDO
+from app.dominio.integracion.casos_uso_validacion import TIPO_TRABAJO_CARGAR_LOTE_VALIDADOR
 from app.dominio.integracion.hallazgos import Hallazgo
 from app.dominio.integracion.puertos_consulta import (
     CuentaDelLote,
@@ -21,6 +22,7 @@ from app.dominio.integracion.puertos_consulta import (
     ResumenAcuse,
     ResumenLote,
 )
+from app.infraestructura.cola.repositorio_trabajos_sql import RepositorioTrabajosSql
 from app.infraestructura.persistencia.cuentas_por_linea_sql import (
     CuentasPorLinea,
     cuenta_de_linea,
@@ -236,6 +238,13 @@ class RepositorioLotesConsultaSql(RepositorioLotesConsulta):
             version_esquema_tedef=lote.version_esquema_tedef,
             version_mapeo=lote.version_mapeo,
             monitoreo_excedido=lote.id in await self._lotes_excedidos([lote.id]),
+            validacion_reintentable=lote.estado == "CARGADO_VALIDADOR"
+            and not await self._validacion_en_curso(lote.id),
+        )
+
+    async def _validacion_en_curso(self, lote_id: int) -> bool:
+        return await RepositorioTrabajosSql(self._sesion).hay_sin_terminar(
+            TIPO_TRABAJO_CARGAR_LOTE_VALIDADOR, lote_id
         )
 
     async def obtener_prevalidacion(self, lote_id: int) -> InformePrevalidacionLote | None:

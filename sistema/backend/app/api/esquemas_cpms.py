@@ -70,7 +70,7 @@ class SolicitudConfirmarProcedimiento(BaseModel):
     codigo_elegido: str = Field(min_length=1, max_length=20)
     posicion_aceptada: int | None = None
     cantidad: int = Field(gt=0)
-    monto_unitario: Decimal
+    monto_unitario: Decimal = Field(gt=0)
     fecha: date
     # Instante en que el cliente pidio las sugerencias (Seccion 6.4: la
     # medicion "codificacion_total" cuenta desde ahi, no desde que llega
@@ -78,6 +78,18 @@ class SolicitudConfirmarProcedimiento(BaseModel):
     # devolver el instante que le llego en la respuesta de
     # GET /cpms/sugerencias.
     inicio_sugerencia: datetime
+    # El procedimiento por codificar de la atencion importada que este
+    # codigo confirma; se omite al agregar un procedimiento a mano.
+    procedimiento_por_codificar_id: int | None = None
+
+
+class ProcedimientoPorCodificarRespuesta(BaseModel):
+    id: int
+    descripcion: str
+    area: str
+    cantidad: int
+    monto_unitario: Decimal
+    fecha: date
 
 
 class UltimoPrecioRespuesta(BaseModel):

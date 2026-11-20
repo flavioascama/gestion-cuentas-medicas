@@ -18,7 +18,7 @@ from decimal import Decimal
 from typing import Any
 
 import sqlalchemy as sa
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, aliased, mapped_column, relationship
 
 from app.infraestructura.persistencia.base import Base
 from app.infraestructura.persistencia.cifrado_columnas import TextoCifrado, indice_ciego
@@ -117,10 +117,12 @@ class AcreditacionModelo(Base):
     __tablename__ = "acreditacion"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    # Una cuenta puede tener varias: cada nueva consulta admitida guarda
+    # otra; la vigente es la mas reciente (id_acreditacion_vigente).
     cuenta_id: Mapped[int] = mapped_column(
-        sa.ForeignKey("cuenta_medica.id", ondelete="CASCADE"), unique=True, nullable=False
+        sa.ForeignKey("cuenta_medica.id", ondelete="CASCADE"), index=True, nullable=False
     )
-    condicion_cobertura: Mapped[str] = mapped_column(sa.String(20), nullable=False)
+    condicion_cobertura: Mapped[str] = mapped_column(sa.String(120), nullable=False)
     codigo_autorizacion: Mapped[str] = mapped_column(sa.String(20), nullable=False)
     tipo_documento_autorizacion: Mapped[str] = mapped_column(sa.String(2), nullable=False)
     codigo_asegurado: Mapped[str] = mapped_column(sa.String(20), nullable=False)
@@ -138,7 +140,22 @@ class AcreditacionModelo(Base):
     componente_ejecutor: Mapped[str] = mapped_column(sa.String(50), nullable=False)
     ruta_evidencia: Mapped[str | None] = mapped_column(sa.String(500), nullable=True)
 
-    cuenta: Mapped[CuentaMedicaModelo] = relationship(back_populates="acreditacion")
+    cuenta: Mapped[CuentaMedicaModelo] = relationship()
+
+
+def id_acreditacion_vigente(cuenta_id: Any) -> sa.ScalarSelect[int]:
+    """El id de la acreditacion vigente (la mas reciente) de la cuenta."""
+    anterior = aliased(AcreditacionModelo)
+    return (
+        sa.select(sa.func.max(anterior.id)).where(anterior.cuenta_id == cuenta_id).scalar_subquery()
+    )
+
+
+def _union_acreditacion_vigente() -> sa.ColumnElement[bool]:
+    return sa.and_(
+        AcreditacionModelo.cuenta_id == CuentaMedicaModelo.id,
+        AcreditacionModelo.id == id_acreditacion_vigente(AcreditacionModelo.cuenta_id),
+    )
 
 
 class CuentaMedicaModelo(Base):
@@ -162,12 +179,25 @@ class CuentaMedicaModelo(Base):
     creado_en: Mapped[datetime] = mapped_column(
         sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
     )
+    # Atencion importada del sistema hospitalario (2026-11-19); la cuenta
+    # manual queda AMBULATORIA y sin el resto. Los diagnosticos secundarios
+    # (separados por comas) se cifran como el principal.
+    tipo_atencion: Mapped[str] = mapped_column(
+        sa.String(15), nullable=False, default="AMBULATORIA", server_default="AMBULATORIA"
+    )
+    atencion_origen_id: Mapped[str | None] = mapped_column(sa.String(40), unique=True)
+    colegiatura_medico: Mapped[str | None] = mapped_column(sa.String(6))
+    nombre_medico: Mapped[str | None] = mapped_column(sa.String(200))
+    diagnosticos_secundarios_cie10: Mapped[str | None] = mapped_column(TextoCifrado())
+    fecha_ingreso_hospitalario: Mapped[date | None] = mapped_column(sa.Date)
+    fecha_alta_hospitalaria: Mapped[date | None] = mapped_column(sa.Date)
 
     asegurado: Mapped[AseguradoModelo] = relationship()
     iafas: Mapped[IafasModelo] = relationship()
     ipress: Mapped[IpressModelo] = relationship()
+    # Solo la vigente; las anteriores quedan en la tabla.
     acreditacion: Mapped[AcreditacionModelo | None] = relationship(
-        back_populates="cuenta", uselist=False
+        primaryjoin=_union_acreditacion_vigente, viewonly=True, uselist=False
     )
     procedimientos: Mapped[list[ProcedimientoFacturadoModelo]] = relationship(
         back_populates="cuenta", order_by="ProcedimientoFacturadoModelo.id"
@@ -180,6 +210,10 @@ class CuentaMedicaModelo(Base):
         sa.CheckConstraint(
             "estado IN (" + ",".join(f"'{e}'" for e in ESTADOS_CUENTA_MEDICA) + ")",
             name="ck_cuenta_medica_estado",
+        ),
+        sa.CheckConstraint(
+            "tipo_atencion IN ('AMBULATORIA','EMERGENCIA','HOSPITALIZACION')",
+            name="ck_cuenta_medica_tipo_atencion",
         ),
     )
 

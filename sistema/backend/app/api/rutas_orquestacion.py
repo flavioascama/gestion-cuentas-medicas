@@ -21,7 +21,10 @@ from app.compartido.errores import ErrorAplicacion
 from app.dominio.acceso.entidades import NombreRol
 from app.dominio.acceso.puertos import CargaSesion
 from app.dominio.orquestacion.casos_uso import CorregirCuentaRechazada, ObtenerRechazoCuenta
-from app.dominio.orquestacion.errores import ErrorTransicionNoDefinida
+from app.dominio.orquestacion.errores import (
+    ErrorComprobanteDesfasado,
+    ErrorTransicionNoDefinida,
+)
 
 router = APIRouter(prefix="/cuentas/{cuenta_id}", tags=["orquestacion"])
 
@@ -59,5 +62,9 @@ async def corregir_cuenta_rechazada(
     except ErrorTransicionNoDefinida as error:
         raise ErrorAplicacion(
             "TRANSICION_NO_VALIDA", str(error), estado_http=status.HTTP_409_CONFLICT
+        ) from error
+    except ErrorComprobanteDesfasado as error:
+        raise ErrorAplicacion(
+            "COMPROBANTE_DESFASADO", str(error), estado_http=status.HTTP_409_CONFLICT
         ) from error
     return RespuestaCorreccionReenvio(estado_cuenta=estado_nuevo)

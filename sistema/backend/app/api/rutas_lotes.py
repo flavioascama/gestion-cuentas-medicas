@@ -1,12 +1,11 @@
-"""Seccion 11: /lotes. `POST /lotes`, `GET /lotes`, `GET /lotes/{id}`,
-`GET /lotes/{id}/prevalidacion` y `GET /lotes/{id}/validacion-oficial`
-para analista y jefe; `POST /lotes/{id}/carga-validador`, `POST
-/lotes/{id}/remision-iafas`, `GET /lotes/{id}/acuses` y `POST
-/lotes/envio-susalud` solo para analista (Fase 18)."""
+"""Seccion 11: /lotes. Matriz de permisos de la tesis: "Generar y validar
+el lote de facturacion", analista y jefe (`POST /lotes`, sugeridos,
+prevalidacion, `POST /lotes/{id}/carga-validador` y las consultas);
+"Remitir el lote y enviar a SUSALUD los lotes del periodo", solo analista
+(`POST /lotes/{id}/remision-iafas`, `POST /lotes/{id}/monitoreo` y `POST
+/lotes/envio-susalud`)."""
 
 from __future__ import annotations
-
-from pathlib import Path
 
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import FileResponse
@@ -24,6 +23,7 @@ from app.api.dependencias_lotes import (
     construir_remitir_lote,
     construir_solicitar_carga_en_validador,
     construir_solicitar_envio_susalud,
+    construir_solicitar_monitoreo_respuesta,
     construir_sugerir_lotes,
 )
 from app.api.esquemas_lotes import (
@@ -42,8 +42,10 @@ from app.api.esquemas_lotes import (
     SolicitudGenerarLote,
 )
 from app.compartido.errores import ErrorAplicacion
+from app.compartido.rutas import ruta_local_s01
 from app.dominio.acceso.entidades import NombreRol
 from app.dominio.acceso.puertos import CargaSesion
+from app.dominio.integracion.casos_uso import SolicitarMonitoreoRespuestaIafas
 from app.dominio.integracion.casos_uso_consulta import (
     ListarLotes,
     ObtenerAcusesLote,
@@ -58,14 +60,22 @@ from app.dominio.integracion.casos_uso_validacion import (
     SolicitarEnvioSusalud,
 )
 from app.dominio.integracion.lotes_sugeridos import ErrorPeriodoLote, SugerirLotes
-from app.dominio.integracion.puertos import ErrorLoteNoRemisible, ErrorRepositorioLote
+from app.dominio.integracion.puertos import (
+    ErrorLoteNoMonitoreable,
+    ErrorLoteNoRemisible,
+    ErrorRepositorioLote,
+)
 from app.dominio.integracion.puertos_validacion import ErrorLoteNoCargable
+from app.dominio.integracion.vigencia_lote import ErrorLoteDesactualizado
 from app.infraestructura.tedef.generar_lote import GenerarLote
 from app.infraestructura.tedef.remitir_lote import RemitirLote
 
 router = APIRouter(prefix="/lotes", tags=["lotes"])
 
 _LECTURA = requiere_rol(NombreRol.ANALISTA, NombreRol.JEFE)
+# "Generar y validar el lote de facturacion": analista y jefe.
+_GENERAR_Y_VALIDAR = requiere_rol(NombreRol.ANALISTA, NombreRol.JEFE)
+# "Remitir el lote y enviar a SUSALUD los lotes del periodo": solo analista.
 _SOLO_ANALISTA = requiere_rol(NombreRol.ANALISTA)
 
 
@@ -73,7 +83,7 @@ _SOLO_ANALISTA = requiere_rol(NombreRol.ANALISTA)
 async def generar_lote(
     solicitud: SolicitudGenerarLote,
     caso_uso: GenerarLote = Depends(construir_generar_lote),
-    actor: CargaSesion = Depends(_LECTURA),
+    actor: CargaSesion = Depends(_GENERAR_Y_VALIDAR),
 ) -> RespuestaGenerarLote:
     try:
         resultado = await caso_uso.ejecutar(
@@ -90,7 +100,7 @@ async def generar_lote(
 @router.get("/sugeridos", response_model=list[LoteSugeridoRespuesta])
 async def sugerir_lotes(
     caso_uso: SugerirLotes = Depends(construir_sugerir_lotes),
-    _actor: CargaSesion = Depends(_LECTURA),
+    _actor: CargaSesion = Depends(_GENERAR_Y_VALIDAR),
 ) -> list[LoteSugeridoRespuesta]:
     """Cuentas facturadas sin lote en curso, agrupadas por IAFAS y periodo."""
     return [LoteSugeridoRespuesta.desde_valor(s) for s in await caso_uso.ejecutar()]
@@ -128,7 +138,7 @@ async def obtener_lote(
 async def obtener_prevalidacion_lote(
     lote_id: int,
     caso_uso: ObtenerPrevalidacionLote = Depends(construir_obtener_prevalidacion_lote),
-    _actor: CargaSesion = Depends(_LECTURA),
+    _actor: CargaSesion = Depends(_GENERAR_Y_VALIDAR),
 ) -> InformePrevalidacionRespuesta:
     informe = await caso_uso.ejecutar(lote_id)
     if informe is None:
@@ -149,13 +159,19 @@ async def solicitar_carga_en_validador(
     lote_id: int,
     caso_uso: SolicitarCargaEnValidador = Depends(construir_solicitar_carga_en_validador),
     # Tabla 46: "Generar y validar el lote", analista y jefe (2026-11-13).
-    actor: CargaSesion = Depends(_LECTURA),
+    # Tambien vuelve a pedir la validacion de un lote CARGADO_VALIDADOR cuyo
+    # trabajo se agoto.
+    actor: CargaSesion = Depends(_GENERAR_Y_VALIDAR),
 ) -> RespuestaTrabajoEncolado:
     try:
         trabajo_id = await caso_uso.ejecutar(lote_id, actor.nombre_usuario)
     except ErrorLoteNoCargable as error:
         raise ErrorAplicacion(
             "LOTE_NO_CARGABLE", str(error), estado_http=status.HTTP_409_CONFLICT
+        ) from error
+    except ErrorLoteDesactualizado as error:
+        raise ErrorAplicacion(
+            "LOTE_DESACTUALIZADO", str(error), estado_http=status.HTTP_409_CONFLICT
         ) from error
     return RespuestaTrabajoEncolado(trabajo_id=trabajo_id)
 
@@ -188,7 +204,31 @@ async def remitir_lote(
         raise ErrorAplicacion(
             "LOTE_NO_REMISIBLE", str(error), estado_http=status.HTTP_409_CONFLICT
         ) from error
+    except ErrorLoteDesactualizado as error:
+        raise ErrorAplicacion(
+            "LOTE_DESACTUALIZADO", str(error), estado_http=status.HTTP_409_CONFLICT
+        ) from error
     return RespuestaRemitirLote.desde_valor(resultado)
+
+
+# Reconsulta de la respuesta cuando el monitoreo de la remision se agoto.
+@router.post(
+    "/{lote_id}/monitoreo",
+    response_model=RespuestaTrabajoEncolado,
+    status_code=status.HTTP_202_ACCEPTED,
+)
+async def solicitar_monitoreo_respuesta(
+    lote_id: int,
+    caso_uso: SolicitarMonitoreoRespuestaIafas = Depends(construir_solicitar_monitoreo_respuesta),
+    actor: CargaSesion = Depends(_SOLO_ANALISTA),
+) -> RespuestaTrabajoEncolado:
+    try:
+        trabajo_id = await caso_uso.ejecutar(lote_id, actor.nombre_usuario)
+    except ErrorLoteNoMonitoreable as error:
+        raise ErrorAplicacion(
+            "LOTE_NO_MONITOREABLE", str(error), estado_http=status.HTTP_409_CONFLICT
+        ) from error
+    return RespuestaTrabajoEncolado(trabajo_id=trabajo_id)
 
 
 # Tabla 46: el jefe consulta los lotes; antes los acuses eran solo del
@@ -226,7 +266,8 @@ async def descargar_archivo_s01_lote(
             f"El lote {lote_id} todavia no tiene un archivo .S01 obtenido del validador.",
             estado_http=status.HTTP_404_NOT_FOUND,
         )
-    return FileResponse(ruta, filename=Path(ruta).name, media_type="application/octet-stream")
+    local = ruta_local_s01(ruta)
+    return FileResponse(local, filename=local.name, media_type="application/octet-stream")
 
 
 @router.post(

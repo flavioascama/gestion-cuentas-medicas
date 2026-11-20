@@ -8,6 +8,7 @@ modelos_farmacia.py y modelos_plataformas.py.
 from __future__ import annotations
 
 from datetime import datetime
+from decimal import Decimal
 
 import sqlalchemy as sa
 from sqlalchemy.orm import Mapped, mapped_column
@@ -17,6 +18,7 @@ from app.infraestructura.persistencia.base import Base
 NATURALEZAS = ("ADMINISTRATIVA", "TECNICA", "FINANCIERA")
 ROLES_RESPONSABLES = ("analista", "auditor")
 ESTADOS_OBSERVACION = ("ABIERTA", "RESPONDIDA")
+RESULTADOS_OBSERVACION = ("LEVANTADA", "MANTENIDA")
 
 
 class CatalogoMotivoObservacionModelo(Base):
@@ -65,6 +67,11 @@ class ObservacionModelo(Base):
     respondido_en: Mapped[datetime | None] = mapped_column(
         sa.DateTime(timezone=True), nullable=True
     )
+    # 2026-11-19: lo glosado, si la aseguradora lo comunica, y en que
+    # termino la observacion respondida.
+    monto_observado: Mapped[Decimal | None] = mapped_column(sa.Numeric(12, 2), nullable=True)
+    resultado: Mapped[str | None] = mapped_column(sa.String(10), nullable=True)
+    resultado_en: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True), nullable=True)
 
     __table_args__ = (
         sa.CheckConstraint(
@@ -75,4 +82,8 @@ class ObservacionModelo(Base):
             "responsable_rol IN ('analista','auditor')", name="ck_observacion_responsable_rol"
         ),
         sa.CheckConstraint("estado IN ('ABIERTA','RESPONDIDA')", name="ck_observacion_estado"),
+        sa.CheckConstraint(
+            "resultado IS NULL OR resultado IN ('LEVANTADA','MANTENIDA')",
+            name="ck_observacion_resultado",
+        ),
     )

@@ -39,12 +39,13 @@ function usar_cierre_exterior(abierto: boolean, al_cerrar: () => void) {
 function PanelAvisos({ avisos, al_cerrar }: { avisos: Aviso[]; al_cerrar: () => void }) {
   const navegar = useNavigate();
   const ahora = usar_ahora();
+  const roles = usar_sesion().sesion?.roles ?? [];
   const lista = pendientes(avisos);
   const abrir = (aviso: Aviso) => {
-    const destino = describir_aviso(aviso).destino;
+    const destino = describir_aviso(aviso, roles).destino;
     if (!destino) return;
     al_cerrar();
-    void navegar(destino, { state: { recorrido: recorrido_de_avisos(lista, aviso) } });
+    void navegar(destino, { state: { recorrido: recorrido_de_avisos(lista, aviso, roles) } });
   };
 
   return (

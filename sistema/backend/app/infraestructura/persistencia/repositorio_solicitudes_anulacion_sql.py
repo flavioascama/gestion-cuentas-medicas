@@ -84,6 +84,7 @@ class RepositorioSolicitudesAnulacionSql(RepositorioSolicitudesAnulacion):
                 _a_valor(solicitud),
                 identificacion_interna=cuenta.identificacion_interna,
                 asegurado=f"{asegurado.nombres} {asegurado.apellidos}",
+                estado_cuenta=cuenta.estado,
             )
             for solicitud, cuenta, asegurado in filas.all()
         ]

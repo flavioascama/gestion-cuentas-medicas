@@ -87,7 +87,8 @@ function AccionGenerarLote({ al_generar }: { al_generar: (lote_id: number) => vo
   const cliente_consultas = useQueryClient();
   const [mostrar_dialogo, set_mostrar_dialogo] = useState(false);
 
-  if (!sesion?.roles.includes("analista")) return null;
+  // Tabla 46: "Generar y validar el lote", analista y jefe.
+  if (!(sesion?.roles.includes("analista") || sesion?.roles.includes("jefe"))) return null;
 
   return (
     <>

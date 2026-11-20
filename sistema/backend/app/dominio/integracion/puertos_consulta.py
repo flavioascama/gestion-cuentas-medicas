@@ -106,6 +106,14 @@ class DetalleCuenta:
     procedimientos: tuple[ProcedimientoResumen, ...]
     productos: tuple[ProductoResumen, ...]
     datos_clinicos_reservados: bool = False
+    # Atencion importada del sistema hospitalario (2026-11-19).
+    tipo_atencion: str = "AMBULATORIA"
+    atencion_origen_id: str | None = None
+    nombre_medico: str | None = None
+    colegiatura_medico: str | None = None
+    diagnosticos_secundarios_cie10: tuple[str, ...] = ()
+    fecha_ingreso_hospitalario: date | None = None
+    fecha_alta_hospitalaria: date | None = None
 
 
 class RepositorioCuentasConsulta(Protocol):
@@ -166,6 +174,8 @@ class DetalleLote:
     version_esquema_tedef: str | None = None
     version_mapeo: str | None = None
     monitoreo_excedido: bool = False
+    # CARGADO_VALIDADOR sin trabajo de validacion en curso.
+    validacion_reintentable: bool = False
 
 
 @dataclass(frozen=True, slots=True)

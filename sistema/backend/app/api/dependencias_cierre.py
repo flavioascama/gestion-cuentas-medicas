@@ -22,6 +22,9 @@ from app.dominio.puertos_comunes import Observabilidad, Reloj
 from app.infraestructura.persistencia.base import obtener_sesion
 from app.infraestructura.persistencia.registro_eventos_sql import RegistroEventosSql
 from app.infraestructura.persistencia.registro_mediciones_sql import RegistroMedicionesSql
+from app.infraestructura.persistencia.repositorio_documentos_pago_sql import (
+    RepositorioDocumentosPagoSql,
+)
 from app.infraestructura.persistencia.repositorio_estado_cuenta_sql import (
     RepositorioEstadoCuentaSql,
 )
@@ -92,5 +95,6 @@ def construir_listar_solicitudes_anulacion_pendientes(
     repositorio: RepositorioSolicitudesAnulacion = Depends(
         obtener_repositorio_solicitudes_anulacion
     ),
+    sesion: AsyncSession = Depends(obtener_sesion),
 ) -> ListarSolicitudesAnulacionPendientes:
-    return ListarSolicitudesAnulacionPendientes(repositorio)
+    return ListarSolicitudesAnulacionPendientes(repositorio, RepositorioDocumentosPagoSql(sesion))

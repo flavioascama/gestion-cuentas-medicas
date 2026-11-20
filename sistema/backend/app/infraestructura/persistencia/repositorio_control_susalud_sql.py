@@ -6,6 +6,8 @@ lee de `lote_facturacion.enviado_susalud_en`, que fija EnviarLoteSusalud."""
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
+
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
@@ -16,6 +18,9 @@ from app.dominio.plazos.susalud import (
     LotePendienteSusalud,
     LotesPeriodo,
     RepositorioControlSusalud,
+)
+from app.infraestructura.persistencia.modelos_declaracion_susalud import (
+    DeclaracionSusaludSinFacturacionModelo,
 )
 from app.infraestructura.persistencia.modelos_integracion import (
     EventoModelo,
@@ -98,3 +103,35 @@ class RepositorioControlSusaludSql(RepositorioControlSusalud):
             )
             for lote_id, periodo, avisado, escalado in filas
         ]
+
+    async def declaraciones(self) -> dict[str, datetime]:
+        filas = await self._sesion.execute(
+            sa.select(
+                DeclaracionSusaludSinFacturacionModelo.periodo,
+                DeclaracionSusaludSinFacturacionModelo.registrada_en,
+            )
+        )
+        return {periodo: registrada_en for periodo, registrada_en in filas.all()}
+
+    async def avisos_sin_lotes(self) -> dict[str, frozenset[str]]:
+        # Los avisos de un mes sin lotes cuelgan del agregado de sesion.
+        filas = await self._sesion.execute(
+            sa.select(EventoModelo.tipo_evento, EventoModelo.datos).where(
+                EventoModelo.tipo_agregado == "SESION_USUARIO",
+                EventoModelo.tipo_evento.in_((TIPO_AVISO_SUSALUD, TIPO_ESCALADO_SUSALUD)),
+            )
+        )
+        avisos: dict[str, set[str]] = {}
+        for tipo, datos in filas.all():
+            avisos.setdefault(str((datos or {}).get("periodo")), set()).add(tipo)
+        return {periodo: frozenset(tipos) for periodo, tipos in avisos.items()}
+
+    async def registrar_declaracion(self, periodo: str, registrada_por: str) -> datetime:
+        registrada_en = datetime.now(UTC)
+        self._sesion.add(
+            DeclaracionSusaludSinFacturacionModelo(
+                periodo=periodo, registrada_en=registrada_en, registrada_por=registrada_por
+            )
+        )
+        await self._sesion.flush()
+        return registrada_en

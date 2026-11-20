@@ -13,6 +13,7 @@ from app.dominio.acreditacion.valores import ContextoCuentaAcreditacion, Resulta
 from app.infraestructura.persistencia.modelos_integracion import (
     AcreditacionModelo,
     CuentaMedicaModelo,
+    DocumentoFacturadorModelo,
 )
 
 
@@ -26,15 +27,23 @@ class RepositorioAcreditacionSql(RepositorioAcreditacion):
         resultado = await self._sesion.execute(
             sa.select(CuentaMedicaModelo)
             .where(CuentaMedicaModelo.id == cuenta_medica_id)
-            .options(selectinload(CuentaMedicaModelo.asegurado))
+            .options(
+                selectinload(CuentaMedicaModelo.asegurado), selectinload(CuentaMedicaModelo.iafas)
+            )
         )
         cuenta = resultado.scalar_one_or_none()
         if cuenta is None:
             return None
+        tiene_comprobante = await self._sesion.scalar(
+            sa.select(sa.exists().where(DocumentoFacturadorModelo.cuenta_id == cuenta.id))
+        )
         return ContextoCuentaAcreditacion(
             cuenta_medica_id=cuenta.id,
             tipo_documento_paciente=cuenta.asegurado.tipo_documento,
             numero_documento_paciente=cuenta.asegurado.numero_documento,
+            codigo_iafas=cuenta.iafas.codigo,
+            estado_cuenta=cuenta.estado,
+            tiene_comprobante=bool(tiene_comprobante),
         )
 
     async def existe_acreditacion(self, cuenta_medica_id: int) -> bool:
@@ -78,7 +87,10 @@ class RepositorioAcreditacionSql(RepositorioAcreditacion):
 
     async def obtener_acreditacion(self, cuenta_medica_id: int) -> AcreditacionRegistrada | None:
         resultado = await self._sesion.execute(
-            sa.select(AcreditacionModelo).where(AcreditacionModelo.cuenta_id == cuenta_medica_id)
+            sa.select(AcreditacionModelo)
+            .where(AcreditacionModelo.cuenta_id == cuenta_medica_id)
+            .order_by(AcreditacionModelo.id.desc())
+            .limit(1)
         )
         fila = resultado.scalar_one_or_none()
         if fila is None:

@@ -44,7 +44,7 @@ _SIN_DETALLE = (NombreRol.GERENTE, NombreRol.ADMINISTRADOR)
 _RUTAS_SENSIBLES: tuple[tuple[str, str, frozenset[NombreRol]], ...] = (
     ("GET", "/cuentas", frozenset({*_CLINICOS, NombreRol.TESORERIA})),
     ("GET", "/cuentas/1", frozenset({*_CLINICOS, NombreRol.TESORERIA})),
-    ("GET", "/cuentas/1/acreditacion", frozenset({NombreRol.ANALISTA})),
+    ("GET", "/cuentas/1/acreditacion", frozenset(_CLINICOS)),
     ("GET", "/cuentas/1/historial", frozenset({NombreRol.JEFE})),
     ("POST", "/cuentas/1/expediente", frozenset({NombreRol.JEFE})),
     ("GET", "/lotes/1/cuentas", frozenset({NombreRol.ANALISTA, NombreRol.JEFE})),

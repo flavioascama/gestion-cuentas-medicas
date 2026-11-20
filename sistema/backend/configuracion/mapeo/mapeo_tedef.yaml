@@ -345,7 +345,7 @@
   expresion: acreditacion.tipo_documento_autorizacion
   transformacion: rellenar_ceros_izquierda(2)
   nota: Clasificación del documento cuyo código está en 'acreditacion.codigo_autorizacion' (Sección 6.1).
-    Típicamente '03' (Carta de Garantía) para el flujo de la Sección 9.1.
+    El código que entrega ACREDITA SALUD es la Solicitud de Atención Médica, '01' del catálogo.
 - tabla: T2
   campo: 13
   nombre: Número del documento de autorización
@@ -356,25 +356,28 @@
 - tabla: T2
   campo: 14
   nombre: Segundo Documento de autorización de la prestación
-  origen: constante
-  expresion: '''99'''
-  transformacion: ninguna(2)
-  nota: El prototipo registra una sola autorización por prestación.
+  origen: calculado
+  expresion: "'03' si la cuenta tiene carta de garantía registrada; '99' si no"
+  transformacion: rellenar_ceros_izquierda(2)
+  nota: La carta de garantía registrada (tabla carta_garantia) es el segundo documento de
+    autorización; sin carta, '99' (No aplica).
 - tabla: T2
   campo: 15
   nombre: Número del segundo documento de autorización
-  origen: blanco
-  expresion: ''
-  transformacion: ''
-  nota: Consecuencia del campo 14 constante en '99' (criterio C1 del propio campo).
+  origen: calculado
+  expresion: carta_garantia.numero si la cuenta tiene carta; en blanco si no
+  transformacion: alinear_derecha(20)
+  nota: Con el campo 14 en '99' va en blanco (criterio C1 del propio campo); un número de carta
+    mayor a 20 caracteres se recorta a 20.
 - tabla: T2
   campo: 16
   nombre: Tipo de Cobertura o Tipo de Prestación
-  origen: constante
-  expresion: '''4'''
+  origen: calculado
+  expresion: '''4'' si cuenta.tipo_atencion=AMBULATORIA; ''6'' si EMERGENCIA; ''5'' si HOSPITALIZACION'
   transformacion: ninguna(1)
-  nota: El prototipo no modela atenciones hospitalarias (Sección 1.2 no las contempla); se usa '4 = Ambulatorio'.
-    Los campos 30 a 34, condicionados a Hospitalaria, quedan en blanco en consecuencia.
+  nota: 'Atención importada del sistema hospitalario (2026-11-19): códigos del dominio del propio campo
+    (4 = Ambulatorio, 5 = Hospitalaria, 6 = Emergencia). La cuenta manual sigue siendo ambulatoria (''4'',
+    como viajaba antes).'
 - tabla: T2
   campo: 17
   nombre: Subtipo de Cobertura
@@ -396,18 +399,20 @@
 - tabla: T2
   campo: 19
   nombre: Segundo Diagnóstico (CIE10)
-  origen: blanco
-  expresion: ''
-  transformacion: ''
-  nota: 'Opcional (criterio C4: en blanco si no hay segundo diagnóstico); el prototipo no registra más
-    de un diagnóstico por prestación.'
+  origen: columna
+  expresion: cuenta.diagnosticos_secundarios_cie10[0] (en blanco si no hay)
+  transformacion: ninguna(5)
+  nota: 'Atención importada del sistema hospitalario (2026-11-19): primer diagnóstico secundario, validado
+    contra el catálogo CIE-10 vigente al importar. Criterio C4: en blanco si no hay (cuenta manual).'
 - tabla: T2
   campo: 20
   nombre: Tercer diagnóstico (CIE10)
-  origen: blanco
-  expresion: ''
-  transformacion: ''
-  nota: 'Opcional (criterio C4: en blanco si no hay tercer diagnóstico).'
+  origen: columna
+  expresion: cuenta.diagnosticos_secundarios_cie10[1] (en blanco si no hay)
+  transformacion: ninguna(5)
+  nota: 'Atención importada del sistema hospitalario (2026-11-19): segundo diagnóstico secundario. Criterio
+    C4: en blanco si no hay. Si la atención trae más de dos secundarios, se guardan todos pero el estándar
+    solo tiene dos posiciones.'
 - tabla: T2
   campo: 21
   nombre: Fecha de Prestación
@@ -425,33 +430,36 @@
 - tabla: T2
   campo: 23
   nombre: Tipo del Profesional Responsable de la Prestación
-  origen: constante
-  expresion: '''00'''
+  origen: calculado
+  expresion: '''01'' si cuenta.colegiatura_medico; ''00'' si no'
   transformacion: ninguna(2)
-  nota: 'El prototipo no modela la identidad ni la colegiatura del profesional tratante: ninguna sección
-    del plan define esa entidad. Se usa ''00: Profesional sin colegiatura'', el valor del propio dominio
-    para ese caso. Marcar para revisión del asesor: ¿corresponde modelar esto en una fase futura?'
+  nota: 'Atención importada del sistema hospitalario (2026-11-19): el sistema hospitalario siempre envía
+    un médico con su colegiatura: ''01 = Colegio Médico del Perú'' del dominio del campo. La cuenta manual
+    no registra profesional y sigue con ''00: Profesional sin colegiatura''.'
 - tabla: T2
   campo: 24
   nombre: Número de Colegiatura del Profesional Responsable de la Prestación
-  origen: blanco
-  expresion: ''
-  transformacion: ''
-  nota: Consecuencia del campo 23 constante en '00' (criterio C2 del propio campo).
+  origen: columna
+  expresion: cuenta.colegiatura_medico (en blanco si el campo 23 es '00')
+  transformacion: rellenar_ceros_izquierda(6)
+  nota: 'Atención importada del sistema hospitalario (2026-11-19): criterios C1 y C2 del propio campo
+    (no en blanco con tipo distinto de ''00''; en blanco con ''00'').'
 - tabla: T2
   campo: 25
   nombre: Tipo de documento de identidad del Profesional Responsable de la Prestación
   origen: blanco
   expresion: ''
   transformacion: ''
-  nota: Consecuencia del campo 23 constante en '00' (criterio C2).
+  nota: El sistema hospitalario no envía el documento del médico, solo su colegiatura y nombre. Con el
+    campo 23 en '00' el criterio C2 pide blanco; con '01' el dato queda pendiente porque la fuente no
+    lo da.
 - tabla: T2
   campo: 26
   nombre: Número del documento de identidad del profesional responsable
   origen: blanco
   expresion: ''
   transformacion: ''
-  nota: Consecuencia del campo 23 constante en '00' (criterio C4 del propio campo).
+  nota: 'Mismo caso que el campo 25: la fuente no envía el documento del médico.'
 - tabla: T2
   campo: 27
   nombre: RUC de Entidad de Referencia
@@ -480,46 +488,53 @@
   origen: blanco
   expresion: ''
   transformacion: ''
-  nota: 'Criterio C3: en blanco cuando el tipo de cobertura es distinto de 5=Hospitalaria (constante en
-    el campo 16).'
+  nota: 'Criterio C3: en blanco cuando el tipo de cobertura no es 5. En una hospitalización importada
+    el criterio C2 pide ''C'' o ''Q'', pero el sistema hospitalario no dice si hubo procedimiento quirúrgico:
+    queda en blanco, pendiente de esa fuente.'
 - tabla: T2
   campo: 31
   nombre: Fecha Ingreso Hospitalario
-  origen: blanco
-  expresion: ''
-  transformacion: ''
-  nota: 'Criterio C2: idem campo 30.'
+  origen: columna
+  expresion: cuenta.fecha_ingreso_hospitalario si el campo 16 es '5'; en blanco si no
+  transformacion: fecha_o_blanco(AAAAMMDD)
+  nota: 'Atención importada del sistema hospitalario (2026-11-19). Criterio C1 (no anterior a la prestación)
+    validado al importar; criterio C2: en blanco si no es hospitalaria.'
 - tabla: T2
   campo: 32
   nombre: Fecha de Egreso Hospitalario
-  origen: blanco
-  expresion: ''
-  transformacion: ''
-  nota: 'Criterio C2: idem campo 30.'
+  origen: columna
+  expresion: cuenta.fecha_alta_hospitalaria si el campo 16 es '5'; en blanco si no
+  transformacion: fecha_o_blanco(AAAAMMDD)
+  nota: 'Atención importada del sistema hospitalario (2026-11-19). Criterio C1 (no anterior al ingreso)
+    validado al importar; criterio C2: en blanco si no es hospitalaria.'
 - tabla: T2
   campo: 33
   nombre: Tipo de Egreso Hospitalario
   origen: blanco
   expresion: ''
   transformacion: ''
-  nota: 'Criterio C2: idem campo 30.'
+  nota: 'Criterio C2: en blanco si no es hospitalaria. En una hospitalización importada el sistema hospitalario
+    envía la fecha de alta pero no el tipo de egreso (alta médica, voluntaria, transferencia...): queda
+    en blanco, pendiente de esa fuente.'
 - tabla: T2
   campo: 34
   nombre: Días de Estancia Facturable
-  origen: blanco
-  expresion: ''
-  transformacion: ''
-  nota: 'Criterio C2: idem campo 30.'
+  origen: calculado
+  expresion: cuenta.fecha_alta_hospitalaria - cuenta.fecha_ingreso_hospitalario (días) si el campo 16
+    es '5'; en blanco si no
+  transformacion: rellenar_ceros_izquierda(3)
+  nota: Atención importada del sistema hospitalario (2026-11-19). El Anexo 1 advierte que los días facturables
+    pueden diferir de la resta entre ingreso y egreso; la fuente no los envía aparte y se usa la resta.
+    Marcar para confirmación del asesor.
 - tabla: T2
   campo: 35
   nombre: Gasto por Honorarios y procedimientos sin IGV
   origen: calculado
   expresion: formula_gasto_por_rubro(prestacion, grupo=1)
   transformacion: monto(12,2)
-  nota: 'Criterio C3: suma en T3 de (Monto Presentado - Monto No Cubierto) con Servicio Exento de Impuestos=''A'',
-    para el ''grupo contable (1)''. El prototipo fija el Código Rubro de T3 en ''02'' (ver nota de T3
-    campo 23), por lo que en la práctica este es el único de los campos 35 a 43 con valores distintos
-    de 0.00.'
+  nota: 'Criterio C3: suma en T3 de (Monto Presentado - Monto No Cubierto) con Servicio Exento=''A'' de
+    los procedimientos que no son de laboratorio ni de imágenes (Código Rubro distinto de ''04'' y ''10'',
+    ver T3 campo 23).'
 - tabla: T2
   campo: 36
   nombre: Gasto por Procedimientos Odontológicos sin IGV
@@ -541,14 +556,16 @@
   origen: calculado
   expresion: formula_gasto_por_rubro(prestacion, grupo=4)
   transformacion: monto(12,2)
-  nota: Criterio C3, grupo contable (4). Da 0.00 con el Código Rubro fijo en '02'.
+  nota: 'Criterio C3, grupo contable (4): suma en T3 de (Monto Presentado - Monto No Cubierto) de los
+    procedimientos de área LABORATORIO (Código Rubro ''04''). Hasta el 2026-11-19 iba siempre en 0.00.'
 - tabla: T2
   campo: 39
   nombre: Gasto por Exámenes auxiliares por imágenes sin IGV
   origen: calculado
   expresion: formula_gasto_por_rubro(prestacion, grupo=5)
   transformacion: monto(12,2)
-  nota: Criterio C3, grupo contable (5). Da 0.00 con el Código Rubro fijo en '02'.
+  nota: 'Criterio C3, grupo contable (5): suma en T3 de (Monto Presentado - Monto No Cubierto) de los
+    procedimientos de área IMAGENES (Código Rubro ''10''). Hasta el 2026-11-19 iba siempre en 0.00.'
 - tabla: T2
   campo: 40
   nombre: Gasto por Farmacia e insumos sin IGV
@@ -696,17 +713,18 @@
 - tabla: T3
   campo: 11
   nombre: Tipo del Profesional Responsable de la Prestación
-  origen: constante
-  expresion: '''00'''
+  origen: calculado
+  expresion: '''01'' si cuenta.colegiatura_medico; ''00'' si no'
   transformacion: ninguna(2)
-  nota: Mismo supuesto que T2 campo 23.
+  nota: 'Mismo criterio que T2 campo 23: el médico de la atención importada es el responsable de cada
+    procedimiento.'
 - tabla: T3
   campo: 12
   nombre: Número de Colegiatura del Profesional Responsable de la Prestación
-  origen: blanco
-  expresion: ''
-  transformacion: ''
-  nota: Consecuencia del campo 11 constante en '00'.
+  origen: columna
+  expresion: cuenta.colegiatura_medico (en blanco si el campo 11 es '00')
+  transformacion: rellenar_ceros_izquierda(6)
+  nota: Mismo criterio que T2 campo 24.
 - tabla: T3
   campo: 13
   nombre: Tipo de documento de identidad del Profesional Responsable de la Prestación
@@ -794,14 +812,14 @@
 - tabla: T3
   campo: 23
   nombre: Código Rubro
-  origen: constante
-  expresion: '''02'''
+  origen: calculado
+  expresion: '''04'' si el área del procedimiento es LABORATORIO; ''10'' si IMAGENES; ''02'' si no'
   transformacion: ninguna(2)
-  nota: 'El catálogo CPMS (Sección 2.3) no incluye un ''Código Rubro'' TEDEF: son catálogos distintos
-    y el anexo no da una tabla de equivalencia. Se fija ''02 = Consultas/Honorarios'' para todos los procedimientos,
-    el rubro más general para el alcance de procedimientos y servicios (Sección 1.2). Esto simplifica
-    los campos 35 a 43 y 44 a 47 de T2 (ver sus notas). Marcar para confirmación del asesor y declarar
-    como limitación en el Anexo A de la tesis.'
+  nota: 'Códigos de la descripción del propio campo: 02 Consultas/Honorarios, 04 Laboratorio, 10 Exámenes
+    auxiliares y/o especiales (imágenes). El área viene del sistema hospitalario; para un procedimiento
+    confirmado a mano se toma de la subsección del CPMS solo cuando es inequívoca (1.4.1, 1.4.2 y 1.4.5
+    imágenes; 1.5.1 a 1.5.4 laboratorio), si no queda ''02'' como antes. Las secciones 1.4 y 1.5 completas
+    no son inequívocas (incluyen radiación en oncología, medicina reproductiva y otros).'
 - tabla: T3
   campo: 24
   nombre: Cantidad prescrita del procedimiento o servicio
@@ -926,8 +944,9 @@
   origen: calculado
   expresion: (producto.monto_presentado - producto.monto_no_cubierto) * acreditacion.porcentaje_coaseguro / 100
   transformacion: monto(12,2)
-  nota: Coaseguro de la acreditación sobre lo que la IAFAS cubre del producto, igual que T3 campo 17 (desde
-    el 2026-11-18; antes era un dato escrito a mano). Marcado igual para confirmación del asesor.
+  nota: Coaseguro de la acreditación sobre el monto presentado menos la exclusión registrada del producto,
+    igual que T3 campo 17 (desde el 2026-11-18; antes era un dato escrito a mano). Marcado igual para
+    confirmación del asesor.
 - tabla: T4
   campo: 15
   nombre: Monto(s) Presentado(s) de (los) Producto(s) de Farmacia
@@ -939,11 +958,12 @@
 - tabla: T4
   campo: 16
   nombre: Monto(s) No Cubierto(s) de (los) Producto(s) de Farmacia
-  origen: columna
-  expresion: producto.monto_no_cubierto
+  origen: calculado
+  expresion: producto.monto_no_cubierto + copago_producto
   transformacion: monto(12,2)
-  nota: 'Dato sintético (a diferencia de T3 campo 20, que se calcula desde los copagos: T4 no modela
-    copago variable por producto, así que se guarda directo).'
+  nota: 'Misma regla que T3 campo 20: lo no cubierto incluye lo que asume el paciente. Es la exclusión
+    registrada del producto (columna monto_no_cubierto) más su copago (T4 campo 14), desde el
+    2026-11-18. Marcado para confirmación del asesor.'
 - tabla: T4
   campo: 17
   nombre: Diagnóstico Asociado al Producto de Farmacia

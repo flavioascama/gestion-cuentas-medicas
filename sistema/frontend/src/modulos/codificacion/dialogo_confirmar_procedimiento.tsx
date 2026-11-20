@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import type { ProcedimientoPorCodificar } from "../../api/atenciones";
 import {
   confirmar_procedimiento,
   ultimo_precio_procedimiento,
@@ -20,6 +21,7 @@ interface Propiedades {
   cuenta_id: number;
   inicio_sugerencia: string;
   descripcion: string;
+  pendiente: ProcedimientoPorCodificar | null;
   al_cerrar: () => void;
   al_confirmar: () => void;
 }
@@ -29,6 +31,7 @@ function construir_solicitud(
   descripcion: string,
   datos: DatosConfirmacion,
   inicio_sugerencia: string,
+  pendiente: ProcedimientoPorCodificar | null,
 ): SolicitudConfirmarProcedimiento {
   return {
     descripcion_registrada: descripcion,
@@ -38,17 +41,19 @@ function construir_solicitud(
     monto_unitario: datos.monto_unitario,
     fecha: datos.fecha,
     inicio_sugerencia,
+    procedimiento_por_codificar_id: pendiente?.id ?? null,
   };
 }
 
 function usar_confirmar_procedimiento(propiedades: Propiedades, datos: DatosConfirmacion) {
-  const { cuenta_id, candidato, descripcion, inicio_sugerencia, al_confirmar } = propiedades;
+  const { cuenta_id, candidato, descripcion, inicio_sugerencia, pendiente, al_confirmar } =
+    propiedades;
   const cliente_consultas = useQueryClient();
   return useMutation({
     mutationFn: () =>
       confirmar_procedimiento(
         cuenta_id,
-        construir_solicitud(candidato, descripcion, datos, inicio_sugerencia),
+        construir_solicitud(candidato, descripcion, datos, inicio_sugerencia, pendiente),
       ),
     onSuccess: () => {
       void cliente_consultas.invalidateQueries({
@@ -62,6 +67,10 @@ function usar_confirmar_procedimiento(propiedades: Propiedades, datos: DatosConf
         queryKey: ["cuentas", cuenta_id],
         exact: true,
       });
+      // Se refrescan tambien los pendientes: el confirmado deja de estarlo.
+      void cliente_consultas.invalidateQueries({
+        queryKey: ["cuentas", cuenta_id, "por-codificar"],
+      });
       al_confirmar();
     },
   });
@@ -69,12 +78,24 @@ function usar_confirmar_procedimiento(propiedades: Propiedades, datos: DatosConf
 
 // Lo que se propone sin que la persona lo escriba (2026-11-18): la fecha de
 // la atencion y el ultimo precio de ese codigo con la IAFAS de la cuenta.
-function usar_datos_propuestos(cuenta_id: number, codigo: string): DatosConfirmacion {
+function usar_datos_propuestos(
+  cuenta_id: number,
+  codigo: string,
+  pendiente: ProcedimientoPorCodificar | null,
+): DatosConfirmacion {
   const cuenta = usar_detalle_cuenta(cuenta_id);
   const precio = useQuery({
     queryKey: ["cuentas", cuenta_id, "ultimo_precio", codigo],
     queryFn: () => ultimo_precio_procedimiento(cuenta_id, codigo),
+    enabled: !pendiente,
   });
+  if (pendiente) {
+    return {
+      cantidad: String(pendiente.cantidad),
+      monto_unitario: pendiente.monto_unitario,
+      fecha: pendiente.fecha,
+    };
+  }
   return {
     ...DATOS_CONFIRMACION_INICIALES,
     monto_unitario: precio.data?.monto_unitario ?? "",
@@ -84,7 +105,11 @@ function usar_datos_propuestos(cuenta_id: number, codigo: string): DatosConfirma
 
 export function DialogoConfirmarProcedimiento(propiedades: Propiedades) {
   const { candidato, al_cerrar } = propiedades;
-  const propuestos = usar_datos_propuestos(propiedades.cuenta_id, candidato.codigo);
+  const propuestos = usar_datos_propuestos(
+    propiedades.cuenta_id,
+    candidato.codigo,
+    propiedades.pendiente,
+  );
   // Mientras la persona no cambie nada, valen los datos propuestos.
   const [escritos, set_datos] = useState<DatosConfirmacion | null>(null);
   const datos = escritos ?? propuestos;

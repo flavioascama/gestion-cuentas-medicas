@@ -44,6 +44,15 @@ export function usar_completitud_cuenta(cuenta_id: number) {
   });
 }
 
+// Cuenta en correccion por el validador TEDEF Web: facturada y con su lote
+// mas reciente observado. Ese lote no se vuelve a cargar; la cuenta se
+// corrige como en un estado editable y va a un lote nuevo. El backend
+// aplica la misma regla (dominio/orquestacion/correccion_validador.py).
+export function usar_en_correccion_validador(cuenta_id: number): boolean {
+  const { data } = usar_completitud_cuenta(cuenta_id);
+  return data?.estado_cuenta === "FACTURADA" && data.lote?.estado === "OBSERVADO_VALIDADOR";
+}
+
 // RNF-06: el plazo vigente de cada cuenta (bandeja y detalle).
 export function usar_vencimientos() {
   const consulta = useQuery({

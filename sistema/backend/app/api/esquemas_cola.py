@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
 
 from pydantic import BaseModel
 
@@ -14,7 +13,6 @@ from app.dominio.puertos_comunes import DetalleTrabajo
 class DetalleTrabajoRespuesta(BaseModel):
     id: int
     tipo: str
-    carga_util: dict[str, Any]
     estado: str
     intentos: int
     error: str | None
@@ -23,4 +21,7 @@ class DetalleTrabajoRespuesta(BaseModel):
 
     @staticmethod
     def desde_valor(valor: DetalleTrabajo) -> DetalleTrabajoRespuesta:
-        return DetalleTrabajoRespuesta(**campos(valor))
+        # Sin la carga util: puede traer texto de una respuesta a una glosa.
+        datos = campos(valor)
+        datos.pop("carga_util", None)
+        return DetalleTrabajoRespuesta(**datos)

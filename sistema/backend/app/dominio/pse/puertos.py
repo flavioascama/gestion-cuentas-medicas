@@ -8,7 +8,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date
+from decimal import Decimal
 from typing import Protocol
+
+# El sistema solo emite facturas a la aseguradora (catalogo SUNAT 01).
+TIPO_FACTURA = "01"
 
 
 class ErrorCuentaNoEncontrada(Exception):
@@ -41,15 +45,32 @@ class RequisitosComprobante:
     acreditada: bool
     con_diagnostico: bool
     procedimientos: int
+    # Existe la acreditacion pero la aseguradora no cubre al asegurado.
+    acreditable: bool = True
+    # Atencion importada (2026-11-19): procedimientos aun sin codigo, y una
+    # hospitalizacion sin carta de garantia registrada.
+    por_codificar: int = 0
+    falta_carta_garantia: bool = False
+    # Control C-18: la acreditacion vigente se registro en contingencia y el
+    # jefe la reviso no conforme.
+    cobertura_no_conforme: bool = False
 
     def faltantes(self) -> tuple[str, ...]:
         faltantes = []
         if not self.acreditada:
             faltantes.append("la acreditación del asegurado")
+        elif self.cobertura_no_conforme:
+            faltantes.append("una verificación de cobertura conforme")
+        elif not self.acreditable:
+            faltantes.append("que la aseguradora acredite al asegurado")
         if not self.con_diagnostico:
             faltantes.append("el diagnóstico principal")
         if self.procedimientos == 0:
             faltantes.append("al menos un procedimiento")
+        if self.por_codificar:
+            faltantes.append("que se codifiquen todos los procedimientos de la atención")
+        if self.falta_carta_garantia:
+            faltantes.append("la carta de garantía de la hospitalización")
         return tuple(faltantes)
 
 
@@ -59,6 +80,80 @@ class ComprobantePse:
     serie: str
     numero: str
     fecha_emision: date
+
+
+@dataclass(frozen=True, slots=True)
+class MontosComprobante:
+    """Lo que factura un comprobante, con la regla de T1."""
+
+    valor_venta: Decimal
+    igv: Decimal
+    total: Decimal
+
+
+@dataclass(frozen=True, slots=True)
+class CotejoMontos:
+    """Los montos guardados en el comprobante frente a los que hoy factura
+    la cuenta."""
+
+    guardados: MontosComprobante | None
+    actuales: MontosComprobante | None
+
+    @property
+    def desfasado(self) -> bool:
+        # Los comprobantes anteriores al 2026-11-18 no guardaron montos: no
+        # hay con que compararlos y no se consideran desfasados.
+        if self.guardados is None or self.actuales is None:
+            return False
+        return self.guardados != self.actuales
+
+
+@dataclass(frozen=True, slots=True)
+class ClienteComprobante:
+    """La aseguradora (IAFAS) a la que se le factura."""
+
+    codigo_iafas: str
+    razon_social: str
+
+
+@dataclass(frozen=True, slots=True)
+class DatosFacturacion:
+    cliente: ClienteComprobante
+    montos: MontosComprobante
+
+
+@dataclass(frozen=True, slots=True)
+class SolicitudComprobante:
+    """Lo que se envia al PSE para emitir un comprobante: los montos se
+    calculan antes, para que el PSE y el comprobante guardado digan lo
+    mismo."""
+
+    ruc_ipress: str
+    codigo_ipress: str
+    tipo_comprobante: str
+    cliente: ClienteComprobante
+    montos: MontosComprobante
+
+
+@dataclass(frozen=True, slots=True)
+class ComprobanteEmitido:
+    """El comprobante que dio el PSE con los montos que se le enviaron; se
+    guarda tal cual."""
+
+    comprobante: ComprobantePse
+    montos: MontosComprobante
+
+
+@dataclass(frozen=True, slots=True)
+class SolicitudNota:
+    """Lo que se envia al PSE para emitir una nota: su monto y el
+    comprobante al que se refiere."""
+
+    ruc_ipress: str
+    codigo_ipress: str
+    tipo: str
+    monto: Decimal
+    referido: ComprobantePse
 
 
 @dataclass(frozen=True, slots=True)
@@ -77,10 +172,10 @@ class NotaPse:
 
 
 class EmisorPse(Protocol):
-    async def emitir(self, ruc_ipress: str, codigo_ipress: str) -> ComprobantePse: ...
+    async def emitir(self, solicitud: SolicitudComprobante) -> ComprobantePse: ...
 
-    async def emitir_nota(self, ruc_ipress: str, codigo_ipress: str, tipo: str) -> NotaPse:
-        """`tipo`: C (credito) o D (debito)."""
+    async def emitir_nota(self, solicitud: SolicitudNota) -> NotaPse:
+        """`solicitud.tipo`: C (credito) o D (debito)."""
         ...
 
 
@@ -93,10 +188,23 @@ class RepositorioComprobantePago(Protocol):
         """None si la cuenta no existe."""
         ...
 
-    async def guardar_comprobante(self, cuenta_id: int, comprobante: ComprobantePse) -> int:
+    async def datos_para_facturar(
+        self, cuenta_id: int, tipo_comprobante: str
+    ) -> DatosFacturacion | None:
+        """La IAFAS de la cuenta y los montos con la regla de T1. None si la
+        cuenta no existe o no tiene acreditacion (de ella salen los copagos)."""
+        ...
+
+    async def guardar_comprobante(self, cuenta_id: int, emitido: ComprobanteEmitido) -> int:
         """Devuelve el id de la fila `documento_facturador` creada.
 
         Lanza ErrorCuentaNoEncontrada si `cuenta_id` no existe, o
         ErrorComprobanteYaExiste si la cuenta ya tiene uno (columna
         `cuenta_id` es UNIQUE, Seccion 6.1: un comprobante por cuenta)."""
+        ...
+
+
+class RepositorioCotejoComprobante(Protocol):
+    async def cotejar(self, cuenta_medica_id: int) -> CotejoMontos:
+        """Montos guardados del comprobante y los que hoy calcula la cuenta."""
         ...

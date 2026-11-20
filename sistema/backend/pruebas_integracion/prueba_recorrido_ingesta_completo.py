@@ -4,7 +4,7 @@ creada por el nuevo endpoint recorre los pasos ... contra los tres
 simuladores", ampliada por la propia adenda del simulador PSE): registrar,
 verificar cobertura, codificar, emitir el comprobante de pago (contra el
 simulador PSE real -- ya no una siembra directa en la base de datos),
-completitud (factura automaticamente), generar lote, cargar en el
+completitud (solo lee: la cuenta se facturo al emitir), generar lote, cargar en el
 validador, obtener el .S01, remitir a la IAFAS, enviar a SUSALUD.
 
 Requiere el stack completo levantado -- postgres, backend, trabajador,
@@ -229,8 +229,8 @@ async def prueba_recorrido_completo_desde_ingesta_hasta_susalud(
     await _emitir_comprobante_de_pago(cliente, token_analista, cuenta_id)
 
     # 5. Completitud: las cuatro piezas (paciente, cobertura, codificacion,
-    #    comprobante) ya estan OK -> ConsultarCompletitudCuenta factura la
-    #    cuenta automaticamente.
+    #    comprobante) ya estan OK; la cuenta quedo FACTURADA al emitir el
+    #    comprobante (2026-11-19) y la consulta solo lo lee.
     completitud_final = await _consultar_completitud(cliente, token_analista, cuenta_id)
     assert completitud_final["estado_cuenta"] == "FACTURADA"
     assert completitud_final["completa"] is True

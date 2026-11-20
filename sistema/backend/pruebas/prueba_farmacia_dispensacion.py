@@ -53,12 +53,16 @@ _DATOS = DatosProductoDispensado(
 @dataclass
 class _EstadoFijo:
     estado: str | None = "REGISTRADA"
+    en_correccion: bool = False
 
     async def obtener_estado(self, cuenta_medica_id: int) -> str | None:
         return self.estado
 
     async def fijar_estado(self, cuenta_medica_id: int, estado_nuevo: str) -> None:
         raise AssertionError("la farmacia no cambia el estado de la cuenta")
+
+    async def en_correccion_validador(self, cuenta_medica_id: int) -> bool:
+        return self.en_correccion
 
 
 @dataclass

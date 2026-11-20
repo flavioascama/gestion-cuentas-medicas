@@ -19,6 +19,7 @@ from app.dominio.observaciones.puertos import RepositorioCatalogoMotivos, Reposi
 from app.dominio.orquestacion.puertos import RepositorioEstadoCuenta
 from app.dominio.puertos_comunes import Observabilidad, Reloj
 from app.infraestructura.persistencia.base import obtener_sesion
+from app.infraestructura.persistencia.consulta_entregas_sql import ConsultaEntregasSql
 from app.infraestructura.persistencia.registro_eventos_sql import RegistroEventosSql
 from app.infraestructura.persistencia.registro_mediciones_sql import RegistroMedicionesSql
 from app.infraestructura.persistencia.repositorio_estado_cuenta_sql import (
@@ -89,8 +90,9 @@ def construir_responder_observacion(
 
 def construir_listar_observaciones_por_cuenta(
     repositorio: RepositorioObservaciones = Depends(obtener_repositorio_observaciones),
+    sesion: AsyncSession = Depends(obtener_sesion),
 ) -> ListarObservacionesPorCuenta:
-    return ListarObservacionesPorCuenta(repositorio)
+    return ListarObservacionesPorCuenta(repositorio, ConsultaEntregasSql(sesion))
 
 
 def construir_listar_catalogo_motivos(

@@ -7,7 +7,7 @@ verifica en pruebas_integracion/."""
 from __future__ import annotations
 
 from dataclasses import dataclass, field, replace
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Any
 
@@ -30,6 +30,12 @@ from app.dominio.comunicaciones.casos_uso import (
 )
 from app.dominio.observaciones.valores import DatosRegistroObservacion
 from app.dominio.orquestacion.errores import ErrorTransicionNoDefinida
+from app.dominio.pse.documentos import (
+    ComprobanteReemplazado,
+    ComprobanteVigente,
+    DocumentosPagoCuenta,
+    NotaDocumento,
+)
 from app.dominio.puertos_comunes import Evento
 
 _AHORA = datetime(2026, 11, 13, 9, 0, 0)
@@ -174,7 +180,7 @@ async def prueba_observacion_por_correo_se_registra_con_el_caso_de_uso_cu08() ->
 
     assert resultado is ResultadoComunicacion.APLICADA
     (argumentos,) = casos.observacion.llamadas
-    assert argumentos[0] == DatosRegistroObservacion(
+    assert replace(argumentos[0], monto_observado=None) == DatosRegistroObservacion(
         cuenta_medica_id=5,
         motivo_codigo="ADM-01",
         es_parcial=True,
@@ -297,6 +303,60 @@ async def prueba_respuesta_a_observacion_de_la_iafas_se_encola_para_su_portal() 
     assert carga["codigo"] == "COM-00000001"
     assert carga["codigo_ipress"] == "15995250"
     assert carga["usuario_origen"] == "analista.uno"
+
+
+_VIGENTE = ComprobanteVigente(1, "01", "F001", "00000200", date(2026, 11, 14))
+_REEMPLAZADO = ComprobanteReemplazado(
+    "01", "F001", "00000123", date(2026, 11, 1), _AHORA, "analista.uno", "Refacturacion"
+)
+_NOTA = NotaDocumento(
+    "C", "FC01", "00000007", Decimal("150.00"), date(2026, 11, 14), "D", _AHORA, "analista.uno"
+)
+
+
+@dataclass
+class _DocumentosFalso:
+    documentos_cuenta: DocumentosPagoCuenta | None
+
+    async def documentos(self, cuenta_medica_id: int) -> DocumentosPagoCuenta | None:
+        return self.documentos_cuenta
+
+
+async def _sustento_encolado(
+    documentos: DocumentosPagoCuenta | None, sustento: str | None
+) -> str | None:
+    trabajos = _TrabajosFalso()
+    encolar = EncolarRespuestaIafas(
+        _RepositorioFalso(origen=_registrada()),
+        trabajos,
+        _RelojFijo(),
+        _DocumentosFalso(documentos),  # type: ignore[arg-type]
+    )
+    await encolar.ejecutar(77, "Se refacturo.", sustento, "analista.uno")
+    ((_, carga),) = trabajos.encolados
+    return carga["sustento"]
+
+
+async def prueba_respuesta_con_reemplazo_informa_el_comprobante_vigente() -> None:
+    sustento = await _sustento_encolado(
+        DocumentosPagoCuenta(_VIGENTE, None, [_REEMPLAZADO]), "Historia clinica."
+    )
+
+    assert sustento == "Historia clinica.\nComprobante vigente: F001-00000200."
+
+
+async def prueba_respuesta_con_nota_informa_la_nota_y_recorta_lo_escrito() -> None:
+    sustento = await _sustento_encolado(DocumentosPagoCuenta(_VIGENTE, _NOTA), "x" * 600)
+    assert sustento is not None
+    assert len(sustento) == 500
+    assert sustento.endswith(
+        "Comprobante vigente: F001-00000200. Nota de crédito: FC01-00000007 por 150.00."
+    )
+    assert sustento.startswith("xxx")
+
+
+async def prueba_respuesta_sin_refacturar_entrega_el_sustento_igual() -> None:
+    assert await _sustento_encolado(DocumentosPagoCuenta(_VIGENTE, None), None) is None
 
 
 async def prueba_observacion_registrada_a_mano_no_se_remite() -> None:

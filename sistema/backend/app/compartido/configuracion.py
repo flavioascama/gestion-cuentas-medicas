@@ -99,6 +99,10 @@ class Configuracion(BaseSettings):
     # C-12: plazo de retencion de las evidencias del robot. La tesis no fija
     # uno; se adopta el de la bitacora (dos anios, RNF-10) como supuesto.
     retencion_evidencias_dias: int = Field(default=730, alias="RETENCION_EVIDENCIAS_DIAS")
+    # Donde el trabajador deja las evidencias cifradas y su clave Fernet: el
+    # servidor las lee para mostrar la Solicitud de Atencion Medica.
+    ruta_reportes: str = Field(default="/reportes", alias="RUTA_REPORTES")
+    clave_cifrado_evidencias: str = Field(default="", alias="CLAVE_CIFRADO_EVIDENCIAS")
 
     # --- Simulador receptor IAFAS / FTP (Fase 8, Seccion 9.2) ---
     ftp_receptor_iafas_host: str = Field(default="localhost", alias="FTP_RECEPTOR_IAFAS_HOST")
@@ -133,6 +137,14 @@ class Configuracion(BaseSettings):
     # trabajador no participa.
     pse_url_base: str = Field(default="http://localhost:8103", alias="PSE_URL_BASE")
 
+    # Sistema hospitalario de la clinica (2026-11-19): de el se importa la
+    # atencion cerrada. API a API, como el PSE, con la clave en la cabecera
+    # X-Clave-Api. La clave no tiene valor por defecto en el codigo.
+    sistema_hospitalario_url_base: str = Field(
+        default="http://localhost:8104", alias="SISTEMA_HOSPITALARIO_URL_BASE"
+    )
+    sistema_hospitalario_clave: str = Field(default="", alias="SISTEMA_HOSPITALARIO_CLAVE")
+
     # Origenes permitidos por CORS (Fase 19, Seccion 12): la aplicacion
     # web corre en un origen distinto al backend (Vite en el puerto 5173
     # en desarrollo), asi que el navegador exige la cabecera CORS. Lista
@@ -164,6 +176,7 @@ class Configuracion(BaseSettings):
                 ("ACREDITA_SALUD_URL_BASE", self.acredita_salud_url_base),
                 ("TEDEF_WEB_URL_BASE", self.tedef_web_url_base),
                 ("PSE_URL_BASE", self.pse_url_base),
+                ("SISTEMA_HOSPITALARIO_URL_BASE", self.sistema_hospitalario_url_base),
                 ("RECEPTOR_IAFAS_URL_BASE", self.receptor_iafas_url_base),
             )
             if not url.startswith("https://")

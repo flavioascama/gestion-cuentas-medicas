@@ -22,8 +22,17 @@ from app.dominio.integracion.lote import (
     ContextoLote,
     DocumentoLote,
     NotaLote,
+    PrestacionLote,
     ProcedimientoLote,
     ProductoLote,
+)
+from app.infraestructura.tedef.catalogos_atencion import (
+    CODIGO_COBERTURA_HOSPITALARIA,
+    CODIGO_COBERTURA_POR_TIPO_ATENCION,
+    PROFESIONAL_COLEGIO_MEDICO,
+    PROFESIONAL_SIN_COLEGIATURA,
+    RUBRO_POR_AREA,
+    dias_estancia,
 )
 from app.infraestructura.tedef.escritor_ancho_fijo import (
     formatear_alfanumerico,
@@ -52,6 +61,7 @@ def construir_t3(
     campo = {c.numero: c for c in tabla.campos}
     presentado = monto_presentado(procedimiento)
     no_cubierto = monto_no_cubierto(procedimiento)
+    profesional = _profesional(documento.prestacion.colegiatura_medico, campo, (11, 12))
 
     return {
         1: formatear_numerico_con_ceros(contexto.ruc_ipress, campo[1]),
@@ -67,8 +77,7 @@ def construir_t3(
         # caracteres); se trunca para que encaje, sin fallar la generacion.
         9: formatear_alfanumerico(procedimiento.descripcion[: campo[9].longitud], campo[9]),
         10: formatear_fecha(procedimiento.fecha, campo[10]),
-        11: formatear_numerico_con_ceros("00", campo[11]),  # profesional sin colegiatura
-        12: " " * campo[12].longitud,
+        **profesional,  # campos 11 y 12, el medico de la atencion
         13: " " * campo[13].longitud,
         14: " " * campo[14].longitud,
         15: formatear_numerico_con_ceros(str(procedimiento.cantidad), campo[15]),
@@ -79,7 +88,7 @@ def construir_t3(
         20: formatear_monto(no_cubierto, campo[20]),
         21: " " * campo[21].longitud,  # Diagnostico Asociado: en blanco (CIE-10 no disponible)
         22: formatear_alfanumerico("A", campo[22]),  # Servicio Exento de Impuestos
-        23: formatear_numerico_con_ceros("02", campo[23]),  # Codigo Rubro fijo (ver mapeo T3-23)
+        23: formatear_numerico_con_ceros(RUBRO_POR_AREA[procedimiento.area], campo[23]),
         24: " " * campo[24].longitud,
         25: " " * campo[25].longitud,
     }
@@ -134,6 +143,68 @@ def construir_t4(
     }
 
 
+def _segundo_documento_t2(
+    numero_carta: str | None, campo: dict[int, CampoEsquema]
+) -> dict[int, str]:
+    """T2 campos 14 y 15: la carta de garantia registrada es el segundo
+    documento de autorizacion ('03'); sin carta, '99' y el numero en blanco.
+    Un numero mas largo que el campo se recorta."""
+
+    if not numero_carta:
+        return {
+            14: formatear_numerico_con_ceros("99", campo[14]),
+            15: " " * campo[15].longitud,
+        }
+    return {
+        14: formatear_numerico_con_ceros("03", campo[14]),
+        15: formatear_alfanumerico(numero_carta[: campo[15].longitud], campo[15], derecha=True),
+    }
+
+
+def _profesional(
+    colegiatura: str | None, campo: dict[int, CampoEsquema], numeros: tuple[int, int]
+) -> dict[int, str]:
+    """Tipo y colegiatura del profesional responsable (T2 23-24, T3 11-12):
+    el medico de la atencion importada (01 = Colegio Medico del Peru); sin
+    medico registrado, '00' y la colegiatura en blanco (criterio C2)."""
+    tipo, numero = numeros
+    if not colegiatura:
+        return {
+            tipo: formatear_numerico_con_ceros(PROFESIONAL_SIN_COLEGIATURA, campo[tipo]),
+            numero: " " * campo[numero].longitud,
+        }
+    return {
+        tipo: formatear_numerico_con_ceros(PROFESIONAL_COLEGIO_MEDICO, campo[tipo]),
+        numero: formatear_numerico_con_ceros(colegiatura, campo[numero]),
+    }
+
+
+def _campos_atencion_t2(
+    prestacion: PrestacionLote, campo: dict[int, CampoEsquema]
+) -> dict[int, str]:
+    """T2 campos 16, 19, 20, 23 a 26 y 30 a 34, segun la atencion. El tipo de
+    hospitalizacion (30) y el tipo de egreso (33) no llegan del sistema
+    hospitalario: van en blanco como antes. El documento del medico (25-26)
+    tampoco llega."""
+    cobertura = CODIGO_COBERTURA_POR_TIPO_ATENCION[prestacion.tipo_atencion]
+    secundarios = (*prestacion.diagnosticos_secundarios_cie10, None, None)
+    ingreso, alta = prestacion.fecha_ingreso_hospitalario, prestacion.fecha_alta_hospitalaria
+    hospitalaria = cobertura == CODIGO_COBERTURA_HOSPITALARIA and ingreso and alta
+    blanco = {n: " " * campo[n].longitud for n in (25, 26, 30, 31, 32, 33, 34)}
+    campos = {
+        **blanco,
+        16: formatear_numerico_con_ceros(cobertura, campo[16]),
+        19: formatear_alfanumerico(secundarios[0], campo[19]),
+        20: formatear_alfanumerico(secundarios[1], campo[20]),
+        **_profesional(prestacion.colegiatura_medico, campo, (23, 24)),
+    }
+    if hospitalaria and ingreso and alta:
+        campos[31] = formatear_fecha(ingreso, campo[31])
+        campos[32] = formatear_fecha(alta, campo[32])
+        campos[34] = formatear_numerico_con_ceros(dias_estancia(ingreso, alta), campo[34])
+    return campos
+
+
 def construir_t2(
     tabla: TablaEsquema,
     contexto: ContextoLote,
@@ -157,29 +228,17 @@ def construir_t2(
         11: formatear_alfanumerico(prestacion.numero_historia_clinica, campo[11]),
         12: formatear_numerico_con_ceros(prestacion.tipo_documento_autorizacion, campo[12]),
         13: formatear_alfanumerico(prestacion.codigo_autorizacion, campo[13], derecha=True),
-        14: formatear_numerico_con_ceros("99", campo[14]),  # sin segundo documento
-        15: " " * campo[15].longitud,
-        16: formatear_numerico_con_ceros("4", campo[16]),  # Ambulatorio
+        **_segundo_documento_t2(prestacion.numero_carta_garantia, campo),
         # Subtipo Cobertura: PENDIENTE, catalogo SUSALUD no disponible (docs/PENDIENTES.md).
         17: formatear_numerico_con_ceros("0000", campo[17]),
         # Primer Diagnostico: PROVISIONAL, ver mapeo T2-18 y docs/PENDIENTES.md.
         18: formatear_alfanumerico(prestacion.diagnostico_principal_cie10, campo[18]),
-        19: " " * campo[19].longitud,
-        20: " " * campo[20].longitud,
         21: formatear_fecha(prestacion.fecha_prestacion, campo[21]),
         22: formatear_hora(prestacion.hora_prestacion, campo[22]),
-        23: formatear_numerico_con_ceros("00", campo[23]),  # profesional sin colegiatura
-        24: " " * campo[24].longitud,
-        25: " " * campo[25].longitud,
-        26: " " * campo[26].longitud,
         27: formatear_numerico_con_ceros(contexto.ruc_ipress, campo[27]),  # sin derivacion real
         28: " " * campo[28].longitud,
         29: " " * campo[29].longitud,
-        30: " " * campo[30].longitud,
-        31: " " * campo[31].longitud,
-        32: " " * campo[32].longitud,
-        33: " " * campo[33].longitud,
-        34: " " * campo[34].longitud,
+        **_campos_atencion_t2(prestacion, campo),
     }
     # Grupos de gasto: los procedimientos y, desde el 2026-11-18, la farmacia.
     campos.update(campos_montos_t2(calcular_gastos(procedimientos, prestacion.productos), campo))

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime
 
 from app.dominio.acreditacion.puertos import (
@@ -12,7 +12,7 @@ from app.dominio.acreditacion.puertos import (
     ErrorCuentaNoEncontrada,
     RepositorioAcreditacion,
 )
-from app.dominio.acreditacion.valores import ResultadoAcreditacion
+from app.dominio.acreditacion.valores import ResultadoAcreditacion, admite_consulta
 from app.dominio.puertos_comunes import (
     Evento,
     MedicionPaso,
@@ -49,9 +49,11 @@ class SolicitarVerificacionCobertura:
         contexto = await self._repositorio.obtener_contexto_cuenta(cuenta_medica_id)
         if contexto is None:
             raise ErrorCuentaNoEncontrada(f"No existe la cuenta medica {cuenta_medica_id}.")
-        if await self._repositorio.existe_acreditacion(cuenta_medica_id):
+        ya_acreditada = await self._repositorio.existe_acreditacion(cuenta_medica_id)
+        if not admite_consulta(contexto, ya_acreditada):
             raise ErrorCuentaYaAcreditada(
-                f"La cuenta medica {cuenta_medica_id} ya tiene una acreditacion registrada."
+                f"La cobertura de la cuenta medica {cuenta_medica_id} ya no se puede volver "
+                "a consultar: la cuenta tiene comprobante o ya no esta registrada."
             )
         return await self._repositorio_trabajos.encolar(
             tipo=TIPO_TRABAJO_CONSULTAR_COBERTURA,
@@ -107,17 +109,19 @@ class VerificarCobertura:
         actor: str,
         usuario_origen: str | None = None,
     ) -> int | None:
-        """Devuelve el id de la acreditacion guardada, o None si ya
-        existia una (idempotencia, Seccion 8.1: 'un reintento no duplica
-        registros') -- en ese caso no repite la consulta ni la medicion."""
-
-        if await self._repositorio.existe_acreditacion(cuenta_medica_id):
-            return None
+        """Devuelve el id de la acreditacion guardada, o None si la cuenta
+        ya tiene una y no admite otra consulta (idempotencia, Seccion 8.1:
+        'un reintento no duplica registros') -- en ese caso no repite la
+        consulta ni la medicion. Una nueva consulta admitida guarda otra
+        acreditacion, que pasa a ser la vigente; la anterior se conserva."""
 
         inicio = self._reloj.ahora()
         contexto = await self._repositorio.obtener_contexto_cuenta(cuenta_medica_id)
         if contexto is None:
             raise ErrorCuentaNoEncontrada(f"No existe la cuenta medica {cuenta_medica_id}.")
+        ya_acreditada = await self._repositorio.existe_acreditacion(cuenta_medica_id)
+        if not admite_consulta(contexto, ya_acreditada):
+            return None
 
         resultado = await self._adaptador.verificar_cobertura(contexto, trabajo_id)
         fin = self._reloj.ahora()
@@ -182,4 +186,10 @@ class ObtenerAcreditacion:
         self._repositorio = repositorio
 
     async def ejecutar(self, cuenta_medica_id: int) -> AcreditacionRegistrada | None:
-        return await self._repositorio.obtener_acreditacion(cuenta_medica_id)
+        """La vigente (la mas reciente), con si se puede volver a consultar."""
+        acreditacion = await self._repositorio.obtener_acreditacion(cuenta_medica_id)
+        if acreditacion is None:
+            return None
+        contexto = await self._repositorio.obtener_contexto_cuenta(cuenta_medica_id)
+        admite = contexto is not None and admite_consulta(contexto, ya_acreditada=True)
+        return replace(acreditacion, admite_reconsulta=admite)

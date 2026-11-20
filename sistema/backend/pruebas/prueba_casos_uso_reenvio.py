@@ -7,12 +7,17 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime
+from decimal import Decimal
 
 import pytest
 
 from app.dominio.orquestacion.casos_uso import CorregirCuentaRechazada, ObtenerRechazoCuenta
-from app.dominio.orquestacion.errores import ErrorTransicionNoDefinida
+from app.dominio.orquestacion.errores import (
+    ErrorComprobanteDesfasado,
+    ErrorTransicionNoDefinida,
+)
 from app.dominio.orquestacion.puertos import RechazoCuenta
+from app.dominio.pse.puertos import CotejoMontos, MontosComprobante
 from app.dominio.puertos_comunes import Evento, Observabilidad
 
 _RECHAZO = RechazoCuenta(
@@ -99,3 +104,53 @@ async def prueba_corregir_rechaza_una_cuenta_que_no_esta_rechazada(estado: str) 
 async def prueba_obtener_rechazo_devuelve_el_del_repositorio() -> None:
     assert await ObtenerRechazoCuenta(_RechazosFalso(_RECHAZO)).ejecutar(1) == _RECHAZO
     assert await ObtenerRechazoCuenta(_RechazosFalso(None)).ejecutar(1) is None
+
+
+def _montos(total: str) -> MontosComprobante:
+    return MontosComprobante(valor_venta=Decimal(total), igv=Decimal("0"), total=Decimal(total))
+
+
+@dataclass
+class _CotejoFalso:
+    cotejo: CotejoMontos
+
+    async def cotejar(self, cuenta_medica_id: int) -> CotejoMontos:
+        return self.cotejo
+
+
+def _con_cotejo(
+    cotejo: CotejoMontos,
+) -> tuple[CorregirCuentaRechazada, _EstadoCuentaFalso, _RegistroEventosFalso]:
+    estado_cuenta = _EstadoCuentaFalso(estados={1: "RECHAZADA"})
+    registro = _RegistroEventosFalso()
+    caso_uso = CorregirCuentaRechazada(
+        estado_cuenta=estado_cuenta,
+        rechazos=_RechazosFalso(_RECHAZO),
+        observabilidad=Observabilidad(eventos=registro, mediciones=_MedicionesFalso()),
+        cotejo=_CotejoFalso(cotejo),
+    )
+    return caso_uso, estado_cuenta, registro
+
+
+async def prueba_corregir_exige_el_reemplazo_si_el_comprobante_quedo_desfasado() -> None:
+    caso_uso, estado_cuenta, registro = _con_cotejo(CotejoMontos(_montos("100"), _montos("80")))
+
+    with pytest.raises(ErrorComprobanteDesfasado, match="emita el comprobante de reemplazo"):
+        await caso_uso.ejecutar(1, "se quito un procedimiento", "ana")
+
+    assert estado_cuenta.estados[1] == "RECHAZADA"
+    assert registro.eventos == []
+
+
+@pytest.mark.parametrize(
+    "cotejo",
+    [
+        CotejoMontos(_montos("100.00"), _montos("100")),
+        # Comprobante antiguo, sin montos guardados: no cuenta como desfasado.
+        CotejoMontos(None, _montos("80")),
+    ],
+)
+async def prueba_corregir_admite_un_comprobante_al_dia_o_sin_montos(cotejo: CotejoMontos) -> None:
+    caso_uso, estado_cuenta, _ = _con_cotejo(cotejo)
+
+    assert await caso_uso.ejecutar(1, "correccion", "ana") == "FACTURADA"

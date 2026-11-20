@@ -52,7 +52,28 @@ from trabajador.soporte.selectores import obtener_selector, ruta_selectores
 registro = structlog.get_logger(__name__)
 
 _PLATAFORMA = "tedef_web"
+_ESTADO_REGISTRADO = "REGISTRADO"
 _ESTADO_OBSERVADO_DETALLADA = "OBSERVADO_DETALLADA"
+
+# Que hacer al pedir la validacion de un lote ya cargado (una solicitud
+# nueva tras agotarse la anterior puede encontrarlo en cualquier punto).
+ACCION_VALIDAR = "validar"  # REGISTRADO: marcarlo y pulsar "Validar Lotes"
+ACCION_ESPERAR = "esperar"  # VALIDANDO u OBSERVADO_DETALLADA: leer el resultado
+ACCION_YA_VALIDADO = "ya_validado"  # ya paso a "Lotes por Enviar"
+ACCION_NO_ENCONTRADO = "no_encontrado"
+
+
+def accion_al_validar(estado_por_validar: str | None, en_por_enviar: bool) -> str:
+    """El simulador solo valida un lote REGISTRADO (los demas no tienen
+    casilla); uno VALIDANDO u OBSERVADO_DETALLADA ya tiene su resultado en
+    camino, y uno que salio de "Lotes por Validar" ya fue validado."""
+    if estado_por_validar is None:
+        return ACCION_YA_VALIDADO if en_por_enviar else ACCION_NO_ENCONTRADO
+    if estado_por_validar == _ESTADO_REGISTRADO:
+        return ACCION_VALIDAR
+    return ACCION_ESPERAR
+
+
 _RUTA = ruta_selectores(_PLATAFORMA)
 
 
@@ -164,13 +185,30 @@ class AdaptadorValidadorTedefWeb(ValidadorTedefWeb):
 
     async def validar_lote(self, identidad: IdentidadLoteTedef) -> ResultadoEtapaValidador:
         async with self._pagina_autenticada() as pagina:
-            fila = await self._fila_o_error(pagina, "lotes_por_validar", identidad)
-            await fila.locator(_sel("lotes_por_validar", "checkbox_lote")).check()
-            await self._paso(pagina, "Lote marcado para validar")
-            await pagina.click(_sel("lotes_por_validar", "boton_validar_lotes"))
+            fila = await self._fila_opcional(pagina, "lotes_por_validar", identidad)
+            estado = None
+            if fila is not None:
+                estado = await _texto(fila.locator(_sel("lotes_por_validar", "estado_lote")))
+            en_por_enviar = fila is None and await self._esta_en_por_enviar(pagina, identidad)
+            accion = accion_al_validar(estado, en_por_enviar)
+            if accion == ACCION_YA_VALIDADO:
+                await self._paso(pagina, "El lote ya estaba validado")
+                return ResultadoEtapaValidador(conforme=True, estado_informado="VALIDADO")
+            if accion == ACCION_NO_ENCONTRADO or fila is None:
+                raise ErrorRobotValidadorTedefWeb(
+                    f"No se encontro el lote {identidad.numero}/{identidad.periodo} en TEDEF Web."
+                )
+            if accion == ACCION_VALIDAR:
+                await fila.locator(_sel("lotes_por_validar", "checkbox_lote")).check()
+                await self._paso(pagina, "Lote marcado para validar")
+                await pagina.click(_sel("lotes_por_validar", "boton_validar_lotes"))
             resultado = await self._esperar_resolucion(pagina, identidad)
             await self._paso(pagina, "Resultado de la validación del lote")
             return resultado
+
+    async def _esta_en_por_enviar(self, pagina: Page, identidad: IdentidadLoteTedef) -> bool:
+        await pagina.goto(f"{self._url_base}{_sel('lotes_por_enviar', 'ruta')}")
+        return await self._fila_opcional(pagina, "lotes_por_enviar", identidad) is not None
 
     async def _esperar_resolucion(
         self, pagina: Page, identidad: IdentidadLoteTedef

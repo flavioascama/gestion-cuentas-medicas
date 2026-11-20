@@ -13,15 +13,10 @@ from app.infraestructura.persistencia.modelos_integracion import (
     CuentaMedicaModelo,
     DocumentoFacturadorModelo,
     IafasModelo,
-    LoteDocumentoModelo,
-    LoteFacturacionModelo,
 )
+from app.infraestructura.persistencia.montos_comprobante_sql import cotejo_de_cuenta
 from app.infraestructura.persistencia.montos_cuenta_sql import montos_por_cuenta
-
-# Un lote en estos estados todavia no se remitio y sus cuentas siguen
-# FACTURADA: no se sugieren otra vez. El observado por el validador no
-# esta en curso; sus cuentas entran en un lote nuevo.
-ESTADOS_LOTE_EN_CURSO = ("GENERADO", "CARGADO_VALIDADOR", "VALIDADO")
+from app.infraestructura.persistencia.vigencia_lote_sql import cuentas_en_lotes_vigentes
 
 
 class RepositorioCuentasPorLotearSql(RepositorioCuentasPorLotear):
@@ -29,15 +24,8 @@ class RepositorioCuentasPorLotearSql(RepositorioCuentasPorLotear):
         self._sesion = sesion
 
     async def cuentas_por_lotear(self) -> list[CuentaPorLotear]:
-        en_lote_en_curso = (
-            sa.select(LoteDocumentoModelo.id)
-            .join(LoteFacturacionModelo, LoteFacturacionModelo.id == LoteDocumentoModelo.lote_id)
-            .where(
-                LoteDocumentoModelo.documento_id == DocumentoFacturadorModelo.id,
-                LoteFacturacionModelo.estado.in_(ESTADOS_LOTE_EN_CURSO),
-            )
-            .exists()
-        )
+        # Las de un lote en curso que dejo de ser vigente vuelven a sugerirse.
+        ocupadas = await cuentas_en_lotes_vigentes(self._sesion)
         filas = (
             await self._sesion.execute(
                 sa.select(
@@ -52,11 +40,13 @@ class RepositorioCuentasPorLotearSql(RepositorioCuentasPorLotear):
                 )
                 .join(AseguradoModelo, AseguradoModelo.id == CuentaMedicaModelo.asegurado_id)
                 .join(IafasModelo, IafasModelo.id == CuentaMedicaModelo.iafas_id)
-                .where(CuentaMedicaModelo.estado == "FACTURADA", sa.not_(en_lote_en_curso))
+                .where(CuentaMedicaModelo.estado == "FACTURADA")
                 .order_by(CuentaMedicaModelo.identificacion_interna)
             )
         ).all()
+        filas = [fila for fila in filas if fila[0].id not in ocupadas]
         montos = await montos_por_cuenta(self._sesion, [fila[0].id for fila in filas])
+        desfasadas = await self._con_comprobante_desfasado([fila[0].id for fila in filas])
         return [
             CuentaPorLotear(
                 cuenta_id=cuenta.id,
@@ -70,7 +60,17 @@ class RepositorioCuentasPorLotearSql(RepositorioCuentasPorLotear):
                 monto=montos[cuenta.id],
                 # Una cuenta facturada siempre tiene procedimientos: lo que puede
                 # faltarle, en las anteriores al 2026-11-18, es el diagnostico.
-                pendientes=pendientes_para_lotear(bool(cuenta.diagnostico_principal_cie10), 1),
+                pendientes=pendientes_para_lotear(
+                    bool(cuenta.diagnostico_principal_cie10), 1, cuenta.id in desfasadas
+                ),
             )
             for cuenta, asegurado, iafas, fecha_emision in filas
         ]
+
+    async def _con_comprobante_desfasado(self, cuenta_ids: list[int]) -> set[int]:
+        # Una consulta por cuenta: solo calcula montos si el comprobante los guardo.
+        desfasadas = set()
+        for cuenta_id in cuenta_ids:
+            if (await cotejo_de_cuenta(self._sesion, cuenta_id)).desfasado:
+                desfasadas.add(cuenta_id)
+        return desfasadas

@@ -1,3 +1,4 @@
+import type { ProcedimientoPorCodificar } from "../../api/atenciones";
 import type { CandidatoCpms, RespuestaSugerenciaCpms } from "../../api/cpms";
 import { DialogoConfirmarProcedimiento } from "./dialogo_confirmar_procedimiento";
 import { ResultadoBusquedaCpms } from "./formulario_busqueda_cpms";
@@ -10,6 +11,7 @@ interface Propiedades {
   candidato_elegido: CandidatoCpms | null;
   al_elegir: (candidato: CandidatoCpms | null) => void;
   al_confirmar: () => void;
+  pendiente: ProcedimientoPorCodificar | null;
 }
 
 export function ResultadosCpms({
@@ -19,6 +21,7 @@ export function ResultadosCpms({
   candidato_elegido,
   al_elegir,
   al_confirmar,
+  pendiente,
 }: Propiedades) {
   return (
     <>
@@ -34,6 +37,7 @@ export function ResultadosCpms({
           cuenta_id={cuenta_id}
           inicio_sugerencia={resultado.inicio_sugerencia}
           descripcion={descripcion}
+          pendiente={pendiente}
           al_cerrar={() => al_elegir(null)}
           al_confirmar={al_confirmar}
         />

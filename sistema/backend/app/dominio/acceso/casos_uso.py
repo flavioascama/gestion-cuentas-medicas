@@ -14,6 +14,7 @@ from app.dominio.acceso.errores import (
     CredencialesInvalidasError,
     CuentaBloqueadaError,
     NombreUsuarioDuplicadoError,
+    NoPuedeCambiarSusRolesError,
     RolesRequeridosError,
     UsuarioNoEncontradoError,
 )
@@ -256,6 +257,7 @@ class ActualizarUsuario:
     ) -> Usuario:
         if roles is not None and not roles:
             raise RolesRequeridosError()
+        await self._exigir_que_no_sea_propio(usuario_id, roles, activo, actor)
         usuario = await self._repositorio.actualizar(usuario_id, nombres, roles, activo)
         if usuario is None:
             raise UsuarioNoEncontradoError(usuario_id)
@@ -279,6 +281,24 @@ class ActualizarUsuario:
             },
         )
         return usuario
+
+    async def _exigir_que_no_sea_propio(
+        self,
+        usuario_id: int,
+        roles: frozenset[NombreRol] | None,
+        activo: bool | None,
+        actor: str,
+    ) -> None:
+        """Su propio nombre si lo cambia; sus roles o su estado, no."""
+        if roles is None and activo is None:
+            return
+        actual = await self._repositorio.obtener_por_id(usuario_id)
+        if actual is None or actual.nombre_usuario != actor:
+            return
+        if (roles is not None and roles != actual.roles) or (
+            activo is not None and activo != actual.activo
+        ):
+            raise NoPuedeCambiarSusRolesError()
 
 
 class ListarUsuarios:

@@ -14,6 +14,9 @@ from app.dominio.integracion.hallazgos import Hallazgo
 
 FALTA_DIAGNOSTICO = "Falta el diagnóstico principal (CIE-10)."
 FALTAN_PROCEDIMIENTOS = "No tiene procedimientos."
+COMPROBANTE_DESFASADO = (
+    "El comprobante no coincide con lo facturado: falta el comprobante de reemplazo."
+)
 
 # Campos del estandar cuyo problema se explica mejor con el nombre que usa la
 # pantalla de la cuenta. Clave: (tabla, numero de campo).
@@ -33,7 +36,7 @@ class PendientesCuenta:
 
 
 def pendientes_para_lotear(
-    tiene_diagnostico: bool, cantidad_procedimientos: int
+    tiene_diagnostico: bool, cantidad_procedimientos: int, comprobante_desfasado: bool = False
 ) -> tuple[str, ...]:
     """Lo que se puede saber de una cuenta facturada sin armar el lote."""
     pendientes = []
@@ -41,6 +44,8 @@ def pendientes_para_lotear(
         pendientes.append(FALTA_DIAGNOSTICO)
     if cantidad_procedimientos == 0:
         pendientes.append(FALTAN_PROCEDIMIENTOS)
+    if comprobante_desfasado:
+        pendientes.append(COMPROBANTE_DESFASADO)
     return tuple(pendientes)
 
 

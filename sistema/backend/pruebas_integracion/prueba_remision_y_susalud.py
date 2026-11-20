@@ -42,6 +42,7 @@ import sqlalchemy as sa
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.compartido.rutas import ruta_local_s01
 from app.dominio.acceso.entidades import NombreRol
 from app.infraestructura.persistencia.modelos_cpms import CpmsVersionModelo
 from app.infraestructura.persistencia.modelos_integracion import (
@@ -198,7 +199,7 @@ async def _ruta_s01(sesion: AsyncSession, lote_id: int, cliente: AsyncClient, to
 
     lote = await sesion.get(LoteFacturacionModelo, lote_id)
     assert lote is not None and lote.ruta_s01 is not None
-    return lote.ruta_s01
+    return str(ruta_local_s01(lote.ruta_s01))
 
 
 async def prueba_9_remision_y_respuesta_el_monitoreo_registra_el_resultado(
@@ -284,9 +285,8 @@ async def prueba_11_envio_a_susalud_informa_la_duplicidad(
     sesion: AsyncSession, cliente: AsyncClient, token_para_rol: _TokenParaRol
 ) -> None:
     """Escenario "Envio a SUSALUD": los lotes del periodo quedan
-    enviados; la duplicidad se informa. Un lote VALIDADO ya es elegible
-    (Seccion 8.3: "lotes VALIDADO o posteriores del periodo"), sin
-    necesitar remitirlo antes a la IAFAS (Seccion 10)."""
+    enviados; la duplicidad se informa. A SUSALUD se informan los lotes
+    remitidos a la IAFAS (2026-11-19), asi que ambos se remiten antes."""
 
     token = await token_para_rol(NombreRol.ANALISTA)
     cuenta_id_1 = await _crear_cuenta_facturada(sesion)
@@ -297,6 +297,11 @@ async def prueba_11_envio_a_susalud_informa_la_duplicidad(
     lote_id_2 = await _generar_y_validar_lote(
         sesion, cliente, token, cuenta_id_2, periodo=_PERIODO_ENVIO_SUSALUD
     )
+    for lote_id in (lote_id_1, lote_id_2):
+        remision = await cliente.post(
+            f"/lotes/{lote_id}/remision-iafas", headers={"Authorization": f"Bearer {token}"}
+        )
+        assert remision.status_code == 201, remision.text
 
     primer_envio = await cliente.post(
         "/lotes/envio-susalud",

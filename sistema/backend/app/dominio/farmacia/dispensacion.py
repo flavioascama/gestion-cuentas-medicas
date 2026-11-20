@@ -14,7 +14,8 @@ lote arma la T4. El copago no se pide (2026-11-18): sale de la
 acreditacion del asegurado al armar el lote y el comprobante.
 
 Se registra y se retira en los mismos estados en que se codifica la cuenta
-(antes de facturar, al corregir una rechazada y al refacturar una glosa)."""
+(antes de facturar, al corregir una rechazada y al refacturar una glosa),
+y en una cuenta facturada cuyo lote observo el validador."""
 
 from __future__ import annotations
 
@@ -23,6 +24,7 @@ from datetime import date
 from decimal import Decimal
 from typing import Protocol
 
+from app.dominio.orquestacion.correccion_validador import admite_correccion
 from app.dominio.orquestacion.puertos import RepositorioEstadoCuenta
 from app.dominio.puertos_comunes import Evento, RegistroEventos
 
@@ -115,7 +117,9 @@ class RepositorioDispensacion(Protocol):
         ...
 
 
-def _validar(datos: DatosProductoDispensado, fecha_prestacion: date) -> None:
+def validar_dispensacion(datos: DatosProductoDispensado, fecha_prestacion: date) -> Decimal:
+    """Valida el producto dispensado y devuelve su monto presentado. La usan
+    el registro manual y la importacion de la atencion."""
     errores: list[str] = []
     if datos.fecha_dispensacion < fecha_prestacion:
         errores.append("la fecha de dispensacion es anterior a la prestacion")
@@ -133,6 +137,7 @@ def _validar(datos: DatosProductoDispensado, fecha_prestacion: date) -> None:
         errores.append(f"la guia de farmacia tiene mas de {LONGITUD_GUIA} caracteres")
     if errores:
         raise ErrorProductoInvalido("; ".join(errores).capitalize() + ".")
+    return (datos.cantidad_venta * datos.monto_unitario).quantize(_DOS_DECIMALES)
 
 
 class RegistrarProductoDispensado:
@@ -152,7 +157,7 @@ class RegistrarProductoDispensado:
         await _exigir_cuenta_editable(self._estado_cuenta, cuenta_medica_id)
         fecha_prestacion = await self._repositorio.fecha_prestacion(cuenta_medica_id)
         assert fecha_prestacion is not None, "una cuenta existente tiene fecha de prestacion"
-        _validar(datos, fecha_prestacion)
+        monto_presentado = validar_dispensacion(datos, fecha_prestacion)
         catalogo = await self._repositorio.producto_vigente(datos.codigo_producto)
         if catalogo is None:
             raise ErrorProductoFueraDeCatalogo(
@@ -161,7 +166,6 @@ class RegistrarProductoDispensado:
         diagnostico = datos.diagnostico_asociado_cie10
         if diagnostico and not await self._repositorio.existe_cie10(diagnostico):
             raise ErrorProductoInvalido(f"El diagnostico {diagnostico} no esta en la CIE-10.")
-        monto_presentado = (datos.cantidad_venta * datos.monto_unitario).quantize(_DOS_DECIMALES)
         producto_id, correlativo = await self._repositorio.guardar(
             ProductoARegistrar(cuenta_medica_id, catalogo, datos, monto_presentado)
         )
@@ -229,7 +233,9 @@ async def _exigir_cuenta_editable(
     estado = await estado_cuenta.obtener_estado(cuenta_medica_id)
     if estado is None:
         raise ErrorCuentaInexistenteFarmacia(f"No existe la cuenta {cuenta_medica_id}.")
-    if estado not in ESTADOS_EDITABLES_FARMACIA:
+    if not await admite_correccion(
+        estado_cuenta, cuenta_medica_id, estado in ESTADOS_EDITABLES_FARMACIA
+    ):
         raise ErrorCuentaNoEditableFarmacia(
             f"La cuenta {cuenta_medica_id} esta en estado {estado!r}: "
             "no admite cambios de farmacia."

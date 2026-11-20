@@ -15,6 +15,22 @@ class ContextoCuentaAcreditacion:
     cuenta_medica_id: int
     tipo_documento_paciente: str
     numero_documento_paciente: str
+    # La IAFAS registrada en la cuenta: el robot la compara con la que
+    # responde ACREDITA SALUD.
+    codigo_iafas: str = ""
+    # Para decidir si la cobertura se puede volver a consultar.
+    estado_cuenta: str = ""
+    tiene_comprobante: bool = False
+
+
+def admite_consulta(contexto: ContextoCuentaAcreditacion, ya_acreditada: bool) -> bool:
+    """La primera consulta siempre; una nueva consulta solo mientras la
+    cuenta siga REGISTRADA y sin comprobante (despues, la acreditacion ya
+    sustento lo facturado y no se reemplaza). Las normas del proyecto no
+    fijan un plazo de vigencia de la acreditacion, asi que no se impone."""
+    if not ya_acreditada:
+        return True
+    return contexto.estado_cuenta == "REGISTRADA" and not contexto.tiene_comprobante
 
 
 @dataclass(frozen=True, slots=True)
@@ -37,6 +53,31 @@ class ResultadoAcreditacion:
     porcentaje_coaseguro: int | None
     preexistencias: list[str] = field(default_factory=list)
     ruta_evidencia: str | None = None
+
+
+def es_acreditable(condicion: str) -> bool:
+    """ACREDITA SALUD responde 'NO ACREDITABLE: <motivo>' cuando no cubre
+    al asegurado; cualquier otra condicion (incluida la acreditable con
+    restriccion) permite facturar."""
+    return not condicion.lstrip().upper().startswith("NO ACREDITABLE")
+
+
+_LONGITUD_CONDICION = 120  # acreditacion.condicion_cobertura
+
+
+def condicion_segun_aseguradora(
+    condicion: str, codigo_iafas_cuenta: str, codigo_iafas_respuesta: str, nombre_respuesta: str
+) -> str:
+    """Si ACREDITA SALUD devuelve al asegurado bajo una IAFAS distinta de la
+    registrada en la cuenta, la acreditacion no sirve para facturar a la
+    IAFAS de la cuenta: queda NO ACREDITABLE con el nombre de la otra."""
+    if not codigo_iafas_cuenta or not codigo_iafas_respuesta:
+        return condicion
+    if codigo_iafas_respuesta.strip() == codigo_iafas_cuenta.strip():
+        return condicion
+    nombre = nombre_respuesta.strip() or codigo_iafas_respuesta.strip()
+    texto = f"NO ACREDITABLE: el asegurado figura en otra aseguradora ({nombre})"
+    return texto[:_LONGITUD_CONDICION]
 
 
 # Tipos de documento del asegurado con nombre conocido (los mismos que

@@ -9,7 +9,10 @@ from datetime import datetime, timedelta
 
 import pytest
 
-from app.dominio.integracion.casos_uso import MonitorearRespuestaIafas
+from app.dominio.integracion.casos_uso import (
+    MonitorearRespuestaIafas,
+    SolicitarMonitoreoRespuestaIafas,
+)
 from app.dominio.integracion.puertos import (
     ContextoLoteMonitoreo,
     ErrorLoteNoMonitoreable,
@@ -91,6 +94,79 @@ def _caso_uso(
         intervalo_reconsulta=timedelta(minutes=15),
     )
     return caso_uso, repositorio
+
+
+@dataclass
+class _EstadoLoteFalso:
+    estado: str | None
+
+    async def obtener_estado_lote(self, lote_id: int) -> str | None:
+        return self.estado
+
+
+@dataclass
+class _TrabajosFalso:
+    en_curso: bool = False
+    encolados: list[tuple[str, dict[str, object], datetime]] = field(default_factory=list)
+
+    async def hay_sin_terminar(self, tipo: str, lote_id: int) -> bool:
+        return self.en_curso
+
+    async def encolar(
+        self, tipo: str, carga_util: dict[str, object], proximo_intento: datetime
+    ) -> int:
+        self.encolados.append((tipo, carga_util, proximo_intento))
+        return 7
+
+
+def _solicitud(
+    estado: str | None, en_curso: bool = False
+) -> tuple[SolicitarMonitoreoRespuestaIafas, _TrabajosFalso, _RegistroEventosFalso]:
+    trabajos = _TrabajosFalso(en_curso=en_curso)
+    eventos = _RegistroEventosFalso()
+    caso_uso = SolicitarMonitoreoRespuestaIafas(
+        repositorio=_EstadoLoteFalso(estado),  # type: ignore[arg-type]
+        repositorio_trabajos=trabajos,  # type: ignore[arg-type]
+        observabilidad=Observabilidad(eventos=eventos, mediciones=_RegistroMedicionesFalso()),
+        reloj=_RelojFijo(datetime(2026, 9, 20, 10, 0, 0)),
+    )
+    return caso_uso, trabajos, eventos
+
+
+async def prueba_solicitar_monitoreo_encola_y_deja_evento() -> None:
+    caso_uso, trabajos, eventos = _solicitud("REMITIDO_IAFAS")
+
+    trabajo_id = await caso_uso.ejecutar(lote_id=1, actor="ana.analista")
+
+    assert trabajo_id == 7
+    assert trabajos.encolados == [
+        (
+            "MONITOREAR_RESPUESTA_IAFAS",
+            {"lote_id": 1, "usuario_origen": "ana.analista"},
+            datetime(2026, 9, 20, 10, 0, 0),
+        )
+    ]
+    assert [(e.tipo_evento, e.lote_id, e.actor) for e in eventos.eventos] == [
+        ("LOTE_MONITOREO_SOLICITADO", 1, "ana.analista")
+    ]
+
+
+@pytest.mark.parametrize("estado", [None, "VALIDADO", "ACEPTADO"])
+async def prueba_solicitar_monitoreo_rechaza_lote_que_no_esta_remitido(
+    estado: str | None,
+) -> None:
+    caso_uso, trabajos, _ = _solicitud(estado)
+    with pytest.raises(ErrorLoteNoMonitoreable):
+        await caso_uso.ejecutar(lote_id=1, actor="ana.analista")
+    assert trabajos.encolados == []
+
+
+async def prueba_solicitar_monitoreo_rechaza_si_ya_hay_uno_en_curso() -> None:
+    caso_uso, trabajos, eventos = _solicitud("REMITIDO_IAFAS", en_curso=True)
+    with pytest.raises(ErrorLoteNoMonitoreable, match="en curso"):
+        await caso_uso.ejecutar(lote_id=1, actor="ana.analista")
+    assert trabajos.encolados == []
+    assert eventos.eventos == []
 
 
 async def prueba_lote_inexistente_lanza_error() -> None:

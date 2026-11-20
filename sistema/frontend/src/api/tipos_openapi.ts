@@ -111,6 +111,107 @@ export interface paths {
         patch: operations["actualizar_usuario_usuarios__usuario_id__patch"];
         trace?: never;
     };
+    "/atenciones-hospitalarias": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Listar Atenciones Hospitalarias
+         * @description Las atenciones cerradas que aun no se importaron.
+         */
+        get: operations["listar_atenciones_hospitalarias_atenciones_hospitalarias_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/atenciones-hospitalarias/{atencion_id}/importar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Importar Atencion Por Consulta */
+        post: operations["importar_atencion_por_consulta_atenciones_hospitalarias__atencion_id__importar_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/cuentas/importar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Importar Atencion Por Archivo
+         * @description El cuerpo es el archivo exportado por el sistema hospitalario.
+         */
+        post: operations["importar_atencion_por_archivo_cuentas_importar_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/cuentas/{cuenta_id}/copago-cobrado": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Consultar Copago Cobrado
+         * @description El copago que la clinica ya cobro al paciente; `null` si no hay.
+         */
+        get: operations["consultar_copago_cobrado_cuentas__cuenta_id__copago_cobrado_get"];
+        put?: never;
+        /**
+         * Registrar Copago Cobrado
+         * @description Registro manual del cobro, con la referencia del comprobante de caja.
+         */
+        post: operations["registrar_copago_cobrado_cuentas__cuenta_id__copago_cobrado_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/cuentas/{cuenta_id}/copago-asegurado": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Consultar Copago Asegurado
+         * @description Lo que el calculo de montos atribuye al asegurado.
+         */
+        get: operations["consultar_copago_asegurado_cuentas__cuenta_id__copago_asegurado_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/cuentas/asegurado/buscar": {
         parameters: {
             query?: never;
@@ -257,6 +358,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/cuentas/{cuenta_id}/acreditacion/solicitud-atencion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Ver Solicitud Atencion */
+        get: operations["ver_solicitud_atencion_cuentas__cuenta_id__acreditacion_solicitud_atencion_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/iafas": {
         parameters: {
             query?: never;
@@ -320,6 +438,43 @@ export interface paths {
         /** Confirmar Procedimiento */
         post: operations["confirmar_procedimiento_cuentas__cuenta_id__procedimientos_post"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/cuentas/{cuenta_id}/procedimientos-por-codificar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Listar Procedimientos Por Codificar
+         * @description Lo que trajo la atencion importada y aun no tiene codigo CPMS.
+         */
+        get: operations["listar_procedimientos_por_codificar_cuentas__cuenta_id__procedimientos_por_codificar_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/cuentas/{cuenta_id}/procedimientos/{procedimiento_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Quitar Procedimiento */
+        delete: operations["quitar_procedimiento_cuentas__cuenta_id__procedimientos__procedimiento_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -486,6 +641,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/lotes/{lote_id}/monitoreo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Solicitar Monitoreo Respuesta */
+        post: operations["solicitar_monitoreo_respuesta_lotes__lote_id__monitoreo_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/lotes/{lote_id}/acuses": {
         parameters: {
             query?: never;
@@ -641,6 +813,27 @@ export interface paths {
          *     se le remite por su portal: queda encolada para el robot.
          */
         post: operations["responder_observacion_observaciones__observacion_id__respuesta_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/observaciones/{observacion_id}/entrega": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Pedir Nueva Entrega
+         * @description Vuelve a encolar la entrega de la respuesta a la aseguradora cuando
+         *     la anterior agoto sus intentos (2026-11-19).
+         */
+        post: operations["pedir_nueva_entrega_observaciones__observacion_id__entrega_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1095,6 +1288,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/plazos/susalud/declaraciones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Registrar Declaracion Sin Facturacion
+         * @description Constancia de la declaracion jurada de un mes sin lotes que reportar.
+         */
+        post: operations["registrar_declaracion_sin_facturacion_plazos_susalud_declaraciones_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/anulaciones/pendientes": {
         parameters: {
             query?: never;
@@ -1524,6 +1737,16 @@ export interface components {
             porcentaje_coaseguro: number | null;
             /** Preexistencias */
             preexistencias: string[];
+            /**
+             * Admite Reconsulta
+             * @default false
+             */
+            admite_reconsulta: boolean;
+            /**
+             * Tiene Solicitud Atencion
+             * @default false
+             */
+            tiene_solicitud_atencion: boolean;
         };
         /** ActividadRobotRespuesta */
         ActividadRobotRespuesta: {
@@ -1568,6 +1791,39 @@ export interface components {
             apellidos: string;
             /** Iafas Id */
             iafas_id: number;
+        };
+        /** AtencionJson */
+        AtencionJson: {
+            /** Atencion Id */
+            atencion_id: string;
+            /** Tipo Atencion */
+            tipo_atencion: string;
+            /**
+             * Fecha Prestacion
+             * Format: date
+             */
+            fecha_prestacion: string;
+            /**
+             * Hora Prestacion
+             * Format: time
+             */
+            hora_prestacion: string;
+            /** Numero Historia Clinica */
+            numero_historia_clinica: string;
+            paciente: components["schemas"]["PacienteJson"];
+            /** Iafas Codigo */
+            iafas_codigo: string;
+            profesional: components["schemas"]["ProfesionalJson"];
+            /** Diagnostico Principal Cie10 */
+            diagnostico_principal_cie10: string;
+            /** Diagnosticos Secundarios Cie10 */
+            diagnosticos_secundarios_cie10?: string[];
+            hospitalizacion?: components["schemas"]["HospitalizacionJson"] | null;
+            /** Procedimientos */
+            procedimientos?: components["schemas"]["ProcedimientoJson"][];
+            /** Farmacia */
+            farmacia?: components["schemas"]["ProductoJson"][];
+            copago_cobrado?: components["schemas"]["CopagoJson"] | null;
         };
         /** AvisoRespuesta */
         AvisoRespuesta: {
@@ -1766,6 +2022,46 @@ export interface components {
             estado: string;
             /** Listos Envio */
             listos_envio: number;
+            /** Declarada En */
+            declarada_en: string | null;
+        };
+        /**
+         * CopagoAseguradoRespuesta
+         * @description `monto` es null mientras la cuenta no tiene acreditacion.
+         */
+        CopagoAseguradoRespuesta: {
+            /** Monto */
+            monto: string | null;
+        };
+        /** CopagoCobradoRespuesta */
+        CopagoCobradoRespuesta: {
+            /** Monto */
+            monto: string;
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /** Referencia */
+            referencia: string;
+            /** Origen */
+            origen: string;
+            /** Registrado Por */
+            registrado_por: string;
+            /** Registrado En */
+            registrado_en: string | null;
+        };
+        /** CopagoJson */
+        CopagoJson: {
+            /** Monto */
+            monto: number | string;
+            /** Referencia */
+            referencia: string;
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
         };
         /** CorreoIafasDetalleRespuesta */
         CorreoIafasDetalleRespuesta: {
@@ -1887,6 +2183,16 @@ export interface components {
              */
             pendientes: string[];
         };
+        /** DeclaracionSinFacturacionRespuesta */
+        DeclaracionSinFacturacionRespuesta: {
+            /** Periodo */
+            periodo: string;
+            /**
+             * Registrada En
+             * Format: date-time
+             */
+            registrada_en: string;
+        };
         /** DetalleCuentaRespuesta */
         DetalleCuentaRespuesta: {
             /** Id */
@@ -1932,6 +2238,26 @@ export interface components {
              * @default false
              */
             datos_clinicos_reservados: boolean;
+            /**
+             * Tipo Atencion
+             * @default AMBULATORIA
+             */
+            tipo_atencion: string;
+            /** Atencion Origen Id */
+            atencion_origen_id?: string | null;
+            /** Nombre Medico */
+            nombre_medico?: string | null;
+            /** Colegiatura Medico */
+            colegiatura_medico?: string | null;
+            /**
+             * Diagnosticos Secundarios Cie10
+             * @default []
+             */
+            diagnosticos_secundarios_cie10: string[];
+            /** Fecha Ingreso Hospitalario */
+            fecha_ingreso_hospitalario?: string | null;
+            /** Fecha Alta Hospitalaria */
+            fecha_alta_hospitalaria?: string | null;
         };
         /** DetalleLoteRespuesta */
         DetalleLoteRespuesta: {
@@ -1966,6 +2292,8 @@ export interface components {
             version_mapeo: string | null;
             /** Monitoreo Excedido */
             monitoreo_excedido: boolean;
+            /** Validacion Reintentable */
+            validacion_reintentable: boolean;
         };
         /** DetalleTrabajoRespuesta */
         DetalleTrabajoRespuesta: {
@@ -1973,10 +2301,6 @@ export interface components {
             id: number;
             /** Tipo */
             tipo: string;
-            /** Carga Util */
-            carga_util: {
-                [key: string]: unknown;
-            };
             /** Estado */
             estado: string;
             /** Intentos */
@@ -2126,6 +2450,13 @@ export interface components {
             cadena_integra: boolean;
             /** Rupturas */
             rupturas: string[];
+        };
+        /** HospitalizacionJson */
+        HospitalizacionJson: {
+            /** Fecha Ingreso */
+            fecha_ingreso?: string | null;
+            /** Fecha Alta */
+            fecha_alta?: string | null;
         };
         /** IndicadoresCicloRespuesta */
         IndicadoresCicloRespuesta: {
@@ -2347,6 +2678,18 @@ export interface components {
             respondido_en: string | null;
             /** Responsable Nombres */
             responsable_nombres?: string | null;
+            /** Monto Observado */
+            monto_observado?: string | null;
+            /** Resultado */
+            resultado?: string | null;
+            /** Resultado En */
+            resultado_en?: string | null;
+            /** Entrega Estado */
+            entrega_estado?: string | null;
+            /** Entrega En */
+            entrega_en?: string | null;
+            /** Entrega Solicitada Por */
+            entrega_solicitada_por?: string | null;
         };
         /** OpcionNavegacion */
         OpcionNavegacion: {
@@ -2358,6 +2701,28 @@ export interface components {
              * @enum {string}
              */
             modo: "ventana" | "sistema";
+        };
+        /** PacienteAtencionRespuesta */
+        PacienteAtencionRespuesta: {
+            /** Tipo Documento */
+            tipo_documento: string;
+            /** Numero Documento */
+            numero_documento: string;
+            /** Nombres */
+            nombres: string;
+            /** Apellidos */
+            apellidos: string;
+        };
+        /** PacienteJson */
+        PacienteJson: {
+            /** Tipo Documento */
+            tipo_documento: string;
+            /** Numero Documento */
+            numero_documento: string;
+            /** Nombres */
+            nombres: string;
+            /** Apellidos */
+            apellidos: string;
         };
         /** ParametroSistemaRespuesta */
         ParametroSistemaRespuesta: {
@@ -2428,6 +2793,40 @@ export interface components {
             /** Accion */
             accion: string | null;
         };
+        /** ProcedimientoJson */
+        ProcedimientoJson: {
+            /** Descripcion */
+            descripcion: string;
+            /** Area */
+            area: string;
+            /** Cantidad */
+            cantidad: number;
+            /** Monto Unitario */
+            monto_unitario: number | string;
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+        };
+        /** ProcedimientoPorCodificarRespuesta */
+        ProcedimientoPorCodificarRespuesta: {
+            /** Id */
+            id: number;
+            /** Descripcion */
+            descripcion: string;
+            /** Area */
+            area: string;
+            /** Cantidad */
+            cantidad: number;
+            /** Monto Unitario */
+            monto_unitario: string;
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+        };
         /** ProcedimientoRespuesta */
         ProcedimientoRespuesta: {
             /** Id */
@@ -2458,6 +2857,22 @@ export interface components {
             /** Forma Farmaceutica */
             forma_farmaceutica: string | null;
         };
+        /** ProductoJson */
+        ProductoJson: {
+            /** Codigo Producto */
+            codigo_producto: string;
+            /** Cantidad */
+            cantidad: number | string;
+            /** Tipo Unidad Dispensacion */
+            tipo_unidad_dispensacion: string;
+            /** Monto Unitario */
+            monto_unitario: number | string;
+            /**
+             * Fecha Dispensacion
+             * Format: date
+             */
+            fecha_dispensacion: string;
+        };
         /** ProductoRegistradoRespuesta */
         ProductoRegistradoRespuesta: {
             /** Producto Id */
@@ -2483,6 +2898,13 @@ export interface components {
             fecha_dispensacion: string | null;
             /** Monto Presentado */
             monto_presentado: string;
+        };
+        /** ProfesionalJson */
+        ProfesionalJson: {
+            /** Numero Colegiatura */
+            numero_colegiatura: string;
+            /** Nombres */
+            nombres: string;
         };
         /** RechazoCuentaRespuesta */
         RechazoCuentaRespuesta: {
@@ -2658,6 +3080,11 @@ export interface components {
             /** Estado Cuenta */
             estado_cuenta: string;
         };
+        /** RespuestaNuevaEntrega */
+        RespuestaNuevaEntrega: {
+            /** Trabajo Id */
+            trabajo_id: number;
+        };
         /** RespuestaObservacionRegistrada */
         RespuestaObservacionRegistrada: {
             /** Observacion Id */
@@ -2779,6 +3206,21 @@ export interface components {
             motivo_receptor: string | null;
             /** Respondido En */
             respondido_en: string | null;
+        };
+        /** ResumenAtencionRespuesta */
+        ResumenAtencionRespuesta: {
+            /** Atencion Id */
+            atencion_id: string;
+            /** Tipo Atencion */
+            tipo_atencion: string;
+            /**
+             * Fecha Prestacion
+             * Format: date
+             */
+            fecha_prestacion: string;
+            paciente: components["schemas"]["PacienteAtencionRespuesta"];
+            /** Iafas Codigo */
+            iafas_codigo: string;
         };
         /** ResumenCie10Respuesta */
         ResumenCie10Respuesta: {
@@ -2911,6 +3353,12 @@ export interface components {
             identificacion_interna?: string | null;
             /** Asegurado */
             asegurado?: string | null;
+            /** Estado Cuenta */
+            estado_cuenta?: string | null;
+            /** Comprobante */
+            comprobante?: string | null;
+            /** Nota Credito */
+            nota_credito?: string | null;
         };
         /**
          * SolicitudAsignacionObservacion
@@ -2975,6 +3423,18 @@ export interface components {
             vigente_hasta?: string | null;
             /** Sustento */
             sustento: string;
+            /** Plan */
+            plan?: string | null;
+            /**
+             * Tipo Copago
+             * @default ninguno
+             * @enum {string}
+             */
+            tipo_copago: "ninguno" | "fijo" | "coaseguro";
+            /** Monto Copago Fijo */
+            monto_copago_fijo?: number | string | null;
+            /** Porcentaje Coaseguro */
+            porcentaje_coaseguro?: number | null;
         };
         /** SolicitudConciliacionPago */
         SolicitudConciliacionPago: {
@@ -3003,6 +3463,20 @@ export interface components {
              * Format: date-time
              */
             inicio_sugerencia: string;
+            /** Procedimiento Por Codificar Id */
+            procedimiento_por_codificar_id?: number | null;
+        };
+        /** SolicitudCopagoCobrado */
+        SolicitudCopagoCobrado: {
+            /** Monto */
+            monto: number | string;
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /** Referencia */
+            referencia: string;
         };
         /** SolicitudCorreccionReenvio */
         SolicitudCorreccionReenvio: {
@@ -3019,6 +3493,11 @@ export interface components {
             nombres: string;
             /** Roles */
             roles: components["schemas"]["NombreRol"][];
+        };
+        /** SolicitudDeclaracionSinFacturacion */
+        SolicitudDeclaracionSinFacturacion: {
+            /** Periodo */
+            periodo: string;
         };
         /** SolicitudDescarte */
         SolicitudDescarte: {
@@ -3156,6 +3635,8 @@ export interface components {
             es_parcial: boolean;
             /** Detalle Campo Objetado */
             detalle_campo_objetado?: string | null;
+            /** Monto Observado */
+            monto_observado?: number | string | null;
         };
         /** SolicitudRemitenteIafas */
         SolicitudRemitenteIafas: {
@@ -3561,6 +4042,198 @@ export interface operations {
             };
         };
     };
+    listar_atenciones_hospitalarias_atenciones_hospitalarias_get: {
+        parameters: {
+            query?: {
+                documento?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResumenAtencionRespuesta"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    importar_atencion_por_consulta_atenciones_hospitalarias__atencion_id__importar_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                atencion_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaCuentaCreada"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    importar_atencion_por_archivo_cuentas_importar_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AtencionJson"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaCuentaCreada"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    consultar_copago_cobrado_cuentas__cuenta_id__copago_cobrado_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cuenta_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CopagoCobradoRespuesta"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    registrar_copago_cobrado_cuentas__cuenta_id__copago_cobrado_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cuenta_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SolicitudCopagoCobrado"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CopagoCobradoRespuesta"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    consultar_copago_asegurado_cuentas__cuenta_id__copago_asegurado_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cuenta_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CopagoAseguradoRespuesta"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     buscar_asegurado_cuentas_asegurado_buscar_post: {
         parameters: {
             query?: never;
@@ -3882,6 +4555,37 @@ export interface operations {
             };
         };
     };
+    ver_solicitud_atencion_cuentas__cuenta_id__acreditacion_solicitud_atencion_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cuenta_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/png": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     listar_iafas_iafas_get: {
         parameters: {
             query?: never;
@@ -3991,6 +4695,67 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["RespuestaProcedimientoConfirmado"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listar_procedimientos_por_codificar_cuentas__cuenta_id__procedimientos_por_codificar_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cuenta_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProcedimientoPorCodificarRespuesta"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    quitar_procedimiento_cuentas__cuenta_id__procedimientos__procedimiento_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cuenta_id: number;
+                procedimiento_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -4330,6 +5095,37 @@ export interface operations {
             };
         };
     };
+    solicitar_monitoreo_respuesta_lotes__lote_id__monitoreo_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lote_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaTrabajoEncolado"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     obtener_acuses_lote_lotes__lote_id__acuses_get: {
         parameters: {
             query?: never;
@@ -4616,6 +5412,37 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    pedir_nueva_entrega_observaciones__observacion_id__entrega_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                observacion_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaNuevaEntrega"];
+                };
             };
             /** @description Validation Error */
             422: {
@@ -5515,6 +6342,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ControlPeriodoSusaludRespuesta"][];
+                };
+            };
+        };
+    };
+    registrar_declaracion_sin_facturacion_plazos_susalud_declaraciones_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SolicitudDeclaracionSinFacturacion"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeclaracionSinFacturacionRespuesta"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

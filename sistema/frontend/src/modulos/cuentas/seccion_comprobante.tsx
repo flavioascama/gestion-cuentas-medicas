@@ -8,9 +8,11 @@ import { usar_sesion } from "../../sesion/contexto_sesion";
 import { formatear_fecha, formatear_monto } from "../../utilidades/formato";
 import { DialogoNota, DialogoReemplazo } from "./dialogos_comprobante";
 import { MOTIVOS_NOTA, TIPOS_NOTA } from "./etiquetas_comprobante";
+import { usar_en_correccion_validador } from "./usar_cuentas";
 import estilos from "./detalle_cuenta.module.css";
 
-// CU-10 (reemplazo al refacturar) y RI-11 (una nota por comprobante).
+// CU-10 (reemplazo al refacturar, y si el validador observo el lote) y
+// RI-11 (una nota por comprobante).
 const _ESTADOS_REEMPLAZO = new Set(["RECHAZADA", "GLOSADA", "GLOSADA_PARCIAL"]);
 const _ESTADOS_NOTA = new Set(["FACTURADA", "RECHAZADA", "GLOSADA", "GLOSADA_PARCIAL"]);
 
@@ -48,11 +50,12 @@ function datos_documentos(documentos: DocumentosPago): { etiqueta: string; valor
 
 function AccionesDocumentos(props: { cuenta_id: number; estado: string; con_nota: boolean }) {
   const [dialogo, set_dialogo] = useState<"reemplazo" | "nota" | null>(null);
+  const en_correccion = usar_en_correccion_validador(props.cuenta_id);
   const cerrar = () => set_dialogo(null);
   if (props.con_nota) return null;
   return (
     <div className={estilos.fila_accion}>
-      {_ESTADOS_REEMPLAZO.has(props.estado) ? (
+      {_ESTADOS_REEMPLAZO.has(props.estado) || en_correccion ? (
         <Boton variante="secundario" onClick={() => set_dialogo("reemplazo")}>
           Emitir comprobante de reemplazo
         </Boton>

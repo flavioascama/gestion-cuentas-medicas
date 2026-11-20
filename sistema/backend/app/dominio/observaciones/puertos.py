@@ -11,6 +11,7 @@ from app.dominio.observaciones.valores import (
     MotivoObservacion,
     Naturaleza,
     Observacion,
+    ResultadoObservacion,
 )
 
 
@@ -63,4 +64,11 @@ class RepositorioObservaciones(Protocol):
         estuviera ya respondida -- lo hace el caso de uso, para poder
         levantar `ErrorObservacionYaRespondida` con todo el contexto de
         dominio antes de tocar la base."""
+        ...
+
+    async def fijar_resultado(
+        self, cuenta_medica_id: int, resultado: ResultadoObservacion, instante: datetime
+    ) -> list[int]:
+        """Fija el resultado de las observaciones RESPONDIDAS de la cuenta
+        que aun no lo tienen; devuelve sus ids."""
         ...

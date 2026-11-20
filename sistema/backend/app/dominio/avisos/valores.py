@@ -183,6 +183,10 @@ class EventoAviso:
     # estado despues, la contingencia se reviso, el trabajo se completo
     # despues): lo decide el repositorio, que ve el resto del almacen.
     atendido: bool = False
+    # De un aviso de observacion (2026-11-19): la persona asignada y el rol
+    # responsable, que deciden quien lo ve (destinatarios.py).
+    responsable_usuario_id: int | None = None
+    responsable_rol: str | None = None
 
 
 def clave_agrupacion(evento: EventoAviso) -> tuple[object, ...]:

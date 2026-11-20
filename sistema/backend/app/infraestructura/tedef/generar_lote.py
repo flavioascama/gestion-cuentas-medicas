@@ -20,8 +20,13 @@ from app.dominio.integracion.esquema import TablaEsquema
 from app.dominio.integracion.hallazgos import Hallazgo
 from app.dominio.integracion.lote import ContextoLote, DocumentoLote
 from app.dominio.integracion.lotes_sugeridos import periodo_unico
-from app.dominio.integracion.pendientes_lote import PendientesCuenta, explicar_errores
+from app.dominio.integracion.pendientes_lote import (
+    COMPROBANTE_DESFASADO,
+    PendientesCuenta,
+    explicar_errores,
+)
 from app.dominio.integracion.puertos import DatosLoteConforme, RepositorioLoteFacturacion
+from app.dominio.pse.puertos import CotejoMontos, MontosComprobante
 from app.dominio.puertos_comunes import (
     Evento,
     MedicionPaso,
@@ -39,6 +44,7 @@ from app.infraestructura.tedef.constructor_lote import (
     construir_t4,
 )
 from app.infraestructura.tedef.escritor_ancho_fijo import ensamblar_archivo, escribir_registro
+from app.infraestructura.tedef.montos_lote import calcular_gastos, calcular_montos_facturados
 from app.infraestructura.tedef.nombrado import (
     PREFIJO_ARCHIVO_POR_TABLA,
     IdentidadTrama,
@@ -97,6 +103,19 @@ def _construir_filas(
     return filas_t1, filas_t2, filas_t3, filas_t4
 
 
+def _comprobante_desfasado(documento: DocumentoLote) -> bool:
+    """El comprobante guardo montos distintos de los que hoy factura la
+    cuenta (misma regla que montos_facturados_de_cuenta): la trama y el
+    comprobante diferirian."""
+    prestacion = documento.prestacion
+    gastos = calcular_gastos(prestacion.procedimientos, prestacion.productos)
+    montos = calcular_montos_facturados(documento.tipo_documento_pago, gastos, TASA_IGV)
+    actuales = MontosComprobante(
+        valor_venta=montos.valor_venta, igv=montos.igv, total=montos.total_facturado
+    )
+    return CotejoMontos(guardados=documento.montos_comprobante, actuales=actuales).desfasado
+
+
 def _pendientes_por_cuenta(
     esquema: dict[str, TablaEsquema], contexto: ContextoLote, documentos: list[DocumentoLote]
 ) -> tuple[PendientesCuenta, ...]:
@@ -111,6 +130,8 @@ def _pendientes_por_cuenta(
             for registro in registros:
                 hallazgos.extend(validar_registro(esquema[tabla], registro))
         explicados = explicar_errores(hallazgos)
+        if _comprobante_desfasado(documento):
+            explicados += (COMPROBANTE_DESFASADO,)
         if explicados:
             pendientes.append(
                 PendientesCuenta(
@@ -203,6 +224,8 @@ class GenerarLote:
         )
 
         conforme = bool(documentos) and not any(h.severidad == "error" for h in hallazgos)
+        # Un comprobante desfasado tambien impide el lote (pendiente de su cuenta).
+        conforme = conforme and not any(_comprobante_desfasado(d) for d in documentos)
         informe = InformeValidacionLote(
             numero_lote=contexto.numero_lote, conforme=conforme, hallazgos=tuple(hallazgos)
         )

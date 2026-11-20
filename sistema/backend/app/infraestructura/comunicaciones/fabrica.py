@@ -37,18 +37,21 @@ def construir_procesar_comunicacion(sesion: AsyncSession) -> ProcesarComunicacio
     estado = RepositorioEstadoCuentaSql(sesion)
     reloj = RelojSistema()
     liquidaciones = RepositorioLiquidacionesSql(sesion)
+    observaciones = RepositorioObservacionesSql(sesion)
     casos = CasosUsoComunicaciones(
         conformidad=RegistrarConformidadAuditoria(
             estado, RepositorioConformidadAuditoriaSql(sesion), eventos
         ),
         observacion=RegistrarObservacion(
-            RepositorioObservacionesSql(sesion),
+            observaciones,
             RepositorioCatalogoMotivosSql(sesion),
             estado,
             observabilidad,
             reloj,
         ),
-        liquidacion=RegistrarLiquidacion(liquidaciones, estado, observabilidad, reloj),
+        liquidacion=RegistrarLiquidacion(
+            liquidaciones, estado, observabilidad, reloj, observaciones
+        ),
         pago=ConciliarPago(liquidaciones, estado, observabilidad, reloj),
     )
     return ProcesarComunicacionIafas(RepositorioComunicacionesSql(sesion), casos, eventos, reloj)

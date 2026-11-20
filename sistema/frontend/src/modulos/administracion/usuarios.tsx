@@ -7,6 +7,7 @@ import { ConPaginacion } from "../../componentes_base/paginacion";
 import { usar_pagina_cliente } from "../../componentes_base/paginar";
 import { TablaDatos, type ColumnaTabla } from "../../componentes_base/tabla_datos";
 import { TituloPagina } from "../../componentes_base/titulo_pagina";
+import { usar_sesion } from "../../sesion/contexto_sesion";
 import { DialogoUsuario } from "./dialogo_usuario";
 import { usar_actualizar_usuario, usar_lista_usuarios } from "./usar_usuarios";
 import estilos from "./administracion.module.css";
@@ -16,6 +17,7 @@ import estilos from "./administracion.module.css";
 function AccionesUsuario({ usuario }: { usuario: Usuario }) {
   const [editando, set_editando] = useState(false);
   const mutacion_activo = usar_actualizar_usuario();
+  const es_propio = usar_sesion().sesion?.usuario_id === usuario.id;
 
   return (
     <div className={estilos.acciones_fila}>
@@ -30,7 +32,7 @@ function AccionesUsuario({ usuario }: { usuario: Usuario }) {
             solicitud: { activo: !usuario.activo },
           })
         }
-        disabled={mutacion_activo.isPending}
+        disabled={mutacion_activo.isPending || es_propio}
       >
         {usuario.activo ? "Desactivar" : "Activar"}
       </Boton>

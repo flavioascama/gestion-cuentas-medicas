@@ -11,3 +11,9 @@ class ErrorLiquidacionInexistente(Exception):
 class ErrorPagoYaConciliado(Exception):
     """CU-12: no se puede conciliar el pago dos veces sobre la misma
     liquidacion."""
+
+
+class ErrorPagoExcedeSaldo(ErrorPagoYaConciliado):
+    """Un pago adicional mayor que lo que falta por pagar dejaria la
+    cuenta con una diferencia que ya no se puede regularizar. Hereda
+    del error anterior para que quien ya lo maneja lo trate igual."""

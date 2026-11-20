@@ -15,6 +15,7 @@ from app.dominio.contingencia.valores import (
     TIPO_EVENTO_REVISION_CONTINGENCIA,
     TIPO_EVENTO_VALIDACION_CONTINGENCIA,
     EstadoRevision,
+    IdentidadLoteS01,
     RegistroContingencia,
     ResumenTrabajo,
     TipoOperacion,
@@ -23,8 +24,13 @@ from app.dominio.puertos_comunes import TIPO_AGREGADO_LOTE
 from app.infraestructura.persistencia.modelos_integracion import (
     CuentaMedicaModelo,
     EventoModelo,
+    IafasModelo,
+    IpressModelo,
     LoteFacturacionModelo,
     TrabajoModelo,
+)
+from app.infraestructura.persistencia.revision_contingencia_sql import (
+    acreditacion_vigente_no_conforme,
 )
 
 _TIPO_OPERACION = {
@@ -85,6 +91,30 @@ class RepositorioContingenciaSql(RepositorioContingencia):
             .where(LoteFacturacionModelo.id == lote_id)
             .values(estado="OBSERVADO_VALIDADOR")
         )
+
+    async def identidad_lote_s01(self, lote_id: int) -> IdentidadLoteS01 | None:
+        fila = (
+            await self._sesion.execute(
+                sa.select(
+                    LoteFacturacionModelo.numero, LoteFacturacionModelo.periodo, IafasModelo.codigo
+                )
+                .join(IafasModelo, IafasModelo.id == LoteFacturacionModelo.iafas_id)
+                .where(LoteFacturacionModelo.id == lote_id)
+            )
+        ).first()
+        ipress = (await self._sesion.execute(sa.select(IpressModelo).limit(1))).scalar_one_or_none()
+        if fila is None or ipress is None:
+            return None
+        return IdentidadLoteS01(
+            ruc=ipress.ruc,
+            codigo_ipress=ipress.codigo_ipress,
+            codigo_iafas=fila[2],
+            numero_lote=fila[0],
+            periodo=fila[1],
+        )
+
+    async def cobertura_vigente_no_conforme(self, cuenta_medica_id: int) -> bool:
+        return await acreditacion_vigente_no_conforme(self._sesion, cuenta_medica_id)
 
     async def listar_registros(self) -> list[RegistroContingencia]:
         es_lote = EventoModelo.tipo_agregado == TIPO_AGREGADO_LOTE

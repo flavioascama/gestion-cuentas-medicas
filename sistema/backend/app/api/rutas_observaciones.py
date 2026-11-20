@@ -9,7 +9,10 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, status
 
 from app.api.dependencias import requiere_rol
-from app.api.dependencias_comunicaciones import construir_encolar_respuesta_iafas
+from app.api.dependencias_comunicaciones import (
+    construir_encolar_respuesta_iafas,
+    construir_solicitar_nueva_entrega,
+)
 from app.api.dependencias_observaciones import (
     construir_asignar_responsable_observacion,
     construir_listar_catalogo_motivos,
@@ -22,6 +25,7 @@ from app.api.esquemas_observaciones import (
     MotivoObservacionRespuesta,
     ObservacionRespuesta,
     ResponsablePosibleRespuesta,
+    RespuestaNuevaEntrega,
     RespuestaObservacionRegistrada,
     SolicitudAsignacionObservacion,
     SolicitudRegistroObservacion,
@@ -31,6 +35,12 @@ from app.compartido.errores import ErrorAplicacion
 from app.dominio.acceso.entidades import NombreRol
 from app.dominio.acceso.puertos import CargaSesion
 from app.dominio.comunicaciones.casos_uso import EncolarRespuestaIafas
+from app.dominio.comunicaciones.entrega_respuesta import (
+    ErrorEntregaDeOtro,
+    ErrorEntregaNoDisponible,
+    Solicitante,
+    SolicitarNuevaEntregaRespuesta,
+)
 from app.dominio.observaciones.casos_uso import (
     AsignarResponsableObservacion,
     ListarCatalogoMotivos,
@@ -41,6 +51,7 @@ from app.dominio.observaciones.casos_uso import (
 )
 from app.dominio.observaciones.errores import (
     ErrorMotivoInexistente,
+    ErrorObservacionDeOtroResponsable,
     ErrorObservacionInexistente,
     ErrorObservacionYaRespondida,
     ErrorResponsableNoValido,
@@ -48,6 +59,7 @@ from app.dominio.observaciones.errores import (
 from app.dominio.observaciones.valores import (
     ROL_RESPONSABLE_POR_NATURALEZA,
     DatosRegistroObservacion,
+    Respondedor,
 )
 from app.dominio.orquestacion.errores import ErrorTransicionNoDefinida
 
@@ -76,6 +88,7 @@ async def registrar_observacion(
                 detalle_campo_objetado=solicitud.detalle_campo_objetado,
                 actor=actor.nombre_usuario,
                 usuario_origen=actor.nombre_usuario,
+                monto_observado=solicitud.monto_observado,
             )
         )
     except ErrorMotivoInexistente as error:
@@ -159,11 +172,15 @@ async def responder_observacion(
             solicitud.respuesta_texto,
             solicitud.respuesta_sustento,
             actor.nombre_usuario,
-            usuario_origen=actor.nombre_usuario,
+            respondedor=Respondedor(actor.usuario_id, actor.nombre_usuario),
         )
     except ErrorObservacionInexistente as error:
         raise ErrorAplicacion(
             "OBSERVACION_NO_ENCONTRADA", str(error), estado_http=status.HTTP_404_NOT_FOUND
+        ) from error
+    except ErrorObservacionDeOtroResponsable as error:
+        raise ErrorAplicacion(
+            "OBSERVACION_DE_OTRO_RESPONSABLE", str(error), estado_http=status.HTTP_403_FORBIDDEN
         ) from error
     except ErrorObservacionYaRespondida as error:
         raise ErrorAplicacion(
@@ -179,3 +196,30 @@ async def responder_observacion(
         solicitud.respuesta_sustento,
         actor.nombre_usuario,
     )
+
+
+@router_item.post("/{observacion_id}/entrega", response_model=RespuestaNuevaEntrega)
+async def pedir_nueva_entrega(
+    observacion_id: int,
+    caso_uso: SolicitarNuevaEntregaRespuesta = Depends(construir_solicitar_nueva_entrega),
+    actor: CargaSesion = Depends(_RESPONDE),
+) -> RespuestaNuevaEntrega:
+    """Vuelve a encolar la entrega de la respuesta a la aseguradora cuando
+    la anterior agoto sus intentos (2026-11-19)."""
+    try:
+        trabajo_id = await caso_uso.ejecutar(
+            observacion_id, Solicitante(actor.nombre_usuario, actor.roles)
+        )
+    except ErrorObservacionInexistente as error:
+        raise ErrorAplicacion(
+            "OBSERVACION_NO_ENCONTRADA", str(error), estado_http=status.HTTP_404_NOT_FOUND
+        ) from error
+    except ErrorEntregaDeOtro as error:
+        raise ErrorAplicacion(
+            "ENTREGA_DE_OTRO_RESPONSABLE", str(error), estado_http=status.HTTP_403_FORBIDDEN
+        ) from error
+    except ErrorEntregaNoDisponible as error:
+        raise ErrorAplicacion(
+            "ENTREGA_NO_DISPONIBLE", str(error), estado_http=status.HTTP_409_CONFLICT
+        ) from error
+    return RespuestaNuevaEntrega(trabajo_id=trabajo_id)

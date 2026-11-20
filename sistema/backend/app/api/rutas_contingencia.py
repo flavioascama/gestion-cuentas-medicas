@@ -39,10 +39,12 @@ from app.dominio.contingencia.casos_uso import (
     ListarRegistrosContingencia,
     RegistrarCoberturaContingencia,
     RevisarRegistroContingencia,
+    normalizar_copago,
 )
 from app.dominio.contingencia.errores import (
     ErrorArchivoS01Invalido,
     ErrorContingenciaNoHabilitada,
+    ErrorCopagoIncompleto,
     ErrorRegistroContingenciaInexistente,
     ErrorRegistroContingenciaYaRevisado,
     ErrorSustentoInsuficiente,
@@ -105,22 +107,9 @@ async def registrar_cobertura_contingencia(
     caso_uso: RegistrarCoberturaContingencia = Depends(construir_registrar_cobertura_contingencia),
     actor: CargaSesion = Depends(_SOLO_ANALISTA),
 ) -> RespuestaCoberturaContingencia:
-    resultado = ResultadoAcreditacion(
-        condicion_cobertura=solicitud.condicion_cobertura,
-        codigo_autorizacion=solicitud.codigo_autorizacion,
-        tipo_documento_autorizacion=solicitud.tipo_documento_autorizacion,
-        codigo_asegurado=solicitud.codigo_asegurado,
-        tipo_afiliacion=solicitud.tipo_afiliacion,
-        plan=None,
-        vigente_desde=None,
-        vigente_hasta=solicitud.vigente_hasta,
-        tipo_copago=None,
-        monto_copago_fijo=None,
-        porcentaje_coaseguro=None,
-    )
     try:
         acreditacion_id = await caso_uso.ejecutar(
-            cuenta_id, resultado, solicitud.sustento, actor.nombre_usuario
+            cuenta_id, resultado_contingencia(solicitud), solicitud.sustento, actor.nombre_usuario
         )
     except ErrorCuentaNoEncontrada as error:
         raise ErrorAplicacion(
@@ -128,7 +117,32 @@ async def registrar_cobertura_contingencia(
         ) from error
     except (ErrorContingenciaNoHabilitada, ErrorSustentoInsuficiente) as error:
         raise _error_contingencia(error) from error
+    except ErrorCopagoIncompleto as error:
+        raise ErrorAplicacion(
+            "COPAGO_INCOMPLETO", str(error), estado_http=status.HTTP_422_UNPROCESSABLE_ENTITY
+        ) from error
     return RespuestaCoberturaContingencia(acreditacion_id=acreditacion_id)
+
+
+def resultado_contingencia(solicitud: SolicitudCoberturaContingencia) -> ResultadoAcreditacion:
+    """La acreditacion registrada a mano, con el plan y el copago en el
+    mismo formato que deja el robot."""
+    tipo, monto, porcentaje = normalizar_copago(
+        solicitud.tipo_copago, solicitud.monto_copago_fijo, solicitud.porcentaje_coaseguro
+    )
+    return ResultadoAcreditacion(
+        condicion_cobertura=solicitud.condicion_cobertura,
+        codigo_autorizacion=solicitud.codigo_autorizacion,
+        tipo_documento_autorizacion=solicitud.tipo_documento_autorizacion,
+        codigo_asegurado=solicitud.codigo_asegurado,
+        tipo_afiliacion=solicitud.tipo_afiliacion,
+        plan=(solicitud.plan or "").strip() or None,
+        vigente_desde=None,
+        vigente_hasta=solicitud.vigente_hasta,
+        tipo_copago=tipo,
+        monto_copago_fijo=monto,
+        porcentaje_coaseguro=porcentaje,
+    )
 
 
 @router_lotes.get("/contingencia", response_model=DisponibilidadContingenciaRespuesta)

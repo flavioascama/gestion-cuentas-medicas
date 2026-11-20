@@ -29,6 +29,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dominio.avisos.valores import TIPO_AVISO_TRABAJO_AGOTADO, EventoAviso
 from app.dominio.observaciones.conformidad import TIPO_EVENTO_CONFORMIDAD
+from app.infraestructura.persistencia.modelos_declaracion_susalud import (
+    DeclaracionSusaludSinFacturacionModelo,
+)
 from app.infraestructura.persistencia.modelos_integracion import (
     AcreditacionModelo,
     CuentaMedicaModelo,
@@ -66,6 +69,7 @@ class _Contexto:
     estado_lote: dict[int, str]
     enviados_susalud: set[int]
     conformidades: dict[int, datetime]
+    declarados: set[str]
 
 
 class EvaluadorAtencionAvisos:
@@ -88,6 +92,7 @@ class EvaluadorAtencionAvisos:
             estado_lote=await self._estados(LoteFacturacionModelo, lotes),
             enviados_susalud=await self._enviados_susalud(lotes),
             conformidades=await self._conformidades(cuentas),
+            declarados=await self._declarados(),
         )
         return [replace(aviso, atendido=_atendido(aviso, contexto)) for aviso in avisos]
 
@@ -162,6 +167,12 @@ class EvaluadorAtencionAvisos:
         )
         return {int(cuenta): _utc(instante) for cuenta, instante in filas.all()}
 
+    async def _declarados(self) -> set[str]:
+        filas = await self._sesion.execute(
+            sa.select(DeclaracionSusaludSinFacturacionModelo.periodo)
+        )
+        return {periodo for (periodo,) in filas.all()}
+
     async def _enviados_susalud(self, lotes: set[int]) -> set[int]:
         if not lotes:
             return set()
@@ -194,6 +205,8 @@ def _atendido(aviso: EventoAviso, contexto: _Contexto) -> bool:
     if aviso.tipo_evento == TIPO_AVISO_TRABAJO_AGOTADO:
         return _trabajo_atendido(aviso, contexto)
     if aviso.tipo_evento in _ENVIO_SUSALUD:
+        if aviso.lote_id is None:
+            return str(aviso.datos.get("periodo")) in contexto.declarados
         return aviso.lote_id in contexto.enviados_susalud
     conformidad = contexto.conformidades.get(aviso.cuenta_medica_id or 0)
     if (

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from decimal import Decimal
 
 from pydantic import BaseModel, Field
 
@@ -16,6 +17,7 @@ class SolicitudRegistroObservacion(BaseModel):
     motivo_codigo: str = Field(min_length=1, max_length=10)
     es_parcial: bool
     detalle_campo_objetado: str | None = Field(default=None, max_length=500)
+    monto_observado: Decimal | None = Field(default=None, ge=0, max_digits=12, decimal_places=2)
 
 
 class RespuestaObservacionRegistrada(BaseModel):
@@ -44,6 +46,14 @@ class ObservacionRespuesta(BaseModel):
     registrado_en: datetime
     respondido_en: datetime | None
     responsable_nombres: str | None = None
+    monto_observado: Decimal | None = None
+    resultado: str | None = None
+    resultado_en: datetime | None = None
+    # PENDIENTE | ENTREGADA | NO_ENTREGADA; None si no vino de la aseguradora
+    # o aun no se responde.
+    entrega_estado: str | None = None
+    entrega_en: datetime | None = None
+    entrega_solicitada_por: str | None = None
 
     @staticmethod
     def desde_valor(valor: Observacion) -> ObservacionRespuesta:
@@ -83,6 +93,10 @@ class SolicitudAsignacionObservacion(BaseModel):
 
     responsable_usuario_id: int | None = None
     naturaleza_corregida: Naturaleza | None = None
+
+
+class RespuestaNuevaEntrega(BaseModel):
+    trabajo_id: int
 
 
 class SolicitudRespuestaObservacion(BaseModel):

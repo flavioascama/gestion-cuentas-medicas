@@ -6,8 +6,11 @@ from __future__ import annotations
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.dominio.acreditacion.valores import es_acreditable
 from app.dominio.pse.puertos import (
-    ComprobantePse,
+    ClienteComprobante,
+    ComprobanteEmitido,
+    DatosFacturacion,
     ErrorComprobanteYaExiste,
     ErrorCuentaNoEncontrada,
     RepositorioComprobantePago,
@@ -17,10 +20,21 @@ from app.infraestructura.persistencia.modelos_integracion import (
     AcreditacionModelo,
     CuentaMedicaModelo,
     DocumentoFacturadorModelo,
+    IafasModelo,
     IpressModelo,
     ProcedimientoFacturadoModelo,
 )
-from app.infraestructura.persistencia.montos_comprobante_sql import montos_facturados_de_cuenta
+from app.infraestructura.persistencia.montos_comprobante_sql import (
+    a_montos_comprobante,
+    montos_facturados_de_cuenta,
+)
+from app.infraestructura.persistencia.repositorio_por_codificar_sql import (
+    contar_por_codificar,
+    tiene_carta_garantia,
+)
+from app.infraestructura.persistencia.revision_contingencia_sql import (
+    acreditacion_vigente_no_conforme,
+)
 
 
 class RepositorioComprobantePagoSql(RepositorioComprobantePago):
@@ -35,10 +49,10 @@ class RepositorioComprobantePagoSql(RepositorioComprobantePago):
         cuenta = await self._sesion.get(CuentaMedicaModelo, cuenta_id)
         if cuenta is None:
             return None
-        acreditada = await self._sesion.scalar(
-            sa.select(sa.literal(True))
-            .select_from(AcreditacionModelo)
+        condicion = await self._sesion.scalar(
+            sa.select(AcreditacionModelo.condicion_cobertura)
             .where(AcreditacionModelo.cuenta_id == cuenta_id)
+            .order_by(AcreditacionModelo.id.desc())  # la vigente
             .limit(1)
         )
         procedimientos = await self._sesion.scalar(
@@ -47,12 +61,32 @@ class RepositorioComprobantePagoSql(RepositorioComprobantePago):
             .where(ProcedimientoFacturadoModelo.cuenta_id == cuenta_id)
         )
         return RequisitosComprobante(
-            acreditada=bool(acreditada),
+            acreditada=condicion is not None,
             con_diagnostico=bool(cuenta.diagnostico_principal_cie10),
             procedimientos=int(procedimientos or 0),
+            acreditable=condicion is None or es_acreditable(condicion),
+            por_codificar=await contar_por_codificar(self._sesion, cuenta_id),
+            falta_carta_garantia=cuenta.tipo_atencion == "HOSPITALIZACION"
+            and not await tiene_carta_garantia(self._sesion, cuenta_id),
+            cobertura_no_conforme=await acreditacion_vigente_no_conforme(self._sesion, cuenta_id),
         )
 
-    async def guardar_comprobante(self, cuenta_id: int, comprobante: ComprobantePse) -> int:
+    async def datos_para_facturar(
+        self, cuenta_id: int, tipo_comprobante: str
+    ) -> DatosFacturacion | None:
+        cuenta = await self._sesion.get(CuentaMedicaModelo, cuenta_id)
+        if cuenta is None:
+            return None
+        iafas = await self._sesion.get(IafasModelo, cuenta.iafas_id)
+        montos = await montos_facturados_de_cuenta(self._sesion, cuenta_id, tipo_comprobante)
+        if iafas is None or montos is None:
+            return None
+        return DatosFacturacion(
+            cliente=ClienteComprobante(codigo_iafas=iafas.codigo, razon_social=iafas.razon_social),
+            montos=a_montos_comprobante(montos),
+        )
+
+    async def guardar_comprobante(self, cuenta_id: int, emitido: ComprobanteEmitido) -> int:
         cuenta = await self._sesion.get(CuentaMedicaModelo, cuenta_id)
         if cuenta is None:
             raise ErrorCuentaNoEncontrada(cuenta_id)
@@ -72,6 +106,8 @@ class RepositorioComprobantePagoSql(RepositorioComprobantePago):
         if ya_existe:
             raise ErrorComprobanteYaExiste(cuenta_id)
 
+        # Se guarda exactamente lo que se envio al PSE.
+        comprobante = emitido.comprobante
         documento = DocumentoFacturadorModelo(
             cuenta_id=cuenta_id,
             ipress_id=cuenta.ipress_id,
@@ -79,15 +115,10 @@ class RepositorioComprobantePagoSql(RepositorioComprobantePago):
             serie=comprobante.serie,
             numero=comprobante.numero,
             fecha_emision=comprobante.fecha_emision,
+            valor_venta=emitido.montos.valor_venta,
+            igv=emitido.montos.igv,
+            total=emitido.montos.total,
         )
-        # El comprobante guarda lo que factura, con la regla de T1.
-        montos = await montos_facturados_de_cuenta(
-            self._sesion, cuenta_id, comprobante.tipo_documento_pago
-        )
-        if montos is not None:
-            documento.valor_venta = montos.valor_venta
-            documento.igv = montos.igv
-            documento.total = montos.total_facturado
         self._sesion.add(documento)
         await self._sesion.flush()
         await self._sesion.commit()

@@ -18,6 +18,7 @@ from app.dominio.puertos_comunes import DetalleTrabajo, RepositorioTrabajos, Tra
 from app.infraestructura.persistencia.modelos_integracion import TrabajoModelo
 
 _LONGITUD_MAXIMA_ERROR = 1000
+_ESTADOS_SIN_TERMINAR = ("PENDIENTE", "EN_PROCESO", "REQUIERE_SESION")
 
 
 class RepositorioTrabajosSql(RepositorioTrabajos):
@@ -135,6 +136,18 @@ class RepositorioTrabajosSql(RepositorioTrabajos):
             sa.update(TrabajoModelo).where(TrabajoModelo.id == trabajo_id).values(**valores)
         )
         await self._sesion.commit()
+
+    async def hay_sin_terminar(self, tipo: str, lote_id: int) -> bool:
+        existe = await self._sesion.execute(
+            sa.select(TrabajoModelo.id)
+            .where(
+                TrabajoModelo.tipo == tipo,
+                TrabajoModelo.estado.in_(_ESTADOS_SIN_TERMINAR),
+                TrabajoModelo.carga_util["lote_id"].as_integer() == lote_id,
+            )
+            .limit(1)
+        )
+        return existe.first() is not None
 
     async def reactivar_requieren_sesion(self, tipos: tuple[str, ...]) -> int:
         resultado = await self._sesion.execute(

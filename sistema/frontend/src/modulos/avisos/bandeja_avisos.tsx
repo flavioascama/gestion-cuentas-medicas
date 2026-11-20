@@ -7,6 +7,7 @@ import { Mensaje } from "../../componentes_base/mensaje";
 import { MigasPan } from "../../componentes_base/migas_pan";
 import { ConPaginacion } from "../../componentes_base/paginacion";
 import { usar_pagina_cliente } from "../../componentes_base/paginar";
+import { usar_sesion } from "../../sesion/contexto_sesion";
 import { usar_ahora } from "../../utilidades/usar_ahora";
 import { describir_aviso } from "./catalogo_avisos";
 import { FilaAviso } from "./fila_aviso";
@@ -117,6 +118,7 @@ function ListaAvisos({ avisos, al_abrir }: { avisos: Aviso[]; al_abrir: (aviso: 
 
 export function BandejaAvisos() {
   const navegar = useNavigate();
+  const roles = usar_sesion().sesion?.roles ?? [];
   const consulta = usar_avisos(true);
   const [estado, set_estado] = useState<Estado>("pendientes");
   const [tipo, set_tipo] = useState<Tipo>("todos");
@@ -124,9 +126,11 @@ export function BandejaAvisos() {
   const visibles = filtrar(avisos, estado, tipo);
 
   const abrir = (aviso: Aviso) => {
-    const destino = describir_aviso(aviso).destino;
+    const destino = describir_aviso(aviso, roles).destino;
     if (destino)
-      void navegar(destino, { state: { recorrido: recorrido_de_avisos(visibles, aviso) } });
+      void navegar(destino, {
+        state: { recorrido: recorrido_de_avisos(visibles, aviso, roles) },
+      });
   };
 
   return (

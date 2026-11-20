@@ -15,6 +15,7 @@ git pull --ff-only
 "${COMPOSE[@]}" build
 "${COMPOSE[@]}" up -d postgres
 "${COMPOSE[@]}" run --rm -T backend uv run alembic upgrade head
+"${COMPOSE[@]}" run --rm -T backend uv run python -m herramientas.facturar_cuentas_completas
 "${COMPOSE[@]}" up -d
 bash despliegue/limpiar_imagenes.sh
 "${COMPOSE[@]}" ps

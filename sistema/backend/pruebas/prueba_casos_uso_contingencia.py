@@ -28,6 +28,7 @@ from app.dominio.contingencia.errores import (
 )
 from app.dominio.contingencia.valores import (
     EstadoRevision,
+    IdentidadLoteS01,
     RegistroContingencia,
     ResultadoConsulta,
     ResultadoValidacionManual,
@@ -59,6 +60,10 @@ _RESULTADO = ResultadoAcreditacion(
 )
 
 
+_IDENTIDAD_S01 = IdentidadLoteS01("20690951848", "15995250", "96969", "0000007", "202611")
+S01_DEL_LOTE = "937_20690951848_15995250_96969_0000007_202611_20261112.S01"
+
+
 class _Reloj:
     def ahora(self) -> datetime:
         return _AHORA
@@ -84,6 +89,7 @@ class _Contingencia:
     estado_lote: str | None = "GENERADO"
     registros: list[RegistroContingencia] = field(default_factory=list)
     observados: list[int] = field(default_factory=list)
+    no_conforme: bool = False
 
     async def ultimo_trabajo(
         self, tipo_trabajo: str, clave: str, valor: int
@@ -101,6 +107,12 @@ class _Contingencia:
 
     async def marcar_lote_observado(self, lote_id: int) -> None:
         self.observados.append(lote_id)
+
+    async def identidad_lote_s01(self, lote_id: int) -> IdentidadLoteS01 | None:
+        return _IDENTIDAD_S01
+
+    async def cobertura_vigente_no_conforme(self, cuenta_medica_id: int) -> bool:
+        return self.no_conforme
 
     async def listar_registros(self) -> list[RegistroContingencia]:
         return self.registros
@@ -206,15 +218,15 @@ def _validacion(
 async def prueba_validacion_validado_guarda_el_s01_y_deja_el_lote_listo(tmp_path: Path) -> None:
     validacion, eventos = _Validacion(), _Eventos()
     caso_uso = _validacion(_Contingencia(), validacion, eventos, tmp_path)
-    archivo = ArchivoLote(nombre="937_LOTE_0000007.S01", contenido=b"contenido")
+    archivo = ArchivoLote(nombre=S01_DEL_LOTE, contenido=b"contenido")
 
     estado = await caso_uso.ejecutar(
         7, ResultadoValidacionManual.VALIDADO, _SUSTENTO, archivo, "ana"
     )
 
     assert estado == "VALIDADO"
-    assert (tmp_path / "937_LOTE_0000007.S01").read_bytes() == b"contenido"
-    assert validacion.archivos[0][:2] == (7, "937_LOTE_0000007.S01")
+    assert (tmp_path / S01_DEL_LOTE).read_bytes() == b"contenido"
+    assert validacion.archivos[0][:2] == (7, S01_DEL_LOTE)
     (evento,) = eventos.eventos
     assert (evento.tipo_evento, evento.estado_previo, evento.estado_nuevo) == (
         "CONTINGENCIA_VALIDACION_REGISTRADA",

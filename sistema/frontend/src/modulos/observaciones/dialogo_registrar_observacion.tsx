@@ -21,6 +21,8 @@ interface CamposFormulario {
   set_es_parcial: (valor: boolean) => void;
   detalle_campo_objetado: string;
   set_detalle_campo_objetado: (valor: string) => void;
+  monto_observado: string;
+  set_monto_observado: (valor: string) => void;
 }
 
 function CamposRegistrarObservacion({ campos }: { campos: CamposFormulario }) {
@@ -54,22 +56,46 @@ function CamposRegistrarObservacion({ campos }: { campos: CamposFormulario }) {
         value={campos.detalle_campo_objetado}
         onChange={(evento) => campos.set_detalle_campo_objetado(evento.target.value)}
       />
+      <CampoTexto
+        etiqueta="Monto observado (opcional)"
+        type="number"
+        min="0"
+        step="0.01"
+        value={campos.monto_observado}
+        onChange={(evento) => campos.set_monto_observado(evento.target.value)}
+      />
     </>
   );
 }
 
-export function DialogoRegistrarObservacion({ cuenta_id, al_cerrar, al_registrar }: Propiedades) {
-  const cliente_consultas = useQueryClient();
+function usar_campos_registro(): CamposFormulario {
   const [motivo_codigo, set_motivo_codigo] = useState("");
   const [es_parcial, set_es_parcial] = useState(false);
   const [detalle_campo_objetado, set_detalle_campo_objetado] = useState("");
+  const [monto_observado, set_monto_observado] = useState("");
+  return {
+    motivo_codigo,
+    set_motivo_codigo,
+    es_parcial,
+    set_es_parcial,
+    detalle_campo_objetado,
+    set_detalle_campo_objetado,
+    monto_observado,
+    set_monto_observado,
+  };
+}
+
+export function DialogoRegistrarObservacion({ cuenta_id, al_cerrar, al_registrar }: Propiedades) {
+  const cliente_consultas = useQueryClient();
+  const campos = usar_campos_registro();
 
   const mutacion = useMutation({
     mutationFn: () =>
       registrar_observacion(cuenta_id, {
-        motivo_codigo,
-        es_parcial,
-        detalle_campo_objetado: detalle_campo_objetado || null,
+        motivo_codigo: campos.motivo_codigo,
+        es_parcial: campos.es_parcial,
+        detalle_campo_objetado: campos.detalle_campo_objetado || null,
+        monto_observado: campos.monto_observado || null,
       }),
     onSuccess: () => {
       void cliente_consultas.invalidateQueries({ queryKey: ["cuentas", cuenta_id] });
@@ -89,7 +115,7 @@ export function DialogoRegistrarObservacion({ cuenta_id, al_cerrar, al_registrar
           <Boton
             variante="primario"
             onClick={() => mutacion.mutate()}
-            disabled={mutacion.isPending || !motivo_codigo}
+            disabled={mutacion.isPending || !campos.motivo_codigo}
           >
             Registrar observación
           </Boton>
@@ -97,16 +123,7 @@ export function DialogoRegistrarObservacion({ cuenta_id, al_cerrar, al_registrar
       }
     >
       <MensajeErrorMutacion error={mutacion.error} texto_por_defecto="No se pudo registrar." />
-      <CamposRegistrarObservacion
-        campos={{
-          motivo_codigo,
-          set_motivo_codigo,
-          es_parcial,
-          set_es_parcial,
-          detalle_campo_objetado,
-          set_detalle_campo_objetado,
-        }}
-      />
+      <CamposRegistrarObservacion campos={campos} />
     </Dialogo>
   );
 }

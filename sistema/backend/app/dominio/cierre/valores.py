@@ -40,3 +40,8 @@ class SolicitudAnulacion:
     # Para la bandeja (2026-11-18): antes solo se veia el id interno.
     identificacion_interna: str | None = None
     asegurado: str | None = None
+    # Lo que el jefe anula (2026-11-19): estado de la cuenta, comprobante
+    # vigente y nota de credito (serie-numero), si los hay.
+    estado_cuenta: str | None = None
+    comprobante: str | None = None
+    nota_credito: str | None = None

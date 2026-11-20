@@ -22,6 +22,7 @@ from app.dominio.integracion.casos_uso_ingesta import (
     ConsultarCompletitudCuenta,
     RegistrarCuentaMedica,
 )
+from app.dominio.integracion.facturacion_cuenta import FacturarCuentaCompleta
 from app.dominio.integracion.puertos_consulta import (
     RepositorioCie10Consulta,
     RepositorioCuentasConsulta,
@@ -154,9 +155,8 @@ def construir_registrar_cuenta(
 
 def construir_consultar_completitud(
     repositorio: RepositorioCompletitudCuenta = Depends(obtener_repositorio_completitud_cuenta),
-    registro_eventos: RegistroEventos = Depends(obtener_registro_eventos),
 ) -> ConsultarCompletitudCuenta:
-    return ConsultarCompletitudCuenta(repositorio, registro_eventos)
+    return ConsultarCompletitudCuenta(repositorio)
 
 
 def obtener_repositorio_comprobante_pago(
@@ -178,5 +178,9 @@ def construir_emitir_comprobante_pago(
     sesion: AsyncSession = Depends(obtener_sesion),
 ) -> EmitirComprobantePago:
     return EmitirComprobantePago(
-        repositorio, emisor, registro_eventos, RepositorioEstadoCuentaSql(sesion)
+        repositorio,
+        emisor,
+        registro_eventos,
+        RepositorioEstadoCuentaSql(sesion),
+        FacturarCuentaCompleta(RepositorioCompletitudCuentaSql(sesion), registro_eventos),
     )

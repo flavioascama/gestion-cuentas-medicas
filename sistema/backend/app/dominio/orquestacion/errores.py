@@ -18,6 +18,17 @@ class ErrorAnulacionSinAprobacion(Exception):
     rechaza la transicion si no hay una aprobacion."""
 
 
+class ErrorComprobanteDesfasado(Exception):
+    """La cuenta corregida ya no factura lo que dice su comprobante: el lote
+    y el comprobante diferirian."""
+
+    def __init__(self) -> None:
+        super().__init__(
+            "El comprobante ya no coincide con la cuenta: emita el comprobante de "
+            "reemplazo antes de declarar la corrección."
+        )
+
+
 class ErrorContinuidadEstados(Exception):
     """Tabla 69 ("continuidad"): el estado previo de un evento debe ser el
     estado nuevo del evento anterior del mismo agregado. Se comprueba al

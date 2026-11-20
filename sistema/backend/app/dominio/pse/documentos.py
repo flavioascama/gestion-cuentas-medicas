@@ -23,8 +23,17 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import Protocol
 
+from app.dominio.orquestacion.correccion_validador import admite_correccion
 from app.dominio.orquestacion.puertos import RepositorioEstadoCuenta
-from app.dominio.pse.puertos import ComprobantePse, EmisorPse, RepositorioComprobantePago
+from app.dominio.pse.casos_uso import solicitud_comprobante
+from app.dominio.pse.puertos import (
+    ComprobanteEmitido,
+    ComprobantePse,
+    EmisorPse,
+    NotaPse,
+    RepositorioComprobantePago,
+    SolicitudNota,
+)
 from app.dominio.puertos_comunes import Evento, RegistroEventos, Reloj
 
 ESTADOS_CON_REEMPLAZO = frozenset({"RECHAZADA", "GLOSADA", "GLOSADA_PARCIAL"})
@@ -121,20 +130,27 @@ class RepositorioDocumentosPago(Protocol):
     async def guardar_nota(self, documento_id: int, nota: NotaDocumento) -> None: ...
 
     async def reemplazar(
-        self, cuenta_medica_id: int, nuevo: ComprobantePse, reemplazo: ComprobanteReemplazado
+        self, cuenta_medica_id: int, nuevo: ComprobanteEmitido, reemplazo: ComprobanteReemplazado
     ) -> None:
         """Archiva el comprobante vigente con los datos de `reemplazo` y
-        deja `nuevo` como vigente en la misma fila."""
+        deja `nuevo` (con los montos enviados al PSE) como vigente en la
+        misma fila."""
         ...
 
 
 async def _estado_exigido(
-    estado_cuenta: RepositorioEstadoCuenta, cuenta_medica_id: int, permitidos: frozenset[str]
+    estado_cuenta: RepositorioEstadoCuenta,
+    cuenta_medica_id: int,
+    permitidos: frozenset[str],
+    con_correccion: bool = False,
 ) -> str:
     estado = await estado_cuenta.obtener_estado(cuenta_medica_id)
     if estado is None:
         raise ErrorCuentaInexistenteDocumento(f"No existe la cuenta {cuenta_medica_id}.")
-    if estado not in permitidos:
+    admitido = estado in permitidos
+    if con_correccion:
+        admitido = await admite_correccion(estado_cuenta, cuenta_medica_id, admitido)
+    if not admitido:
         raise ErrorEstadoNoAdmiteDocumento(
             f"La cuenta {cuenta_medica_id} esta en estado {estado!r}."
         )
@@ -151,6 +167,15 @@ def _validar_nota(datos: DatosNota) -> None:
         errores.append("el monto debe ser mayor que cero")
     if errores:
         raise ErrorNotaInvalida("; ".join(errores).capitalize() + ".")
+
+
+def _validar_monto_nota(datos: DatosNota, vigente: ComprobanteVigente) -> None:
+    # Solo se compara cuando se conoce el valor de venta del comprobante.
+    if vigente.valor_venta is not None and datos.monto > vigente.valor_venta:
+        raise ErrorNotaInvalida(
+            f"El monto de la nota ({datos.monto}) supera el valor de venta del "
+            f"comprobante ({vigente.valor_venta})."
+        )
 
 
 class ConsultarDocumentosPago:
@@ -194,8 +219,8 @@ class RegistrarNotaDocumento:
         if documentos.nota is not None:
             raise ErrorNotaYaRegistrada("El comprobante ya tiene una nota registrada.")
         _validar_nota(datos)
-        ruc_ipress, codigo_ipress = await self._comprobantes.obtener_ipress_propia()
-        emitida = await self._emisor.emitir_nota(ruc_ipress, codigo_ipress, datos.tipo)
+        _validar_monto_nota(datos, documentos.vigente)
+        emitida = await self._emitir_nota(datos, documentos.vigente)
         ahora = self._reloj.ahora()
         nota = NotaDocumento(
             tipo=datos.tipo,
@@ -226,6 +251,19 @@ class RegistrarNotaDocumento:
         )
         return nota
 
+    async def _emitir_nota(self, datos: DatosNota, vigente: ComprobanteVigente) -> NotaPse:
+        # El PSE recibe el monto de la nota y el comprobante al que ajusta.
+        ruc_ipress, codigo_ipress = await self._comprobantes.obtener_ipress_propia()
+        referido = ComprobantePse(
+            tipo_documento_pago=vigente.tipo_documento_pago,
+            serie=vigente.serie,
+            numero=vigente.numero,
+            fecha_emision=vigente.fecha_emision,
+        )
+        return await self._emisor.emitir_nota(
+            SolicitudNota(ruc_ipress, codigo_ipress, datos.tipo, datos.monto, referido)
+        )
+
 
 class ReemplazarComprobantePago:
     def __init__(
@@ -244,7 +282,11 @@ class ReemplazarComprobantePago:
         self._reloj = reloj
 
     async def ejecutar(self, cuenta_medica_id: int, motivo: str, actor: str) -> ComprobanteVigente:
-        await _estado_exigido(self._estado_cuenta, cuenta_medica_id, ESTADOS_CON_REEMPLAZO)
+        # Tambien si el validador observo su lote: sin el reemplazo la cuenta
+        # corregida no entra al lote nuevo (comprobante desfasado).
+        await _estado_exigido(
+            self._estado_cuenta, cuenta_medica_id, ESTADOS_CON_REEMPLAZO, con_correccion=True
+        )
         if not motivo.strip():
             raise ErrorNotaInvalida("El motivo del reemplazo es obligatorio.")
         documentos = await self._repositorio.documentos(cuenta_medica_id)
@@ -254,12 +296,12 @@ class ReemplazarComprobantePago:
             raise ErrorComprobanteConNota(
                 "El comprobante tiene una nota registrada: no se reemplaza."
             )
-        ruc_ipress, codigo_ipress = await self._comprobantes.obtener_ipress_propia()
-        nuevo = await self._emisor.emitir(ruc_ipress, codigo_ipress)
+        solicitud = await solicitud_comprobante(self._comprobantes, cuenta_medica_id)
+        nuevo = await self._emisor.emitir(solicitud)
         anterior = documentos.vigente
         await self._repositorio.reemplazar(
             cuenta_medica_id,
-            nuevo,
+            ComprobanteEmitido(nuevo, solicitud.montos),
             ComprobanteReemplazado(
                 tipo_documento_pago=anterior.tipo_documento_pago,
                 serie=anterior.serie,
@@ -270,6 +312,26 @@ class ReemplazarComprobantePago:
                 motivo=motivo.strip(),
             ),
         )
+        await self._registrar_evento(cuenta_medica_id, anterior, nuevo, (motivo.strip(), actor))
+        return ComprobanteVigente(
+            documento_id=anterior.documento_id,
+            tipo_documento_pago=nuevo.tipo_documento_pago,
+            serie=nuevo.serie,
+            numero=nuevo.numero,
+            fecha_emision=nuevo.fecha_emision,
+            valor_venta=solicitud.montos.valor_venta,
+            igv=solicitud.montos.igv,
+            total=solicitud.montos.total,
+        )
+
+    async def _registrar_evento(
+        self,
+        cuenta_medica_id: int,
+        anterior: ComprobanteVigente,
+        nuevo: ComprobantePse,
+        motivo_y_actor: tuple[str, str],
+    ) -> None:
+        motivo, actor = motivo_y_actor
         await self._registro_eventos.registrar(
             Evento(
                 cuenta_medica_id=cuenta_medica_id,
@@ -281,14 +343,7 @@ class ReemplazarComprobantePago:
                     "documento_id": anterior.documento_id,
                     "anterior": f"{anterior.serie}-{anterior.numero}",
                     "nuevo": f"{nuevo.serie}-{nuevo.numero}",
-                    "motivo": motivo.strip(),
+                    "motivo": motivo,
                 },
             )
-        )
-        return ComprobanteVigente(
-            documento_id=anterior.documento_id,
-            tipo_documento_pago=nuevo.tipo_documento_pago,
-            serie=nuevo.serie,
-            numero=nuevo.numero,
-            fecha_emision=nuevo.fecha_emision,
         )

@@ -17,6 +17,11 @@ class ErrorResponsableNoValido(Exception):
     rol que responde esa naturaleza de observacion."""
 
 
+class ErrorObservacionDeOtroResponsable(Exception):
+    """CU-10: la observacion tiene responsable asignado y solo esa persona
+    la responde (2026-11-19)."""
+
+
 class ErrorObservacionYaRespondida(Exception):
     """CU-10: no se puede responder dos veces la misma observacion (una
     nueva objecion de la aseguradora sobre la respuesta es una

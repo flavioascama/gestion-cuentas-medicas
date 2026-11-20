@@ -55,3 +55,53 @@ def prueba_emitir_nota_rechaza_un_tipo_desconocido(tmp_path: Path) -> None:
         "/notas", json={"ruc_ipress": "20123456789", "codigo_ipress": "15995250", "tipo": "N"}
     )
     assert respuesta.status_code == 422
+
+
+_DATOS = {"ruc_ipress": "20123456789", "codigo_ipress": "15995250"}
+_CLIENTE_Y_MONTOS = {
+    "tipo_comprobante": "01",
+    "codigo_cliente": "19395",
+    "razon_social_cliente": "IAFAS de prueba",
+    "valor_venta": "100.00",
+    "igv": "18.00",
+    "total": "118.00",
+}
+
+
+def prueba_emitir_acepta_cliente_y_montos_que_cuadran(tmp_path: Path) -> None:
+    respuesta = _cliente(tmp_path).post("/comprobantes", json={**_DATOS, **_CLIENTE_Y_MONTOS})
+    assert respuesta.status_code == 201, respuesta.text
+    assert respuesta.json()["tipo_documento_pago"] == "01"
+
+
+def prueba_emitir_rechaza_un_total_que_no_cuadra(tmp_path: Path) -> None:
+    respuesta = _cliente(tmp_path).post(
+        "/comprobantes", json={**_DATOS, **_CLIENTE_Y_MONTOS, "total": "120.00"}
+    )
+    assert respuesta.status_code == 422
+
+
+def prueba_emitir_rechaza_montos_negativos(tmp_path: Path) -> None:
+    respuesta = _cliente(tmp_path).post(
+        "/comprobantes",
+        json={**_DATOS, **_CLIENTE_Y_MONTOS, "valor_venta": "-1.00", "total": "17.00"},
+    )
+    assert respuesta.status_code == 422
+
+
+def prueba_emitir_nota_acepta_monto_y_comprobante_referido(tmp_path: Path) -> None:
+    respuesta = _cliente(tmp_path).post(
+        "/notas",
+        json={
+            **_DATOS,
+            "tipo": "C",
+            "monto": "50.00",
+            "comprobante_referido": {"tipo_comprobante": "01", "serie": "E001", "numero": "7"},
+        },
+    )
+    assert respuesta.status_code == 201, respuesta.text
+
+
+def prueba_emitir_nota_rechaza_un_monto_negativo(tmp_path: Path) -> None:
+    respuesta = _cliente(tmp_path).post("/notas", json={**_DATOS, "tipo": "C", "monto": "-5"})
+    assert respuesta.status_code == 422

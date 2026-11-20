@@ -25,3 +25,10 @@ class RepositorioLiquidaciones(Protocol):
     ) -> None:
         """CU-12, T-11: completa la liquidacion con el pago recibido."""
         ...
+
+    async def registrar_pago_adicional(
+        self, liquidacion_id: int, monto_pagado: Decimal, diferencia: Decimal
+    ) -> None:
+        """Actualiza lo pagado (acumulado) y la diferencia tras un pago
+        adicional; la fecha de conciliacion sigue siendo la del primero."""
+        ...

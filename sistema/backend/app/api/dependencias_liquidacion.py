@@ -24,6 +24,9 @@ from app.infraestructura.persistencia.repositorio_estado_cuenta_sql import (
 from app.infraestructura.persistencia.repositorio_liquidaciones_sql import (
     RepositorioLiquidacionesSql,
 )
+from app.infraestructura.persistencia.repositorio_observaciones_sql import (
+    RepositorioObservacionesSql,
+)
 
 
 def obtener_repositorio_liquidaciones(
@@ -49,8 +52,11 @@ def construir_registrar_liquidacion(
     estado_cuenta: RepositorioEstadoCuenta = Depends(obtener_repositorio_estado_cuenta),
     observabilidad: Observabilidad = Depends(obtener_observabilidad),
     reloj: Reloj = Depends(obtener_reloj),
+    sesion: AsyncSession = Depends(obtener_sesion),
 ) -> RegistrarLiquidacion:
-    return RegistrarLiquidacion(repositorio, estado_cuenta, observabilidad, reloj)
+    return RegistrarLiquidacion(
+        repositorio, estado_cuenta, observabilidad, reloj, RepositorioObservacionesSql(sesion)
+    )
 
 
 def construir_conciliar_pago(

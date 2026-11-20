@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict
+from datetime import date
 from decimal import Decimal
 
 import sqlalchemy as sa
@@ -10,6 +11,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dominio.cpms.puertos import DatosConfirmacionCodigo, RepositorioCpms, VersionCpms
 from app.dominio.cpms.valores import CandidatoCpms, ProcedimientoCpms
+from app.infraestructura.persistencia.modelos_atencion_hospitalaria import (
+    ProcedimientoPorCodificarModelo,
+)
 from app.infraestructura.persistencia.modelos_cpms import CpmsProcedimientoModelo, CpmsVersionModelo
 from app.infraestructura.persistencia.modelos_integracion import (
     CuentaMedicaModelo,
@@ -125,5 +129,53 @@ class RepositorioCpmsSql(RepositorioCpms):
         self._sesion.add(registro)
         await self._sesion.flush()
         id_creado = registro.id
+        if datos.procedimiento_por_codificar_id is not None:
+            # Queda enlazado y deja de estar pendiente, en la misma transaccion.
+            await self._sesion.execute(
+                sa.update(ProcedimientoPorCodificarModelo)
+                .where(ProcedimientoPorCodificarModelo.id == datos.procedimiento_por_codificar_id)
+                .values(procedimiento_facturado_id=id_creado)
+            )
         await self._sesion.commit()
         return id_creado
+
+    async def fecha_minima_procedimiento(self, cuenta_id: int) -> date | None:
+        fila = (
+            await self._sesion.execute(
+                sa.select(
+                    CuentaMedicaModelo.fecha_prestacion,
+                    CuentaMedicaModelo.fecha_ingreso_hospitalario,
+                ).where(CuentaMedicaModelo.id == cuenta_id)
+            )
+        ).first()
+        if fila is None:
+            return None
+        minima: date = fila.fecha_ingreso_hospitalario or fila.fecha_prestacion
+        return minima
+
+    async def procedimiento_por_codificar_pendiente(
+        self, cuenta_id: int, procedimiento_por_codificar_id: int
+    ) -> bool:
+        fila = await self._sesion.get(
+            ProcedimientoPorCodificarModelo, procedimiento_por_codificar_id
+        )
+        return (
+            fila is not None
+            and fila.cuenta_medica_id == cuenta_id
+            and fila.procedimiento_facturado_id is None
+        )
+
+    async def quitar_procedimiento(self, cuenta_id: int, procedimiento_id: int) -> str | None:
+        fila = await self._sesion.get(ProcedimientoFacturadoModelo, procedimiento_id)
+        if fila is None or fila.cuenta_id != cuenta_id:
+            return None
+        codigo = fila.codigo_asignado
+        # Si venia de la atencion importada, vuelve a quedar por codificar.
+        await self._sesion.execute(
+            sa.update(ProcedimientoPorCodificarModelo)
+            .where(ProcedimientoPorCodificarModelo.procedimiento_facturado_id == fila.id)
+            .values(procedimiento_facturado_id=None)
+        )
+        await self._sesion.delete(fila)
+        await self._sesion.flush()
+        return codigo

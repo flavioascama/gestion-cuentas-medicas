@@ -10,6 +10,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Protocol
 
+from app.dominio.integracion.vigencia_lote import VigenciaLote
+
 
 class ErrorLoteNoCargable(Exception):
     """El lote no existe o no esta en estado GENERADO (Seccion 8.3:
@@ -183,6 +185,11 @@ class RepositorioValidacionOficial(Protocol):
 
     async def obtener_estado_lote(self, lote_id: int) -> str | None:
         """None si el lote no existe."""
+        ...
+
+    async def vigencia_lote(self, lote_id: int) -> VigenciaLote | None:
+        """Lo que hace falta para saber si el lote sigue vigente; None si
+        no existe."""
         ...
 
     async def existe_validacion_conforme(self, lote_id: int, etapa: str) -> bool:

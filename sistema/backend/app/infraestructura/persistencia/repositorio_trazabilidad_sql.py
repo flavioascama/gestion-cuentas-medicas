@@ -185,9 +185,10 @@ class RepositorioTrazabilidadSql(RepositorioTrazabilidad):
 
         acreditacion = (
             await self._sesion.execute(
-                sa.select(AcreditacionModelo).where(
-                    AcreditacionModelo.cuenta_id == cuenta_medica_id
-                )
+                sa.select(AcreditacionModelo)
+                .where(AcreditacionModelo.cuenta_id == cuenta_medica_id)
+                .order_by(AcreditacionModelo.id.desc())  # la vigente
+                .limit(1)
             )
         ).scalar_one_or_none()
         if acreditacion is not None:

@@ -11,8 +11,8 @@ import { usar_valor_diferido } from "../../utilidades/usar_valor_diferido";
 // utiles con una o dos letras.
 const _LARGO_MINIMO_BUSQUEDA = 3;
 
-export function usar_asistente_cpms(cuenta_id: number) {
-  const [descripcion, set_descripcion] = useState("");
+export function usar_asistente_cpms(cuenta_id: number, descripcion_inicial = "") {
+  const [descripcion, set_descripcion] = useState(descripcion_inicial);
   const [candidato_elegido, set_candidato_elegido] = useState<CandidatoCpms | null>(null);
   const [mensaje_exito, set_mensaje_exito] = useState(false);
 

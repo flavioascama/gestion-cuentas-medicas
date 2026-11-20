@@ -10,6 +10,7 @@ import { CampoTexto } from "../../componentes_base/campo_texto";
 import { Dialogo } from "../../componentes_base/dialogo";
 import { MensajeErrorMutacion } from "../../componentes_base/mensaje_error_mutacion";
 import { Selector, type OpcionSelector } from "../../componentes_base/selector";
+import { AFILIACIONES, DOCUMENTOS_AUTORIZACION, TIPOS_COPAGO } from "./catalogos_cobertura";
 import estilos from "./contingencia.module.css";
 
 // CU-01, flujo alternativo (RF-23, AD-13, C-18): ACREDITA SALUD no
@@ -20,42 +21,49 @@ import estilos from "./contingencia.module.css";
 const _INICIAL: SolicitudCoberturaContingencia = {
   condicion_cobertura: "ACREDITABLE",
   codigo_autorizacion: "",
-  tipo_documento_autorizacion: "03",
+  tipo_documento_autorizacion: "01",
   codigo_asegurado: "",
   tipo_afiliacion: "1",
   vigente_hasta: null,
   sustento: "",
+  plan: null,
+  tipo_copago: "ninguno",
 };
 
 type Campo = keyof SolicitudCoberturaContingencia;
 
-// Los valores que admite cada dato (2026-11-18): antes se escribian los
-// codigos a mano. Tipo de documento y de afiliacion son los del estandar
-// TEDEF (Tabla 2, campos 12 y 7).
-const _CONDICIONES: OpcionSelector[] = [
-  { valor: "ACREDITABLE", etiqueta: "Acreditable" },
-  { valor: "NO ACREDITABLE", etiqueta: "No acreditable" },
-];
-const _DOCUMENTOS_AUTORIZACION: OpcionSelector[] = [
-  { valor: "01", etiqueta: "Solicitud de atención médica (SITEDS)" },
-  { valor: "02", etiqueta: "Solicitud de chequeo médico (SITEDS)" },
-  { valor: "03", etiqueta: "Carta de garantía" },
-  { valor: "04", etiqueta: "Por código" },
-  { valor: "06", etiqueta: "Otro tipo de autorización" },
-  { valor: "07", etiqueta: "Declaración de accidente" },
-  { valor: "99", etiqueta: "No aplica" },
-];
-const _AFILIACIONES: OpcionSelector[] = [
-  { valor: "1", etiqueta: "Regular" },
-  { valor: "2", etiqueta: "SCTR" },
-  { valor: "3", etiqueta: "Potestativo (independiente)" },
-  { valor: "4", etiqueta: "SCTR independiente" },
-  { valor: "5", etiqueta: "Otros contributivos y complementario" },
-  { valor: "6", etiqueta: "SOAT" },
-  { valor: "7", etiqueta: "AFOCAT" },
-  { valor: "8", etiqueta: "SIS subsidiado" },
-  { valor: "9", etiqueta: "Semicontributivo" },
-];
+// El valor del copago se escribe en un solo campo: es el monto si el copago
+// es fijo y el porcentaje si es coaseguro.
+function cuerpo_solicitud(datos: SolicitudCoberturaContingencia): SolicitudCoberturaContingencia {
+  const valor = datos.monto_copago_fijo ?? null;
+  return {
+    ...datos,
+    monto_copago_fijo: datos.tipo_copago === "fijo" ? valor : null,
+    porcentaje_coaseguro: datos.tipo_copago === "coaseguro" ? Number(valor) : null,
+  };
+}
+
+function CampoValorCopago({
+  datos,
+  al_cambiar,
+}: {
+  datos: SolicitudCoberturaContingencia;
+  al_cambiar: (campo: Campo, valor: string) => void;
+}) {
+  if (datos.tipo_copago === "ninguno") return null;
+  const fijo = datos.tipo_copago === "fijo";
+  return (
+    <CampoTexto
+      etiqueta={fijo ? "Monto del copago" : "Porcentaje de coaseguro"}
+      type="number"
+      min={fijo ? 0.01 : 1}
+      max={fijo ? undefined : 100}
+      step={fijo ? 0.01 : 1}
+      value={datos.monto_copago_fijo ?? ""}
+      onChange={(evento) => al_cambiar("monto_copago_fijo", evento.target.value)}
+    />
+  );
+}
 
 function CamposCobertura({
   datos,
@@ -81,15 +89,17 @@ function CamposCobertura({
   );
   return (
     <div className={estilos.formulario}>
-      {lista("condicion_cobertura", "Condición de cobertura", _CONDICIONES)}
       {campo("codigo_autorizacion", "Código de acreditación")}
       {lista(
         "tipo_documento_autorizacion",
         "Tipo de documento de autorización",
-        _DOCUMENTOS_AUTORIZACION,
+        DOCUMENTOS_AUTORIZACION,
       )}
       {campo("codigo_asegurado", "Código del asegurado en la IAFAS")}
-      {lista("tipo_afiliacion", "Tipo de afiliación", _AFILIACIONES)}
+      {lista("tipo_afiliacion", "Tipo de afiliación", AFILIACIONES)}
+      {campo("plan", "Plan (opcional)")}
+      {lista("tipo_copago", "Tipo de copago", TIPOS_COPAGO)}
+      <CampoValorCopago datos={datos} al_cambiar={al_cambiar} />
       <CampoTexto
         etiqueta="Vigente hasta (opcional)"
         type="date"
@@ -115,10 +125,13 @@ function DialogoCoberturaContingencia({
       ...previos,
       [campo]: campo === "vigente_hasta" && !valor ? null : valor,
     }));
-  const completo = !!datos.codigo_autorizacion.trim() && !!datos.codigo_asegurado.trim();
+  const copago_completo =
+    datos.tipo_copago === "ninguno" || Number(datos.monto_copago_fijo ?? 0) > 0;
+  const completo =
+    !!datos.codigo_autorizacion.trim() && !!datos.codigo_asegurado.trim() && copago_completo;
 
   const mutacion = useMutation({
-    mutationFn: () => registrar_cobertura_contingencia(cuenta_id, datos),
+    mutationFn: () => registrar_cobertura_contingencia(cuenta_id, cuerpo_solicitud(datos)),
     onSuccess: () => {
       void cliente_consultas.invalidateQueries({ queryKey: ["cuentas", cuenta_id] });
       al_cerrar();

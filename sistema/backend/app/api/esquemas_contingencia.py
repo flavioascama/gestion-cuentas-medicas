@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from datetime import date, datetime
+from decimal import Decimal
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -44,6 +46,10 @@ class SolicitudCoberturaContingencia(BaseModel):
     tipo_afiliacion: str = Field(min_length=1, max_length=1)
     vigente_hasta: date | None = None
     sustento: str = Field(min_length=1, max_length=1000)
+    plan: str | None = Field(default=None, max_length=100)
+    tipo_copago: Literal["ninguno", "fijo", "coaseguro"] = "ninguno"
+    monto_copago_fijo: Decimal | None = Field(default=None, gt=0, max_digits=12, decimal_places=2)
+    porcentaje_coaseguro: int | None = Field(default=None, ge=1, le=100)
 
 
 class RespuestaCoberturaContingencia(BaseModel):

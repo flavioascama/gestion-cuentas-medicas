@@ -29,6 +29,7 @@ from app.dominio.integracion.casos_uso_validacion import (
 )
 from app.dominio.integracion.puertos import ConsultorRespuestaReceptor
 from app.dominio.integracion.puertos_validacion import ValidadorTedefWeb
+from app.dominio.integracion.vigencia_lote import ErrorLoteDesactualizado
 from app.dominio.plataformas.casos_uso import (
     TIPO_TRABAJO_INICIAR_SESION_PLATAFORMA,
     IniciarSesionPlataforma,
@@ -321,7 +322,8 @@ async def manejar_error(
         registro.info("trabajo_sin_resultado", trabajo_id=trabajo.id, motivo=str(error))
         return
 
-    if isinstance(error, ErrorSesionFallida):
+    # Reintentar no sirve: el lote cambio y se arma uno nuevo.
+    if isinstance(error, (ErrorSesionFallida, ErrorLoteDesactualizado)):
         async with fabrica_sesiones() as sesion:
             await RepositorioTrabajosSql(sesion).marcar_agotado(trabajo.id, str(error))
         registro.warning("trabajo_agotado_sesion_fallida", trabajo_id=trabajo.id, error=str(error))

@@ -13,6 +13,7 @@ import type { ResumenCuenta } from "../../api/cuentas";
 import { usar_sesion } from "../../sesion/contexto_sesion";
 import { usar_estado_de_sesion } from "../../utilidades/estado_de_sesion";
 import { formatear_fecha } from "../../utilidades/formato";
+import { DialogoImportarAtencion } from "./dialogo_importar_atencion";
 import { DialogoNuevaCuenta } from "./dialogo_nueva_cuenta";
 import { FiltrosBandejaCuentas, type FiltrosCuentas } from "./filtros_bandeja_cuentas";
 import { usar_bandeja_cuentas, usar_vencimientos } from "./usar_cuentas";
@@ -106,27 +107,32 @@ function construir_manejadores_filtros(
   };
 }
 
-function AccionNuevaCuenta({ al_crear }: { al_crear: (cuenta_id: number) => void }) {
+function AccionesCuentas({ al_crear }: { al_crear: (cuenta_id: number) => void }) {
   const { sesion } = usar_sesion();
   const cliente_consultas = useQueryClient();
-  const [mostrar_dialogo, set_mostrar_dialogo] = useState(false);
+  const [dialogo, set_dialogo] = useState<"nueva" | "importar" | null>(null);
 
   if (!sesion?.roles.includes("analista")) return null;
 
+  const al_registrar = (cuenta_id: number) => {
+    set_dialogo(null);
+    void cliente_consultas.invalidateQueries({ queryKey: ["cuentas"] });
+    al_crear(cuenta_id);
+  };
+
   return (
     <>
-      <Boton variante="primario" onClick={() => set_mostrar_dialogo(true)}>
+      <Boton variante="secundario" onClick={() => set_dialogo("importar")}>
+        Importar atención
+      </Boton>
+      <Boton variante="primario" onClick={() => set_dialogo("nueva")}>
         Nueva cuenta
       </Boton>
-      {mostrar_dialogo ? (
-        <DialogoNuevaCuenta
-          al_cerrar={() => set_mostrar_dialogo(false)}
-          al_registrar={(cuenta_id) => {
-            set_mostrar_dialogo(false);
-            void cliente_consultas.invalidateQueries({ queryKey: ["cuentas"] });
-            al_crear(cuenta_id);
-          }}
-        />
+      {dialogo === "nueva" ? (
+        <DialogoNuevaCuenta al_cerrar={() => set_dialogo(null)} al_registrar={al_registrar} />
+      ) : null}
+      {dialogo === "importar" ? (
+        <DialogoImportarAtencion al_cerrar={() => set_dialogo(null)} al_importar={al_registrar} />
       ) : null}
     </>
   );
@@ -149,7 +155,7 @@ function EncabezadoCuentas({
 }) {
   return (
     <>
-      <TituloPagina titulo="Cuentas médicas" acciones={<AccionNuevaCuenta al_crear={al_crear} />} />
+      <TituloPagina titulo="Cuentas médicas" acciones={<AccionesCuentas al_crear={al_crear} />} />
       <div className={estilos.tarjeta_filtros}>
         <FiltrosBandejaCuentas
           filtros={filtros}

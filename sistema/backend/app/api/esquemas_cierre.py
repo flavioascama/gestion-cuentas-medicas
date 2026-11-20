@@ -42,6 +42,9 @@ class SolicitudAnulacionRespuesta(BaseModel):
     resuelto_en: datetime | None
     identificacion_interna: str | None = None
     asegurado: str | None = None
+    estado_cuenta: str | None = None
+    comprobante: str | None = None
+    nota_credito: str | None = None
 
     @staticmethod
     def desde_valor(valor: SolicitudAnulacion) -> SolicitudAnulacionRespuesta:

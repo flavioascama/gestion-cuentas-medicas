@@ -15,7 +15,11 @@ from app.dominio.acreditacion.casos_uso import (
     VerificarCobertura,
 )
 from app.dominio.acreditacion.puertos import ErrorCuentaNoEncontrada
-from app.dominio.acreditacion.valores import ContextoCuentaAcreditacion, ResultadoAcreditacion
+from app.dominio.acreditacion.valores import (
+    ContextoCuentaAcreditacion,
+    ResultadoAcreditacion,
+    es_acreditable,
+)
 from app.dominio.puertos_comunes import Evento, MedicionPaso
 
 _CONTEXTO = ContextoCuentaAcreditacion(
@@ -25,7 +29,7 @@ _CONTEXTO = ContextoCuentaAcreditacion(
 _RESULTADO = ResultadoAcreditacion(
     condicion_cobertura="ACREDITABLE",
     codigo_autorizacion="AUT0000001",
-    tipo_documento_autorizacion="03",
+    tipo_documento_autorizacion="01",
     codigo_asegurado="AS81953443",
     tipo_afiliacion="1",
     plan="PLAN DE PRUEBA",
@@ -197,3 +201,16 @@ async def prueba_verificar_cobertura_rechaza_cuenta_inexistente() -> None:
     )
     with pytest.raises(ErrorCuentaNoEncontrada):
         await caso_uso.ejecutar(trabajo_id=7, cuenta_medica_id=99, actor="trabajador")
+
+
+@pytest.mark.parametrize(
+    ("condicion", "esperado"),
+    [
+        ("ACREDITABLE", True),
+        ("ACREDITABLE CON RESTRICCIÓN: diagnóstico en período de carencia", True),
+        ("NO ACREDITABLE: afiliación cancelada", False),
+        ("  no acreditable", False),
+    ],
+)
+def prueba_es_acreditable_solo_rechaza_los_no_acreditables(condicion: str, esperado: bool) -> None:
+    assert es_acreditable(condicion) is esperado

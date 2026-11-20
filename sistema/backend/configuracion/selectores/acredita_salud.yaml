@@ -35,6 +35,10 @@ consulta_iafas:
   vigente_desde: '[data-testid="iafas-vigente-desde"]'
   vigente_hasta: '[data-testid="iafas-vigente-hasta"]'
   preexistencias: '[data-testid="iafas-preexistencias"]'
+  codigo_asegurado: '[data-testid="iafas-codigo-asegurado"]'
+  tipo_afiliacion: '[data-testid="iafas-tipo-afiliacion"]'
+  codigo_iafas: '[data-testid="iafas-codigo-iafas"]'
+  nombre_iafas: '[data-testid="iafas-nombre-iafas"]'
 
 evaluacion:
   condicion_cobertura: '[data-testid="condicion-cobertura"]'

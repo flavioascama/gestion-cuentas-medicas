@@ -83,7 +83,7 @@ export function DetalleLote() {
         acciones={
           <div className={estilos.acciones}>
             <EtiquetasLote lote={lote} />
-            <BotonAccionLote estado={lote.estado} acciones={acciones} />
+            <BotonAccionLote lote={lote} acciones={acciones} />
           </div>
         }
       />

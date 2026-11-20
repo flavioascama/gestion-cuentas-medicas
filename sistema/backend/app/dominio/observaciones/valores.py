@@ -5,9 +5,18 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
+from decimal import Decimal
 from enum import StrEnum
 
 from app.dominio.acceso.entidades import NombreRol
+
+
+class ResultadoObservacion(StrEnum):
+    """En que termino la observacion respondida, segun la siguiente
+    comunicacion de la aseguradora (2026-11-19)."""
+
+    LEVANTADA = "LEVANTADA"
+    MANTENIDA = "MANTENIDA"
 
 
 class Naturaleza(StrEnum):
@@ -56,6 +65,8 @@ class DatosRegistroObservacion:
     detalle_campo_objetado: str | None
     actor: str
     usuario_origen: str | None = None
+    # Lo que la aseguradora glosa, si lo comunica (2026-11-19).
+    monto_observado: Decimal | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -72,6 +83,15 @@ class DatosNuevaObservacion:
     detalle_campo_objetado: str | None
     responsable_rol: NombreRol
     registrado_en: datetime
+    monto_observado: Decimal | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class Respondedor:
+    """Quien registra la respuesta (CU-10)."""
+
+    usuario_id: int
+    nombre_usuario: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -94,3 +114,11 @@ class Observacion:
     respondido_en: datetime | None
     # Nombre de la persona asignada, para mostrarlo (2026-11-18).
     responsable_nombres: str | None = None
+    # 2026-11-19: cuanto se observo, en que termino y, si vino de la
+    # aseguradora, si la respuesta le llego (ver entrega.py).
+    monto_observado: Decimal | None = None
+    resultado: str | None = None
+    resultado_en: datetime | None = None
+    entrega_estado: str | None = None
+    entrega_en: datetime | None = None
+    entrega_solicitada_por: str | None = None

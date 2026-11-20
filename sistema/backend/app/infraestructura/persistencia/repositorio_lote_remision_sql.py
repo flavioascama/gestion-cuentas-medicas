@@ -8,6 +8,7 @@ import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dominio.integracion.puertos import LoteParaRemitir, RepositorioLoteRemision
+from app.dominio.integracion.vigencia_lote import VigenciaLote
 from app.dominio.orquestacion.valores import TipoTransicion
 from app.infraestructura.persistencia.modelos_integracion import (
     AcuseTransmisionModelo,
@@ -19,6 +20,7 @@ from app.infraestructura.persistencia.transicion_cuentas_lote import (
     cuentas_de_documentos,
     transicionar_cuentas,
 )
+from app.infraestructura.persistencia.vigencia_lote_sql import vigencia_de_lote
 
 
 class RepositorioLoteRemisionSql(RepositorioLoteRemision):
@@ -44,6 +46,9 @@ class RepositorioLoteRemisionSql(RepositorioLoteRemision):
             ruta_s01=lote.ruta_s01,
             documento_ids=documento_ids,
         )
+
+    async def vigencia_lote(self, lote_id: int) -> VigenciaLote | None:
+        return await vigencia_de_lote(self._sesion, lote_id)
 
     async def registrar_remision(
         self,

@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.dependencias import obtener_reloj
 from app.compartido.configuracion import Configuracion, obtener_configuracion
 from app.compartido.rutas import raiz_reportes
+from app.dominio.integracion.casos_uso import SolicitarMonitoreoRespuestaIafas
 from app.dominio.integracion.casos_uso_consulta import (
     ListarLotes,
     ObtenerAcusesLote,
@@ -166,8 +167,9 @@ def construir_solicitar_carga_en_validador(
     repositorio: RepositorioValidacionOficial = Depends(obtener_repositorio_validacion_oficial),
     repositorio_trabajos: RepositorioTrabajos = Depends(obtener_repositorio_trabajos),
     reloj: Reloj = Depends(obtener_reloj),
+    observabilidad: Observabilidad = Depends(obtener_observabilidad),
 ) -> SolicitarCargaEnValidador:
-    return SolicitarCargaEnValidador(repositorio, repositorio_trabajos, reloj)
+    return SolicitarCargaEnValidador(repositorio, repositorio_trabajos, reloj, observabilidad)
 
 
 def construir_remitir_lote(
@@ -178,6 +180,17 @@ def construir_remitir_lote(
     reloj: Reloj = Depends(obtener_reloj),
 ) -> RemitirLote:
     return RemitirLote(repositorio, transmisor, observabilidad, repositorio_trabajos, reloj)
+
+
+def construir_solicitar_monitoreo_respuesta(
+    repositorio: RepositorioValidacionOficial = Depends(obtener_repositorio_validacion_oficial),
+    repositorio_trabajos: RepositorioTrabajos = Depends(obtener_repositorio_trabajos),
+    observabilidad: Observabilidad = Depends(obtener_observabilidad),
+    reloj: Reloj = Depends(obtener_reloj),
+) -> SolicitarMonitoreoRespuestaIafas:
+    return SolicitarMonitoreoRespuestaIafas(
+        repositorio, repositorio_trabajos, observabilidad, reloj
+    )
 
 
 def construir_solicitar_envio_susalud(

@@ -33,6 +33,8 @@ _RUTAS_SOLO_JEFE: tuple[tuple[str, str, dict[str, Any] | None], ...] = (
 # (metodo, ruta, cuerpo) -- analista o auditor (responsable segun naturaleza).
 _RUTAS_RESPONDE: tuple[tuple[str, str, dict[str, Any] | None], ...] = (
     ("POST", "/observaciones/1/respuesta", _CUERPO_RESPUESTA),
+    # Nueva entrega de la respuesta a la aseguradora (2026-11-19).
+    ("POST", "/observaciones/1/entrega", None),
 )
 
 

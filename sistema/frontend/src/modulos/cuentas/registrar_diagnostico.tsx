@@ -13,18 +13,23 @@ export function RegistrarDiagnostico({ cuenta_id }: { cuenta_id: number }) {
   const cliente_consultas = useQueryClient();
   const [codigo, set_codigo] = useState("");
   const mutacion = useMutation({
-    mutationFn: () => registrar_diagnostico(cuenta_id, codigo.trim()),
+    mutationFn: () => registrar_diagnostico(cuenta_id, codigo),
     onSuccess: () => void cliente_consultas.invalidateQueries({ queryKey: ["cuentas", cuenta_id] }),
   });
 
   return (
     <div className={estilos.formulario_en_paso}>
-      <CampoCie10 value={codigo} onChange={set_codigo} etiqueta="Diagnóstico principal (CIE-10)" />
+      <CampoCie10
+        value={codigo}
+        onChange={set_codigo}
+        etiqueta="Diagnóstico principal (CIE-10)"
+        obligatorio
+      />
       <div className={estilos.fila_accion}>
         <Boton
           variante="primario"
           onClick={() => mutacion.mutate()}
-          disabled={mutacion.isPending || codigo.trim().length < 3}
+          disabled={mutacion.isPending || !codigo}
         >
           Guardar diagnóstico
         </Boton>

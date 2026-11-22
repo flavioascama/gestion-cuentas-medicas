@@ -130,6 +130,9 @@ function VerSolicitudAtencion({ cuenta_id }: { cuenta_id: number }) {
 
 function EstadoUltimaConsulta({ ultima }: { ultima: UltimaConsultaCobertura | null | undefined }) {
   if (!ultima) return null;
+  // Mientras espera el codigo de verificacion no se esta consultando: debajo
+  // ya se pide el codigo.
+  if (ultima.resultado === "REQUIERE_SESION") return null;
   if (_EN_CURSO.has(ultima.resultado)) {
     return <p className={propios.estado}>Consultando la acreditación…</p>;
   }

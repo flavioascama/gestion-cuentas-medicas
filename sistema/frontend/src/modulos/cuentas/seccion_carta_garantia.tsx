@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import {
+  corregir_carta_garantia,
   obtener_carta_garantia,
   registrar_carta_garantia,
   type CartaGarantia,
@@ -15,7 +16,8 @@ import estilos from "./detalle_cuenta.module.css";
 
 // RF-13 y CU-06: la carta de garantia de la IAFAS (numero, vigencia y
 // monto). Su vigencia es la que vigila el aviso de vencimiento (Tabla 61).
-const _ESTADOS_SIN_REGISTRO = new Set(["CERRADA", "ANULADA"]);
+// Se registra y se corrige en Registrada y Rechazada (igual que el servidor).
+const _ESTADOS_CARTA = new Set(["REGISTRADA", "RECHAZADA"]);
 
 interface Formulario {
   numero: string;
@@ -37,24 +39,28 @@ function CamposCarta({ formulario, cambiar }: { formulario: Formulario; cambiar:
     <>
       <CampoTexto
         etiqueta="Número"
+        obligatorio
         maxLength={30}
         value={formulario.numero}
         onChange={cambiar("numero")}
       />
       <CampoTexto
         etiqueta="Vigente desde"
+        obligatorio
         type="date"
         value={formulario.vigente_desde}
         onChange={cambiar("vigente_desde")}
       />
       <CampoTexto
         etiqueta="Vigente hasta"
+        obligatorio
         type="date"
         value={formulario.vigente_hasta}
         onChange={cambiar("vigente_hasta")}
       />
       <CampoTexto
         etiqueta="Monto (S/)"
+        obligatorio
         type="number"
         min="0.01"
         step="0.01"
@@ -65,23 +71,44 @@ function CamposCarta({ formulario, cambiar }: { formulario: Formulario; cambiar:
   );
 }
 
-function DialogoCartaGarantia({
-  cuenta_id,
-  al_cerrar,
-}: {
-  cuenta_id: number;
-  al_cerrar: () => void;
-}) {
+function inicial(carta: CartaGarantia | null): Formulario {
+  if (!carta) return _VACIO;
+  const { numero, vigente_desde, vigente_hasta } = carta;
+  return { numero, vigente_desde, vigente_hasta, monto: String(carta.monto) };
+}
+
+function usar_guardar_carta(
+  cuenta_id: number,
+  carta: CartaGarantia | null,
+  formulario: Formulario,
+  al_cerrar: () => void,
+) {
   const cliente_consultas = useQueryClient();
-  const [formulario, set_formulario] = useState<Formulario>(_VACIO);
-  const mutacion = useMutation({
-    mutationFn: () => registrar_carta_garantia(cuenta_id, formulario),
+  return useMutation({
+    mutationFn: () =>
+      carta
+        ? corregir_carta_garantia(cuenta_id, formulario)
+        : registrar_carta_garantia(cuenta_id, formulario),
     onSuccess: async () => {
       await cliente_consultas.invalidateQueries({ queryKey: ["cuentas", cuenta_id] });
       await cliente_consultas.invalidateQueries({ queryKey: ["plazos"] });
       al_cerrar();
     },
   });
+}
+
+function DialogoCartaGarantia({
+  cuenta_id,
+  carta,
+  al_cerrar,
+}: {
+  cuenta_id: number;
+  // Con la carta ya registrada, el dialogo la corrige.
+  carta: CartaGarantia | null;
+  al_cerrar: () => void;
+}) {
+  const [formulario, set_formulario] = useState<Formulario>(() => inicial(carta));
+  const mutacion = usar_guardar_carta(cuenta_id, carta, formulario, al_cerrar);
   const completo = formulario_completo(formulario);
   const cambiar: Cambiar = (clave) => (evento) =>
     set_formulario({ ...formulario, [clave]: evento.target.value });
@@ -100,7 +127,7 @@ function DialogoCartaGarantia({
             onClick={() => mutacion.mutate()}
             disabled={!completo || mutacion.isPending}
           >
-            Registrar
+            {carta ? "Guardar corrección" : "Registrar"}
           </Boton>
         </>
       }
@@ -108,7 +135,7 @@ function DialogoCartaGarantia({
       <CamposCarta formulario={formulario} cambiar={cambiar} />
       <MensajeErrorMutacion
         error={mutacion.error}
-        texto_por_defecto="No se pudo registrar la carta de garantía."
+        texto_por_defecto={`No se pudo ${carta ? "corregir" : "registrar"} la carta de garantía.`}
       />
     </Dialogo>
   );
@@ -135,6 +162,12 @@ function DatosCarta({ carta }: { carta: CartaGarantia }) {
   );
 }
 
+// Sin carta se registra; con ella, se corrige (en Registrada y Rechazada).
+function texto_accion_carta(con_carta: boolean, analista: boolean, estado: string): string | null {
+  if (!con_carta) return "Registrar carta de garantía";
+  return analista && _ESTADOS_CARTA.has(estado) ? "Corregir" : null;
+}
+
 // Paso "Carta de garantia" de la linea de la cuenta.
 export function ContenidoCartaGarantia({
   cuenta_id,
@@ -151,23 +184,27 @@ export function ContenidoCartaGarantia({
   const [registrar, set_registrar] = useState(false);
 
   const carta = consulta.data ?? null;
-  const puede_registrar =
-    Boolean(sesion?.roles.includes("analista")) && !_ESTADOS_SIN_REGISTRO.has(estado);
+  const analista = Boolean(sesion?.roles.includes("analista"));
+  const puede_registrar = analista && _ESTADOS_CARTA.has(estado);
   if (consulta.isPending || (!carta && !puede_registrar)) return null;
+  const accion = texto_accion_carta(Boolean(carta), analista, estado);
 
   return (
     <>
-      {carta ? (
-        <DatosCarta carta={carta} />
-      ) : (
+      {carta ? <DatosCarta carta={carta} /> : null}
+      {accion ? (
         <div className={estilos.fila_accion}>
           <Boton variante="secundario" onClick={() => set_registrar(true)}>
-            Registrar carta de garantía
+            {accion}
           </Boton>
         </div>
-      )}
+      ) : null}
       {registrar ? (
-        <DialogoCartaGarantia cuenta_id={cuenta_id} al_cerrar={() => set_registrar(false)} />
+        <DialogoCartaGarantia
+          cuenta_id={cuenta_id}
+          carta={carta}
+          al_cerrar={() => set_registrar(false)}
+        />
       ) : null}
     </>
   );

@@ -1,19 +1,17 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { consultar_documentos_pago, type DocumentosPago } from "../../api/comprobante";
-import { emitir_comprobante_pago } from "../../api/cuentas";
 import { Boton } from "../../componentes_base/boton";
-import { MensajeErrorMutacion } from "../../componentes_base/mensaje_error_mutacion";
 import { usar_sesion } from "../../sesion/contexto_sesion";
 import { formatear_fecha, formatear_monto } from "../../utilidades/formato";
-import { DialogoNota, DialogoReemplazo } from "./dialogos_comprobante";
+import { DialogoEmitirComprobante, DialogoNota, DialogoReemplazo } from "./dialogos_comprobante";
 import { MOTIVOS_NOTA, TIPOS_NOTA } from "./etiquetas_comprobante";
 import { usar_en_correccion_validador } from "./usar_cuentas";
 import estilos from "./detalle_cuenta.module.css";
 
 // CU-10 (reemplazo al refacturar, y si el validador observo el lote) y
 // RI-11 (una nota por comprobante).
-const _ESTADOS_REEMPLAZO = new Set(["RECHAZADA", "GLOSADA", "GLOSADA_PARCIAL"]);
+const _ESTADOS_REEMPLAZO = new Set(["RECHAZADA", "GLOSADA"]);
 const _ESTADOS_NOTA = new Set(["FACTURADA", "RECHAZADA", "GLOSADA", "GLOSADA_PARCIAL"]);
 
 function datos_documentos(documentos: DocumentosPago): { etiqueta: string; valor: string }[] {
@@ -26,7 +24,7 @@ function datos_documentos(documentos: DocumentosPago): { etiqueta: string; valor
   if (vigente.total != null) {
     datos.push(
       { etiqueta: "Valor de venta", valor: formatear_monto(vigente.valor_venta ?? 0) },
-      { etiqueta: "IGV (18 %)", valor: formatear_monto(vigente.igv ?? 0) },
+      { etiqueta: "IGV", valor: formatear_monto(vigente.igv ?? 0) },
       { etiqueta: "Total", valor: formatear_monto(vigente.total) },
     );
   }
@@ -34,7 +32,7 @@ function datos_documentos(documentos: DocumentosPago): { etiqueta: string; valor
     datos.push(
       {
         etiqueta: TIPOS_NOTA[nota.tipo] ?? "Nota",
-        valor: `${nota.serie}-${nota.numero} · ${formatear_monto(nota.monto)} · ${formatear_fecha(nota.fecha)}`,
+        valor: `${nota.serie}-${nota.numero} · ${formatear_monto(nota.monto)} sin IGV · ${formatear_fecha(nota.fecha)}`,
       },
       { etiqueta: "Motivo de la nota", valor: MOTIVOS_NOTA[nota.motivo] ?? nota.motivo },
     );
@@ -48,14 +46,36 @@ function datos_documentos(documentos: DocumentosPago): { etiqueta: string; valor
   return datos;
 }
 
-function AccionesDocumentos(props: { cuenta_id: number; estado: string; con_nota: boolean }) {
+// En Facturada, Rechazada y Glosada, el reemplazo solo si el servidor dice
+// que el comprobante ya no refleja la cuenta.
+function admite_reemplazo(estado: string, desfasado: boolean, en_correccion: boolean): boolean {
+  const con_reemplazo = estado === "FACTURADA" || _ESTADOS_REEMPLAZO.has(estado);
+  return en_correccion || (con_reemplazo && desfasado);
+}
+
+function AccionesDocumentos(props: {
+  cuenta_id: number;
+  estado: string;
+  nota: DocumentosPago["nota"];
+  desfasado: boolean;
+}) {
   const [dialogo, set_dialogo] = useState<"reemplazo" | "nota" | null>(null);
   const en_correccion = usar_en_correccion_validador(props.cuenta_id);
   const cerrar = () => set_dialogo(null);
-  if (props.con_nota) return null;
+  // RI-11: una nota por comprobante, y la nota no se corrige.
+  if (props.nota) {
+    const tipo = (TIPOS_NOTA[props.nota.tipo] ?? "Nota").toLowerCase();
+    return (
+      <div className={estilos.fila_accion}>
+        <span>
+          El comprobante ya tiene su {tipo} {props.nota.serie}-{props.nota.numero}.
+        </span>
+      </div>
+    );
+  }
   return (
     <div className={estilos.fila_accion}>
-      {_ESTADOS_REEMPLAZO.has(props.estado) || en_correccion ? (
+      {admite_reemplazo(props.estado, props.desfasado, en_correccion) ? (
         <Boton variante="secundario" onClick={() => set_dialogo("reemplazo")}>
           Emitir comprobante de reemplazo
         </Boton>
@@ -78,25 +98,31 @@ const _LISTA = new Intl.ListFormat("es", { type: "conjunction" });
 // El comprobante va al final: sin acreditacion, diagnostico y al menos un
 // procedimiento no hay nada que facturar (2026-11-18).
 function EmitirComprobante({ cuenta_id, faltantes }: { cuenta_id: number; faltantes: string[] }) {
-  const cliente_consultas = useQueryClient();
-  const mutacion = useMutation({
-    mutationFn: () => emitir_comprobante_pago(cuenta_id),
-    onSuccess: () => void cliente_consultas.invalidateQueries({ queryKey: ["cuentas", cuenta_id] }),
-  });
+  const [confirmar, set_confirmar] = useState(false);
   return (
-    <>
-      <div className={estilos.fila_accion}>
-        <Boton
-          variante="primario"
-          onClick={() => mutacion.mutate()}
-          disabled={mutacion.isPending || faltantes.length > 0}
-        >
-          Emitir comprobante de pago
-        </Boton>
-        {faltantes.length > 0 ? <span>Antes falta: {_LISTA.format(faltantes)}.</span> : null}
-      </div>
-      <MensajeErrorMutacion error={mutacion.error} texto_por_defecto="No se pudo emitir." />
-    </>
+    <div className={estilos.fila_accion}>
+      <Boton
+        variante="primario"
+        onClick={() => set_confirmar(true)}
+        disabled={faltantes.length > 0}
+      >
+        Emitir comprobante de pago
+      </Boton>
+      {faltantes.length > 0 ? <span>Antes falta: {_LISTA.format(faltantes)}.</span> : null}
+      {confirmar ? (
+        <DialogoEmitirComprobante cuenta_id={cuenta_id} al_cerrar={() => set_confirmar(false)} />
+      ) : null}
+    </div>
+  );
+}
+
+// El servidor dice si el comprobante vigente ya no refleja la cuenta.
+function AvisoDesfasado({ documentos }: { documentos: DocumentosPago | null }) {
+  if (!documentos?.desfasado) return null;
+  return (
+    <div className={estilos.fila_accion}>
+      <span>El comprobante ya no refleja la cuenta.</span>
+    </div>
   );
 }
 
@@ -133,11 +159,13 @@ export function ContenidoComprobante({
       ) : (
         <EmitirComprobante cuenta_id={cuenta_id} faltantes={faltantes} />
       )}
+      <AvisoDesfasado documentos={documentos} />
       {documentos && es_analista ? (
         <AccionesDocumentos
           cuenta_id={cuenta_id}
           estado={estado}
-          con_nota={Boolean(documentos.nota)}
+          nota={documentos.nota}
+          desfasado={documentos.desfasado}
         />
       ) : null}
     </>

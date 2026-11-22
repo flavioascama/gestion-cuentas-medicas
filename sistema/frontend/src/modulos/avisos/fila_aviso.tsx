@@ -4,7 +4,7 @@ import type { NombreRol } from "../../api/auth";
 import { usar_sesion } from "../../sesion/contexto_sesion";
 import { formatear_hace } from "../../utilidades/formato";
 import { describir_aviso } from "./catalogo_avisos";
-import { ETIQUETA_SEVERIDAD, icono_severidad } from "./severidad_avisos";
+import { ETIQUETA_SEVERIDAD, icono_severidad, tipo_aviso } from "./severidad_avisos";
 import estilos from "./fila_aviso.module.css";
 
 // Un aviso es una fila entera clicable (patron de bandeja de entrada):
@@ -49,7 +49,7 @@ function Contenedor({
 export function FilaAviso({ aviso, ahora, compacta = false, al_abrir }: Propiedades) {
   const descripcion = describir_aviso(aviso, usar_roles());
   const Icono = icono_severidad(aviso.severidad, aviso.atendido);
-  const etiqueta = aviso.atendido ? "Atendido" : (ETIQUETA_SEVERIDAD[aviso.severidad] ?? "");
+  const etiqueta = aviso.atendido ? "Atendido" : (ETIQUETA_SEVERIDAD[tipo_aviso(aviso)] ?? "");
   const hace = formatear_hace(aviso.ocurrido_en, ahora);
   const clase = `${estilos.fila} ${compacta ? estilos.compacta : ""} ${clase_tono(aviso)}`;
 

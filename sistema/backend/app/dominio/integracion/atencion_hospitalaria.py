@@ -32,13 +32,13 @@ class ErrorSistemaHospitalarioNoDisponible(Exception):
 
 class ErrorAtencionNoEncontrada(Exception):
     def __init__(self, atencion_id: str) -> None:
-        super().__init__(f"El sistema hospitalario no tiene la atencion {atencion_id}.")
+        super().__init__(f"El sistema hospitalario no tiene la atención {atencion_id}.")
         self.atencion_id = atencion_id
 
 
 class ErrorAtencionYaImportada(Exception):
     def __init__(self, atencion_id: str, cuenta_id: int) -> None:
-        super().__init__(f"La atencion {atencion_id} ya se importo en la cuenta {cuenta_id}.")
+        super().__init__(f"La atención {atencion_id} ya se importó en otra cuenta.")
         self.atencion_id = atencion_id
         self.cuenta_id = cuenta_id
 

@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Any
 
@@ -55,6 +55,8 @@ class DocumentoExpediente:
     tipo: str
     referencia: str
     emitido_en: datetime | None
+    # El comprobante solo guarda el dia de emision, sin hora.
+    fecha_emision: date | None = None
 
 
 @dataclass(frozen=True, slots=True)

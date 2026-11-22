@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { usar_sesion } from "../sesion/contexto_sesion";
 import {
   IconoCandado,
   IconoCerrarSesion,
@@ -53,6 +54,7 @@ function PerfilCabecera({
 }) {
   const [abierto, set_abierto] = useState(false);
   const contenedor = useRef<HTMLDivElement>(null);
+  const nombre = usar_sesion().sesion?.nombres ?? nombre_usuario;
 
   useEffect(() => {
     function al_hacer_clic_fuera(evento: MouseEvent): void {
@@ -70,9 +72,9 @@ function PerfilCabecera({
         onClick={() => set_abierto((anterior) => !anterior)}
         aria-expanded={abierto}
       >
-        <span className={estilos.avatar}>{obtener_iniciales(nombre_usuario)}</span>
+        <span className={estilos.avatar}>{obtener_iniciales(nombre)}</span>
         <span className={estilos.datos_perfil}>
-          <span className={estilos.nombre_perfil}>{nombre_usuario}</span>
+          <span className={estilos.nombre_perfil}>{nombre}</span>
           <span className={estilos.rol_perfil} title={etiquetas_roles(roles)}>
             {etiquetas_roles(roles)}
           </span>

@@ -11,6 +11,7 @@ import { CampoTexto } from "../../componentes_base/campo_texto";
 import { Dialogo } from "../../componentes_base/dialogo";
 import { MensajeErrorMutacion } from "../../componentes_base/mensaje_error_mutacion";
 import { Selector } from "../../componentes_base/selector";
+import { fecha_local_hoy } from "../../utilidades/formato";
 import { usar_valor_diferido } from "../../utilidades/usar_valor_diferido";
 import estilos_campo from "./campo_cie10.module.css";
 
@@ -52,10 +53,28 @@ function inicial(fecha_prestacion: string): Formulario {
   };
 }
 
-function completo(f: Formulario): boolean {
-  return [f.codigo_producto, f.fecha_dispensacion, f.cantidad_venta, f.monto_unitario].every(
-    (valor) => valor.trim() !== "",
+// La regla del servidor: hasta dos decimales, la cantidad mayor que cero y
+// los montos no negativos.
+const _CANTIDAD = /^\d{1,7}(\.\d{1,2})?$/;
+const _MONTO = /^\d{1,10}(\.\d{1,2})?$/;
+
+function cifras_validas(f: Formulario): boolean {
+  return (
+    _CANTIDAD.test(f.cantidad_venta) &&
+    Number(f.cantidad_venta) > 0 &&
+    _MONTO.test(f.monto_unitario) &&
+    (f.monto_no_cubierto === "" || _MONTO.test(f.monto_no_cubierto))
   );
+}
+
+function completo(f: Formulario): boolean {
+  const llenos = [
+    f.codigo_producto,
+    f.fecha_dispensacion,
+    f.cantidad_venta,
+    f.monto_unitario,
+  ].every((valor) => valor.trim() !== "");
+  return llenos && cifras_validas(f);
 }
 
 function a_solicitud(f: Formulario): SolicitudProductoDispensado {
@@ -116,6 +135,7 @@ function SelectorProducto({ valor, al_elegir }: { valor: string; al_elegir: (c: 
     <div className={estilos_campo.contenedor}>
       <CampoTexto
         etiqueta="Producto (catálogo GTIN)"
+        obligatorio
         value={texto}
         onChange={(evento) => {
           set_texto(evento.target.value);
@@ -143,12 +163,15 @@ function CamposProducto({ formulario, cambiar }: { formulario: Formulario; cambi
     <>
       <CampoTexto
         etiqueta="Fecha de dispensación"
+        obligatorio
         type="date"
+        max={fecha_local_hoy()}
         value={formulario.fecha_dispensacion}
         onChange={cambiar("fecha_dispensacion")}
       />
       <CampoTexto
         etiqueta="Cantidad"
+        obligatorio
         {...monto}
         value={formulario.cantidad_venta}
         onChange={cambiar("cantidad_venta")}
@@ -161,6 +184,7 @@ function CamposProducto({ formulario, cambiar }: { formulario: Formulario; cambi
       />
       <CampoTexto
         etiqueta="Monto unitario sin IGV (S/)"
+        obligatorio
         {...monto}
         value={formulario.monto_unitario}
         onChange={cambiar("monto_unitario")}

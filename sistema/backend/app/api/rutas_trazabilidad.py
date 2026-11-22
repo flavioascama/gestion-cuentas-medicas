@@ -9,6 +9,7 @@ mas de un "Si" fuera de "consultar las cuentas y su detalle")."""
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencias import requiere_rol
 from app.api.dependencias_trazabilidad import (
@@ -24,6 +25,7 @@ from app.api.esquemas_trazabilidad import (
     IndicadoresCicloRespuesta,
     SolicitudExportacionExpediente,
 )
+from app.api.nombres_actores import con_nombres_en_historial
 from app.compartido.errores import ErrorAplicacion
 from app.dominio.acceso.entidades import NombreRol
 from app.dominio.acceso.puertos import CargaSesion
@@ -35,6 +37,7 @@ from app.dominio.trazabilidad.casos_uso import (
 )
 from app.dominio.trazabilidad.errores import ErrorCuentaInexistente, ErrorLoteInexistente
 from app.dominio.trazabilidad.valores import FiltroIndicadores
+from app.infraestructura.persistencia.base import obtener_sesion
 
 router = APIRouter(prefix="/cuentas/{cuenta_id}", tags=["trazabilidad"])
 router_indicadores = APIRouter(tags=["trazabilidad"])
@@ -49,6 +52,7 @@ async def consultar_historial_cuenta(
     cuenta_id: int,
     caso_uso: ConsultarHistorialCuenta = Depends(construir_consultar_historial_cuenta),
     actor: CargaSesion = Depends(_SOLO_JEFE),
+    sesion: AsyncSession = Depends(obtener_sesion),
 ) -> HistorialCuentaRespuesta:
     try:
         historial = await caso_uso.ejecutar(cuenta_id, actor.nombre_usuario)
@@ -56,7 +60,9 @@ async def consultar_historial_cuenta(
         raise ErrorAplicacion(
             "CUENTA_NO_ENCONTRADA", str(error), estado_http=status.HTTP_404_NOT_FOUND
         ) from error
-    return HistorialCuentaRespuesta.desde_valor(historial)
+    respuesta = HistorialCuentaRespuesta.desde_valor(historial)
+    await con_nombres_en_historial(sesion, respuesta)
+    return respuesta
 
 
 @router_historial_lote.get("/historial", response_model=HistorialLoteRespuesta)
@@ -64,6 +70,7 @@ async def consultar_historial_lote(
     lote_id: int,
     caso_uso: ConsultarHistorialLote = Depends(construir_consultar_historial_lote),
     actor: CargaSesion = Depends(_SOLO_JEFE),
+    sesion: AsyncSession = Depends(obtener_sesion),
 ) -> HistorialLoteRespuesta:
     """RT-13: el historial de cualquier lote, como el de la cuenta."""
     try:
@@ -72,7 +79,9 @@ async def consultar_historial_lote(
         raise ErrorAplicacion(
             "LOTE_NO_ENCONTRADO", str(error), estado_http=status.HTTP_404_NOT_FOUND
         ) from error
-    return HistorialLoteRespuesta.desde_valor(historial)
+    respuesta = HistorialLoteRespuesta.desde_valor(historial)
+    await con_nombres_en_historial(sesion, respuesta)
+    return respuesta
 
 
 @router.post("/expediente", response_model=ExpedienteRespuesta, status_code=status.HTTP_201_CREATED)
@@ -81,6 +90,7 @@ async def exportar_expediente(
     solicitud: SolicitudExportacionExpediente,
     caso_uso: ExportarExpediente = Depends(construir_exportar_expediente),
     actor: CargaSesion = Depends(_SOLO_JEFE),
+    sesion: AsyncSession = Depends(obtener_sesion),
 ) -> ExpedienteRespuesta:
     try:
         expediente = await caso_uso.ejecutar(cuenta_id, solicitud.motivo, actor.nombre_usuario)
@@ -88,7 +98,9 @@ async def exportar_expediente(
         raise ErrorAplicacion(
             "CUENTA_NO_ENCONTRADA", str(error), estado_http=status.HTTP_404_NOT_FOUND
         ) from error
-    return ExpedienteRespuesta.desde_valor(expediente)
+    respuesta = ExpedienteRespuesta.desde_valor(expediente)
+    await con_nombres_en_historial(sesion, respuesta.historial)
+    return respuesta
 
 
 @router_indicadores.get("/indicadores", response_model=IndicadoresCicloRespuesta)

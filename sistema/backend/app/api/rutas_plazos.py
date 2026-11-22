@@ -12,7 +12,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencias import obtener_reloj, requiere_rol
 from app.api.serializacion import campos
-from app.compartido.configuracion import obtener_configuracion
 from app.compartido.errores import ErrorAplicacion
 from app.dominio.acceso.entidades import NombreRol
 from app.dominio.acceso.puertos import CargaSesion
@@ -24,6 +23,7 @@ from app.dominio.plazos.declaracion_susalud import (
     ErrorPeriodoNoCerrado,
     RegistrarDeclaracionSinFacturacion,
 )
+from app.dominio.plazos.parametros_sistema import feriados_desde_texto
 from app.dominio.plazos.susalud import ConsultarControlSusalud, ControlPeriodoSusalud
 from app.dominio.puertos_comunes import Reloj
 from app.infraestructura.persistencia.base import obtener_sesion
@@ -31,6 +31,7 @@ from app.infraestructura.persistencia.registro_eventos_sql import RegistroEvento
 from app.infraestructura.persistencia.repositorio_control_susalud_sql import (
     RepositorioControlSusaludSql,
 )
+from app.infraestructura.persistencia.repositorio_parametros_sistema_sql import valor_vigente
 from app.infraestructura.persistencia.repositorio_plazos_sql import RepositorioPlazosSql
 
 router = APIRouter(prefix="/plazos", tags=["plazos"])
@@ -53,15 +54,15 @@ class VencimientoRespuesta(BaseModel):
         return VencimientoRespuesta(**campos(valor))
 
 
-def construir_consultar_vencimientos(
+async def construir_consultar_vencimientos(
     sesion: AsyncSession = Depends(obtener_sesion),
     reloj: Reloj = Depends(obtener_reloj),
 ) -> ConsultarVencimientos:
-    configuracion = obtener_configuracion()
+    dias_reenvio = int(await valor_vigente(sesion, "DIAS_PLAZO_REENVIO_LOTE_RECHAZADO"))
     return ConsultarVencimientos(
-        RepositorioPlazosSql(sesion, configuracion.dias_plazo_reenvio_lote_rechazado),
+        RepositorioPlazosSql(sesion, dias_reenvio),
         reloj,
-        configuracion.dias_aviso_previo_vencimiento,
+        int(await valor_vigente(sesion, "DIAS_AVISO_PREVIO_VENCIMIENTO")),
     )
 
 
@@ -82,22 +83,22 @@ class ControlPeriodoSusaludRespuesta(BaseModel):
     estado: str
     listos_envio: int
     declarada_en: datetime | None
+    declarada_fuera_de_plazo: bool
 
     @staticmethod
     def desde_valor(valor: ControlPeriodoSusalud) -> ControlPeriodoSusaludRespuesta:
         return ControlPeriodoSusaludRespuesta(**campos(valor))
 
 
-def construir_consultar_control_susalud(
+async def construir_consultar_control_susalud(
     sesion: AsyncSession = Depends(obtener_sesion),
     reloj: Reloj = Depends(obtener_reloj),
 ) -> ConsultarControlSusalud:
-    configuracion = obtener_configuracion()
     return ConsultarControlSusalud(
         RepositorioControlSusaludSql(sesion),
         reloj,
-        configuracion.conjunto_feriados,
-        configuracion.dias_aviso_previo_vencimiento,
+        feriados_desde_texto(await valor_vigente(sesion, "FERIADOS")),
+        int(await valor_vigente(sesion, "DIAS_AVISO_PREVIO_VENCIMIENTO")),
     )
 
 

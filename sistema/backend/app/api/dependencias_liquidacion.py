@@ -9,9 +9,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.dependencias import obtener_reloj
 from app.dominio.liquidacion.casos_uso import (
     ConciliarPago,
+    CorregirLiquidacion,
     ObtenerLiquidacion,
     RegistrarLiquidacion,
 )
+from app.dominio.liquidacion.correccion_pago import CorregirPago
 from app.dominio.liquidacion.puertos import RepositorioLiquidaciones
 from app.dominio.orquestacion.puertos import RepositorioEstadoCuenta
 from app.dominio.puertos_comunes import Observabilidad, Reloj
@@ -68,7 +70,24 @@ def construir_conciliar_pago(
     return ConciliarPago(repositorio, estado_cuenta, observabilidad, reloj)
 
 
+def construir_corregir_liquidacion(
+    repositorio: RepositorioLiquidaciones = Depends(obtener_repositorio_liquidaciones),
+    estado_cuenta: RepositorioEstadoCuenta = Depends(obtener_repositorio_estado_cuenta),
+    observabilidad: Observabilidad = Depends(obtener_observabilidad),
+) -> CorregirLiquidacion:
+    return CorregirLiquidacion(repositorio, estado_cuenta, observabilidad)
+
+
+def construir_corregir_pago(
+    repositorio: RepositorioLiquidaciones = Depends(obtener_repositorio_liquidaciones),
+    estado_cuenta: RepositorioEstadoCuenta = Depends(obtener_repositorio_estado_cuenta),
+    observabilidad: Observabilidad = Depends(obtener_observabilidad),
+) -> CorregirPago:
+    return CorregirPago(repositorio, estado_cuenta, observabilidad)
+
+
 def construir_obtener_liquidacion(
     repositorio: RepositorioLiquidaciones = Depends(obtener_repositorio_liquidaciones),
+    estado_cuenta: RepositorioEstadoCuenta = Depends(obtener_repositorio_estado_cuenta),
 ) -> ObtenerLiquidacion:
-    return ObtenerLiquidacion(repositorio)
+    return ObtenerLiquidacion(repositorio, estado_cuenta)

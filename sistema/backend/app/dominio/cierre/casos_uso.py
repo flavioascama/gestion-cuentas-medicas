@@ -10,9 +10,11 @@ from __future__ import annotations
 
 from dataclasses import replace
 
+from app.compartido.nombres_estados import nombre_estado
 from app.dominio.cierre.errores import (
     ErrorAnulacionPropia,
     ErrorDiferenciaPendiente,
+    ErrorMotivoRechazoRequerido,
     ErrorObservacionPendiente,
     ErrorSinLiquidacion,
     ErrorSolicitudAnulacionInexistente,
@@ -21,7 +23,9 @@ from app.dominio.cierre.errores import (
 )
 from app.dominio.cierre.puertos import RepositorioSolicitudesAnulacion
 from app.dominio.cierre.valores import (
+    CondicionesCierre,
     DatosNuevaSolicitudAnulacion,
+    EstadoCierreCuenta,
     EstadoSolicitudAnulacion,
     SolicitudAnulacion,
 )
@@ -33,6 +37,26 @@ from app.dominio.orquestacion.puertos import RepositorioEstadoCuenta
 from app.dominio.orquestacion.valores import ESTADOS_TERMINALES, TipoTransicion
 from app.dominio.pse.documentos import RepositorioDocumentosPago
 from app.dominio.puertos_comunes import Evento, Observabilidad, Reloj
+
+
+async def evaluar_cierre(
+    liquidaciones: RepositorioLiquidaciones,
+    observaciones: RepositorioObservaciones,
+    cuenta_medica_id: int,
+) -> CondicionesCierre:
+    """La unica regla de lo que falta para cerrar: la usan el cierre y la
+    consulta de la seccion de cierre."""
+    liquidacion = await liquidaciones.obtener_por_cuenta(cuenta_medica_id)
+    conciliado = liquidacion is not None and liquidacion.diferencia is not None
+    diferencia = liquidacion.diferencia if liquidacion is not None else None
+    abiertas = [
+        o for o in await observaciones.listar_por_cuenta(cuenta_medica_id) if o.estado == "ABIERTA"
+    ]
+    return CondicionesCierre(
+        pago_conciliado=conciliado,
+        diferencia=diferencia if diferencia else None,
+        observaciones_sin_responder=len(abiertas),
+    )
 
 
 class CerrarCuenta:
@@ -53,25 +77,18 @@ class CerrarCuenta:
         self._observabilidad = observabilidad
 
     async def ejecutar(self, cuenta_medica_id: int, actor: str) -> str:
-        liquidacion = await self._liquidaciones.obtener_por_cuenta(cuenta_medica_id)
-        if liquidacion is None or liquidacion.diferencia is None:
-            raise ErrorSinLiquidacion(
-                f"La cuenta {cuenta_medica_id} no tiene un pago conciliado todavia."
-            )
-        if liquidacion.diferencia != 0:
+        condiciones = await evaluar_cierre(
+            self._liquidaciones, self._observaciones, cuenta_medica_id
+        )
+        if not condiciones.pago_conciliado:
+            raise ErrorSinLiquidacion("La cuenta no tiene un pago conciliado todavía.")
+        if condiciones.diferencia is not None:
             raise ErrorDiferenciaPendiente(
-                f"La cuenta {cuenta_medica_id} tiene una diferencia de conciliacion "
-                f"({liquidacion.diferencia}) sin resolver."
+                "La cuenta tiene una diferencia de S/ "
+                f"{abs(condiciones.diferencia):.2f} entre lo liquidado y lo pagado sin resolver."
             )
-        observaciones_abiertas = [
-            o
-            for o in await self._observaciones.listar_por_cuenta(cuenta_medica_id)
-            if o.estado == "ABIERTA"
-        ]
-        if observaciones_abiertas:
-            raise ErrorObservacionPendiente(
-                f"La cuenta {cuenta_medica_id} tiene observaciones sin responder."
-            )
+        if condiciones.observaciones_sin_responder:
+            raise ErrorObservacionPendiente("La cuenta tiene observaciones sin responder.")
 
         estado_actual = await self._estado_cuenta.obtener_estado(cuenta_medica_id)
         estado_nuevo = validar_transicion(estado_actual, TipoTransicion.CIERRE)
@@ -113,16 +130,20 @@ class SolicitarAnulacion:
         # asi que la transicion en si (que la exige) se valida recien
         # en ResolverSolicitudAnulacion; aqui solo se adelanta el
         # rechazo que no depende de ella (Tabla 69).
-        if estado_actual is None or estado_actual in ESTADOS_TERMINALES:
+        if estado_actual is None:
             raise ErrorTransicionNoDefinida(
-                f"No se puede solicitar la anulacion de la cuenta {cuenta_medica_id}: "
-                f"su estado {estado_actual!r} no admite nuevas transiciones."
+                "No se puede solicitar la anulación de una cuenta que todavía no se registró."
+            )
+        if estado_actual in ESTADOS_TERMINALES:
+            raise ErrorTransicionNoDefinida(
+                "La anulación no procede en una cuenta Cerrada o Anulada: "
+                f"esta cuenta está {nombre_estado(estado_actual)}."
             )
 
         pendiente = await self._repositorio.obtener_pendiente_por_cuenta(cuenta_medica_id)
         if pendiente is not None:
             raise ErrorSolicitudAnulacionYaPendiente(
-                f"La cuenta {cuenta_medica_id} ya tiene una solicitud de anulacion pendiente."
+                "La cuenta ya tiene una solicitud de anulación pendiente."
             )
 
         ahora = self._reloj.ahora()
@@ -147,6 +168,24 @@ class SolicitarAnulacion:
         return solicitud_id
 
 
+def _validar_resolucion(
+    solicitud: SolicitudAnulacion, aprobada: bool, actor: str, motivo: str | None
+) -> str | None:
+    """Devuelve el motivo sin espacios sobrantes, o None si no se escribio."""
+    if solicitud.estado != EstadoSolicitudAnulacion.PENDIENTE:
+        raise ErrorSolicitudAnulacionYaResuelta(
+            f"La solicitud de anulación ya fue {solicitud.estado.value.lower()}."
+        )
+    if aprobada and solicitud.solicitado_por == actor:
+        raise ErrorAnulacionPropia(
+            "Quien solicitó la anulación no la aprueba: la aprueba otra persona."
+        )
+    limpio = (motivo or "").strip() or None
+    if not aprobada and limpio is None:
+        raise ErrorMotivoRechazoRequerido("Falta el motivo del rechazo.")
+    return limpio
+
+
 class ResolverSolicitudAnulacion:
     """CU-13, flujo alternativo: "el jefe de cuentas medicas la aprueba
     o la rechaza; con la aprobacion, la cuenta pasa a ANULADA; con el
@@ -164,21 +203,23 @@ class ResolverSolicitudAnulacion:
         self._observabilidad = observabilidad
         self._reloj = reloj
 
-    async def ejecutar(self, solicitud_id: int, aprobada: bool, actor: str) -> str | None:
+    async def ejecutar(
+        self, solicitud_id: int, aprobada: bool, actor: str, motivo: str | None = None
+    ) -> str | None:
         solicitud = await self._repositorio.obtener(solicitud_id)
         if solicitud is None:
-            raise ErrorSolicitudAnulacionInexistente(f"No existe la solicitud {solicitud_id}.")
-        if solicitud.estado != EstadoSolicitudAnulacion.PENDIENTE:
-            raise ErrorSolicitudAnulacionYaResuelta(
-                f"La solicitud {solicitud_id} ya fue {solicitud.estado.value.lower()}."
-            )
-        if aprobada and solicitud.solicitado_por == actor:
-            raise ErrorAnulacionPropia(
-                "Quien solicito la anulacion no la aprueba: la aprueba otra persona."
-            )
+            raise ErrorSolicitudAnulacionInexistente("No existe la solicitud de anulación.")
+        motivo = _validar_resolucion(solicitud, aprobada, actor, motivo)
 
         ahora = self._reloj.ahora()
-        await self._repositorio.resolver(solicitud_id, aprobada, actor, ahora)
+        await self._repositorio.resolver(solicitud_id, aprobada, actor, ahora, motivo)
+        # El resultado se avisa a quien la pidio (avisos/destinatarios.py).
+        datos: dict[str, object] = {
+            "solicitud_id": solicitud_id,
+            "solicitado_por": solicitud.solicitado_por,
+        }
+        if motivo is not None:
+            datos["motivo"] = motivo
 
         if not aprobada:
             await self._observabilidad.eventos.registrar(
@@ -188,7 +229,7 @@ class ResolverSolicitudAnulacion:
                     actor=actor,
                     estado_previo=None,
                     estado_nuevo=None,
-                    datos={"solicitud_id": solicitud_id},
+                    datos=datos,
                 )
             )
             return None
@@ -205,10 +246,34 @@ class ResolverSolicitudAnulacion:
                 actor=actor,
                 estado_previo=estado_actual,
                 estado_nuevo=estado_nuevo,
-                datos={"solicitud_id": solicitud_id},
+                datos=datos,
             )
         )
         return estado_nuevo
+
+
+class ConsultarCierreCuenta:
+    """Lectura de la seccion de cierre y anulacion: lo que falta para cerrar
+    (la misma regla de CerrarCuenta) y la solicitud de anulacion pendiente o
+    la ultima resuelta."""
+
+    def __init__(
+        self,
+        liquidaciones: RepositorioLiquidaciones,
+        observaciones: RepositorioObservaciones,
+        solicitudes: RepositorioSolicitudesAnulacion,
+    ) -> None:
+        self._liquidaciones = liquidaciones
+        self._observaciones = observaciones
+        self._solicitudes = solicitudes
+
+    async def ejecutar(self, cuenta_medica_id: int) -> EstadoCierreCuenta:
+        return EstadoCierreCuenta(
+            condiciones=await evaluar_cierre(
+                self._liquidaciones, self._observaciones, cuenta_medica_id
+            ),
+            ultima_solicitud=await self._solicitudes.obtener_ultima_por_cuenta(cuenta_medica_id),
+        )
 
 
 class ListarSolicitudesAnulacionPendientes:

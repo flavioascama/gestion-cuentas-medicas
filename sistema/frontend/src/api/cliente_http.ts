@@ -67,7 +67,7 @@ async function leer_error(respuesta: Response): Promise<ErrorApi> {
     typeof cuerpo === "object" && cuerpo !== null ? (cuerpo as Record<string, unknown>) : {};
   return new ErrorApi(
     typeof objeto.codigo === "string" ? objeto.codigo : "ERROR_DESCONOCIDO",
-    typeof objeto.mensaje === "string" ? objeto.mensaje : respuesta.statusText,
+    typeof objeto.mensaje === "string" ? objeto.mensaje : "No se pudo completar la operación.",
     respuesta.status,
     typeof objeto.detalles === "object" && objeto.detalles !== null
       ? (objeto.detalles as Record<string, unknown>)

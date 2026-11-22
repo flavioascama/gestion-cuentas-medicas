@@ -7,6 +7,8 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from decimal import Decimal
 
+from app.compartido.fecha_peru import fecha_peru
+from app.compartido.nombres_estados import nombre_estado
 from app.dominio.cpms.normalizacion import es_codigo_candidato, normalizar
 from app.dominio.cpms.por_codificar import ErrorProcedimientoPorCodificarInexistente
 from app.dominio.cpms.puertos import (
@@ -31,7 +33,7 @@ from app.dominio.puertos_comunes import (
 _MAXIMO_CANDIDATOS_DEVUELTOS = 10
 
 
-ESTADOS_CODIFICABLES = frozenset({"REGISTRADA", "RECHAZADA", "GLOSADA", "GLOSADA_PARCIAL"})
+ESTADOS_CODIFICABLES = frozenset({"REGISTRADA", "RECHAZADA", "GLOSADA"})
 
 
 class ErrorCuentaNoCodificable(Exception):
@@ -165,8 +167,8 @@ class ConfirmarCodigoCpms:
         )
         if candidato is None:
             raise ErrorCodigoCpmsInexistente(
-                f"El codigo {confirmacion.codigo_elegido!r} no existe en la version "
-                f"vigente del catalogo CPMS ({version_id})."
+                f"El código {confirmacion.codigo_elegido} no existe en la versión "
+                "vigente del catálogo CPMS."
             )
 
         fin = self._reloj.ahora()
@@ -209,16 +211,16 @@ class ConfirmarCodigoCpms:
             self._estado_cuenta, cuenta_medica_id, estado in ESTADOS_CODIFICABLES
         ):
             raise ErrorCuentaNoCodificable(
-                f"La cuenta {cuenta_medica_id} esta en estado {estado!r}: no admite codificacion."
+                f"La cuenta está en estado {nombre_estado(estado or '')}: no admite codificación."
             )
 
     async def _exigir_fecha_valida(self, confirmacion: ConfirmacionCodigoCpms) -> None:
-        if confirmacion.fecha > self._reloj.ahora().date():
+        if confirmacion.fecha > fecha_peru(self._reloj.ahora()):
             raise ErrorProcedimientoInvalido("La fecha del procedimiento es posterior a hoy.")
         minima = await self._repositorio.fecha_minima_procedimiento(confirmacion.cuenta_medica_id)
         if minima is not None and confirmacion.fecha < minima:
             raise ErrorProcedimientoInvalido(
-                "La fecha del procedimiento es anterior a la prestacion de la cuenta."
+                "La fecha del procedimiento es anterior a la prestación de la cuenta."
             )
 
     async def _exigir_pendiente(self, confirmacion: ConfirmacionCodigoCpms) -> None:
@@ -229,8 +231,7 @@ class ConfirmarCodigoCpms:
             confirmacion.cuenta_medica_id, pendiente_id
         ):
             raise ErrorProcedimientoPorCodificarInexistente(
-                f"La cuenta {confirmacion.cuenta_medica_id} no tiene pendiente el "
-                f"procedimiento por codificar {pendiente_id}."
+                "La cuenta no tiene pendiente ese procedimiento por codificar."
             )
 
     async def _persistir(
@@ -301,18 +302,16 @@ class QuitarProcedimiento:
     async def ejecutar(self, cuenta_medica_id: int, procedimiento_id: int, actor: str) -> None:
         estado = await self._estado_cuenta.obtener_estado(cuenta_medica_id)
         if estado is None:
-            raise ErrorProcedimientoInexistente(f"No existe la cuenta {cuenta_medica_id}.")
+            raise ErrorProcedimientoInexistente("No existe la cuenta.")
         if not await admite_correccion(
             self._estado_cuenta, cuenta_medica_id, estado in ESTADOS_CODIFICABLES
         ):
             raise ErrorCuentaNoCodificable(
-                f"La cuenta {cuenta_medica_id} esta en estado {estado!r}: no admite codificacion."
+                f"La cuenta está en estado {nombre_estado(estado)}: no admite codificación."
             )
         codigo = await self._repositorio.quitar_procedimiento(cuenta_medica_id, procedimiento_id)
         if codigo is None:
-            raise ErrorProcedimientoInexistente(
-                f"La cuenta {cuenta_medica_id} no tiene el procedimiento {procedimiento_id}."
-            )
+            raise ErrorProcedimientoInexistente("La cuenta no tiene ese procedimiento.")
         await self._registro_eventos.registrar(
             Evento(
                 cuenta_medica_id=cuenta_medica_id,

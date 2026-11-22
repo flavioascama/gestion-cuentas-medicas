@@ -1,5 +1,6 @@
 import type { RespuestaSugerenciaCpms } from "../../api/cpms";
 import { CampoTexto } from "../../componentes_base/campo_texto";
+import { formatear_version_catalogo } from "../../utilidades/formato";
 import estilos from "./asistente_cpms.module.css";
 
 interface PropiedadesFormulario {
@@ -30,7 +31,7 @@ export function FormularioBusquedaCpms({
 export function ResultadoBusquedaCpms({ resultado }: { resultado: RespuestaSugerenciaCpms }) {
   return (
     <div className={estilos.version}>
-      Catálogo CPMS versión {resultado.cpms_version_etiqueta}
+      Catálogo CPMS versión {formatear_version_catalogo(resultado.cpms_version_etiqueta)}
       {resultado.coincidencia_exacta ? " — coincidencia exacta por código" : ""}
     </div>
   );

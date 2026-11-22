@@ -18,6 +18,7 @@ from app.infraestructura.persistencia.modelos_documentos_pago import (
     ComprobanteReemplazadoModelo,
 )
 from app.infraestructura.persistencia.modelos_integracion import (
+    CuentaMedicaModelo,
     DocumentoFacturadorModelo,
     IpressModelo,
     TrabajoModelo,
@@ -100,6 +101,12 @@ class RepositorioComunicacionesSql(RepositorioComunicaciones):
             .limit(1)
         )
         return int(pendiente) if pendiente is not None else None
+
+    async def estado_de_cuenta(self, cuenta_id: int) -> str | None:
+        estado = await self._sesion.scalar(
+            sa.select(CuentaMedicaModelo.estado).where(CuentaMedicaModelo.id == cuenta_id)
+        )
+        return None if estado is None else str(estado)
 
     async def cuenta_de_documento(self, documento: str) -> int | None:
         numero = DocumentoFacturadorModelo.serie + DocumentoFacturadorModelo.numero

@@ -2,12 +2,14 @@ import { useState } from "react";
 import type { Usuario } from "../../api/usuarios";
 import { Boton } from "../../componentes_base/boton";
 import { CampoTexto } from "../../componentes_base/campo_texto";
+import { MensajeErrorMutacion } from "../../componentes_base/mensaje_error_mutacion";
 import { etiquetas_roles } from "../../componentes_base/mapa_roles";
 import { ConPaginacion } from "../../componentes_base/paginacion";
 import { usar_pagina_cliente } from "../../componentes_base/paginar";
 import { TablaDatos, type ColumnaTabla } from "../../componentes_base/tabla_datos";
 import { TituloPagina } from "../../componentes_base/titulo_pagina";
 import { usar_sesion } from "../../sesion/contexto_sesion";
+import { DialogoRestablecerClave } from "./dialogo_restablecer_clave";
 import { DialogoUsuario } from "./dialogo_usuario";
 import { usar_actualizar_usuario, usar_lista_usuarios } from "./usar_usuarios";
 import estilos from "./administracion.module.css";
@@ -16,27 +18,42 @@ import estilos from "./administracion.module.css";
 // administracion, 2026-11-15).
 function AccionesUsuario({ usuario }: { usuario: Usuario }) {
   const [editando, set_editando] = useState(false);
+  const [restableciendo, set_restableciendo] = useState(false);
   const mutacion_activo = usar_actualizar_usuario();
   const es_propio = usar_sesion().sesion?.usuario_id === usuario.id;
 
   return (
-    <div className={estilos.acciones_fila}>
-      <Boton variante="terciario" onClick={() => set_editando(true)}>
-        Editar
-      </Boton>
-      <Boton
-        variante="terciario"
-        onClick={() =>
-          mutacion_activo.mutate({
-            usuario_id: usuario.id,
-            solicitud: { activo: !usuario.activo },
-          })
-        }
-        disabled={mutacion_activo.isPending || es_propio}
-      >
-        {usuario.activo ? "Desactivar" : "Activar"}
-      </Boton>
-      {editando ? <DialogoUsuario usuario={usuario} al_cerrar={() => set_editando(false)} /> : null}
+    <div>
+      <div className={estilos.acciones_fila}>
+        <Boton variante="terciario" onClick={() => set_editando(true)}>
+          Editar
+        </Boton>
+        <Boton variante="terciario" onClick={() => set_restableciendo(true)} disabled={es_propio}>
+          Restablecer contraseña
+        </Boton>
+        <Boton
+          variante="terciario"
+          onClick={() =>
+            mutacion_activo.mutate({
+              usuario_id: usuario.id,
+              solicitud: { activo: !usuario.activo },
+            })
+          }
+          disabled={mutacion_activo.isPending || es_propio}
+        >
+          {usuario.activo ? "Desactivar" : "Activar"}
+        </Boton>
+        {editando ? (
+          <DialogoUsuario usuario={usuario} al_cerrar={() => set_editando(false)} />
+        ) : null}
+        {restableciendo ? (
+          <DialogoRestablecerClave usuario={usuario} al_cerrar={() => set_restableciendo(false)} />
+        ) : null}
+      </div>
+      <MensajeErrorMutacion
+        error={mutacion_activo.error}
+        texto_por_defecto="No se pudo cambiar el estado del usuario."
+      />
     </div>
   );
 }
@@ -69,7 +86,10 @@ function coincide(usuario: Usuario, busqueda: string): boolean {
 function TablaUsuarios() {
   const consulta = usar_lista_usuarios();
   const [busqueda, set_busqueda] = useState("");
-  const filtrados = (consulta.data ?? []).filter((usuario) => coincide(usuario, busqueda));
+  // Primero los activos; dentro de cada grupo se conserva el orden recibido.
+  const filtrados = (consulta.data ?? [])
+    .filter((usuario) => coincide(usuario, busqueda))
+    .sort((a, b) => Number(b.activo) - Number(a.activo));
   const { pagina_actual, total_paginas, filas_pagina, set_pagina } = usar_pagina_cliente(filtrados);
 
   return (

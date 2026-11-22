@@ -6,7 +6,6 @@ configuracion/mapeo. Este modulo solo resuelve parametros de despliegue.
 """
 
 import re
-from datetime import date
 from functools import lru_cache
 
 from pydantic import Field, model_validator
@@ -186,12 +185,6 @@ class Configuracion(BaseSettings):
         if sin_tls:
             raise ValueError("Canales sin TLS fuera de desarrollo: " + ", ".join(sin_tls))
         return self
-
-    @property
-    def conjunto_feriados(self) -> frozenset[date]:
-        return frozenset(
-            date.fromisoformat(f.strip()) for f in self.feriados.split(",") if f.strip()
-        )
 
     @property
     def lista_origenes_cors(self) -> list[str]:

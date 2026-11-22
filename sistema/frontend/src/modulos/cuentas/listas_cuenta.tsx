@@ -1,11 +1,11 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { quitar_procedimiento } from "../../api/cpms";
 import type { DetalleCuenta } from "../../api/cuentas";
 import { Boton } from "../../componentes_base/boton";
-import { MensajeErrorMutacion } from "../../componentes_base/mensaje_error_mutacion";
 import { TablaDatos, type ColumnaTabla } from "../../componentes_base/tabla_datos";
 import { formatear_fecha, formatear_monto } from "../../utilidades/formato";
 import { usar_puede_codificar } from "./codificacion_cuenta";
+import { DialogoConfirmarQuitar } from "./dialogo_confirmar_quitar";
 import estilos from "./detalle_cuenta.module.css";
 
 type Procedimiento = DetalleCuenta["procedimientos"][number];
@@ -41,7 +41,7 @@ const _COLUMNAS_PROCEDIMIENTOS: ColumnaTabla<Procedimiento>[] = [
 
 // Mismo "Quitar" que la farmacia: solo para quien puede codificar la cuenta.
 function columnas_procedimientos(
-  al_quitar: ((id: number) => void) | null,
+  al_quitar: ((fila: Procedimiento) => void) | null,
 ): ColumnaTabla<Procedimiento>[] {
   if (!al_quitar) return _COLUMNAS_PROCEDIMIENTOS;
   return [
@@ -50,7 +50,7 @@ function columnas_procedimientos(
       clave: "id",
       encabezado: "",
       formatear: (fila) => (
-        <Boton variante="terciario" onClick={() => al_quitar(fila.id)}>
+        <Boton variante="terciario" onClick={() => al_quitar(fila)}>
           Quitar
         </Boton>
       ),
@@ -69,11 +69,7 @@ export function SeccionProcedimientos({
   al_codificar: () => void;
 }) {
   const puede_codificar = usar_puede_codificar(cuenta.estado, cuenta.id);
-  const cliente_consultas = useQueryClient();
-  const quitar = useMutation({
-    mutationFn: (procedimiento_id: number) => quitar_procedimiento(cuenta.id, procedimiento_id),
-    onSuccess: () => void cliente_consultas.invalidateQueries({ queryKey: ["cuentas", cuenta.id] }),
-  });
+  const [por_quitar, set_por_quitar] = useState<Procedimiento | null>(null);
   const total = cuenta.procedimientos.reduce((suma, fila) => suma + importe(fila), 0);
   return (
     <div className={estilos.seccion}>
@@ -85,12 +81,8 @@ export function SeccionProcedimientos({
           </Boton>
         </div>
       ) : null}
-      <MensajeErrorMutacion
-        error={quitar.error}
-        texto_por_defecto="No se pudo quitar el procedimiento."
-      />
       <TablaDatos
-        columnas={columnas_procedimientos(puede_codificar ? (id) => quitar.mutate(id) : null)}
+        columnas={columnas_procedimientos(puede_codificar ? set_por_quitar : null)}
         filas={cuenta.procedimientos}
         obtener_clave={(fila) => fila.id}
         mensaje_vacio="La cuenta no tiene procedimientos confirmados."
@@ -100,6 +92,16 @@ export function SeccionProcedimientos({
           <span>Total de procedimientos</span>
           <span>{formatear_monto(total)}</span>
         </div>
+      ) : null}
+      {por_quitar ? (
+        <DialogoConfirmarQuitar
+          titulo="Quitar procedimiento"
+          cuenta_id={cuenta.id}
+          texto={`¿Quitar el procedimiento ${por_quitar.codigo_asignado} de la cuenta?`}
+          texto_error="No se pudo quitar el procedimiento."
+          quitar={() => quitar_procedimiento(cuenta.id, por_quitar.id)}
+          al_cerrar={() => set_por_quitar(null)}
+        />
       ) : null}
     </div>
   );

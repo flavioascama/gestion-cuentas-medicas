@@ -76,6 +76,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/avisos/{evento_id}/atendido": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Marcar Aviso Atendido
+         * @description Solo quien recibe el aviso, y solo los que no se resuelven solos.
+         */
+        post: operations["marcar_aviso_atendido_avisos__evento_id__atendido_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/usuarios": {
         parameters: {
             query?: never;
@@ -109,6 +129,23 @@ export interface paths {
         head?: never;
         /** Actualizar Usuario */
         patch: operations["actualizar_usuario_usuarios__usuario_id__patch"];
+        trace?: never;
+    };
+    "/usuarios/{usuario_id}/restablecer-clave": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Restablecer Clave Usuario */
+        post: operations["restablecer_clave_usuario_usuarios__usuario_id__restablecer_clave_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/atenciones-hospitalarias": {
@@ -341,6 +378,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/cuentas/{cuenta_id}/asegurado": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Corregir Asegurado
+         * @description Corrige nombres y apellidos del asegurado mientras la cuenta siga
+         *     registrada; el documento no se corrige.
+         */
+        put: operations["corregir_asegurado_cuentas__cuenta_id__asegurado_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/cuentas/{cuenta_id}/acreditacion": {
         parameters: {
             query?: never;
@@ -512,6 +570,27 @@ export interface paths {
         put?: never;
         /** Cargar Catalogo Cpms */
         post: operations["cargar_catalogo_cpms_catalogo_cpms_versiones_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/catalogo-cpms/procedimientos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Buscar Procedimientos Catalogo Cpms
+         * @description Para que el administrador compruebe que un procedimiento esta en la
+         *     version vigente: por codigo o nombre, sin distinguir mayusculas ni tildes.
+         */
+        get: operations["buscar_procedimientos_catalogo_cpms_catalogo_cpms_procedimientos_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -986,7 +1065,12 @@ export interface paths {
         };
         /** Obtener Carta Garantia */
         get: operations["obtener_carta_garantia_cuentas__cuenta_id__carta_garantia_get"];
-        put?: never;
+        /**
+         * Corregir Carta Garantia
+         * @description Corrige la carta mientras la cuenta siga registrada; la correccion
+         *     queda en el historial con los datos anteriores.
+         */
+        put: operations["corregir_carta_garantia_cuentas__cuenta_id__carta_garantia_put"];
         /** Registrar Carta Garantia */
         post: operations["registrar_carta_garantia_cuentas__cuenta_id__carta_garantia_post"];
         delete?: never;
@@ -1090,7 +1174,8 @@ export interface paths {
         /** Listar Parametros Iafas */
         get: operations["listar_parametros_iafas_parametros_iafas_get"];
         put?: never;
-        post?: never;
+        /** Crear Iafas */
+        post: operations["crear_iafas_parametros_iafas_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1107,7 +1192,8 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        delete?: never;
+        /** Eliminar Iafas */
+        delete: operations["eliminar_iafas_parametros_iafas__iafas_id__delete"];
         options?: never;
         head?: never;
         /** Actualizar Parametros Iafas */
@@ -1145,7 +1231,8 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
+        /** Actualizar Parametros Sistema */
+        patch: operations["actualizar_parametros_sistema_parametros_sistema_patch"];
         trace?: never;
     };
     "/cuentas/{cuenta_id}/liquidacion": {
@@ -1157,7 +1244,12 @@ export interface paths {
         };
         /** Obtener Liquidacion */
         get: operations["obtener_liquidacion_cuentas__cuenta_id__liquidacion_get"];
-        put?: never;
+        /**
+         * Corregir Liquidacion
+         * @description Corrige el monto liquidado mientras la cuenta siga en el estado en que
+         *     quedo al liquidarse y sin pago registrado.
+         */
+        put: operations["corregir_liquidacion_cuentas__cuenta_id__liquidacion_put"];
         /** Registrar Liquidacion */
         post: operations["registrar_liquidacion_cuentas__cuenta_id__liquidacion_post"];
         delete?: never;
@@ -1174,7 +1266,12 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        put?: never;
+        /**
+         * Corregir Pago
+         * @description Corrige lo pagado que registro una persona mientras la cuenta no este
+         *     Cerrada ni Anulada; queda en el historial.
+         */
+        put: operations["corregir_pago_cuentas__cuenta_id__pago_put"];
         /** Conciliar Pago */
         post: operations["conciliar_pago_cuentas__cuenta_id__pago_post"];
         delete?: never;
@@ -1190,7 +1287,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** Consultar Cierre Cuenta */
+        get: operations["consultar_cierre_cuenta_cuentas__cuenta_id__cierre_get"];
         put?: never;
         /** Cerrar Cuenta */
         post: operations["cerrar_cuenta_cuentas__cuenta_id__cierre_post"];
@@ -1856,6 +1954,13 @@ export interface components {
             atendido: boolean;
             /** Repeticiones */
             repeticiones: number;
+            /** Actor */
+            actor?: string | null;
+            /**
+             * Marcable
+             * @default false
+             */
+            marcable: boolean;
         };
         /** CandidatoCpmsRespuesta */
         CandidatoCpmsRespuesta: {
@@ -1997,6 +2102,8 @@ export interface components {
             recibida_en: string;
             /** Respuesta Remitida En */
             respuesta_remitida_en: string | null;
+            /** Identificacion Interna */
+            identificacion_interna?: string | null;
         };
         /** ConformidadAuditoriaRespuesta */
         ConformidadAuditoriaRespuesta: {
@@ -2024,6 +2131,8 @@ export interface components {
             listos_envio: number;
             /** Declarada En */
             declarada_en: string | null;
+            /** Declarada Fuera De Plazo */
+            declarada_fuera_de_plazo: boolean;
         };
         /**
          * CopagoAseguradoRespuesta
@@ -2258,6 +2367,18 @@ export interface components {
             fecha_ingreso_hospitalario?: string | null;
             /** Fecha Alta Hospitalaria */
             fecha_alta_hospitalaria?: string | null;
+            /**
+             * Descripciones Cie10
+             * @default {}
+             */
+            descripciones_cie10: {
+                [key: string]: string;
+            };
+            /**
+             * Asegurado Corregible
+             * @default false
+             */
+            asegurado_corregible: boolean;
         };
         /** DetalleLoteRespuesta */
         DetalleLoteRespuesta: {
@@ -2294,6 +2415,10 @@ export interface components {
             monitoreo_excedido: boolean;
             /** Validacion Reintentable */
             validacion_reintentable: boolean;
+            /** Vigente */
+            vigente: boolean;
+            /** Motivo Desactualizado */
+            motivo_desactualizado: string | null;
         };
         /** DetalleTrabajoRespuesta */
         DetalleTrabajoRespuesta: {
@@ -2338,6 +2463,8 @@ export interface components {
             referencia: string;
             /** Emitido En */
             emitido_en: string | null;
+            /** Fecha Emision */
+            fecha_emision?: string | null;
         };
         /** DocumentosPagoRespuesta */
         DocumentosPagoRespuesta: {
@@ -2345,6 +2472,24 @@ export interface components {
             nota: components["schemas"]["NotaDocumentoRespuesta"] | null;
             /** Reemplazados */
             reemplazados: components["schemas"]["ComprobanteReemplazadoRespuesta"][];
+            /**
+             * Desfasado
+             * @default false
+             */
+            desfasado: boolean;
+        };
+        /**
+         * EstadoCierreRespuesta
+         * @description Lo que falta para cerrar y la ultima solicitud de anulacion.
+         */
+        EstadoCierreRespuesta: {
+            /** Pago Conciliado */
+            pago_conciliado: boolean;
+            /** Diferencia */
+            diferencia: string | null;
+            /** Observaciones Sin Responder */
+            observaciones_sin_responder: number;
+            ultima_solicitud: components["schemas"]["SolicitudAnulacionRespuesta"] | null;
         };
         /** EstadoNavegacion */
         EstadoNavegacion: {
@@ -2535,6 +2680,16 @@ export interface components {
             diferencia: string | null;
             /** Conciliado En */
             conciliado_en: string | null;
+            /**
+             * Corregible
+             * @default false
+             */
+            corregible: boolean;
+            /**
+             * Pago Corregible
+             * @default false
+             */
+            pago_corregible: boolean;
         };
         /** LoteDeCuentaRespuesta */
         LoteDeCuentaRespuesta: {
@@ -2792,6 +2947,13 @@ export interface components {
             bloquea: boolean;
             /** Accion */
             accion: string | null;
+        };
+        /** ProcedimientoCatalogoCpmsRespuesta */
+        ProcedimientoCatalogoCpmsRespuesta: {
+            /** Codigo */
+            codigo: string;
+            /** Nombre */
+            nombre: string;
         };
         /** ProcedimientoJson */
         ProcedimientoJson: {
@@ -3283,6 +3445,10 @@ export interface components {
             monto_total: string;
             /** Monitoreo Excedido */
             monitoreo_excedido: boolean;
+            /** Vigente */
+            vigente: boolean;
+            /** Motivo Desactualizado */
+            motivo_desactualizado: string | null;
         };
         /** ResumenSesionPlataformaRespuesta */
         ResumenSesionPlataformaRespuesta: {
@@ -3351,6 +3517,8 @@ export interface components {
             resuelto_en: string | null;
             /** Identificacion Interna */
             identificacion_interna?: string | null;
+            /** Solicitado Por Nombre */
+            solicitado_por_nombre?: string | null;
             /** Asegurado */
             asegurado?: string | null;
             /** Estado Cuenta */
@@ -3359,6 +3527,8 @@ export interface components {
             comprobante?: string | null;
             /** Nota Credito */
             nota_credito?: string | null;
+            /** Motivo Resolucion */
+            motivo_resolucion?: string | null;
         };
         /**
          * SolicitudAsignacionObservacion
@@ -3389,6 +3559,17 @@ export interface components {
         SolicitudCargarCatalogoCpms: {
             /** Etiqueta */
             etiqueta?: string | null;
+            /** Nombre Archivo */
+            nombre_archivo: string;
+            /** Contenido Base64 */
+            contenido_base64: string;
+        };
+        /** SolicitudCargarCatalogoGtin */
+        SolicitudCargarCatalogoGtin: {
+            /** Nombre Archivo */
+            nombre_archivo: string;
+            /** Contenido Base64 */
+            contenido_base64: string;
         };
         /** SolicitudCartaGarantia */
         SolicitudCartaGarantia: {
@@ -3482,6 +3663,13 @@ export interface components {
         SolicitudCorreccionReenvio: {
             /** Descripcion Correccion */
             descripcion_correccion: string;
+        };
+        /** SolicitudCorregirAsegurado */
+        SolicitudCorregirAsegurado: {
+            /** Nombres Asegurado */
+            nombres_asegurado: string;
+            /** Apellidos Asegurado */
+            apellidos_asegurado: string;
         };
         /** SolicitudCrearUsuario */
         SolicitudCrearUsuario: {
@@ -3577,8 +3765,27 @@ export interface components {
             /** Diagnostico Principal Cie10 */
             diagnostico_principal_cie10?: string | null;
         };
+        /** SolicitudNuevaIafas */
+        SolicitudNuevaIafas: {
+            /** Codigo */
+            codigo: string;
+            /** Razon Social */
+            razon_social: string;
+            /** Periodicidad Remision Dias */
+            periodicidad_remision_dias: number;
+            /** Ventana Monitoreo Horas */
+            ventana_monitoreo_horas: number;
+            /** Dias Plazo Respuesta Observacion */
+            dias_plazo_respuesta_observacion: number;
+            /** Dias Plazo Comunicacion Auditoria */
+            dias_plazo_comunicacion_auditoria: number;
+            /** Dias Plazo Pago Liquidacion */
+            dias_plazo_pago_liquidacion: number;
+        };
         /** SolicitudParametrosIafas */
         SolicitudParametrosIafas: {
+            /** Razon Social */
+            razon_social?: string | null;
             /** Periodicidad Remision Dias */
             periodicidad_remision_dias?: number | null;
             /** Ventana Monitoreo Horas */
@@ -3589,6 +3796,13 @@ export interface components {
             dias_plazo_comunicacion_auditoria?: number | null;
             /** Dias Plazo Pago Liquidacion */
             dias_plazo_pago_liquidacion?: number | null;
+        };
+        /** SolicitudParametrosSistema */
+        SolicitudParametrosSistema: {
+            /** Valores */
+            valores: {
+                [key: string]: string;
+            };
         };
         /** SolicitudProductoDispensado */
         SolicitudProductoDispensado: {
@@ -3647,6 +3861,8 @@ export interface components {
         SolicitudResolucionAnulacion: {
             /** Aprobada */
             aprobada: boolean;
+            /** Motivo */
+            motivo?: string | null;
         };
         /** SolicitudRespuestaCaptcha */
         SolicitudRespuestaCaptcha: {
@@ -3659,6 +3875,11 @@ export interface components {
             respuesta_texto: string;
             /** Respuesta Sustento */
             respuesta_sustento?: string | null;
+        };
+        /** SolicitudRestablecerClave */
+        SolicitudRestablecerClave: {
+            /** Clave */
+            clave: string;
         };
         /** SolicitudRevisionContingencia */
         SolicitudRevisionContingencia: {
@@ -3954,6 +4175,35 @@ export interface operations {
             };
         };
     };
+    marcar_aviso_atendido_avisos__evento_id__atendido_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                evento_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     listar_usuarios_usuarios_get: {
         parameters: {
             query?: never;
@@ -4019,6 +4269,41 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["SolicitudActualizarUsuario"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaUsuario"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    restablecer_clave_usuario_usuarios__usuario_id__restablecer_clave_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                usuario_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SolicitudRestablecerClave"];
             };
         };
         responses: {
@@ -4524,6 +4809,39 @@ export interface operations {
             };
         };
     };
+    corregir_asegurado_cuentas__cuenta_id__asegurado_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cuenta_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SolicitudCorregirAsegurado"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     obtener_acreditacion_cuentas__cuenta_id__acreditacion_get: {
         parameters: {
             query?: never;
@@ -4841,6 +5159,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RespuestaCatalogoCpmsCargado"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    buscar_procedimientos_catalogo_cpms_catalogo_cpms_procedimientos_get: {
+        parameters: {
+            query?: {
+                buscar?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProcedimientoCatalogoCpmsRespuesta"][];
                 };
             };
             /** @description Validation Error */
@@ -5762,6 +6111,41 @@ export interface operations {
             };
         };
     };
+    corregir_carta_garantia_cuentas__cuenta_id__carta_garantia_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cuenta_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SolicitudCartaGarantia"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CartaGarantiaRespuesta"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     registrar_carta_garantia_cuentas__cuenta_id__carta_garantia_post: {
         parameters: {
             query?: never;
@@ -5983,6 +6367,68 @@ export interface operations {
             };
         };
     };
+    crear_iafas_parametros_iafas_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SolicitudNuevaIafas"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ParametrosIafasRespuesta"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    eliminar_iafas_parametros_iafas__iafas_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                iafas_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     actualizar_parametros_iafas_parametros_iafas__iafas_id__patch: {
         parameters: {
             query?: never;
@@ -6073,6 +6519,39 @@ export interface operations {
             };
         };
     };
+    actualizar_parametros_sistema_parametros_sistema_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SolicitudParametrosSistema"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ParametroSistemaRespuesta"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     obtener_liquidacion_cuentas__cuenta_id__liquidacion_get: {
         parameters: {
             query?: never;
@@ -6091,6 +6570,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LiquidacionRespuesta"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    corregir_liquidacion_cuentas__cuenta_id__liquidacion_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cuenta_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SolicitudRegistroLiquidacion"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LiquidacionRespuesta"];
                 };
             };
             /** @description Validation Error */
@@ -6139,6 +6653,41 @@ export interface operations {
             };
         };
     };
+    corregir_pago_cuentas__cuenta_id__pago_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cuenta_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SolicitudConciliacionPago"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LiquidacionRespuesta"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     conciliar_pago_cuentas__cuenta_id__pago_post: {
         parameters: {
             query?: never;
@@ -6161,6 +6710,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RespuestaConciliacion"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    consultar_cierre_cuenta_cuentas__cuenta_id__cierre_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cuenta_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EstadoCierreRespuesta"];
                 };
             };
             /** @description Validation Error */
@@ -6963,7 +7543,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SolicitudCargarCatalogoGtin"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             201: {
@@ -6972,6 +7556,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["VersionCatalogoGtinRespuesta"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

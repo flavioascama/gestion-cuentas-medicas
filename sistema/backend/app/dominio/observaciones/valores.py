@@ -88,10 +88,12 @@ class DatosNuevaObservacion:
 
 @dataclass(frozen=True, slots=True)
 class Respondedor:
-    """Quien registra la respuesta (CU-10)."""
+    """Quien registra la respuesta (CU-10), con sus roles: sin persona
+    asignada, responde quien tenga el rol responsable."""
 
     usuario_id: int
     nombre_usuario: str
+    roles: frozenset[NombreRol] = frozenset()
 
 
 @dataclass(frozen=True, slots=True)

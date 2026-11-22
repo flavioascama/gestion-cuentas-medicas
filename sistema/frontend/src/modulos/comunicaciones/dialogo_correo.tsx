@@ -19,6 +19,7 @@ import { usar_sesion } from "../../sesion/contexto_sesion";
 import { formatear_fecha_hora } from "../../utilidades/formato";
 import { BuscadorCuenta } from "../cuentas/buscador_cuenta";
 import { MOTIVOS_OMISION, MOTIVOS_REVISION } from "./etiquetas_correos";
+import { usar_nombre_aseguradora } from "./usar_nombre_aseguradora";
 import estilos from "./comunicaciones.module.css";
 
 // Detalle de un correo recibido: remitente, asunto, texto y adjuntos. El
@@ -82,12 +83,15 @@ function resolucion(correo: CorreoIafasDetalle): string | null {
 
 function ContenidoCorreo({ correo }: { correo: CorreoIafasDetalle }) {
   const revisado = resolucion(correo);
+  const nombre_aseguradora = usar_nombre_aseguradora();
   return (
     <>
       <dl className={estilos.ficha}>
         <Dato etiqueta="Remitente">{correo.remitente}</Dato>
         <Dato etiqueta="Recibido">{formatear_fecha_hora(correo.recibido_en)}</Dato>
-        <Dato etiqueta="Aseguradora">{correo.codigo_iafas ?? "—"}</Dato>
+        <Dato etiqueta="IAFAS">
+          {correo.codigo_iafas ? nombre_aseguradora(correo.codigo_iafas) : "—"}
+        </Dato>
         <Dato etiqueta="Estado">
           <EtiquetaEstado estado={correo.estado} />
           {correo.motivo_revision ? (
@@ -110,7 +114,7 @@ function ContenidoCorreo({ correo }: { correo: CorreoIafasDetalle }) {
           ))}
         </ul>
       ) : null}
-      <div className={estilos.huella}>Huella SHA-256: {correo.huella}</div>
+      <div className={estilos.huella}>Huella de integridad: {correo.huella}</div>
     </>
   );
 }

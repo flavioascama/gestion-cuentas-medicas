@@ -22,6 +22,7 @@ from app.api.dependencias_cuentas import (
     construir_buscar_asegurado,
     construir_buscar_cie10,
     construir_consultar_completitud,
+    construir_corregir_asegurado,
     construir_emitir_comprobante_pago,
     construir_listar_cuentas,
     construir_listar_iafas,
@@ -43,8 +44,10 @@ from app.api.esquemas_cuentas import (
     ResumenCuentaRespuesta,
     ResumenIafasRespuesta,
     SolicitudBuscarAsegurado,
+    SolicitudCorregirAsegurado,
     SolicitudDiagnostico,
     SolicitudNuevaCuenta,
+    error_numero_documento,
 )
 from app.compartido.errores import ErrorAplicacion
 from app.dominio.acceso.entidades import NombreRol
@@ -61,7 +64,15 @@ from app.dominio.integracion.casos_uso_consulta import (
 from app.dominio.integracion.casos_uso_ingesta import (
     BuscarAseguradoRegistrado,
     ConsultarCompletitudCuenta,
+    ErrorDatosNuevaCuenta,
     RegistrarCuentaMedica,
+)
+from app.dominio.integracion.correccion_asegurado import (
+    CorregirNombresAsegurado,
+    ErrorAseguradoConCuentasAvanzadas,
+    ErrorAseguradoNoCorregible,
+    ErrorCuentaInexistenteAsegurado,
+    ErrorNombresAseguradoInvalidos,
 )
 from app.dominio.integracion.diagnostico_cuenta import (
     ErrorCie10Inexistente,
@@ -136,11 +147,24 @@ async def registrar_cuenta(
     caso_uso: RegistrarCuentaMedica = Depends(construir_registrar_cuenta),
     actor: CargaSesion = Depends(_SOLO_ANALISTA),
 ) -> RespuestaCuentaCreada:
+    documento_invalido = error_numero_documento(
+        solicitud.tipo_documento_asegurado, solicitud.numero_documento_asegurado
+    )
+    if documento_invalido:
+        raise ErrorAplicacion("DOCUMENTO_INVALIDO", documento_invalido)
     try:
         cuenta_id = await caso_uso.ejecutar(solicitud.a_valor(), actor.nombre_usuario)
     except ErrorIafasInexistente as error:
         raise ErrorAplicacion(
             "IAFAS_INEXISTENTE", str(error), estado_http=status.HTTP_400_BAD_REQUEST
+        ) from error
+    except ErrorDatosNuevaCuenta as error:
+        raise ErrorAplicacion(
+            "DATOS_CUENTA_INVALIDOS", str(error), estado_http=status.HTTP_400_BAD_REQUEST
+        ) from error
+    except ErrorCie10Inexistente as error:
+        raise ErrorAplicacion(
+            "CIE10_INEXISTENTE", str(error), estado_http=status.HTTP_400_BAD_REQUEST
         ) from error
     return RespuestaCuentaCreada(cuenta_id=cuenta_id)
 
@@ -168,7 +192,7 @@ async def obtener_cuenta(
     if cuenta is None:
         raise ErrorAplicacion(
             "CUENTA_NO_ENCONTRADA",
-            f"No existe la cuenta medica {cuenta_id}.",
+            "No existe la cuenta.",
             estado_http=status.HTTP_404_NOT_FOUND,
         )
     return DetalleCuentaRespuesta.desde_valor(cuenta)
@@ -210,7 +234,7 @@ async def consultar_completitud_cuenta(
     if resultado is None:
         raise ErrorAplicacion(
             "CUENTA_NO_ENCONTRADA",
-            f"No existe la cuenta medica {cuenta_id}.",
+            "No existe la cuenta.",
             estado_http=status.HTTP_404_NOT_FOUND,
         )
     return RespuestaCompletitudCuenta.desde_valor(resultado)
@@ -279,6 +303,36 @@ async def registrar_diagnostico(
     return RespuestaDiagnostico(codigo_cie10=codigo)
 
 
+@router.put("/{cuenta_id}/asegurado", status_code=status.HTTP_204_NO_CONTENT)
+async def corregir_asegurado(
+    cuenta_id: int,
+    solicitud: SolicitudCorregirAsegurado,
+    caso_uso: CorregirNombresAsegurado = Depends(construir_corregir_asegurado),
+    actor: CargaSesion = Depends(_SOLO_ANALISTA),
+) -> None:
+    """Corrige nombres y apellidos del asegurado mientras la cuenta siga
+    registrada; el documento no se corrige."""
+    try:
+        await caso_uso.ejecutar(
+            cuenta_id,
+            solicitud.nombres_asegurado,
+            solicitud.apellidos_asegurado,
+            actor.nombre_usuario,
+        )
+    except ErrorCuentaInexistenteAsegurado as error:
+        raise ErrorAplicacion(
+            "CUENTA_NO_ENCONTRADA", str(error), estado_http=status.HTTP_404_NOT_FOUND
+        ) from error
+    except (ErrorAseguradoNoCorregible, ErrorAseguradoConCuentasAvanzadas) as error:
+        raise ErrorAplicacion(
+            "ASEGURADO_NO_CORREGIBLE", str(error), estado_http=status.HTTP_409_CONFLICT
+        ) from error
+    except ErrorNombresAseguradoInvalidos as error:
+        raise ErrorAplicacion(
+            "DATOS_CUENTA_INVALIDOS", str(error), estado_http=status.HTTP_400_BAD_REQUEST
+        ) from error
+
+
 @router.get("/{cuenta_id}/acreditacion", response_model=AcreditacionRespuesta)
 async def obtener_acreditacion(
     cuenta_id: int,
@@ -289,7 +343,7 @@ async def obtener_acreditacion(
     if acreditacion is None:
         raise ErrorAplicacion(
             "ACREDITACION_NO_ENCONTRADA",
-            f"La cuenta medica {cuenta_id} no tiene acreditacion registrada.",
+            "La cuenta no tiene acreditación registrada.",
             estado_http=status.HTTP_404_NOT_FOUND,
         )
     return AcreditacionRespuesta.desde_valor(acreditacion)

@@ -52,6 +52,8 @@ class Usuario:
     intentos_fallidos: int = 0
     bloqueado_hasta: datetime | None = None
     debe_cambiar_clave: bool = False
+    # Al restablecer la contraseña: las sesiones emitidas antes ya no valen.
+    sesiones_validas_desde: datetime | None = None
 
     def tiene_alguno(self, roles: frozenset[NombreRol]) -> bool:
         return bool(self.roles & roles)

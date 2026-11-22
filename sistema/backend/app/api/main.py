@@ -6,6 +6,7 @@ Ejecutar con: uvicorn app.api.main:app --reload
 from __future__ import annotations
 
 from fastapi import FastAPI
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.requests import Request
@@ -19,6 +20,8 @@ from app.infraestructura.observabilidad.registro import configurar_registro
 # se mantiene este orden como buena practica adicional.
 configurar_registro(obtener_configuracion().nivel_log)
 
+from app.api.mensajes_transicion import mensaje_operacion_no_disponible  # noqa: E402
+from app.api.mensajes_validacion import mensaje_validacion  # noqa: E402
 from app.api.middleware_correlacion import middleware_correlacion  # noqa: E402
 from app.api.rutas_acreditacion import router as router_acreditacion  # noqa: E402
 from app.api.rutas_administracion import router as router_administracion  # noqa: E402
@@ -111,6 +114,13 @@ app.include_router(router_administracion)
 app.include_router(router_robot)
 
 
+@app.exception_handler(RequestValidationError)
+async def manejador_validacion(_solicitud: Request, error: RequestValidationError) -> JSONResponse:
+    """Un dato rechazado por su forma se responde con el formato de error de la aplicación."""
+    rechazo = ErrorAplicacion("DATOS_INVALIDOS", mensaje_validacion(error.errors()), 422)
+    return JSONResponse(status_code=rechazo.estado_http, content=rechazo.cuerpo_respuesta())
+
+
 @app.exception_handler(ErrorAplicacion)
 async def manejador_error_aplicacion(_solicitud: Request, error: ErrorAplicacion) -> JSONResponse:
     return JSONResponse(status_code=error.estado_http, content=error.cuerpo_respuesta())
@@ -122,7 +132,9 @@ async def manejador_transicion_no_definida(
 ) -> JSONResponse:
     """RF-08 y Tabla 69: un evento con un estado o una transicion fuera de la
     maquina de estados se rechaza como conflicto, no como falla interna."""
-    conflicto = ErrorAplicacion("TRANSICION_NO_DEFINIDA", str(error), estado_http=409)
+    conflicto = ErrorAplicacion(
+        "TRANSICION_NO_DEFINIDA", mensaje_operacion_no_disponible(error, ultimo=False), 409
+    )
     return JSONResponse(status_code=conflicto.estado_http, content=conflicto.cuerpo_respuesta())
 
 
@@ -132,5 +144,7 @@ async def manejador_continuidad_estados(
 ) -> JSONResponse:
     """Tabla 69 ("continuidad"): un evento que no parte del ultimo estado
     registrado se rechaza como conflicto, no como falla interna."""
-    conflicto = ErrorAplicacion("CONTINUIDAD_ESTADOS", str(error), estado_http=409)
+    conflicto = ErrorAplicacion(
+        "CONTINUIDAD_ESTADOS", mensaje_operacion_no_disponible(error, ultimo=True), 409
+    )
     return JSONResponse(status_code=conflicto.estado_http, content=conflicto.cuerpo_respuesta())

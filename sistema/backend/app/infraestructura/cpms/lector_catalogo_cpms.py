@@ -8,7 +8,7 @@ correcta es la inversa: herramientas ya importa de `app`)."""
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
+from typing import IO, Any
 
 import openpyxl
 
@@ -17,7 +17,7 @@ from app.compartido.rutas import raiz_docs_fuentes
 _NOMBRE_HOJA = "Parte 1"  # todas las partes publicadas usan este nombre de hoja
 
 
-def leer_procedimientos(ruta: Path) -> list[dict[str, Any]]:
+def leer_procedimientos(ruta: Path | IO[bytes]) -> list[dict[str, Any]]:
     libro = openpyxl.load_workbook(ruta, read_only=True, data_only=True)
     hoja = libro[_NOMBRE_HOJA]
     filas = hoja.iter_rows(values_only=True)

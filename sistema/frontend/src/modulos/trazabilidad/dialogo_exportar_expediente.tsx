@@ -1,11 +1,13 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { exportar_expediente, type Expediente } from "../../api/trazabilidad";
+import { exportar_expediente } from "../../api/trazabilidad";
 import { Boton } from "../../componentes_base/boton";
 import { CampoTexto } from "../../componentes_base/campo_texto";
 import { Dialogo } from "../../componentes_base/dialogo";
 import { MensajeErrorMutacion } from "../../componentes_base/mensaje_error_mutacion";
-import { formatear_fecha_hora } from "../../utilidades/formato";
+import { usar_sesion } from "../../sesion/contexto_sesion";
+import { usar_detalle_cuenta } from "../cuentas/usar_cuentas";
+import { abrir_expediente, html_expediente } from "./documento_expediente";
 
 interface Propiedades {
   cuenta_id: number;
@@ -13,32 +15,28 @@ interface Propiedades {
 }
 
 function ResultadoExpediente({
-  expediente,
+  al_abrir,
   al_cerrar,
 }: {
-  expediente: Expediente;
+  al_abrir: () => void;
   al_cerrar: () => void;
 }) {
-  const documentos =
-    expediente.documentos.length === 0
-      ? "ninguno"
-      : expediente.documentos.map((d) => `${d.tipo} (${d.referencia})`).join(", ");
-
   return (
     <Dialogo
-      titulo="Expediente exportado"
+      titulo="Exportar expediente de auditoría"
       al_cerrar={al_cerrar}
       acciones={
-        <Boton variante="primario" onClick={al_cerrar}>
-          Cerrar
-        </Boton>
+        <>
+          <Boton variante="secundario" onClick={al_abrir}>
+            Abrir de nuevo
+          </Boton>
+          <Boton variante="primario" onClick={al_cerrar}>
+            Cerrar
+          </Boton>
+        </>
       }
     >
-      <p>Generado el {formatear_fecha_hora(expediente.generado_en)}.</p>
-      <p>
-        Eventos incluidos: {expediente.historial.eventos.length}. Documentos asociados: {documentos}
-        .
-      </p>
+      <p>Expediente generado.</p>
     </Dialogo>
   );
 }
@@ -73,10 +71,10 @@ function FormularioExportarExpediente({
         </>
       }
     >
-      <p>Registre el motivo de la exportación. Queda asociado a la bitácora de accesos.</p>
       <MensajeErrorMutacion error={error} texto_por_defecto="No se pudo exportar." />
       <CampoTexto
         etiqueta="Motivo"
+        obligatorio
         value={motivo}
         onChange={(evento) => set_motivo(evento.target.value)}
       />
@@ -86,17 +84,31 @@ function FormularioExportarExpediente({
 
 export function DialogoExportarExpediente({ cuenta_id, al_cerrar }: Propiedades) {
   const cliente_consultas = useQueryClient();
+  const { sesion } = usar_sesion();
+  const cuenta = usar_detalle_cuenta(cuenta_id).data;
   const [motivo, set_motivo] = useState("");
+  const [documento, set_documento] = useState<string | null>(null);
 
   const mutacion = useMutation({
     mutationFn: () => exportar_expediente(cuenta_id, motivo),
-    onSuccess: () => {
+    onSuccess: (expediente) => {
       void cliente_consultas.invalidateQueries({ queryKey: ["cuentas", cuenta_id, "historial"] });
+      const html = html_expediente({
+        expediente,
+        cuenta: cuenta?.identificacion_interna ?? "",
+        ipress: cuenta?.ipress_codigo ?? null,
+        exportado_por: sesion?.nombres ?? sesion?.nombre_usuario ?? "",
+        motivo,
+      });
+      set_documento(html);
+      abrir_expediente(html);
     },
   });
 
-  if (mutacion.isSuccess) {
-    return <ResultadoExpediente expediente={mutacion.data} al_cerrar={al_cerrar} />;
+  if (documento !== null) {
+    return (
+      <ResultadoExpediente al_abrir={() => abrir_expediente(documento)} al_cerrar={al_cerrar} />
+    );
   }
   return (
     <FormularioExportarExpediente

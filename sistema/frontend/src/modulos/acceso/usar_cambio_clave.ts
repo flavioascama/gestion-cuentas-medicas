@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ErrorApi } from "../../api/cliente_http";
 import { usar_sesion } from "../../sesion/contexto_sesion";
 
-const _POLITICA =
+export const _POLITICA =
   "La contraseña debe tener al menos doce caracteres, con una mayúscula, una minúscula y un dígito.";
 
 // Lo que responde el servidor, dicho como en el resto de la pantalla.
@@ -12,7 +12,7 @@ const _MENSAJES = new Map<string, string>([
   ["CLAVE_DEBIL", _POLITICA],
 ]);
 
-function cumple_politica(clave: string): boolean {
+export function cumple_politica(clave: string): boolean {
   return clave.length >= 12 && /[A-Z]/.test(clave) && /[a-z]/.test(clave) && /\d/.test(clave);
 }
 

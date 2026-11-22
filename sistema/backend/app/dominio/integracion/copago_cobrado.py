@@ -9,6 +9,8 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import Protocol
 
+from app.compartido.fecha_peru import fecha_peru
+from app.compartido.nombres_estados import nombre_estado
 from app.dominio.orquestacion.puertos import RepositorioEstadoCuenta
 from app.dominio.orquestacion.valores import ESTADOS_TERMINALES
 from app.dominio.puertos_comunes import Evento, RegistroEventos, Reloj
@@ -113,17 +115,15 @@ class RegistrarCopagoCobrado:
     ) -> CopagoCobrado:
         estado = await self._estado_cuenta.obtener_estado(cuenta_medica_id)
         if estado is None:
-            raise ErrorCuentaInexistenteCopago(f"No existe la cuenta medica {cuenta_medica_id}.")
+            raise ErrorCuentaInexistenteCopago("No existe la cuenta.")
         if estado in ESTADOS_TERMINALES:
             raise ErrorCuentaCerradaCopago(
-                f"La cuenta {cuenta_medica_id} esta en estado {estado!r}: no admite el cobro."
+                f"La cuenta está en estado {nombre_estado(estado)}: no admite el cobro."
             )
         ahora = self._reloj.ahora()
-        referencia = _validar(datos, ahora.date())
+        referencia = _validar(datos, fecha_peru(ahora))
         if await self._repositorio.obtener(cuenta_medica_id) is not None:
-            raise ErrorCopagoYaRegistrado(
-                f"La cuenta {cuenta_medica_id} ya tiene su copago cobrado registrado."
-            )
+            raise ErrorCopagoYaRegistrado("La cuenta ya tiene su copago cobrado registrado.")
         copago = CopagoCobrado(
             monto=datos.monto,
             fecha=datos.fecha,

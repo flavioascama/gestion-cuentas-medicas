@@ -7,6 +7,7 @@ from datetime import datetime
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.compartido.fecha_peru import fecha_peru
 from app.dominio.integracion.puertos import LoteParaRemitir, RepositorioLoteRemision
 from app.dominio.integracion.vigencia_lote import VigenciaLote
 from app.dominio.orquestacion.valores import TipoTransicion
@@ -76,7 +77,7 @@ class RepositorioLoteRemisionSql(RepositorioLoteRemision):
                     # 'la conserva en reenvios'); el disparador de la Fase 7
                     # lo impediria de todos modos si se intentara.
                     fecha_primer_envio=sa.func.coalesce(
-                        DocumentoFacturadorModelo.fecha_primer_envio, instante.date()
+                        DocumentoFacturadorModelo.fecha_primer_envio, fecha_peru(instante)
                     )
                 )
             )

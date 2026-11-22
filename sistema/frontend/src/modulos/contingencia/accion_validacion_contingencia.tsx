@@ -10,6 +10,7 @@ import { Dialogo } from "../../componentes_base/dialogo";
 import { MensajeErrorMutacion } from "../../componentes_base/mensaje_error_mutacion";
 import { Selector } from "../../componentes_base/selector";
 import { usar_sesion } from "../../sesion/contexto_sesion";
+import { leer_base64 } from "../../utilidades/archivo";
 import estilos from "./contingencia.module.css";
 
 // CU-03, flujo alternativo ("si el validador no esta disponible, se aplica
@@ -18,19 +19,14 @@ import estilos from "./contingencia.module.css";
 
 type Resultado = "VALIDADO" | "OBSERVADO";
 
+// Las cotas del servidor para el sustento.
+const _SUSTENTO_MINIMO = 10;
+const _SUSTENTO_MAXIMO = 1000;
+
 const _OPCIONES = [
   { valor: "VALIDADO", etiqueta: "Validado (adjuntar el .S01)" },
   { valor: "OBSERVADO", etiqueta: "Observado por el validador" },
 ];
-
-async function leer_base64(archivo: File): Promise<string> {
-  const bytes = new Uint8Array(await archivo.arrayBuffer());
-  let binario = "";
-  bytes.forEach((byte) => {
-    binario += String.fromCharCode(byte);
-  });
-  return btoa(binario);
-}
 
 function usar_registro(lote_id: number, al_cerrar: () => void) {
   const cliente_consultas = useQueryClient();
@@ -62,13 +58,14 @@ function CamposResultado({
     <>
       <Selector
         etiqueta="Resultado del validador"
+        obligatorio
         opciones={_OPCIONES}
         value={resultado}
         onChange={(evento) => al_cambiar_resultado(evento.target.value as Resultado)}
       />
       {resultado === "VALIDADO" ? (
         <label className={estilos.campo_archivo}>
-          Archivo de transmisión (.S01)
+          Archivo de transmisión (.S01) *
           <input
             type="file"
             accept=".S01,.s01"
@@ -91,7 +88,8 @@ function DialogoValidacionContingencia({
   const [sustento, set_sustento] = useState("");
   const [archivo, set_archivo] = useState<File | null>(null);
   const mutacion = usar_registro(lote_id, al_cerrar);
-  const listo = !!sustento.trim() && (resultado === "OBSERVADO" || archivo !== null);
+  const listo =
+    sustento.trim().length >= _SUSTENTO_MINIMO && (resultado === "OBSERVADO" || archivo !== null);
 
   return (
     <Dialogo
@@ -120,7 +118,9 @@ function DialogoValidacionContingencia({
       />
       <CampoTexto
         etiqueta="Sustento"
+        obligatorio
         value={sustento}
+        maxLength={_SUSTENTO_MAXIMO}
         onChange={(evento) => set_sustento(evento.target.value)}
       />
     </Dialogo>

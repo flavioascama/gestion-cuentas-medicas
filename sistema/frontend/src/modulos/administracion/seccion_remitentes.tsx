@@ -43,10 +43,10 @@ function DialogoRemitente({ iafas, al_cerrar }: { iafas: ParametrosIafas; al_cer
       }
     >
       <CampoTexto
-        etiqueta="Remitente autorizado"
+        etiqueta="Remitentes autorizados (separados por coma)"
         value={remitente}
         maxLength={200}
-        placeholder="auditoria@aseguradora.pe o @aseguradora.pe"
+        placeholder="auditoria@iafas.pe o @iafas.pe"
         onChange={(evento) => set_remitente(evento.target.value)}
       />
       <MensajeErrorMutacion error={mutacion.error} texto_por_defecto="No se pudo guardar." />
@@ -58,7 +58,7 @@ function columnas(al_editar: (fila: ParametrosIafas) => void): ColumnaTabla<Para
   return [
     {
       clave: "razon_social",
-      encabezado: "Aseguradora",
+      encabezado: "IAFAS",
       formatear: (fila) => (
         <>
           {fila.razon_social}
@@ -101,7 +101,7 @@ export function SeccionRemitentes({ filas, cargando, error }: Propiedades) {
         obtener_clave={(fila) => fila.iafas_id}
         cargando={cargando}
         error={error}
-        mensaje_vacio="No hay aseguradoras registradas."
+        mensaje_vacio="No hay IAFAS registradas."
       />
       {editando ? <DialogoRemitente iafas={editando} al_cerrar={() => set_editando(null)} /> : null}
     </div>

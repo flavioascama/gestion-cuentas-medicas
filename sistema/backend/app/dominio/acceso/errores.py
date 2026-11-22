@@ -59,7 +59,7 @@ class NoPuedeCambiarSusRolesError(ErrorAcceso):
 
 class UsuarioNoEncontradoError(ErrorAcceso):
     def __init__(self, usuario_id: int) -> None:
-        super().__init__(f"No existe el usuario {usuario_id}.")
+        super().__init__("No existe ese usuario.")
         self.usuario_id = usuario_id
 
 
@@ -69,19 +69,27 @@ class ClaveDebilError(ErrorAcceso):
 
     def __init__(self) -> None:
         super().__init__(
-            "La clave debe tener al menos doce caracteres e incluir una mayuscula, "
-            "una minuscula y un digito."
+            "La contraseña debe tener al menos doce caracteres e incluir una mayúscula, "
+            "una minúscula y un dígito."
         )
+
+
+class NoPuedeRestablecerSuClaveError(ErrorAcceso):
+    """Quien restablece la contraseña es otro administrador, no la propia
+    persona (separacion de funciones)."""
+
+    def __init__(self) -> None:
+        super().__init__("No puede restablecer su propia contraseña; use el cambio de contraseña.")
 
 
 class ClaveActualIncorrectaError(ErrorAcceso):
     def __init__(self) -> None:
-        super().__init__("La clave actual no es correcta.")
+        super().__init__("La contraseña actual no es correcta.")
 
 
 class ClaveRepetidaError(ErrorAcceso):
     def __init__(self) -> None:
-        super().__init__("La clave nueva debe ser distinta de la actual.")
+        super().__init__("La contraseña nueva debe ser distinta de la actual.")
 
 
 class CuentaBloqueadaError(ErrorAcceso):
@@ -90,7 +98,7 @@ class CuentaBloqueadaError(ErrorAcceso):
 
     def __init__(self, minutos_restantes: int) -> None:
         super().__init__(
-            f"La cuenta esta bloqueada por intentos fallidos; intente de nuevo en "
+            f"La cuenta está bloqueada por intentos fallidos; intente de nuevo en "
             f"{minutos_restantes} minuto(s)."
         )
         self.minutos_restantes = minutos_restantes

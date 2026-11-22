@@ -40,12 +40,11 @@ def validar_transicion(
     if transicion is TipoTransicion.ANULACION:
         if estado_actual is None:
             raise ErrorTransicionNoDefinida(
-                "No se puede anular una cuenta que todavia no se registro."
+                "No se puede anular una cuenta que todavía no se registró."
             )
         if not aprobacion_anulacion:
             raise ErrorAnulacionSinAprobacion(
-                "La transicion a ANULADA exige la aprobacion registrada del jefe de cuentas "
-                "medicas (RF-21, Tabla 69)."
+                "La anulación exige la aprobación registrada del jefe de cuentas médicas."
             )
         return "ANULADA"
 

@@ -13,6 +13,7 @@ from app.dominio.acceso.entidades import NombreRol
 from app.dominio.avisos.valores import (
     CATALOGO_AVISOS,
     TIPO_AVISO_TRABAJO_AGOTADO,
+    TIPOS_AVISO_ANULACION,
     EventoAviso,
     tipos_para_roles,
 )
@@ -59,8 +60,15 @@ def _entrega_por_rol(evento: EventoAviso, roles: frozenset[NombreRol]) -> bool:
 
 
 def es_destinatario(
-    evento: EventoAviso, roles: frozenset[NombreRol], usuario_id: int | None
+    evento: EventoAviso,
+    roles: frozenset[NombreRol],
+    usuario_id: int | None,
+    nombre_usuario: str | None = None,
 ) -> bool:
+    if evento.tipo_evento in TIPOS_AVISO_ANULACION:
+        # Solo quien pidio la anulacion.
+        solicitante = evento.datos.get("solicitado_por")
+        return solicitante is not None and solicitante == nombre_usuario
     if not es_aviso_de_observacion(evento):
         return _por_rol(evento, roles)
     entrega = es_entrega_agotada(evento)

@@ -3,7 +3,7 @@ import type { IndicadoresCiclo, IndicadoresIafas, TiempoEtapa } from "../../api/
 import { ControlSegmentado, type OpcionSegmento } from "../../componentes_base/control_segmentado";
 import { resolver_estado } from "../../componentes_base/mapa_estados";
 import { TablaDatos, type ColumnaTabla } from "../../componentes_base/tabla_datos";
-import { formatear_monto } from "../../utilidades/formato";
+import { formatear_monto, formatear_periodo } from "../../utilidades/formato";
 import type { FiltrosPanel } from "./barra_filtros";
 import {
   METRICAS_IAFAS,
@@ -14,12 +14,7 @@ import {
   construir_filas_iafas,
   type MetricaIafas,
 } from "./datos_indicadores";
-import {
-  etiqueta_periodo,
-  formatear_entero,
-  formatear_horas,
-  formatear_porcentaje,
-} from "./formato_indicadores";
+import { formatear_entero, formatear_horas, formatear_porcentaje } from "./formato_indicadores";
 import type { ColumnaApilada } from "./geometria_columnas";
 import { GraficoBarras, type FilaGrafico } from "./grafico_barras";
 import { GraficoColumnasApiladas } from "./grafico_columnas_apiladas";
@@ -139,7 +134,7 @@ const _OPCIONES_METRICA: OpcionSegmento<MetricaIafas>[] = (
 function TarjetaComparativoIafas({ indicadores, filtros, al_alternar_iafas }: PropiedadesGraficos) {
   const [metrica, set_metrica] = useState<MetricaIafas>("cuentas");
   const definicion = METRICAS_IAFAS[metrica];
-  const alcance = filtros.periodo ? etiqueta_periodo(filtros.periodo) : "Todos los periodos";
+  const alcance = filtros.periodo ? formatear_periodo(filtros.periodo) : "Todos los periodos";
   return (
     <TarjetaGrafico
       titulo="Comparativo por IAFAS"
@@ -191,7 +186,7 @@ function TarjetaEstados({ indicadores, filtros, al_ver_cuentas }: PropiedadesGra
   const filas = construir_filas_estados(indicadores.distribucion_por_estado);
   // La bandeja de Cuentas filtra por fecha exacta, no por mes: se avisa
   // en vez de mostrar una cantidad distinta sin explicacion.
-  const nota = filtros.periodo ? etiqueta_periodo(filtros.periodo) : "Todos los periodos";
+  const nota = filtros.periodo ? formatear_periodo(filtros.periodo) : "Todos los periodos";
   return (
     <TarjetaGrafico
       titulo="Distribución de cuentas por estado"

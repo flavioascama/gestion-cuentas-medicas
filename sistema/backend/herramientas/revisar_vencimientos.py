@@ -23,9 +23,9 @@ import json
 from dataclasses import asdict
 from datetime import UTC, datetime
 
-from app.compartido.configuracion import obtener_configuracion
 from app.compartido.rutas import raiz_reportes
 from app.dominio.plazos.casos_uso import RevisarVencimientos
+from app.dominio.plazos.parametros_sistema import feriados_desde_texto
 from app.dominio.plazos.susalud import RevisarPlazoSusalud
 from app.dominio.puertos_comunes import Observabilidad
 from app.infraestructura.persistencia.base import FabricaSesiones
@@ -34,23 +34,26 @@ from app.infraestructura.persistencia.registro_mediciones_sql import RegistroMed
 from app.infraestructura.persistencia.repositorio_control_susalud_sql import (
     RepositorioControlSusaludSql,
 )
+from app.infraestructura.persistencia.repositorio_parametros_sistema_sql import valor_vigente
 from app.infraestructura.persistencia.repositorio_plazos_sql import RepositorioPlazosSql
 from app.infraestructura.reloj import RelojSistema
 
 
 async def main() -> None:
-    configuracion = obtener_configuracion()
     async with FabricaSesiones() as sesion:
+        dias_aviso = int(await valor_vigente(sesion, "DIAS_AVISO_PREVIO_VENCIMIENTO"))
         caso_uso = RevisarVencimientos(
             repositorio=RepositorioPlazosSql(
-                sesion, configuracion.dias_plazo_reenvio_lote_rechazado
+                sesion, int(await valor_vigente(sesion, "DIAS_PLAZO_REENVIO_LOTE_RECHAZADO"))
             ),
             observabilidad=Observabilidad(
                 eventos=RegistroEventosSql(sesion), mediciones=RegistroMedicionesSql(sesion)
             ),
             reloj=RelojSistema(),
-            dias_aviso_previo_vencimiento=configuracion.dias_aviso_previo_vencimiento,
-            dias_aviso_vigencia_carta_garantia=configuracion.dias_aviso_vigencia_carta_garantia,
+            dias_aviso_previo_vencimiento=dias_aviso,
+            dias_aviso_vigencia_carta_garantia=int(
+                await valor_vigente(sesion, "DIAS_AVISO_VIGENCIA_CARTA_GARANTIA")
+            ),
         )
         resumen = await caso_uso.ejecutar()
         # RT-05 y RI-16: el envio a SUSALUD en los diez dias habiles.
@@ -60,8 +63,8 @@ async def main() -> None:
                 eventos=RegistroEventosSql(sesion), mediciones=RegistroMedicionesSql(sesion)
             ),
             reloj=RelojSistema(),
-            feriados=configuracion.conjunto_feriados,
-            dias_aviso_previo=configuracion.dias_aviso_previo_vencimiento,
+            feriados=feriados_desde_texto(await valor_vigente(sesion, "FERIADOS")),
+            dias_aviso_previo=dias_aviso,
         ).ejecutar()
         await sesion.commit()
 

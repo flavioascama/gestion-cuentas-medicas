@@ -340,6 +340,10 @@ class LoteDocumentoModelo(Base):
     documento_id: Mapped[int] = mapped_column(
         sa.ForeignKey("documento_facturador.id"), nullable=False
     )
+    # Lo facturado por el comprobante al generar el lote: lo que el lote
+    # remite aunque despues se reemplace el comprobante (segunda auditoria
+    # final, hallazgo 1). Nulo en los lotes anteriores.
+    total_facturado: Mapped[Decimal | None] = mapped_column(sa.Numeric(12, 2), nullable=True)
 
     lote: Mapped[LoteFacturacionModelo] = relationship(back_populates="documentos")
     documento: Mapped[DocumentoFacturadorModelo] = relationship()

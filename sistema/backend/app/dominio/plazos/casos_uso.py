@@ -19,6 +19,7 @@ from __future__ import annotations
 from datetime import date, datetime, timedelta
 from typing import Any
 
+from app.compartido.fecha_peru import fecha_peru
 from app.dominio.plazos.puertos import RepositorioPlazos
 from app.dominio.plazos.valores import (
     CuentaConPlazo,
@@ -123,7 +124,10 @@ class RevisarVencimientos:
         hitos = await self._repositorio.cuentas_con_carta_garantia_por_vencer()
         avisados = 0
         for hito in hitos:
-            if self._carta_garantia_proxima_a_vencer(ahora.date(), hito) and not hito.ya_avisada:
+            if (
+                self._carta_garantia_proxima_a_vencer(fecha_peru(ahora), hito)
+                and not hito.ya_avisada
+            ):
                 await self._registrar(
                     cuenta_medica_id=hito.cuenta_medica_id,
                     tipo_evento="CARTA_GARANTIA_PROXIMA_A_VENCER",

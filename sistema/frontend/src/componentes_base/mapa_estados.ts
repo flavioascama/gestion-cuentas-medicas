@@ -56,6 +56,8 @@ const _ESTADOS: Record<string, DefinicionEstado> = {
   // CU-05: el monitoreo agoto la ventana sin respuesta de la IAFAS (marca,
   // no estado: el lote sigue remitido).
   EXCEDIDO: { texto: "Excedido", color: "ambar" },
+  // El lote ya no refleja sus cuentas (marca, no estado).
+  DESACTUALIZADO: { texto: "Desactualizado", color: "ambar" },
 
   // Envio a SUSALUD por periodo (RT-05, RI-16). ENVIADO y PENDIENTE
   // comparten texto y color con los de abajo.
@@ -70,6 +72,7 @@ const _ESTADOS: Record<string, DefinicionEstado> = {
   COMPLETADO: { texto: "Completado", color: "verde" },
   AGOTADO: { texto: "Agotado", color: "rojo" },
   REQUIERE_SESION: { texto: "Requiere sesión", color: "ambar" },
+  SIN_RESULTADO: { texto: "Sin resultado", color: "ambar" },
   // Opciones que el administrador activa o apaga (navegacion del robot).
   OPCION_ACTIVADA: { texto: "Activada", color: "verde" },
   OPCION_DESACTIVADA: { texto: "Desactivada", color: "gris" },

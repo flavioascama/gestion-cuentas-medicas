@@ -9,8 +9,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencias import requiere_rol
 from app.api.dependencias_administracion import construir_listar_versiones_catalogo_gtin
-from app.api.esquemas_administracion import VersionCatalogoGtinRespuesta
+from app.api.esquemas_administracion import (
+    SolicitudCargarCatalogoGtin,
+    VersionCatalogoGtinRespuesta,
+)
 from app.api.rutas_farmacia import ProductoCatalogoRespuesta
+from app.compartido.archivo_catalogo import ErrorArchivoCatalogoInvalido, decodificar_xlsx
 from app.compartido.errores import ErrorAplicacion
 from app.dominio.acceso.entidades import NombreRol
 from app.dominio.acceso.puertos import CargaSesion
@@ -20,10 +24,8 @@ from app.dominio.farmacia.casos_uso import (
     ListarVersionesCatalogoGtin,
 )
 from app.infraestructura.persistencia.base import obtener_sesion
-from app.infraestructura.persistencia.cargador_catalogo_gtin import (
-    CargadorCatalogoGtinSql,
-    ErrorCatalogoGtinSinTrazabilidad,
-)
+from app.infraestructura.persistencia.cargador_catalogo_gtin import CargadorCatalogoGtinSql
+from app.infraestructura.persistencia.lector_catalogo_gtin_xlsx import leer_productos_xlsx_gtin
 from app.infraestructura.persistencia.registro_eventos_sql import RegistroEventosSql
 from app.infraestructura.persistencia.repositorio_catalogo_gtin_sql import (
     RepositorioCatalogoGtinSql,
@@ -48,16 +50,22 @@ async def listar_versiones_catalogo_gtin(
     status_code=status.HTTP_201_CREATED,
 )
 async def cargar_catalogo_gtin(
+    solicitud: SolicitudCargarCatalogoGtin,
     sesion: AsyncSession = Depends(obtener_sesion),
     actor: CargaSesion = Depends(_SOLO_ADMINISTRADOR),
 ) -> VersionCatalogoGtinRespuesta:
-    caso_uso = CargarCatalogoGtin(CargadorCatalogoGtinSql(sesion), RegistroEventosSql(sesion))
     try:
-        version = await caso_uso.ejecutar(actor.nombre_usuario, actor.usuario_id)
-    except ErrorCatalogoGtinSinTrazabilidad as error:
+        contenido = decodificar_xlsx(solicitud.nombre_archivo, solicitud.contenido_base64)
+        productos, trazabilidad = leer_productos_xlsx_gtin(contenido, solicitud.nombre_archivo)
+    except ErrorArchivoCatalogoInvalido as error:
         raise ErrorAplicacion(
-            "CATALOGO_GTIN_SIN_TRAZABILIDAD", str(error), estado_http=409
+            "ARCHIVO_CATALOGO_INVALIDO",
+            str(error),
+            estado_http=status.HTTP_422_UNPROCESSABLE_ENTITY,
         ) from error
+    cargador = CargadorCatalogoGtinSql(sesion, productos, trazabilidad, solicitud.nombre_archivo)
+    caso_uso = CargarCatalogoGtin(cargador, RegistroEventosSql(sesion))
+    version = await caso_uso.ejecutar(actor.nombre_usuario, actor.usuario_id)
     return VersionCatalogoGtinRespuesta.desde_valor(version)
 
 

@@ -21,6 +21,9 @@ const _TAREAS: Record<string, string> = {
   ENVIAR_LOTE_SUSALUD: "Envío a SUSALUD",
 };
 
+// El mismo limite que aplica la consulta (_MAXIMO_ACTIVIDAD en rutas_robot.py).
+const _MAXIMO_ACTIVIDAD = 50;
+
 const _COLUMNAS: ColumnaTabla<ActividadRobot>[] = [
   {
     clave: "tipo",
@@ -71,6 +74,7 @@ export function BandejaActividadRobot() {
           al_hacer_clic_fila={set_abierta}
         />
       </ConPaginacion>
+      <p className={estilos.pie}>Últimas {_MAXIMO_ACTIVIDAD} tareas.</p>
       {abierta ? (
         <DialogoPasosRobot
           trabajo_id={abierta.trabajo_id}

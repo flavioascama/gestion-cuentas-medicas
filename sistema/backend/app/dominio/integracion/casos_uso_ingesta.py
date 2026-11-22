@@ -5,6 +5,11 @@ distinto (alta de la cuenta, no consulta de trabajos)."""
 
 from __future__ import annotations
 
+from dataclasses import replace
+from datetime import datetime
+
+from app.compartido.fecha_peru import fecha_peru
+from app.dominio.integracion.diagnostico_cuenta import ErrorCie10Inexistente, normalizar_cie10
 from app.dominio.integracion.facturacion_cuenta import cobertura, codificacion_completa
 from app.dominio.integracion.puertos_ingesta import (
     AseguradoRegistrado,
@@ -16,7 +21,29 @@ from app.dominio.integracion.puertos_ingesta import (
 )
 from app.dominio.orquestacion.motor import validar_transicion
 from app.dominio.orquestacion.valores import TipoTransicion
-from app.dominio.puertos_comunes import Evento, RegistroEventos
+from app.dominio.puertos_comunes import Evento, RegistroEventos, Reloj
+
+MENSAJE_NOMBRES_EN_BLANCO = "Ingrese los nombres y los apellidos del asegurado."
+
+
+class ErrorDatosNuevaCuenta(Exception):
+    """Un dato de la nueva cuenta que impide registrarla."""
+
+
+def nombres_recortados(nombres: str, apellidos: str) -> tuple[str, str] | None:
+    """Nombres y apellidos sin espacios sobrantes; None si alguno queda en blanco."""
+    nombres, apellidos = nombres.strip(), apellidos.strip()
+    return (nombres, apellidos) if nombres and apellidos else None
+
+
+def _validar_datos(datos: DatosNuevaCuenta, ahora: datetime) -> DatosNuevaCuenta:
+    nombres = nombres_recortados(datos.nombres_asegurado, datos.apellidos_asegurado)
+    if nombres is None:
+        raise ErrorDatosNuevaCuenta(MENSAJE_NOMBRES_EN_BLANCO)
+    # Con una prestacion futura ningun procedimiento se podria codificar.
+    if datos.fecha_prestacion > fecha_peru(ahora):
+        raise ErrorDatosNuevaCuenta("La fecha de prestación no puede ser posterior a hoy.")
+    return replace(datos, nombres_asegurado=nombres[0], apellidos_asegurado=nombres[1])
 
 
 class RegistrarCuentaMedica:
@@ -25,12 +52,23 @@ class RegistrarCuentaMedica:
     proceso disperso y manual de captura (planilla, correo, etc.)."""
 
     def __init__(
-        self, repositorio: RepositorioIngestaCuentas, registro_eventos: RegistroEventos
+        self,
+        repositorio: RepositorioIngestaCuentas,
+        registro_eventos: RegistroEventos,
+        reloj: Reloj,
     ) -> None:
         self._repositorio = repositorio
         self._registro_eventos = registro_eventos
+        self._reloj = reloj
 
     async def ejecutar(self, datos: DatosNuevaCuenta, actor: str) -> int:
+        datos = _validar_datos(datos, self._reloj.ahora())
+        # El diagnostico es opcional, pero si viene debe estar en el catalogo,
+        # igual que al registrarlo despues (RegistrarDiagnosticoPrincipal).
+        codigo = normalizar_cie10(datos.diagnostico_principal_cie10 or "")
+        if codigo and not await self._repositorio.existe_cie10(codigo):
+            raise ErrorCie10Inexistente(codigo)
+        datos = replace(datos, diagnostico_principal_cie10=codigo or None)
         # T-01 (Tabla 58) validada por el motor como el resto (RF-08).
         estado_inicial = validar_transicion(None, TipoTransicion.REGISTRO)
         cuenta_id = await self._repositorio.crear_cuenta(datos)

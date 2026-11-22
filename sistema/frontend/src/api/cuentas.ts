@@ -8,6 +8,7 @@ export type RespuestaTrabajoEncolado = components["schemas"]["RespuestaTrabajoEn
 export type SolicitudNuevaCuenta = components["schemas"]["SolicitudNuevaCuenta"];
 export type RespuestaCuentaCreada = components["schemas"]["RespuestaCuentaCreada"];
 export type AseguradoRegistrado = components["schemas"]["AseguradoRegistradoRespuesta"];
+export type SolicitudCorregirAsegurado = components["schemas"]["SolicitudCorregirAsegurado"];
 export type RespuestaCompletitudCuenta = components["schemas"]["RespuestaCompletitudCuenta"];
 export type RespuestaComprobantePago = components["schemas"]["RespuestaComprobantePago"];
 
@@ -53,6 +54,14 @@ export function buscar_asegurado(
 
 export function registrar_cuenta(datos: SolicitudNuevaCuenta): Promise<RespuestaCuentaCreada> {
   return enviar<RespuestaCuentaCreada>("POST", "/cuentas", datos);
+}
+
+// Nombres y apellidos del asegurado, mientras la cuenta siga registrada.
+export function corregir_asegurado(
+  cuenta_id: number,
+  datos: SolicitudCorregirAsegurado,
+): Promise<void> {
+  return enviar<void>("PUT", `/cuentas/${cuenta_id}/asegurado`, datos);
 }
 
 // Completa el diagnostico principal de una cuenta ya registrada.

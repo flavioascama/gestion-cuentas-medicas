@@ -32,6 +32,7 @@ def _a_valor(fila: SolicitudAnulacionModelo) -> SolicitudAnulacion:
         solicitado_en=fila.solicitado_en,
         resuelto_por=fila.resuelto_por,
         resuelto_en=fila.resuelto_en,
+        motivo_resolucion=fila.motivo_resolucion,
     )
 
 
@@ -68,6 +69,17 @@ class RepositorioSolicitudesAnulacionSql(RepositorioSolicitudesAnulacion):
         ).scalar_one_or_none()
         return None if fila is None else _a_valor(fila)
 
+    async def obtener_ultima_por_cuenta(self, cuenta_medica_id: int) -> SolicitudAnulacion | None:
+        fila = (
+            await self._sesion.execute(
+                sa.select(SolicitudAnulacionModelo)
+                .where(SolicitudAnulacionModelo.cuenta_medica_id == cuenta_medica_id)
+                .order_by(SolicitudAnulacionModelo.solicitado_en.desc())
+                .limit(1)
+            )
+        ).scalar_one_or_none()
+        return None if fila is None else _a_valor(fila)
+
     async def listar_pendientes(self) -> list[SolicitudAnulacion]:
         filas = await self._sesion.execute(
             sa.select(SolicitudAnulacionModelo, CuentaMedicaModelo, AseguradoModelo)
@@ -90,7 +102,12 @@ class RepositorioSolicitudesAnulacionSql(RepositorioSolicitudesAnulacion):
         ]
 
     async def resolver(
-        self, solicitud_id: int, aprobada: bool, resuelto_por: str, resuelto_en: datetime
+        self,
+        solicitud_id: int,
+        aprobada: bool,
+        resuelto_por: str,
+        resuelto_en: datetime,
+        motivo_resolucion: str | None = None,
     ) -> None:
         nuevo_estado = (
             EstadoSolicitudAnulacion.APROBADA if aprobada else EstadoSolicitudAnulacion.RECHAZADA
@@ -98,5 +115,10 @@ class RepositorioSolicitudesAnulacionSql(RepositorioSolicitudesAnulacion):
         await self._sesion.execute(
             sa.update(SolicitudAnulacionModelo)
             .where(SolicitudAnulacionModelo.id == solicitud_id)
-            .values(estado=nuevo_estado.value, resuelto_por=resuelto_por, resuelto_en=resuelto_en)
+            .values(
+                estado=nuevo_estado.value,
+                resuelto_por=resuelto_por,
+                resuelto_en=resuelto_en,
+                motivo_resolucion=motivo_resolucion,
+            )
         )

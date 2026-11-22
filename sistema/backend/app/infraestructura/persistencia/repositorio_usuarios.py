@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 import sqlalchemy as sa
 from sqlalchemy.exc import IntegrityError
@@ -25,6 +25,7 @@ def _a_entidad(modelo: UsuarioModelo) -> Usuario:
         intentos_fallidos=modelo.intentos_fallidos,
         bloqueado_hasta=modelo.bloqueado_hasta,
         debe_cambiar_clave=modelo.debe_cambiar_clave,
+        sesiones_validas_desde=modelo.sesiones_validas_desde,
     )
 
 
@@ -140,6 +141,20 @@ class RepositorioUsuariosSql(RepositorioUsuarios):
                 debe_cambiar_clave=False,
                 intentos_fallidos=0,
                 bloqueado_hasta=None,
+            )
+        )
+        await self._sesion.commit()
+
+    async def restablecer_clave(self, usuario_id: int, hash_clave: str) -> None:
+        await self._sesion.execute(
+            sa.update(UsuarioModelo)
+            .where(UsuarioModelo.id == usuario_id)
+            .values(
+                hash_clave=hash_clave,
+                debe_cambiar_clave=True,
+                intentos_fallidos=0,
+                bloqueado_hasta=None,
+                sesiones_validas_desde=datetime.now(UTC),
             )
         )
         await self._sesion.commit()

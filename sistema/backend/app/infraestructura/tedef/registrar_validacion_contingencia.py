@@ -18,6 +18,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from app.compartido.huella import huella_sha256
+from app.compartido.nombres_estados import nombre_estado
 from app.dominio.contingencia.casos_uso import (
     ConsultarDisponibilidadContingencia,
     validar_sustento,
@@ -74,8 +75,8 @@ class RegistrarValidacionContingencia:
         estado_previo = await self._repositorio.obtener_estado_lote(lote_id)
         if not await self._disponibilidad.validacion(lote_id):
             raise ErrorContingenciaNoHabilitada(
-                "El modo de contingencia de validacion solo se habilita cuando la ultima "
-                "carga de este lote en el validador agoto sus reintentos."
+                "El modo de contingencia de validación solo se habilita cuando la última "
+                "carga de este lote en el validador agotó sus reintentos."
             )
         datos: dict[str, object] = {"modo": "contingencia", "resultado": resultado.value}
         if resultado is ResultadoValidacionManual.VALIDADO:
@@ -139,14 +140,14 @@ def s01_corresponde_al_lote(nombre: str, identidad: IdentidadLoteS01 | None) -> 
 def _exigir_s01(archivo: ArchivoLote | None, identidad: IdentidadLoteS01 | None) -> ArchivoLote:
     if archivo is None:
         raise ErrorArchivoS01Invalido(
-            "Para registrar el lote como VALIDADO en contingencia hay que adjuntar el "
-            "archivo .S01 que entrego el validador."
+            f"Para registrar el lote como {nombre_estado('VALIDADO')} en contingencia hay que "
+            "adjuntar el archivo .S01 que entregó el validador."
         )
     if not archivo.contenido:
         raise ErrorArchivoS01Invalido("El archivo .S01 está vacío.")
     nombre = Path(archivo.nombre).name
     if nombre != archivo.nombre or not nombre.upper().endswith(".S01"):
-        raise ErrorArchivoS01Invalido(f"El archivo {archivo.nombre!r} no es un .S01 valido.")
+        raise ErrorArchivoS01Invalido(f"El archivo {archivo.nombre} no es un .S01 válido.")
     if not s01_corresponde_al_lote(nombre, identidad):
         raise ErrorArchivoS01Invalido(f"El archivo {nombre} no corresponde a este lote.")
     return archivo

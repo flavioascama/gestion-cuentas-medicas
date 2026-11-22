@@ -43,6 +43,13 @@ async def vigencia_de_lote(sesion: AsyncSession, lote_id: int) -> VigenciaLote |
     return VigenciaLote(lote_id, lote.generado_en, (), validacion_no_conforme=no_conforme)
 
 
+async def vigencias_de_lotes(sesion: AsyncSession, lote_ids: list[int]) -> dict[int, VigenciaLote]:
+    """Las de varios lotes con una sola lectura de sus documentos (bandeja)."""
+    if not lote_ids:
+        return {}
+    return await _vigencias(sesion, LoteFacturacionModelo.id.in_(lote_ids))
+
+
 async def cuentas_en_lotes_vigentes(sesion: AsyncSession) -> set[int]:
     """Cuentas que ya estan en un lote en curso y vigente: no entran en
     otro. Las de un lote que dejo de ser vigente quedan libres."""

@@ -13,7 +13,7 @@ function NotaConfianza() {
   return (
     <p className={estilos.confianza}>
       <IconoEscudo />
-      Tu sesión y tus datos están protegidos
+      Su sesión y sus datos están protegidos
     </p>
   );
 }

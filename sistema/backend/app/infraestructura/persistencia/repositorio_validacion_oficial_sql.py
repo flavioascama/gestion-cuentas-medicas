@@ -9,13 +9,14 @@ las devuelve en memoria a quien lo invoco.
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
+from app.compartido.fecha_peru import fecha_peru
 from app.compartido.rutas import raiz_reportes
 from app.dominio.integracion.puertos_validacion import (
     ArchivoLote,
@@ -72,7 +73,8 @@ class RepositorioValidacionOficialSql(RepositorioValidacionOficial):
             codigo_iafas=lote.iafas.codigo,
             numero_lote=lote.numero,
             periodo=lote.periodo,
-            fecha=lote.generado_en.date(),
+            # SQLite devuelve el instante sin zona: es UTC.
+            fecha=fecha_peru(lote.generado_en.replace(tzinfo=lote.generado_en.tzinfo or UTC)),
         )
         directorio = raiz_reportes() / "lotes_generados"
         tablas = list(cargar_tablas_activas())
@@ -116,6 +118,10 @@ class RepositorioValidacionOficialSql(RepositorioValidacionOficial):
     async def obtener_estado_lote(self, lote_id: int) -> str | None:
         lote = await self._sesion.get(LoteFacturacionModelo, lote_id)
         return lote.estado if lote is not None else None
+
+    async def obtener_numero_lote(self, lote_id: int) -> str | None:
+        lote = await self._sesion.get(LoteFacturacionModelo, lote_id)
+        return lote.numero if lote is not None else None
 
     async def vigencia_lote(self, lote_id: int) -> VigenciaLote | None:
         return await vigencia_de_lote(self._sesion, lote_id)

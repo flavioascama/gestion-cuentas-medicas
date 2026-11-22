@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from typing import Annotated
+
+from pydantic import BaseModel, Field, StringConstraints
 
 from app.dominio.acceso.entidades import NombreRol, Usuario
 
@@ -24,7 +26,10 @@ class SolicitudCambioClave(BaseModel):
 
 
 class SolicitudCrearUsuario(BaseModel):
-    nombre_usuario: str = Field(min_length=3, max_length=50)
+    # Se guardan sin espacios al inicio ni al final.
+    nombre_usuario: Annotated[
+        str, StringConstraints(strip_whitespace=True, min_length=3, max_length=50)
+    ]
     # min_length=12 es solo la cota estructural (falla rapido con un 422
     # claro); la politica completa del control C-01 -- mayuscula,
     # minuscula y digito -- es una regla de negocio y vive en
@@ -32,8 +37,13 @@ class SolicitudCrearUsuario(BaseModel):
     # ("ninguna regla de negocio en una ruta", GUIA_ESTILO_CODIGO.md,
     # Seccion 2.1).
     clave: str = Field(min_length=12, max_length=200)
-    nombres: str = Field(min_length=1, max_length=150)
+    nombres: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=150)]
     roles: list[NombreRol] = Field(min_length=1)
+
+
+class SolicitudRestablecerClave(BaseModel):
+    # La politica completa (control C-01) la valida el dominio.
+    clave: str = Field(min_length=12, max_length=200)
 
 
 class SolicitudActualizarUsuario(BaseModel):

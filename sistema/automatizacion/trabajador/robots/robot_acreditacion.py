@@ -104,7 +104,7 @@ class AdaptadorAcreditacionWeb(AcreditacionWeb):
         estado_sesion = self._almacen_sesiones.cargar(_PLATAFORMA)
         if estado_sesion is None:
             raise ErrorSesionNoDisponible(
-                "No hay una sesion asistida guardada para ACREDITA SALUD."
+                "No hay un ingreso activo a ACREDITA SALUD: ingrese con el código de verificación."
             )
 
         navegador_contexto = await self._gestor_navegador.nuevo_contexto(estado_sesion)
@@ -136,7 +136,8 @@ class AdaptadorAcreditacionWeb(AcreditacionWeb):
         await pagina.goto(f"{configuracion.acredita_salud_url_base}/menu")
         if pagina.url.endswith("/ingreso"):
             raise ErrorSesionNoDisponible(
-                "La sesion asistida guardada de ACREDITA SALUD ya no es valida."
+                "El ingreso a ACREDITA SALUD venció: vuelva a ingresar con el código de "
+                "verificación."
             )
         await self._paso(pagina, "Menú principal, con la sesión iniciada")
 

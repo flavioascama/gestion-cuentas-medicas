@@ -59,3 +59,15 @@
   border: 1px solid var(--color_borde);
   border-radius: var(--radio_borde);
 }
+
+/* La accion va pegada a su aviso: cubre el borde inferior de la fila. */
+.accion_aviso {
+  position: relative;
+  margin-top: -1px;
+  display: flex;
+  align-items: center;
+  gap: var(--espacio_3);
+  padding: 0 var(--espacio_4) var(--espacio_3) calc(var(--espacio_4) + 24px);
+  border-bottom: 1px solid var(--color_borde);
+  background-color: var(--color_superficie);
+}

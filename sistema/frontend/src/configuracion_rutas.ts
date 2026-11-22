@@ -44,7 +44,7 @@ export const CONFIGURACION_RUTAS: DefinicionRuta[] = [
   // en vez de apilados en una sola. "/administracion" queda sin etiqueta
   // y redirige a usuarios.
   { ruta: "/administracion/usuarios", etiqueta: "Usuarios", roles: ["administrador"] },
-  { ruta: "/administracion/aseguradoras", etiqueta: "Aseguradoras", roles: ["administrador"] },
+  { ruta: "/administracion/aseguradoras", etiqueta: "IAFAS", roles: ["administrador"] },
   { ruta: "/administracion/parametros", etiqueta: "Parámetros", roles: ["administrador"] },
   { ruta: "/administracion/catalogos", etiqueta: "Catálogos", roles: ["administrador"] },
   // Registro de lo que hizo el robot: tarea, usuario que la pidio y hora.

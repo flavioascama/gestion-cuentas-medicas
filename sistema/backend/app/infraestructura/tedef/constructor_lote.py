@@ -17,6 +17,7 @@ docs/PENDIENTES.md), por lo que "RUC de Entidad de Referencia" (T2 campo
 
 from __future__ import annotations
 
+from app.compartido.fecha_peru import ZONA_PERU, fecha_peru
 from app.dominio.integracion.esquema import CampoEsquema, TablaEsquema
 from app.dominio.integracion.lote import (
     ContextoLote,
@@ -272,8 +273,8 @@ def construir_t1(
     m = calcular_montos_t1(documento, contexto, valores_t2)
 
     return {
-        1: formatear_fecha(contexto.generado_en.date(), campo[1]),
-        2: formatear_hora(contexto.generado_en.time(), campo[2]),
+        1: formatear_fecha(fecha_peru(contexto.generado_en), campo[1]),
+        2: formatear_hora(contexto.generado_en.astimezone(ZONA_PERU).time(), campo[2]),
         3: formatear_numerico_con_ceros(contexto.numero_lote, campo[3]),
         4: formatear_numerico_con_ceros(contexto.codigo_iafas, campo[4]),
         5: formatear_numerico_con_ceros(contexto.ruc_ipress, campo[5]),

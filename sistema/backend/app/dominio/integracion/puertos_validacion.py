@@ -187,6 +187,10 @@ class RepositorioValidacionOficial(Protocol):
         """None si el lote no existe."""
         ...
 
+    async def obtener_numero_lote(self, lote_id: int) -> str | None:
+        """El numero visible del lote; None si no existe."""
+        ...
+
     async def vigencia_lote(self, lote_id: int) -> VigenciaLote | None:
         """Lo que hace falta para saber si el lote sigue vigente; None si
         no existe."""

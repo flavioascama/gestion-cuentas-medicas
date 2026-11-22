@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from decimal import Decimal
 from typing import Protocol
 
 from app.dominio.acceso.entidades import NombreRol
@@ -36,6 +37,10 @@ class RepositorioObservaciones(Protocol):
         ...
 
     async def obtener(self, observacion_id: int) -> Observacion | None: ...
+
+    async def total_facturado(self, cuenta_medica_id: int) -> Decimal | None:
+        """Total del comprobante vigente de la cuenta; None si no se conoce."""
+        ...
 
     async def listar_por_cuenta(self, cuenta_medica_id: int) -> list[Observacion]: ...
 

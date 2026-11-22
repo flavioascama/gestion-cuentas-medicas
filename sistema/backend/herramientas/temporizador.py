@@ -17,6 +17,8 @@ import asyncio
 from datetime import UTC, datetime, timedelta
 
 from app.compartido.configuracion import obtener_configuracion
+from app.infraestructura.persistencia.base import FabricaSesiones
+from app.infraestructura.persistencia.repositorio_parametros_sistema_sql import valor_vigente
 from app.infraestructura.temporizador import TareaProgramada, ejecutar_pendientes
 from herramientas import (
     anclar_cadena_eventos,
@@ -32,10 +34,20 @@ from herramientas import (
 _VUELTA_SEGUNDOS = 60
 
 
-def _tareas() -> list[TareaProgramada]:
+async def _tareas() -> list[TareaProgramada]:
     configuracion = obtener_configuracion()
-    cada_vencimientos = timedelta(minutes=configuracion.temporizador_intervalo_vencimientos_minutos)
-    cada_cadena = timedelta(hours=configuracion.temporizador_intervalo_cadena_horas)
+    minutos = configuracion.temporizador_intervalo_vencimientos_minutos
+    horas = configuracion.temporizador_intervalo_cadena_horas
+    try:
+        async with FabricaSesiones() as sesion:
+            minutos = int(
+                await valor_vigente(sesion, "TEMPORIZADOR_INTERVALO_VENCIMIENTOS_MINUTOS")
+            )
+            horas = int(await valor_vigente(sesion, "TEMPORIZADOR_INTERVALO_CADENA_HORAS"))
+    except Exception as error:  # noqa: BLE001 - sin base de datos rigen los del despliegue
+        print(f"no se pudieron leer los intervalos: {error}", flush=True)
+    cada_vencimientos = timedelta(minutes=minutos)
+    cada_cadena = timedelta(hours=horas)
     cada_comunicaciones = timedelta(
         minutes=configuracion.temporizador_intervalo_comunicaciones_minutos
     )
@@ -59,7 +71,7 @@ def _tareas() -> list[TareaProgramada]:
 
 
 async def main() -> None:
-    tareas = _tareas()
+    tareas = await _tareas()
     ultimas: dict[str, datetime] = {}
     print("temporizador iniciado: " + ", ".join(t.nombre for t in tareas), flush=True)
     while True:
@@ -70,6 +82,9 @@ async def main() -> None:
                 f"[{ahora.isoformat(timespec='seconds')}] {resultado.nombre}: {estado}", flush=True
             )
         await asyncio.sleep(_VUELTA_SEGUNDOS)
+        # Los intervalos se vuelven a leer en cada vuelta: un cambio del
+        # administrador rige en el siguiente ciclo sin reiniciar el proceso.
+        tareas = await _tareas()
 
 
 if __name__ == "__main__":

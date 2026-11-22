@@ -44,15 +44,15 @@ class SolicitarNuevaEntregaRespuesta:
     async def ejecutar(self, observacion_id: int, solicitante: Solicitante) -> int:
         observacion = await self._observaciones.obtener(observacion_id)
         if observacion is None:
-            raise ErrorObservacionInexistente(f"No existe la observacion {observacion_id}.")
+            raise ErrorObservacionInexistente("No existe la observación.")
         hechos = (await self._entregas.hechos(observacion.cuenta_medica_id)).get(observacion_id)
         if hechos is None or estado_entrega(observacion, hechos) is not EstadoEntrega.NO_ENTREGADA:
             raise ErrorEntregaNoDisponible(
-                "La respuesta no esta pendiente de una nueva entrega a la aseguradora."
+                "La respuesta no está pendiente de una nueva entrega a la IAFAS."
             )
         es_analista = NombreRol.ANALISTA in solicitante.roles
         if not es_analista and solicitante.nombre_usuario != hechos.solicitada_por:
-            raise ErrorEntregaDeOtro("Solo quien respondio o el analista piden la entrega.")
+            raise ErrorEntregaDeOtro("Solo quien respondió o el analista piden la entrega.")
         trabajo_id = await self._encolar.ejecutar(
             observacion_id,
             observacion.respuesta_texto or "",
@@ -60,5 +60,5 @@ class SolicitarNuevaEntregaRespuesta:
             solicitante.nombre_usuario,
         )
         if trabajo_id is None:
-            raise ErrorEntregaNoDisponible("La observacion no vino de la aseguradora.")
+            raise ErrorEntregaNoDisponible("La observación no vino de la IAFAS.")
         return trabajo_id

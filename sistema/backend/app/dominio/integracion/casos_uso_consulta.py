@@ -89,6 +89,7 @@ def reservar_datos_clinicos(detalle: DetalleCuenta) -> DetalleCuenta:
         numero_historia_clinica=None,
         diagnostico_principal_cie10=None,
         diagnosticos_secundarios_cie10=(),
+        descripciones_cie10={},
         nombre_medico=None,
         colegiatura_medico=None,
         procedimientos=(),

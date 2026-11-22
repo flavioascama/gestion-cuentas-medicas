@@ -82,6 +82,13 @@ const _COLUMNAS_FECHAS: ColumnaTabla<Observacion>[] = [
   },
 ];
 
+// Lo que objeto la IAFAS (por ejemplo, "Falta firma en la orden").
+const _COLUMNA_DATO_OBSERVADO: ColumnaTabla<Observacion> = {
+  clave: "detalle_campo_objetado",
+  encabezado: "Dato observado",
+  formatear: (fila) => fila.detalle_campo_objetado ?? "—",
+};
+
 interface Permisos {
   puede_asignar: boolean;
   puede_responder: boolean;
@@ -98,10 +105,11 @@ function permisos_de(sesion: CargaSesion): Permisos {
   };
 }
 
-// Con responsable asignado, solo esa persona responde.
+// Con responsable asignado, solo esa persona responde; sin el, el rol responsable.
 function responde(observacion: Observacion, permisos: Permisos): boolean {
   const asignado = observacion.responsable_usuario_id;
-  return permisos.puede_responder && (asignado === null || asignado === permisos.usuario_id);
+  if (asignado !== null) return permisos.puede_responder && asignado === permisos.usuario_id;
+  return (permisos.sesion.roles as string[]).includes(observacion.responsable_rol);
 }
 
 function crear_columnas(
@@ -122,6 +130,7 @@ function crear_columnas(
       encabezado: "Motivo",
       formatear: (fila) => motivos.get(fila.motivo_codigo) ?? fila.motivo_codigo,
     },
+    _COLUMNA_DATO_OBSERVADO,
     {
       clave: "estado",
       encabezado: "Estado",
@@ -170,6 +179,7 @@ function DialogosObservaciones({
   observaciones: Observacion[];
 }) {
   const por_asignar = observaciones.find((o) => o.id === estado.asignar_observacion_id);
+  const por_responder = observaciones.find((o) => o.id === estado.responder_observacion_id);
   return (
     <>
       {estado.mostrar_registro ? (
@@ -187,10 +197,11 @@ function DialogosObservaciones({
           al_asignar={() => estado.set_asignar_observacion_id(null)}
         />
       ) : null}
-      {estado.responder_observacion_id !== null ? (
+      {por_responder ? (
         <DialogoResponderObservacion
           cuenta_id={cuenta_id}
-          observacion_id={estado.responder_observacion_id}
+          observacion_id={por_responder.id}
+          detalle={por_responder.detalle_campo_objetado}
           al_cerrar={() => estado.set_responder_observacion_id(null)}
           al_responder={() => estado.set_responder_observacion_id(null)}
         />

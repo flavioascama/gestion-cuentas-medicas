@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Any
 
@@ -198,6 +198,7 @@ class DocumentoExpedienteRespuesta(BaseModel):
     tipo: str
     referencia: str
     emitido_en: datetime | None
+    fecha_emision: date | None = None
 
     @staticmethod
     def desde_valor(valor: DocumentoExpediente) -> DocumentoExpedienteRespuesta:

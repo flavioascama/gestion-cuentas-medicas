@@ -7,6 +7,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
+from app.compartido.nombres_estados import nombre_estado
 from app.dominio.integracion.puertos import (
     ConsultorRespuestaReceptor,
     ErrorLoteNoMonitoreable,
@@ -89,17 +90,19 @@ class SolicitarMonitoreoRespuestaIafas:
     async def ejecutar(self, lote_id: int, actor: str) -> int:
         estado = await self._repositorio.obtener_estado_lote(lote_id)
         if estado is None:
-            raise ErrorLoteNoMonitoreable(f"No existe el lote {lote_id}.")
+            raise ErrorLoteNoMonitoreable("No existe el lote.")
+        numero = await self._repositorio.obtener_numero_lote(lote_id)
         if estado != _ESTADO_REMITIDO_IAFAS:
             raise ErrorLoteNoMonitoreable(
-                f"El lote {lote_id} esta en estado {estado!r}; solo se puede consultar la "
-                f"respuesta de un lote en estado {_ESTADO_REMITIDO_IAFAS!r}."
+                f"El lote {numero} está en estado {nombre_estado(estado)}; solo se puede "
+                "consultar la respuesta de un lote en estado "
+                f"{nombre_estado(_ESTADO_REMITIDO_IAFAS)}."
             )
         if await self._repositorio_trabajos.hay_sin_terminar(
             TIPO_TRABAJO_MONITOREAR_RESPUESTA_IAFAS, lote_id
         ):
             raise ErrorLoteNoMonitoreable(
-                f"El lote {lote_id} ya tiene una consulta de la respuesta en curso."
+                f"El lote {numero} ya tiene una consulta de la respuesta en curso."
             )
         ahora = self._reloj.ahora()
         trabajo_id = await encolar_monitoreo_respuesta(
@@ -149,7 +152,7 @@ class MonitorearRespuestaIafas:
         inicio = self._reloj.ahora()
         contexto = await self._repositorio.obtener_contexto_lote(lote_id)
         if contexto is None:
-            raise ErrorLoteNoMonitoreable(f"No existe el lote {lote_id}.")
+            raise ErrorLoteNoMonitoreable("No existe el lote.")
 
         respuesta = await self._consultor.consultar(contexto.nombre_s01)
         ahora = self._reloj.ahora()

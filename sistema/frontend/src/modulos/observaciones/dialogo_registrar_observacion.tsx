@@ -32,6 +32,7 @@ function CamposRegistrarObservacion({ campos }: { campos: CamposFormulario }) {
     <>
       <Selector
         etiqueta="Motivo indicado por la IAFAS"
+        obligatorio
         opciones={[
           { valor: "", etiqueta: "Seleccione un motivo" },
           ...(consulta_motivos.data ?? []).map((m) => ({
@@ -44,6 +45,7 @@ function CamposRegistrarObservacion({ campos }: { campos: CamposFormulario }) {
       />
       <Selector
         etiqueta="Alcance de la observación"
+        obligatorio
         opciones={[
           { valor: "total", etiqueta: "Total: la IAFAS objeta toda la cuenta" },
           { valor: "parcial", etiqueta: "Parcial: objeta una parte; el resto sigue a liquidación" },
@@ -57,12 +59,18 @@ function CamposRegistrarObservacion({ campos }: { campos: CamposFormulario }) {
         onChange={(evento) => campos.set_detalle_campo_objetado(evento.target.value)}
       />
       <CampoTexto
-        etiqueta="Monto observado (opcional)"
+        etiqueta={campos.es_parcial ? "Monto observado" : "Monto observado (opcional)"}
+        obligatorio={campos.es_parcial}
         type="number"
-        min="0"
+        min="0.01"
         step="0.01"
         value={campos.monto_observado}
         onChange={(evento) => campos.set_monto_observado(evento.target.value)}
+        error={
+          campos.monto_observado !== "" && !(Number(campos.monto_observado) > 0)
+            ? "El monto debe ser mayor que S/ 0.00."
+            : undefined
+        }
       />
     </>
   );
@@ -88,6 +96,10 @@ function usar_campos_registro(): CamposFormulario {
 export function DialogoRegistrarObservacion({ cuenta_id, al_cerrar, al_registrar }: Propiedades) {
   const cliente_consultas = useQueryClient();
   const campos = usar_campos_registro();
+  // El monto, si se escribe, es mayor que 0; la glosa parcial lo exige.
+  const monto_no_valido =
+    (campos.es_parcial && campos.monto_observado === "") ||
+    (campos.monto_observado !== "" && !(Number(campos.monto_observado) > 0));
 
   const mutacion = useMutation({
     mutationFn: () =>
@@ -99,6 +111,7 @@ export function DialogoRegistrarObservacion({ cuenta_id, al_cerrar, al_registrar
       }),
     onSuccess: () => {
       void cliente_consultas.invalidateQueries({ queryKey: ["cuentas", cuenta_id] });
+      void cliente_consultas.invalidateQueries({ queryKey: ["plazos"] });
       al_registrar();
     },
   });
@@ -115,7 +128,7 @@ export function DialogoRegistrarObservacion({ cuenta_id, al_cerrar, al_registrar
           <Boton
             variante="primario"
             onClick={() => mutacion.mutate()}
-            disabled={mutacion.isPending || !campos.motivo_codigo}
+            disabled={mutacion.isPending || !campos.motivo_codigo || monto_no_valido}
           >
             Registrar observación
           </Boton>

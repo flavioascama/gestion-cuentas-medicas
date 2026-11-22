@@ -17,16 +17,16 @@ la real (a lo sumo es anterior): el control avisa antes, nunca despues."""
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import UTC, date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta
 from enum import StrEnum
 from typing import Protocol
 
+from app.compartido.fecha_peru import ZONA_PERU, fecha_peru
 from app.dominio.plazos.valores import ResumenHito
 from app.dominio.puertos_comunes import Evento, Observabilidad, Reloj
 
 DIAS_HABILES_ENVIO_SUSALUD = 10
 # El Peru no aplica horario de verano: UTC-5 todo el anio.
-ZONA_PERU = timezone(timedelta(hours=-5))
 _ACTOR_TEMPORIZADOR = "temporizador_sistema"
 TIPO_AVISO_SUSALUD = "SUSALUD_ENVIO_PROXIMO_A_VENCER"
 TIPO_ESCALADO_SUSALUD = "SUSALUD_ENVIO_VENCIDO_ESCALADO"
@@ -113,6 +113,7 @@ class ControlPeriodoSusalud:
     listos_envio: int = 0
     # Solo en los meses sin lotes: cuando se registro la declaracion jurada.
     declarada_en: datetime | None = None
+    declarada_fuera_de_plazo: bool = False
 
 
 class RepositorioControlSusalud(Protocol):
@@ -203,7 +204,14 @@ class ConsultarControlSusalud:
             limite = fecha_limite_envio_susalud(periodo, self._feriados)
         if resumen is None and declarada is not None:
             return ControlPeriodoSusalud(
-                periodo, 0, 0, limite, None, EstadoEnvioSusalud.SIN_LOTES, declarada_en=declarada
+                periodo,
+                0,
+                0,
+                limite,
+                None,
+                EstadoEnvioSusalud.SIN_LOTES,
+                declarada_en=declarada,
+                declarada_fuera_de_plazo=fecha_peru(declarada) > limite,
             )
         if resumen is None:
             estado = estado_por_plazo(limite, hoy, self._dias_aviso_previo)

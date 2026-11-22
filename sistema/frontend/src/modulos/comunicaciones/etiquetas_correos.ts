@@ -2,7 +2,7 @@
 // mapa_estados.ts y mapa_roles.ts.
 
 export const MOTIVOS_REVISION: Record<string, string> = {
-  SIN_FORMATO: "Sin el formato de la aseguradora",
+  SIN_FORMATO: "Sin el formato de la IAFAS",
   REMITENTE_NO_REGISTRADO: "Remitente no registrado",
   COMPROBANTE_DESCONOCIDO: "Comprobante desconocido",
 };

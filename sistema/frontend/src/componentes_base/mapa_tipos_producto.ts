@@ -4,7 +4,9 @@
 
 const _ETIQUETAS_TIPO_PRODUCTO: Record<string, string> = {
   M: "Medicamento",
+  P: "Suplemento dietético o producto natural",
   I: "Insumo o dispositivo médico",
+  R: "Preparado magistral",
   B: "Producto sanitario o cosmético",
   A: "Suplemento alimenticio",
 };

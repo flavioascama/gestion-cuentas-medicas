@@ -4,7 +4,9 @@ registro el robot, y la revision a pedido de ambos canales."""
 
 from __future__ import annotations
 
+import sqlalchemy as sa
 from fastapi import APIRouter, Depends, Query, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencias import requiere_rol
 from app.api.dependencias_comunicaciones import (
@@ -18,6 +20,8 @@ from app.dominio.comunicaciones.casos_uso import (
     ListarComunicacionesIafas,
     SolicitarRevisionComunicaciones,
 )
+from app.infraestructura.persistencia.base import obtener_sesion
+from app.infraestructura.persistencia.modelos_integracion import CuentaMedicaModelo
 
 router = APIRouter(prefix="/comunicaciones-iafas", tags=["comunicaciones_iafas"])
 
@@ -30,9 +34,31 @@ async def listar_comunicaciones(
     cuenta_id: int | None = Query(default=None),
     caso_uso: ListarComunicacionesIafas = Depends(construir_listar_comunicaciones),
     _: CargaSesion = Depends(_LECTURA),
+    sesion: AsyncSession = Depends(obtener_sesion),
 ) -> list[ComunicacionIafasRespuesta]:
-    registradas = await caso_uso.ejecutar(cuenta_id)
-    return [ComunicacionIafasRespuesta.desde_valor(valor) for valor in registradas]
+    respuestas = [
+        ComunicacionIafasRespuesta.desde_valor(v) for v in await caso_uso.ejecutar(cuenta_id)
+    ]
+    await _con_identificacion_de_cuenta(sesion, respuestas)
+    return respuestas
+
+
+async def _con_identificacion_de_cuenta(
+    sesion: AsyncSession, respuestas: list[ComunicacionIafasRespuesta]
+) -> None:
+    """Una sola consulta para todas las cuentas de la lista."""
+    ids = {r.cuenta_medica_id for r in respuestas if r.cuenta_medica_id is not None}
+    if not ids:
+        return
+    filas = await sesion.execute(
+        sa.select(CuentaMedicaModelo.id, CuentaMedicaModelo.identificacion_interna).where(
+            CuentaMedicaModelo.id.in_(ids)
+        )
+    )
+    identificaciones = dict(filas.tuples().all())
+    for respuesta in respuestas:
+        if respuesta.cuenta_medica_id is not None:
+            respuesta.identificacion_interna = identificaciones.get(respuesta.cuenta_medica_id)
 
 
 @router.post("/revision", response_model=RevisionSolicitada, status_code=status.HTTP_202_ACCEPTED)

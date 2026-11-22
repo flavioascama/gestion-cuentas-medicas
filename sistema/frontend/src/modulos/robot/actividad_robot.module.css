@@ -4,3 +4,9 @@
   border-radius: var(--radio_borde);
   padding: var(--espacio_6);
 }
+
+.pie {
+  margin: var(--espacio_3) 0 0;
+  font-size: var(--tamano_metadato);
+  color: var(--color_texto_secundario);
+}

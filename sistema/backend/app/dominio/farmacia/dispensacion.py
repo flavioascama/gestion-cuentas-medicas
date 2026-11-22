@@ -20,15 +20,17 @@ y en una cuenta facturada cuyo lote observo el validador."""
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date
+from datetime import UTC, date, datetime
 from decimal import Decimal
 from typing import Protocol
 
+from app.compartido.fecha_peru import fecha_peru
+from app.compartido.nombres_estados import nombre_estado
 from app.dominio.orquestacion.correccion_validador import admite_correccion
 from app.dominio.orquestacion.puertos import RepositorioEstadoCuenta
-from app.dominio.puertos_comunes import Evento, RegistroEventos
+from app.dominio.puertos_comunes import Evento, RegistroEventos, Reloj
 
-ESTADOS_EDITABLES_FARMACIA = frozenset({"REGISTRADA", "RECHAZADA", "GLOSADA", "GLOSADA_PARCIAL"})
+ESTADOS_EDITABLES_FARMACIA = frozenset({"REGISTRADA", "RECHAZADA", "GLOSADA"})
 CATALOGO_GTIN = "1"
 TIPOS_UNIDAD_DISPENSACION = frozenset({"1", "2"})
 INDICADORES_EXONERACION_IGV = frozenset({"A", "D"})
@@ -117,12 +119,16 @@ class RepositorioDispensacion(Protocol):
         ...
 
 
-def validar_dispensacion(datos: DatosProductoDispensado, fecha_prestacion: date) -> Decimal:
+def validar_dispensacion(
+    datos: DatosProductoDispensado, fecha_prestacion: date, hoy: date | None = None
+) -> Decimal:
     """Valida el producto dispensado y devuelve su monto presentado. La usan
     el registro manual y la importacion de la atencion."""
     errores: list[str] = []
     if datos.fecha_dispensacion < fecha_prestacion:
-        errores.append("la fecha de dispensacion es anterior a la prestacion")
+        errores.append("la fecha de dispensación es anterior a la prestación")
+    if hoy is not None and datos.fecha_dispensacion > hoy:
+        errores.append("la fecha de dispensación es posterior a hoy")
     if datos.cantidad_venta <= 0:
         errores.append("la cantidad debe ser mayor que cero")
     if min(datos.monto_unitario, datos.monto_no_cubierto) < 0:
@@ -130,11 +136,11 @@ def validar_dispensacion(datos: DatosProductoDispensado, fecha_prestacion: date)
     if datos.monto_no_cubierto > datos.cantidad_venta * datos.monto_unitario:
         errores.append("el monto no cubierto supera el monto del producto")
     if datos.tipo_unidad_dispensacion not in TIPOS_UNIDAD_DISPENSACION:
-        errores.append("tipo de unidad de dispensacion fuera del dominio (1 o 2)")
+        errores.append("el tipo de unidad de dispensación no es válido")
     if datos.exento_igv not in INDICADORES_EXONERACION_IGV:
-        errores.append("indicador de exoneracion de IGV fuera del dominio (A o D)")
+        errores.append("el indicador de IGV no es válido")
     if datos.guia_farmacia and len(datos.guia_farmacia) > LONGITUD_GUIA:
-        errores.append(f"la guia de farmacia tiene mas de {LONGITUD_GUIA} caracteres")
+        errores.append(f"la guía de farmacia tiene más de {LONGITUD_GUIA} caracteres")
     if errores:
         raise ErrorProductoInvalido("; ".join(errores).capitalize() + ".")
     return (datos.cantidad_venta * datos.monto_unitario).quantize(_DOS_DECIMALES)
@@ -146,10 +152,12 @@ class RegistrarProductoDispensado:
         repositorio: RepositorioDispensacion,
         estado_cuenta: RepositorioEstadoCuenta,
         registro_eventos: RegistroEventos,
+        reloj: Reloj | None = None,
     ) -> None:
         self._repositorio = repositorio
         self._estado_cuenta = estado_cuenta
         self._registro_eventos = registro_eventos
+        self._reloj = reloj
 
     async def ejecutar(
         self, cuenta_medica_id: int, datos: DatosProductoDispensado, actor: str
@@ -157,15 +165,16 @@ class RegistrarProductoDispensado:
         await _exigir_cuenta_editable(self._estado_cuenta, cuenta_medica_id)
         fecha_prestacion = await self._repositorio.fecha_prestacion(cuenta_medica_id)
         assert fecha_prestacion is not None, "una cuenta existente tiene fecha de prestacion"
-        monto_presentado = validar_dispensacion(datos, fecha_prestacion)
+        ahora = self._reloj.ahora() if self._reloj is not None else datetime.now(UTC)
+        monto_presentado = validar_dispensacion(datos, fecha_prestacion, fecha_peru(ahora))
         catalogo = await self._repositorio.producto_vigente(datos.codigo_producto)
         if catalogo is None:
             raise ErrorProductoFueraDeCatalogo(
-                f"El codigo {datos.codigo_producto} no esta en el catalogo GTIN vigente."
+                f"El código {datos.codigo_producto} no está en el catálogo GTIN vigente."
             )
         diagnostico = datos.diagnostico_asociado_cie10
         if diagnostico and not await self._repositorio.existe_cie10(diagnostico):
-            raise ErrorProductoInvalido(f"El diagnostico {diagnostico} no esta en la CIE-10.")
+            raise ErrorProductoInvalido(f"El diagnóstico {diagnostico} no está en la CIE-10.")
         producto_id, correlativo = await self._repositorio.guardar(
             ProductoARegistrar(cuenta_medica_id, catalogo, datos, monto_presentado)
         )
@@ -204,9 +213,7 @@ class QuitarProductoDispensado:
         await _exigir_cuenta_editable(self._estado_cuenta, cuenta_medica_id)
         codigo = await self._repositorio.quitar(cuenta_medica_id, producto_id)
         if codigo is None:
-            raise ErrorProductoInexistente(
-                f"La cuenta {cuenta_medica_id} no tiene el producto {producto_id}."
-            )
+            raise ErrorProductoInexistente("La cuenta no tiene ese producto.")
         await self._registro_eventos.registrar(
             Evento(
                 cuenta_medica_id=cuenta_medica_id,
@@ -232,11 +239,10 @@ async def _exigir_cuenta_editable(
 ) -> None:
     estado = await estado_cuenta.obtener_estado(cuenta_medica_id)
     if estado is None:
-        raise ErrorCuentaInexistenteFarmacia(f"No existe la cuenta {cuenta_medica_id}.")
+        raise ErrorCuentaInexistenteFarmacia("No existe la cuenta.")
     if not await admite_correccion(
         estado_cuenta, cuenta_medica_id, estado in ESTADOS_EDITABLES_FARMACIA
     ):
         raise ErrorCuentaNoEditableFarmacia(
-            f"La cuenta {cuenta_medica_id} esta en estado {estado!r}: "
-            "no admite cambios de farmacia."
+            f"La cuenta está en estado {nombre_estado(estado)}: no admite cambios de farmacia."
         )

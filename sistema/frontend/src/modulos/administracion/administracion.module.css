@@ -102,11 +102,31 @@
   min-width: 240px;
 }
 
-/* Parametros del sistema: la columna de valores en la misma posicion en
-   todos los grupos. */
-.tabla_parametros th:first-child,
-.tabla_parametros td:first-child {
-  width: 65%;
+/* Parametros del sistema: un grupo por tarjeta, dos por fila en pantalla
+   ancha y una en angosta. */
+.rejilla_parametros {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: var(--espacio_6);
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .rejilla_parametros {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.campos_parametros {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio_3);
+}
+
+.acciones_parametros {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--espacio_4);
 }
 
 /* Una opcion que se activa o se apaga: nombre, estado y boton. */

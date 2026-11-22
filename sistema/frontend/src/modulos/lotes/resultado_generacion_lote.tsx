@@ -3,7 +3,6 @@ import { Boton } from "../../componentes_base/boton";
 import { Dialogo } from "../../componentes_base/dialogo";
 import { Mensaje } from "../../componentes_base/mensaje";
 import { CuentasConPendientes } from "./cuentas_con_pendientes";
-import { InformePrevalidacion } from "./informe_prevalidacion";
 import estilos from "./dialogo_generar_lote.module.css";
 
 interface Propiedades {
@@ -12,11 +11,13 @@ interface Propiedades {
   al_ver_lote: (lote_id: number) => void;
 }
 
-// Si el lote no se pudo generar, primero dice de que cuenta se trata y que
-// le falta, con el enlace para completarlo (2026-11-18). El informe del
-// estandar (tabla, campo y criterio) queda debajo, plegado.
+// Si el lote no se pudo generar, dice de que cuenta se trata y que le
+// falta, con el enlace para completarlo. Sin el informe del estandar.
 function LoteNoGenerado({ resultado }: { resultado: RespuestaGenerarLote }) {
   const cuentas = resultado.cuentas_con_pendientes ?? [];
+  const motivos = [
+    ...new Set(resultado.hallazgos.filter((h) => h.severidad === "error").map((h) => h.mensaje)),
+  ];
   return (
     <>
       <Mensaje
@@ -28,10 +29,13 @@ function LoteNoGenerado({ resultado }: { resultado: RespuestaGenerarLote }) {
         }
       />
       <CuentasConPendientes titulo="Cuentas por completar" cuentas={cuentas} />
-      <details className={estilos.detalle_tecnico} open={cuentas.length === 0}>
-        <summary>Detalle técnico</summary>
-        <InformePrevalidacion hallazgos={resultado.hallazgos} />
-      </details>
+      {cuentas.length === 0 ? (
+        <ul className={estilos.lista_pendientes}>
+          {motivos.map((motivo) => (
+            <li key={motivo}>{motivo}</li>
+          ))}
+        </ul>
+      ) : null}
     </>
   );
 }

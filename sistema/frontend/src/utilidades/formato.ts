@@ -26,11 +26,31 @@ export function formatear_fecha(iso: string): string {
   return `${dia}/${mes}/${fecha.getFullYear()}`;
 }
 
-// Periodo AAAAMM como "Noviembre de 2026".
+const _MESES = [
+  "Enero",
+  "Febrero",
+  "Marzo",
+  "Abril",
+  "Mayo",
+  "Junio",
+  "Julio",
+  "Agosto",
+  "Setiembre",
+  "Octubre",
+  "Noviembre",
+  "Diciembre",
+];
+
+// Periodo AAAAMM como "Octubre-26": la unica forma en que se muestra.
 export function formatear_periodo(periodo: string): string {
-  const fecha = new Date(Number(periodo.slice(0, 4)), Number(periodo.slice(4, 6)) - 1, 1);
-  const texto = fecha.toLocaleDateString("es-PE", { month: "long", year: "numeric" });
-  return texto.charAt(0).toUpperCase() + texto.slice(1);
+  const mes = _MESES[Number(periodo.slice(4, 6)) - 1];
+  return periodo.length === 6 && mes ? `${mes}-${periodo.slice(2, 4)}` : periodo;
+}
+
+// La etiqueta de una version de catalogo es la fecha de carga (AAAA-MM-DD)
+// salvo que se haya dado otra.
+export function formatear_version_catalogo(etiqueta: string): string {
+  return /^\d{4}-\d{2}-\d{2}$/.test(etiqueta) ? formatear_fecha(etiqueta) : etiqueta;
 }
 
 export function formatear_fecha_hora(iso: string): string {

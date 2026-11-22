@@ -18,6 +18,10 @@ import estilos from "./contingencia.module.css";
 // obtuvo por otro medio, con su sustento. El backend solo lo admite si la
 // ultima verificacion de esta cuenta agoto sus reintentos.
 
+// Las mismas cotas que el servidor (esquemas_contingencia.py y
+// LONGITUD_MINIMA_SUSTENTO).
+const _LARGO_MINIMO_SUSTENTO = 10;
+
 const _INICIAL: SolicitudCoberturaContingencia = {
   condicion_cobertura: "ACREDITABLE",
   codigo_autorizacion: "",
@@ -43,6 +47,17 @@ function cuerpo_solicitud(datos: SolicitudCoberturaContingencia): SolicitudCober
   };
 }
 
+function datos_completos(datos: SolicitudCoberturaContingencia): boolean {
+  const copago_completo =
+    datos.tipo_copago === "ninguno" || Number(datos.monto_copago_fijo ?? 0) > 0;
+  return (
+    !!datos.codigo_autorizacion.trim() &&
+    !!datos.codigo_asegurado.trim() &&
+    copago_completo &&
+    datos.sustento.trim().length >= _LARGO_MINIMO_SUSTENTO
+  );
+}
+
 function CampoValorCopago({
   datos,
   al_cambiar,
@@ -55,6 +70,7 @@ function CampoValorCopago({
   return (
     <CampoTexto
       etiqueta={fijo ? "Monto del copago" : "Porcentaje de coaseguro"}
+      obligatorio
       type="number"
       min={fijo ? 0.01 : 1}
       max={fijo ? undefined : 100}
@@ -72,9 +88,11 @@ function CamposCobertura({
   datos: SolicitudCoberturaContingencia;
   al_cambiar: (campo: Campo, valor: string) => void;
 }) {
-  const campo = (clave: Campo, etiqueta: string) => (
+  const campo = (clave: Campo, etiqueta: string, largo_maximo: number) => (
     <CampoTexto
       etiqueta={etiqueta}
+      obligatorio={clave !== "plan"}
+      maxLength={largo_maximo}
       value={datos[clave] ?? ""}
       onChange={(evento) => al_cambiar(clave, evento.target.value)}
     />
@@ -82,6 +100,7 @@ function CamposCobertura({
   const lista = (clave: Campo, etiqueta: string, opciones: OpcionSelector[]) => (
     <Selector
       etiqueta={etiqueta}
+      obligatorio={clave !== "tipo_copago"}
       opciones={opciones}
       value={datos[clave] ?? ""}
       onChange={(evento) => al_cambiar(clave, evento.target.value)}
@@ -89,15 +108,15 @@ function CamposCobertura({
   );
   return (
     <div className={estilos.formulario}>
-      {campo("codigo_autorizacion", "Código de acreditación")}
+      {campo("codigo_autorizacion", "Código de acreditación", 20)}
       {lista(
         "tipo_documento_autorizacion",
         "Tipo de documento de autorización",
         DOCUMENTOS_AUTORIZACION,
       )}
-      {campo("codigo_asegurado", "Código del asegurado en la IAFAS")}
+      {campo("codigo_asegurado", "Código del asegurado en la IAFAS", 20)}
       {lista("tipo_afiliacion", "Tipo de afiliación", AFILIACIONES)}
-      {campo("plan", "Plan (opcional)")}
+      {campo("plan", "Plan (opcional)", 100)}
       {lista("tipo_copago", "Tipo de copago", TIPOS_COPAGO)}
       <CampoValorCopago datos={datos} al_cambiar={al_cambiar} />
       <CampoTexto
@@ -106,7 +125,7 @@ function CamposCobertura({
         value={datos.vigente_hasta ?? ""}
         onChange={(evento) => al_cambiar("vigente_hasta", evento.target.value)}
       />
-      <div className={estilos.ancho_completo}>{campo("sustento", "Sustento")}</div>
+      <div className={estilos.ancho_completo}>{campo("sustento", "Sustento", 1000)}</div>
     </div>
   );
 }
@@ -125,10 +144,7 @@ function DialogoCoberturaContingencia({
       ...previos,
       [campo]: campo === "vigente_hasta" && !valor ? null : valor,
     }));
-  const copago_completo =
-    datos.tipo_copago === "ninguno" || Number(datos.monto_copago_fijo ?? 0) > 0;
-  const completo =
-    !!datos.codigo_autorizacion.trim() && !!datos.codigo_asegurado.trim() && copago_completo;
+  const completo = datos_completos(datos);
 
   const mutacion = useMutation({
     mutationFn: () => registrar_cobertura_contingencia(cuenta_id, cuerpo_solicitud(datos)),
@@ -150,7 +166,7 @@ function DialogoCoberturaContingencia({
           <Boton
             variante="primario"
             onClick={() => mutacion.mutate()}
-            disabled={mutacion.isPending || !completo || !datos.sustento.trim()}
+            disabled={mutacion.isPending || !completo}
           >
             Registrar en contingencia
           </Boton>

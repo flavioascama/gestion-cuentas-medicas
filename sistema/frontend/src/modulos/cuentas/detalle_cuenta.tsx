@@ -143,6 +143,14 @@ function EncabezadoCuenta({ cuenta, recorrido }: PropiedadesEncabezado) {
   );
 }
 
+function VolverBandeja({ recorrido }: { recorrido: Recorrido | null }) {
+  return (
+    <Link to={recorrido?.volver.ruta ?? "/cuentas"}>
+      {recorrido?.volver.etiqueta ?? "Volver a la bandeja"}
+    </Link>
+  );
+}
+
 export function DetalleCuenta() {
   const parametros = useParams<{ cuenta_id: string }>();
   const cuenta_id = Number(parametros.cuenta_id);
@@ -159,7 +167,12 @@ export function DetalleCuenta() {
 
   if (consulta.isPending) return <p>Cargando cuenta…</p>;
   if (consulta.isError || !consulta.data)
-    return <Mensaje tipo="error" texto="No se pudo cargar la cuenta." />;
+    return (
+      <div>
+        <Mensaje tipo="error" texto="No se pudo cargar la cuenta." />
+        <VolverBandeja recorrido={recorrido} />
+      </div>
+    );
 
   const cuenta = consulta.data;
 
@@ -174,9 +187,7 @@ export function DetalleCuenta() {
         al_codificar_pendiente={(pendiente) => set_asistente_cpms({ pendiente })}
       />
       <Pestanas pestanas={pestanas} etiqueta_lista="Secciones de la cuenta" />
-      <Link to={recorrido?.volver.ruta ?? "/cuentas"}>
-        {recorrido?.volver.etiqueta ?? "Volver a la bandeja"}
-      </Link>
+      <VolverBandeja recorrido={recorrido} />
       {asistente_cpms ? (
         <AsistenteCpms
           cuenta_id={cuenta_id}

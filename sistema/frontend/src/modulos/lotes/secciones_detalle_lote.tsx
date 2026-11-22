@@ -7,9 +7,10 @@ import {
   type ObservacionOficial,
   type ResumenAcuse,
 } from "../../api/lotes";
+import { EtiquetaEstado } from "../../componentes_base/etiqueta_estado";
 import { MensajeErrorMutacion } from "../../componentes_base/mensaje_error_mutacion";
 import { TablaDatos, type ColumnaTabla } from "../../componentes_base/tabla_datos";
-import { formatear_fecha_hora } from "../../utilidades/formato";
+import { formatear_fecha_hora, formatear_periodo } from "../../utilidades/formato";
 import { IconoCheck, IconoDescarga } from "./iconos_detalle_lote";
 import estilos from "./detalle_lote.module.css";
 
@@ -32,13 +33,22 @@ const _COLUMNAS_OBSERVACIONES: ColumnaTabla<ObservacionOficial>[] = [
 ];
 
 const _COLUMNAS_ACUSES: ColumnaTabla<ResumenAcuse>[] = [
-  { clave: "resultado_transferencia", encabezado: "Resultado" },
+  {
+    clave: "resultado_transferencia",
+    encabezado: "Resultado",
+    formatear: (fila) => <EtiquetaEstado estado={fila.resultado_transferencia} />,
+  },
   {
     clave: "intentado_en",
     encabezado: "Intentado",
     formatear: (fila) => formatear_fecha_hora(fila.intentado_en),
   },
-  { clave: "respuesta_receptor", encabezado: "Respuesta de la IAFAS" },
+  {
+    clave: "respuesta_receptor",
+    encabezado: "Respuesta de la IAFAS",
+    formatear: (fila) =>
+      fila.respuesta_receptor ? <EtiquetaEstado estado={fila.respuesta_receptor} /> : "—",
+  },
   {
     clave: "respondido_en",
     encabezado: "Respondido",
@@ -93,13 +103,12 @@ export function SeccionDatosLote({
   nombre_iafas: string;
 }) {
   const datos = [
-    { etiqueta: "Periodo", valor: lote.periodo },
+    { etiqueta: "Periodo", valor: formatear_periodo(lote.periodo) },
     { etiqueta: "IAFAS", valor: nombre_iafas },
     { etiqueta: "Cantidad de documentos", valor: String(lote.cantidad_documentos) },
     { etiqueta: "Generado", valor: formatear_fecha_hora(lote.generado_en) },
-    // RT-06: con que version del estandar y del diccionario de mapeo se genero.
+    // RT-06: con que version del estandar se genero.
     { etiqueta: "Estándar TEDEF", valor: lote.version_esquema_tedef ?? "—" },
-    { etiqueta: "Diccionario de mapeo", valor: lote.version_mapeo?.slice(0, 12) ?? "—" },
   ];
   return (
     <div className={estilos.seccion}>

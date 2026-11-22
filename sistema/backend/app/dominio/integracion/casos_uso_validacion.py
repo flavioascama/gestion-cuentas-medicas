@@ -15,6 +15,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 
+from app.compartido.nombres_estados import nombre_estado
 from app.dominio.integracion.puertos_validacion import (
     ArchivoLote,
     DatosRegistrarValidacion,
@@ -65,13 +66,14 @@ class SolicitarCargaEnValidador:
     async def ejecutar(self, lote_id: int, actor: str) -> int:
         estado = await self._repositorio.obtener_estado_lote(lote_id)
         if estado is None:
-            raise ErrorLoteNoCargable(f"No existe el lote {lote_id}.")
+            raise ErrorLoteNoCargable("No existe el lote.")
         if estado == _ESTADO_CARGADO_VALIDADOR:
             await self._exigir_sin_trabajo_en_curso(lote_id)
         elif estado != _ESTADO_GENERADO:
+            numero = await self._repositorio.obtener_numero_lote(lote_id)
             raise ErrorLoteNoCargable(
-                f"El lote {lote_id} esta en estado {estado!r}; solo se puede cargar "
-                f"en el validador un lote en estado {_ESTADO_GENERADO!r}."
+                f"El lote {numero} está en estado {nombre_estado(estado)}; solo se puede "
+                f"cargar en el validador un lote en estado {nombre_estado(_ESTADO_GENERADO)}."
             )
         exigir_lote_vigente(await self._repositorio.vigencia_lote(lote_id))
         trabajo_id = await self._repositorio_trabajos.encolar(
@@ -100,7 +102,8 @@ class SolicitarCargaEnValidador:
         if await self._repositorio_trabajos.hay_sin_terminar(
             TIPO_TRABAJO_CARGAR_LOTE_VALIDADOR, lote_id
         ):
-            raise ErrorLoteNoCargable(f"El lote {lote_id} ya tiene una validacion en curso.")
+            numero = await self._repositorio.obtener_numero_lote(lote_id)
+            raise ErrorLoteNoCargable(f"El lote {numero} ya tiene una validación en curso.")
 
 
 @dataclass(frozen=True, slots=True)

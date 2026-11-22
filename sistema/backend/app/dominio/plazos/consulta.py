@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, time, timedelta
 from enum import StrEnum
 
+from app.compartido.fecha_peru import ZONA_PERU
 from app.dominio.plazos.puertos import RepositorioPlazos
 from app.dominio.puertos_comunes import Reloj
 
@@ -66,7 +67,7 @@ class ConsultarVencimientos:
             (
                 c.cuenta_medica_id,
                 HitoPlazo.COBERTURA,
-                datetime.combine(c.vigente_hasta, time.max, UTC),
+                datetime.combine(c.vigente_hasta, time.max, ZONA_PERU),
             )
             for c in await self._repositorio.cuentas_con_carta_garantia_por_vencer()
         )

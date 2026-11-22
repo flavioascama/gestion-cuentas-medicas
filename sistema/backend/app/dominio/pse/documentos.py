@@ -14,15 +14,19 @@ y la nota que lo ajusta.
   de la nota los da el PSE al emitirla, igual que los del comprobante
   (2026-11-18: antes se escribian a mano).
 
-Un comprobante con nota no se reemplaza: la nota es de ese comprobante."""
+Un comprobante con nota no se reemplaza: la nota es de ese comprobante.
+
+En FACTURADA se reemplaza solo un comprobante desfasado (2026-11-21, calculo
+del copago corregido); el estado no cambia y su lote en curso se desactualiza."""
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import date, datetime
 from decimal import Decimal
 from typing import Protocol
 
+from app.compartido.nombres_estados import nombre_estado
 from app.dominio.orquestacion.correccion_validador import admite_correccion
 from app.dominio.orquestacion.puertos import RepositorioEstadoCuenta
 from app.dominio.pse.casos_uso import solicitud_comprobante
@@ -32,12 +36,22 @@ from app.dominio.pse.puertos import (
     EmisorPse,
     NotaPse,
     RepositorioComprobantePago,
+    RepositorioCotejoComprobante,
     SolicitudNota,
 )
+from app.dominio.pse.reemplazo_necesario import REEMPLAZO_INNECESARIO, estados_con_reemplazo
 from app.dominio.puertos_comunes import Evento, RegistroEventos, Reloj
 
-ESTADOS_CON_REEMPLAZO = frozenset({"RECHAZADA", "GLOSADA", "GLOSADA_PARCIAL"})
+ESTADOS_CON_REEMPLAZO = frozenset({"RECHAZADA", "GLOSADA"})
 ESTADOS_CON_NOTA = frozenset({"FACTURADA", "RECHAZADA", "GLOSADA", "GLOSADA_PARCIAL"})
+# Orden en que se nombran los estados permitidos en un rechazo.
+_ORDEN_ESTADOS = ("FACTURADA", "RECHAZADA", "GLOSADA", "GLOSADA_PARCIAL")
+_OPERACION_REEMPLAZO = "el comprobante de reemplazo solo se emite"
+_OPERACION_NOTA = "la nota de crédito o débito solo se registra"
+_CUANDO_MAS_SE_REEMPLAZA = (
+    ", si el validador observó el lote de la cuenta o, en Facturada, si el comprobante ya no "
+    "refleja la cuenta"
+)
 TIPOS_NOTA = frozenset({"C", "D"})
 MOTIVOS_NOTA = frozenset({"R", "A", "D"})
 
@@ -120,6 +134,8 @@ class DocumentosPagoCuenta:
     vigente: ComprobanteVigente
     nota: NotaDocumento | None
     reemplazados: list[ComprobanteReemplazado] = field(default_factory=list)
+    # El comprobante vigente ya no refleja lo que hoy factura la cuenta.
+    desfasado: bool = False
 
 
 class RepositorioDocumentosPago(Protocol):
@@ -138,21 +154,29 @@ class RepositorioDocumentosPago(Protocol):
         ...
 
 
+def _estados_permitidos(permitidos: frozenset[str], con_correccion: bool) -> str:
+    nombres = [nombre_estado(estado) for estado in _ORDEN_ESTADOS if estado in permitidos]
+    texto = ", ".join(nombres[:-1]) + " o " + nombres[-1]
+    return texto + (_CUANDO_MAS_SE_REEMPLAZA if con_correccion else "")
+
+
 async def _estado_exigido(
     estado_cuenta: RepositorioEstadoCuenta,
     cuenta_medica_id: int,
     permitidos: frozenset[str],
+    operacion: str,
     con_correccion: bool = False,
 ) -> str:
     estado = await estado_cuenta.obtener_estado(cuenta_medica_id)
     if estado is None:
-        raise ErrorCuentaInexistenteDocumento(f"No existe la cuenta {cuenta_medica_id}.")
+        raise ErrorCuentaInexistenteDocumento("No existe la cuenta.")
     admitido = estado in permitidos
     if con_correccion:
         admitido = await admite_correccion(estado_cuenta, cuenta_medica_id, admitido)
     if not admitido:
         raise ErrorEstadoNoAdmiteDocumento(
-            f"La cuenta {cuenta_medica_id} esta en estado {estado!r}."
+            f"La cuenta está en estado {nombre_estado(estado)}: {operacion} en estado "
+            f"{_estados_permitidos(permitidos, con_correccion)}."
         )
     return estado
 
@@ -160,9 +184,9 @@ async def _estado_exigido(
 def _validar_nota(datos: DatosNota) -> None:
     errores: list[str] = []
     if datos.tipo not in TIPOS_NOTA:
-        errores.append("tipo de nota fuera del dominio (C o D)")
+        errores.append("el tipo de nota no es válido")
     if datos.motivo not in MOTIVOS_NOTA:
-        errores.append("motivo fuera del dominio (R, A o D)")
+        errores.append("el motivo de la nota no es válido")
     if datos.monto <= 0:
         errores.append("el monto debe ser mayor que cero")
     if errores:
@@ -173,26 +197,37 @@ def _validar_monto_nota(datos: DatosNota, vigente: ComprobanteVigente) -> None:
     # Solo se compara cuando se conoce el valor de venta del comprobante.
     if vigente.valor_venta is not None and datos.monto > vigente.valor_venta:
         raise ErrorNotaInvalida(
-            f"El monto de la nota ({datos.monto}) supera el valor de venta del "
-            f"comprobante ({vigente.valor_venta})."
+            f"El monto de la nota (S/ {datos.monto:.2f}) supera el valor de venta del "
+            f"comprobante (S/ {vigente.valor_venta:.2f})."
         )
 
 
 class ConsultarDocumentosPago:
-    def __init__(self, repositorio: RepositorioDocumentosPago) -> None:
+    def __init__(
+        self,
+        repositorio: RepositorioDocumentosPago,
+        cotejo: RepositorioCotejoComprobante | None = None,
+    ) -> None:
         self._repositorio = repositorio
+        self._cotejo = cotejo
 
     async def ejecutar(self, cuenta_medica_id: int) -> DocumentosPagoCuenta | None:
-        return await self._repositorio.documentos(cuenta_medica_id)
+        documentos = await self._repositorio.documentos(cuenta_medica_id)
+        if documentos is None or self._cotejo is None:
+            return documentos
+        cotejo = await self._cotejo.cotejar(cuenta_medica_id)
+        return replace(documentos, desfasado=cotejo.desfasado)
 
 
 @dataclass(frozen=True, slots=True)
 class EmisionPse:
     """Objeto de parametros (GUIA_ESTILO_CODIGO.md, Seccion 2.2): lo que
-    hace falta para pedir un comprobante al PSE."""
+    hace falta para pedir un comprobante al PSE; con `cotejo`, el reemplazo
+    sabe si el comprobante vigente quedo desfasado."""
 
     comprobantes: RepositorioComprobantePago
     emisor: EmisorPse
+    cotejo: RepositorioCotejoComprobante | None = None
 
 
 class RegistrarNotaDocumento:
@@ -212,10 +247,12 @@ class RegistrarNotaDocumento:
         self._reloj = reloj
 
     async def ejecutar(self, cuenta_medica_id: int, datos: DatosNota, actor: str) -> NotaDocumento:
-        await _estado_exigido(self._estado_cuenta, cuenta_medica_id, ESTADOS_CON_NOTA)
+        await _estado_exigido(
+            self._estado_cuenta, cuenta_medica_id, ESTADOS_CON_NOTA, _OPERACION_NOTA
+        )
         documentos = await self._repositorio.documentos(cuenta_medica_id)
         if documentos is None:
-            raise ErrorSinComprobante(f"La cuenta {cuenta_medica_id} no tiene comprobante.")
+            raise ErrorSinComprobante("La cuenta no tiene comprobante.")
         if documentos.nota is not None:
             raise ErrorNotaYaRegistrada("El comprobante ya tiene una nota registrada.")
         _validar_nota(datos)
@@ -277,21 +314,30 @@ class ReemplazarComprobantePago:
         self._repositorio = repositorio
         self._comprobantes = emision.comprobantes
         self._emisor = emision.emisor
+        self._cotejo = emision.cotejo
         self._estado_cuenta = estado_cuenta
         self._registro_eventos = registro_eventos
         self._reloj = reloj
 
     async def ejecutar(self, cuenta_medica_id: int, motivo: str, actor: str) -> ComprobanteVigente:
-        # Tambien si el validador observo su lote: sin el reemplazo la cuenta
-        # corregida no entra al lote nuevo (comprobante desfasado).
+        # Tambien si el validador observo su lote: sin reemplazo no entra al lote nuevo.
+        permitidos = await estados_con_reemplazo(
+            ESTADOS_CON_REEMPLAZO, self._cotejo, self._estado_cuenta, cuenta_medica_id
+        )
+        if permitidos is None:
+            raise ErrorEstadoNoAdmiteDocumento(REEMPLAZO_INNECESARIO)
         await _estado_exigido(
-            self._estado_cuenta, cuenta_medica_id, ESTADOS_CON_REEMPLAZO, con_correccion=True
+            self._estado_cuenta,
+            cuenta_medica_id,
+            permitidos,
+            _OPERACION_REEMPLAZO,
+            con_correccion=True,
         )
         if not motivo.strip():
             raise ErrorNotaInvalida("El motivo del reemplazo es obligatorio.")
         documentos = await self._repositorio.documentos(cuenta_medica_id)
         if documentos is None:
-            raise ErrorSinComprobante(f"La cuenta {cuenta_medica_id} no tiene comprobante.")
+            raise ErrorSinComprobante("La cuenta no tiene comprobante.")
         if documentos.nota is not None:
             raise ErrorComprobanteConNota(
                 "El comprobante tiene una nota registrada: no se reemplaza."

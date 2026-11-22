@@ -24,6 +24,8 @@ class AvisoRespuesta(BaseModel):
     numero_lote: str | None
     atendido: bool
     repeticiones: int
+    actor: str | None = None
+    marcable: bool = False
 
     @staticmethod
     def desde_valor(valor: Aviso) -> AvisoRespuesta:

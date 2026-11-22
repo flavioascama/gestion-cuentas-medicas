@@ -46,8 +46,8 @@ def validar_sustento(sustento: str) -> str:
     limpio = sustento.strip()
     if len(limpio) < LONGITUD_MINIMA_SUSTENTO:
         raise ErrorSustentoInsuficiente(
-            "El registro en contingencia exige su sustento (control C-18): describa la "
-            f"constancia obtenida en al menos {LONGITUD_MINIMA_SUSTENTO} caracteres."
+            "El registro en contingencia exige su sustento: describa la constancia "
+            f"obtenida en al menos {LONGITUD_MINIMA_SUSTENTO} caracteres."
         )
     return limpio
 
@@ -165,11 +165,11 @@ class RegistrarCoberturaContingencia:
     ) -> int:
         sustento_limpio = validar_sustento(sustento)
         if await self._acreditaciones.obtener_contexto_cuenta(cuenta_medica_id) is None:
-            raise ErrorCuentaNoEncontrada(f"No existe la cuenta medica {cuenta_medica_id}.")
+            raise ErrorCuentaNoEncontrada("No existe la cuenta.")
         if not await self._disponibilidad.cobertura(cuenta_medica_id):
             raise ErrorContingenciaNoHabilitada(
-                "El modo de contingencia de cobertura solo se habilita cuando la ultima "
-                "verificacion de esta cuenta agoto sus reintentos y no hay acreditacion."
+                "El modo de contingencia de cobertura solo se habilita cuando la última "
+                "verificación de esta cuenta agotó sus reintentos y no hay acreditación."
             )
         acreditacion_id = await self._acreditaciones.guardar_acreditacion(
             cuenta_medica_id=cuenta_medica_id,
@@ -225,12 +225,10 @@ class RevisarRegistroContingencia:
             None,
         )
         if registro is None:
-            raise ErrorRegistroContingenciaInexistente(
-                f"No existe el registro en contingencia {evento_id}."
-            )
+            raise ErrorRegistroContingenciaInexistente("No existe ese registro en contingencia.")
         if registro.estado_revision is not EstadoRevision.PENDIENTE:
             raise ErrorRegistroContingenciaYaRevisado(
-                f"El registro en contingencia {evento_id} ya fue revisado."
+                "Ese registro en contingencia ya fue revisado."
             )
         await self._observabilidad.eventos.registrar(
             Evento(

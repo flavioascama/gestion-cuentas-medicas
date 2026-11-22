@@ -1,9 +1,12 @@
-import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Fragment, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import type { Aviso } from "../../api/avisos";
+import { marcar_aviso_atendido, type Aviso } from "../../api/avisos";
+import { Boton } from "../../componentes_base/boton";
 import { ControlSegmentado, type OpcionSegmento } from "../../componentes_base/control_segmentado";
 import { IconoCampana } from "../../componentes_base/iconos_navegacion";
 import { Mensaje } from "../../componentes_base/mensaje";
+import { MensajeErrorMutacion } from "../../componentes_base/mensaje_error_mutacion";
 import { MigasPan } from "../../componentes_base/migas_pan";
 import { ConPaginacion } from "../../componentes_base/paginacion";
 import { usar_pagina_cliente } from "../../componentes_base/paginar";
@@ -11,6 +14,7 @@ import { usar_sesion } from "../../sesion/contexto_sesion";
 import { usar_ahora } from "../../utilidades/usar_ahora";
 import { describir_aviso } from "./catalogo_avisos";
 import { FilaAviso } from "./fila_aviso";
+import { tipo_aviso } from "./severidad_avisos";
 import { pendientes, recorrido_de_avisos, usar_avisos } from "./usar_avisos";
 import estilos from "./bandeja_avisos.module.css";
 
@@ -24,7 +28,7 @@ type Estado = "pendientes" | "atendidos" | "todos";
 type Tipo = "todos" | "critico" | "escalamiento" | "aviso";
 
 function contar(avisos: Aviso[], severidad: string): number {
-  return avisos.filter((aviso) => aviso.severidad === severidad).length;
+  return avisos.filter((aviso) => tipo_aviso(aviso) === severidad).length;
 }
 
 function filtrar(avisos: Aviso[], estado: Estado, tipo: Tipo): Aviso[] {
@@ -32,7 +36,7 @@ function filtrar(avisos: Aviso[], estado: Estado, tipo: Tipo): Aviso[] {
     estado === "todos"
       ? avisos
       : avisos.filter((aviso) => aviso.atendido === (estado === "atendidos"));
-  return tipo === "todos" ? por_estado : por_estado.filter((aviso) => aviso.severidad === tipo);
+  return tipo === "todos" ? por_estado : por_estado.filter((aviso) => tipo_aviso(aviso) === tipo);
 }
 
 function Encabezado() {
@@ -91,6 +95,24 @@ function Filtros({
   );
 }
 
+// Para los avisos que nada resuelve solo: queda registrado quien lo marco.
+function MarcarAtendido({ aviso }: { aviso: Aviso }) {
+  const cliente_consultas = useQueryClient();
+  const mutacion = useMutation({
+    mutationFn: () => marcar_aviso_atendido(aviso.evento_id),
+    onSuccess: () => void cliente_consultas.invalidateQueries({ queryKey: ["avisos"] }),
+  });
+  if (!aviso.marcable || aviso.atendido) return null;
+  return (
+    <div className={estilos.accion_aviso}>
+      <Boton variante="terciario" onClick={() => mutacion.mutate()} disabled={mutacion.isPending}>
+        Marcar como atendido
+      </Boton>
+      <MensajeErrorMutacion error={mutacion.error} texto_por_defecto="No se pudo marcar." />
+    </div>
+  );
+}
+
 function ListaAvisos({ avisos, al_abrir }: { avisos: Aviso[]; al_abrir: (aviso: Aviso) => void }) {
   const ahora = usar_ahora();
   const { pagina_actual, total_paginas, filas_pagina, set_pagina } = usar_pagina_cliente(avisos);
@@ -108,7 +130,10 @@ function ListaAvisos({ avisos, al_abrir }: { avisos: Aviso[]; al_abrir: (aviso: 
       >
         <div className={estilos.lista}>
           {filas_pagina.map((aviso) => (
-            <FilaAviso key={aviso.evento_id} aviso={aviso} ahora={ahora} al_abrir={al_abrir} />
+            <Fragment key={aviso.evento_id}>
+              <FilaAviso aviso={aviso} ahora={ahora} al_abrir={al_abrir} />
+              <MarcarAtendido aviso={aviso} />
+            </Fragment>
           ))}
         </div>
       </ConPaginacion>
@@ -145,7 +170,9 @@ export function BandejaAvisos() {
           set_tipo(nuevo_tipo);
         }}
       />
-      {consulta.isError ? <Mensaje tipo="error" texto="No se pudo obtener los avisos." /> : null}
+      {consulta.isError ? (
+        <Mensaje tipo="error" texto="No se pudieron obtener los avisos." />
+      ) : null}
       {consulta.isPending ? (
         <p className={estilos.vacio}>Cargando avisos…</p>
       ) : (

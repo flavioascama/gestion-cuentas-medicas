@@ -15,6 +15,7 @@ from app.dominio.acceso.errores import (
     CuentaBloqueadaError,
     NombreUsuarioDuplicadoError,
     NoPuedeCambiarSusRolesError,
+    NoPuedeRestablecerSuClaveError,
     RolesRequeridosError,
     UsuarioNoEncontradoError,
 )
@@ -93,7 +94,7 @@ class IniciarSesion:
                 assert usuario.id is not None, "Un usuario ya persistido siempre tiene id"
                 await self._registrar_intento_fallido(usuario.id, ahora)
             await self._registrar_rechazo(nombre_usuario, usuario, motivo)
-            raise CredencialesInvalidasError("Nombre de usuario o clave incorrectos.")
+            raise CredencialesInvalidasError("Nombre de usuario o contraseña incorrectos.")
         assert usuario is not None, "Sin motivo de rechazo, el usuario existe"
 
         assert usuario.id is not None, "Un usuario ya persistido siempre tiene id"
@@ -299,6 +300,40 @@ class ActualizarUsuario:
             activo is not None and activo != actual.activo
         ):
             raise NoPuedeCambiarSusRolesError()
+
+
+class RestablecerClaveUsuario:
+    """CU-18: el administrador pone una clave temporal a otro usuario. La
+    persona debe cambiarla en su siguiente ingreso y se levanta su bloqueo
+    por intentos fallidos. El evento deja quien lo hizo y sobre quien, sin
+    la clave."""
+
+    def __init__(
+        self,
+        repositorio: RepositorioUsuarios,
+        verificador: VerificadorClave,
+        registro_eventos: RegistroEventos,
+    ) -> None:
+        self._repositorio = repositorio
+        self._verificador = verificador
+        self._registro_eventos = registro_eventos
+
+    async def ejecutar(self, usuario_id: int, clave: str, actor: str) -> Usuario:
+        usuario = await self._repositorio.obtener_por_id(usuario_id)
+        if usuario is None:
+            raise UsuarioNoEncontradoError(usuario_id)
+        if usuario.nombre_usuario == actor:
+            raise NoPuedeRestablecerSuClaveError()
+        validar_politica_clave(clave)
+        await self._repositorio.restablecer_clave(usuario_id, self._verificador.generar_hash(clave))
+        await _registrar_administracion(
+            self._registro_eventos,
+            usuario,
+            "CLAVE_RESTABLECIDA",
+            actor,
+            {"nombre_usuario": usuario.nombre_usuario},
+        )
+        return usuario
 
 
 class ListarUsuarios:

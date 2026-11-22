@@ -107,14 +107,3 @@
 .motivo_pendiente {
   color: var(--color_advertencia);
 }
-
-.detalle_tecnico {
-  margin-top: var(--espacio_4);
-}
-
-.detalle_tecnico > summary {
-  cursor: pointer;
-  font-size: var(--tamano_metadato);
-  color: var(--color_texto_secundario);
-  margin-bottom: var(--espacio_2);
-}

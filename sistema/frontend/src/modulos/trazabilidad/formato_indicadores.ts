@@ -11,12 +11,12 @@ export function formatear_entero(valor: number): string {
   return new Intl.NumberFormat("es-PE").format(valor);
 }
 
-// "202609" -> "Set 2026": gerencia lee meses, no el codigo AAAAMM que
-// usa la trama TEDEF.
+// "202609" -> "Set-26": marca corta del eje; el resto del panel usa
+// formatear_periodo ("Setiembre-26").
 export function etiqueta_periodo(periodo: string): string {
   const mes = Number(periodo.slice(4, 6));
   if (periodo.length !== 6 || mes < 1 || mes > 12) return periodo;
-  return `${_MESES[mes - 1]} ${periodo.slice(0, 4)}`;
+  return `${_MESES[mes - 1]}-${periodo.slice(2, 4)}`;
 }
 
 // Las duraciones reales van de segundos a dias: con una unidad fija

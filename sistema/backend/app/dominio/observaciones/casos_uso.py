@@ -13,11 +13,14 @@ from app.dominio.acceso.entidades import NombreRol, Usuario
 from app.dominio.acceso.puertos import RepositorioUsuarios
 from app.dominio.observaciones.entrega import ConsultaEntregas, con_entrega
 from app.dominio.observaciones.errores import (
+    ErrorMontoObservadoExcedeFacturado,
+    ErrorMontoObservadoNoValido,
     ErrorMotivoInexistente,
     ErrorObservacionDeOtroResponsable,
     ErrorObservacionInexistente,
     ErrorObservacionYaRespondida,
     ErrorResponsableNoValido,
+    ErrorRespuestaConComprobanteDesfasado,
 )
 from app.dominio.observaciones.puertos import RepositorioCatalogoMotivos, RepositorioObservaciones
 from app.dominio.observaciones.valores import (
@@ -33,6 +36,7 @@ from app.dominio.observaciones.valores import (
 from app.dominio.orquestacion.motor import validar_transicion
 from app.dominio.orquestacion.puertos import RepositorioEstadoCuenta
 from app.dominio.orquestacion.valores import TipoTransicion
+from app.dominio.pse.puertos import RepositorioCotejoComprobante
 from app.dominio.puertos_comunes import Evento, Observabilidad, Reloj
 
 # Una cuenta ya glosada (total o parcial) puede recibir otra observacion
@@ -40,6 +44,46 @@ from app.dominio.puertos_comunes import Evento, Observabilidad, Reloj
 # no define una y el estado ya es el que corresponde.
 _ESTADOS_GLOSADOS = frozenset({"GLOSADA", "GLOSADA_PARCIAL"})
 TIPO_EVENTO_OBSERVACION_ADICIONAL = "OBSERVACION_ADICIONAL"
+_ETIQUETA_ROL = {NombreRol.ANALISTA: "Analista", NombreRol.AUDITOR: "Auditor"}
+
+
+async def _exigir_dentro_de_lo_facturado(
+    repositorio: RepositorioObservaciones, datos: DatosRegistroObservacion
+) -> None:
+    # La glosa total puede ir sin monto; la parcial lo exige (tercera
+    # auditoria, medio 1). Sin el monto del comprobante no hay que comparar.
+    monto = datos.monto_observado
+    if monto is None:
+        if datos.es_parcial:
+            raise ErrorMontoObservadoNoValido("Una glosa parcial debe indicar el monto observado.")
+        return
+    if monto <= 0:
+        raise ErrorMontoObservadoNoValido("El monto observado debe ser mayor que S/ 0.00.")
+    facturado = await repositorio.total_facturado(datos.cuenta_medica_id)
+    if facturado is not None and monto > facturado:
+        raise ErrorMontoObservadoExcedeFacturado(monto, facturado)
+    if facturado is not None and datos.es_parcial and monto == facturado:
+        raise ErrorMontoObservadoNoValido(
+            f"Una glosa parcial debe ser menor que el total facturado de la cuenta "
+            f"(S/ {facturado:,.2f}): por S/ {monto:,.2f} regístrela como glosa total."
+        )
+
+
+def _exigir_responsable(observacion: Observacion, respondedor: Respondedor | None) -> None:
+    """Con responsable asignado, solo esa persona responde; sin el, quien
+    tenga el rol responsable (la misma regla de la pantalla)."""
+    asignado = observacion.responsable_usuario_id
+    if asignado is not None:
+        if respondedor is None or respondedor.usuario_id != asignado:
+            raise ErrorObservacionDeOtroResponsable(
+                "La observación está asignada a otra persona: la responde ella."
+            )
+        return
+    if respondedor is not None and observacion.responsable_rol not in respondedor.roles:
+        etiqueta = _ETIQUETA_ROL.get(observacion.responsable_rol, observacion.responsable_rol)
+        raise ErrorObservacionDeOtroResponsable(
+            f"La observación la responde una persona con el rol {etiqueta}."
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -104,9 +148,9 @@ class RegistrarObservacion:
         motivo = await self._catalogo.obtener(datos.motivo_codigo)
         if motivo is None:
             raise ErrorMotivoInexistente(
-                f"El motivo {datos.motivo_codigo!r} no existe en el catalogo vigente."
+                f"El motivo {datos.motivo_codigo!r} no existe en el catálogo vigente."
             )
-
+        await _exigir_dentro_de_lo_facturado(self._repositorio, datos)
         estado_actual = await self._estado_cuenta.obtener_estado(datos.cuenta_medica_id)
         paso = _paso_de_registro(estado_actual, datos.es_parcial)
 
@@ -189,7 +233,7 @@ class AsignarResponsableObservacion:
     ) -> None:
         observacion = await self._repositorio.obtener(observacion_id)
         if observacion is None:
-            raise ErrorObservacionInexistente(f"No existe la observacion {observacion_id}.")
+            raise ErrorObservacionInexistente("No existe la observación.")
 
         naturaleza_final = naturaleza_corregida or observacion.naturaleza
         responsable_rol = ROL_RESPONSABLE_POR_NATURALEZA[naturaleza_final]
@@ -245,7 +289,12 @@ class ResponderObservacion:
     SUBSANADA (T-08), sea la respondida total o parcial: una parcial que
     llego sobre SUBSANADA la devolvio a GLOSADA y sin esto quedaria ahi.
     GLOSADA_PARCIAL no se mueve -- Tabla 58/65/66 solo definen GLOSADA_
-    PARCIAL -> LIQUIDADA_PARCIAL (T-10, CU-12, a cargo de tesoreria)."""
+    PARCIAL -> LIQUIDADA_PARCIAL (T-10, CU-12, a cargo de tesoreria).
+
+    Con `cotejo` (2026-11-21), la respuesta no sale mientras el comprobante
+    vigente no refleje la cuenta: en GLOSADA y GLOSADA_PARCIAL se pueden
+    cambiar procedimientos y productos, y antes hay que emitir el
+    comprobante de reemplazo."""
 
     def __init__(
         self,
@@ -253,11 +302,13 @@ class ResponderObservacion:
         estado_cuenta: RepositorioEstadoCuenta,
         observabilidad: Observabilidad,
         reloj: Reloj,
+        cotejo: RepositorioCotejoComprobante | None = None,
     ) -> None:
         self._repositorio = repositorio
         self._estado_cuenta = estado_cuenta
         self._observabilidad = observabilidad
         self._reloj = reloj
+        self._cotejo = cotejo
 
     async def ejecutar(
         self,
@@ -269,17 +320,11 @@ class ResponderObservacion:
     ) -> None:
         observacion = await self._repositorio.obtener(observacion_id)
         if observacion is None:
-            raise ErrorObservacionInexistente(f"No existe la observacion {observacion_id}.")
+            raise ErrorObservacionInexistente("No existe la observación.")
         if observacion.estado == "RESPONDIDA":
-            raise ErrorObservacionYaRespondida(
-                f"La observacion {observacion_id} ya tiene una respuesta registrada."
-            )
-        # Con responsable asignado, solo esa persona responde; sin el, rige el rol.
-        asignado = observacion.responsable_usuario_id
-        if asignado is not None and (respondedor is None or respondedor.usuario_id != asignado):
-            raise ErrorObservacionDeOtroResponsable(
-                "La observacion esta asignada a otra persona: la responde ella."
-            )
+            raise ErrorObservacionYaRespondida("La observación ya tiene una respuesta registrada.")
+        _exigir_responsable(observacion, respondedor)
+        await self._exigir_comprobante_al_dia(observacion.cuenta_medica_id)
         usuario_origen = respondedor.nombre_usuario if respondedor is not None else None
 
         ahora = self._reloj.ahora()
@@ -308,6 +353,10 @@ class ResponderObservacion:
                 usuario_origen=usuario_origen,
             )
         )
+
+    async def _exigir_comprobante_al_dia(self, cuenta_medica_id: int) -> None:
+        if self._cotejo is not None and (await self._cotejo.cotejar(cuenta_medica_id)).desfasado:
+            raise ErrorRespuestaConComprobanteDesfasado()
 
     async def _quedan_otras_abiertas(self, observacion: Observacion) -> bool:
         # La cuenta sigue glosada mientras otra observacion espere respuesta.

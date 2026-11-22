@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencias import obtener_reloj, requiere_rol
@@ -17,6 +17,7 @@ from app.api.dependencias_cpms import (
 )
 from app.api.esquemas_cpms import (
     ParametrosSugerenciaCpms,
+    ProcedimientoCatalogoCpmsRespuesta,
     ProcedimientoPorCodificarRespuesta,
     RespuestaCatalogoCpmsCargado,
     RespuestaProcedimientoConfirmado,
@@ -27,6 +28,7 @@ from app.api.esquemas_cpms import (
     VersionCpmsRespuesta,
 )
 from app.api.serializacion import campos
+from app.compartido.archivo_catalogo import ErrorArchivoCatalogoInvalido, decodificar_xlsx
 from app.compartido.errores import ErrorAplicacion
 from app.dominio.acceso.entidades import NombreRol
 from app.dominio.acceso.puertos import CargaSesion
@@ -39,6 +41,7 @@ from app.dominio.cpms.casos_uso import (
     QuitarProcedimiento,
     SugerirCodigoCpms,
 )
+from app.dominio.cpms.normalizacion import normalizar
 from app.dominio.cpms.por_codificar import (
     ErrorProcedimientoPorCodificarInexistente,
     ListarProcedimientosPorCodificar,
@@ -46,7 +49,7 @@ from app.dominio.cpms.por_codificar import (
 from app.dominio.cpms.puertos import ErrorCodigoCpmsInexistente, ErrorProcedimientoInvalido
 from app.dominio.cpms.valores import FiltrosSugerencia
 from app.dominio.puertos_comunes import Reloj
-from app.infraestructura.cpms.cargar_catalogo_cpms import CargarCatalogoCpms, ErrorSinArchivosCpms
+from app.infraestructura.cpms.cargar_catalogo_cpms import CargarCatalogoCpms
 from app.infraestructura.persistencia.base import obtener_sesion
 from app.infraestructura.persistencia.repositorio_cpms_sql import (
     ErrorRepositorioCpms,
@@ -199,6 +202,42 @@ async def listar_versiones_cpms(
     return [VersionCpmsRespuesta.desde_valor(v) for v in versiones]
 
 
+_MAXIMO_BUSQUEDA_CATALOGO = 20
+
+
+@router.get(
+    "/catalogo-cpms/procedimientos",
+    response_model=list[ProcedimientoCatalogoCpmsRespuesta],
+)
+async def buscar_procedimientos_catalogo_cpms(
+    buscar: str = Query(default="", max_length=100),
+    _actor: CargaSesion = Depends(_SOLO_ADMINISTRADOR),
+    sesion: AsyncSession = Depends(obtener_sesion),
+) -> list[ProcedimientoCatalogoCpmsRespuesta]:
+    """Para que el administrador compruebe que un procedimiento esta en la
+    version vigente: por codigo o nombre, sin distinguir mayusculas ni tildes."""
+    texto = normalizar(buscar)
+    if not texto:
+        return []
+    repositorio = RepositorioCpmsSql(sesion)
+    try:
+        version_id, _ = await repositorio.version_vigente()
+    except ErrorRepositorioCpms:
+        return []
+    encontrados = sorted(
+        (
+            p
+            for p in await repositorio.listar_procedimientos(version_id)
+            if texto in normalizar(p.codigo) or texto in normalizar(p.denominacion)
+        ),
+        key=lambda p: p.codigo,
+    )
+    return [
+        ProcedimientoCatalogoCpmsRespuesta(codigo=p.codigo, nombre=p.denominacion)
+        for p in encontrados[:_MAXIMO_BUSQUEDA_CATALOGO]
+    ]
+
+
 @router.post(
     "/catalogo-cpms/versiones",
     response_model=RespuestaCatalogoCpmsCargado,
@@ -210,10 +249,13 @@ async def cargar_catalogo_cpms(
     _actor: CargaSesion = Depends(_SOLO_ADMINISTRADOR),
 ) -> RespuestaCatalogoCpmsCargado:
     try:
-        resultado = await caso_uso.ejecutar(solicitud.etiqueta)
-    except ErrorSinArchivosCpms as error:
+        contenido = decodificar_xlsx(solicitud.nombre_archivo, solicitud.contenido_base64)
+        resultado = await caso_uso.ejecutar(solicitud.etiqueta, solicitud.nombre_archivo, contenido)
+    except ErrorArchivoCatalogoInvalido as error:
         raise ErrorAplicacion(
-            "SIN_ARCHIVOS_CPMS", str(error), estado_http=status.HTTP_409_CONFLICT
+            "ARCHIVO_CATALOGO_INVALIDO",
+            str(error),
+            estado_http=status.HTTP_422_UNPROCESSABLE_ENTITY,
         ) from error
     return RespuestaCatalogoCpmsCargado(
         version_id=resultado.version_id, etiqueta=resultado.etiqueta, conteo=resultado.conteo

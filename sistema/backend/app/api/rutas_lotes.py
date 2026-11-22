@@ -128,7 +128,7 @@ async def obtener_lote(
     if lote is None:
         raise ErrorAplicacion(
             "LOTE_NO_ENCONTRADO",
-            f"No existe el lote {lote_id}.",
+            "No existe el lote.",
             estado_http=status.HTTP_404_NOT_FOUND,
         )
     return DetalleLoteRespuesta.desde_valor(lote)
@@ -144,7 +144,7 @@ async def obtener_prevalidacion_lote(
     if informe is None:
         raise ErrorAplicacion(
             "PREVALIDACION_NO_ENCONTRADA",
-            f"El lote {lote_id} no tiene informe de prevalidacion persistido.",
+            "El lote no tiene informe de prevalidación.",
             estado_http=status.HTTP_404_NOT_FOUND,
         )
     return InformePrevalidacionRespuesta.desde_valor(informe)
@@ -263,7 +263,7 @@ async def descargar_archivo_s01_lote(
     if ruta is None:
         raise ErrorAplicacion(
             "ARCHIVO_S01_NO_DISPONIBLE",
-            f"El lote {lote_id} todavia no tiene un archivo .S01 obtenido del validador.",
+            "El lote todavía no tiene el archivo de transmisión que entrega el validador.",
             estado_http=status.HTTP_404_NOT_FOUND,
         )
     local = ruta_local_s01(ruta)

@@ -17,7 +17,7 @@ class SolicitudRegistroObservacion(BaseModel):
     motivo_codigo: str = Field(min_length=1, max_length=10)
     es_parcial: bool
     detalle_campo_objetado: str | None = Field(default=None, max_length=500)
-    monto_observado: Decimal | None = Field(default=None, ge=0, max_digits=12, decimal_places=2)
+    monto_observado: Decimal | None = Field(default=None, max_digits=12, decimal_places=2)
 
 
 class RespuestaObservacionRegistrada(BaseModel):

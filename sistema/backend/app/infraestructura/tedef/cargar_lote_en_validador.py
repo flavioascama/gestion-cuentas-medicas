@@ -86,7 +86,7 @@ class CargarLoteEnValidador:
     ) -> None:
         lote = await self._d.repositorio.obtener_lote_para_carga(lote_id)
         if lote is None:
-            raise ErrorLoteNoCargable(f"No existe el lote {lote_id}.")
+            raise ErrorLoteNoCargable("No existe el lote.")
         # Justo antes de tocar el validador: el lote pudo cambiar en la cola.
         exigir_lote_vigente(await self._d.repositorio.vigencia_lote(lote_id))
         identidad = IdentidadLoteTedef(numero=lote.numero, periodo=lote.periodo)

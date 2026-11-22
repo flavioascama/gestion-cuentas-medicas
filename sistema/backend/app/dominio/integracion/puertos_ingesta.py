@@ -13,7 +13,7 @@ from typing import Protocol
 
 class ErrorIafasInexistente(Exception):
     def __init__(self, iafas_id: int) -> None:
-        super().__init__(f"No existe la IAFAS {iafas_id}.")
+        super().__init__("No existe la IAFAS.")
         self.iafas_id = iafas_id
 
 
@@ -59,6 +59,10 @@ class RepositorioIngestaCuentas(Protocol):
         genera identificacion_interna ("CTA-NNNNNN") y numero_historia_clinica
         a partir del id creado. Devuelve el id de la cuenta, en estado
         REGISTRADA. Lanza ErrorIafasInexistente si iafas_id no existe."""
+        ...
+
+    async def existe_cie10(self, codigo: str) -> bool:
+        """El codigo esta en el catalogo CIE-10."""
         ...
 
 

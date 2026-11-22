@@ -23,6 +23,11 @@ from decimal import Decimal, InvalidOperation
 from enum import StrEnum
 from typing import Any, Protocol
 
+from app.dominio.comunicaciones.motivo_no_aplicada import (
+    COMPROBANTE_NO_ENCONTRADO,
+    RECHAZOS_POR_MONTO,
+    motivo_no_aplicada,
+)
 from app.dominio.comunicaciones.sustento_respuesta import (
     linea_comprobante,
     sustento_con_comprobante,
@@ -54,6 +59,7 @@ _RECHAZOS_DE_NEGOCIO: tuple[type[Exception], ...] = (
     ErrorConformidadYaRegistrada,
     ErrorLiquidacionInexistente,
     ErrorPagoYaConciliado,
+    *RECHAZOS_POR_MONTO,
     ValueError,
 )
 TIPO_TRABAJO_MONITOREAR_COMUNICACIONES = "MONITOREAR_COMUNICACIONES_IAFAS"
@@ -131,6 +137,10 @@ class RepositorioComunicaciones(Protocol):
         """La cuenta del comprobante, vigente o reemplazado."""
         ...
 
+    async def estado_de_cuenta(self, cuenta_id: int) -> str | None:
+        """Para decir por que no se aplico una comunicacion."""
+        ...
+
     async def origen_de_observacion(self, observacion_id: int) -> ComunicacionRegistrada | None: ...
 
     async def marcar_respuesta_remitida(self, codigo: str, instante: datetime) -> None: ...
@@ -182,7 +192,7 @@ class ProcesarComunicacionIafas:
         cuenta_id = await self._repositorio.cuenta_de_documento(comunicacion.documento)
         if cuenta_id is None:
             await self._guardar(
-                comunicacion, None, ResultadoComunicacion.NO_APLICADA, "Comprobante desconocido."
+                comunicacion, None, ResultadoComunicacion.NO_APLICADA, COMPROBANTE_NO_ENCONTRADO
             )
             return ResultadoComunicacion.NO_APLICADA
         await self._evento(cuenta_id, "COMUNICACION_IAFAS_RECIBIDA", comunicacion, None)
@@ -190,7 +200,7 @@ class ProcesarComunicacionIafas:
             observacion_id = await self._aplicar(cuenta_id, comunicacion)
         except _RECHAZOS_DE_NEGOCIO as error:
             await self._repositorio.descartar_cambios_pendientes()
-            detalle = str(error) or type(error).__name__
+            detalle = motivo_no_aplicada(error, await self._repositorio.estado_de_cuenta(cuenta_id))
             await self._evento(cuenta_id, "COMUNICACION_IAFAS_NO_APLICADA", comunicacion, detalle)
             await self._guardar(comunicacion, cuenta_id, ResultadoComunicacion.NO_APLICADA, detalle)
             return ResultadoComunicacion.NO_APLICADA

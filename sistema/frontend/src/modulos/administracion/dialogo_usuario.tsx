@@ -39,9 +39,9 @@ export function DialogoUsuario({ usuario, al_cerrar }: Propiedades) {
     } else {
       mutacion_crear.mutate(
         {
-          nombre_usuario: formulario.nombre_usuario,
+          nombre_usuario: formulario.nombre_usuario.trim(),
           clave: formulario.clave,
-          nombres: formulario.nombres,
+          nombres: formulario.nombres.trim(),
           roles,
         },
         { onSuccess: al_cerrar },

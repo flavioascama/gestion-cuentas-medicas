@@ -19,6 +19,14 @@ export function registrar_liquidacion(
   });
 }
 
+// Mientras la cuenta siga como quedo al liquidarse y sin pago; queda en el historial.
+export function corregir_liquidacion(
+  cuenta_id: number,
+  monto_liquidado: string,
+): Promise<Liquidacion> {
+  return enviar<Liquidacion>("PUT", `/cuentas/${cuenta_id}/liquidacion`, { monto_liquidado });
+}
+
 export function conciliar_pago(
   cuenta_id: number,
   monto_pagado: string,

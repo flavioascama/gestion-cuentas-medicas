@@ -6,7 +6,7 @@ consultas nuevas, sin contraparte previa a esta fase."""
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date, datetime, time
 from decimal import Decimal
 from typing import Protocol
@@ -114,6 +114,10 @@ class DetalleCuenta:
     diagnosticos_secundarios_cie10: tuple[str, ...] = ()
     fecha_ingreso_hospitalario: date | None = None
     fecha_alta_hospitalaria: date | None = None
+    # Descripcion del catalogo CIE-10 de los diagnosticos de la cuenta, por codigo.
+    descripciones_cie10: dict[str, str] = field(default_factory=dict)
+    # Los nombres del asegurado se pueden corregir (correccion_asegurado.py).
+    asegurado_corregible: bool = False
 
 
 class RepositorioCuentasConsulta(Protocol):
@@ -156,6 +160,9 @@ class ResumenLote:
     monto_total: Decimal
     # CU-05: se agoto la ventana de monitoreo sin respuesta de la IAFAS.
     monitoreo_excedido: bool = False
+    # Igual que en el detalle (vigencia_lote.py).
+    vigente: bool = True
+    motivo_desactualizado: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -176,6 +183,10 @@ class DetalleLote:
     monitoreo_excedido: bool = False
     # CARGADO_VALIDADOR sin trabajo de validacion en curso.
     validacion_reintentable: bool = False
+    # Un lote en curso que dejo de reflejar sus cuentas (vigencia_lote.py);
+    # el motivo, dicho en una frase, solo si no es vigente.
+    vigente: bool = True
+    motivo_desactualizado: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

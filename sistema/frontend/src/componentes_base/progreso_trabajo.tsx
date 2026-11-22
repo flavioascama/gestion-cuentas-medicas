@@ -4,6 +4,15 @@ import { obtener_trabajo, type DetalleTrabajo } from "../api/trabajos";
 import { formatear_duracion } from "../utilidades/formato";
 import { resolver_estado } from "./mapa_estados";
 
+// Como se nombra cada estado de la operacion ante el usuario.
+const _TEXTO_ESTADO: Record<string, string> = {
+  PENDIENTE: "En espera",
+  EN_PROCESO: "En curso",
+  COMPLETADO: "Completado",
+  AGOTADO: "No se completó",
+  REQUIERE_SESION: "Requiere el código de verificación",
+};
+
 // REQUIERE_SESION no es terminal: en cuanto el usuario resuelve la sesion
 // asistida (SesionPlataforma), el backend reactiva este mismo trabajo
 // a PENDIENTE por su cuenta (IniciarSesionPlataforma.ejecutar ->
@@ -42,8 +51,8 @@ export function ProgresoTrabajo({ trabajo_id, al_completar, texto_en_curso }: Pr
     if (consulta.data && consulta.data.estado === "COMPLETADO") al_completar?.(consulta.data);
   }, [consulta.data, al_completar]);
 
-  if (consulta.isPending) return <span>Consultando el estado del trabajo…</span>;
-  if (consulta.isError) return <span>No se pudo consultar el trabajo.</span>;
+  if (consulta.isPending) return <span>Consultando el estado de la operación…</span>;
+  if (consulta.isError) return <span>No se pudo consultar la operación.</span>;
 
   const trabajo = consulta.data;
   const transcurrido = formatear_duracion((ahora - new Date(trabajo.creado_en).getTime()) / 1000);
@@ -54,12 +63,11 @@ export function ProgresoTrabajo({ trabajo_id, al_completar, texto_en_curso }: Pr
       </span>
     );
   }
-  const definicion = resolver_estado(trabajo.estado);
+  const texto_estado = _TEXTO_ESTADO[trabajo.estado] ?? resolver_estado(trabajo.estado).texto;
 
   return (
     <span>
-      {definicion.texto}, {transcurrido}
-      {trabajo.error ? ` — ${trabajo.error}` : ""}
+      {texto_estado}, {transcurrido}
     </span>
   );
 }

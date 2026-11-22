@@ -16,6 +16,7 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencias import obtener_reloj, requiere_rol
+from app.api.nombres_actores import con_nombres_en_filas
 from app.api.serializacion import campos
 from app.compartido.errores import ErrorAplicacion
 from app.dominio.acceso.entidades import NombreRol
@@ -121,7 +122,9 @@ async def listar_actividad(
     """Registro del robot, lo mas reciente primero. Solo el administrador
     (pedido del usuario, 2026-11-18)."""
     actividad = await RepositorioNavegacionRobotSql(sesion).actividad(_MAXIMO_ACTIVIDAD)
-    return [ActividadRobotRespuesta.desde_valor(a) for a in actividad]
+    filas = [ActividadRobotRespuesta.desde_valor(a) for a in actividad]
+    await con_nombres_en_filas(sesion, filas, {"usuario": "usuario"})
+    return filas
 
 
 @router.get("/trabajos/{trabajo_id}/pasos", response_model=list[PasoRobotRespuesta])

@@ -8,6 +8,7 @@ import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import contains_eager, selectinload
 
+from app.dominio.integracion.correccion_asegurado import ESTADO_CORREGIBLE
 from app.dominio.integracion.puertos_consulta import (
     DetalleCuenta,
     ProcedimientoResumen,
@@ -17,8 +18,12 @@ from app.dominio.integracion.puertos_consulta import (
 )
 from app.dominio.orquestacion.valores import ESTADOS_TERMINALES
 from app.infraestructura.persistencia.modelos_catalogo_gtin import CatalogoGtinProductoModelo
+from app.infraestructura.persistencia.modelos_cie10 import Cie10CodigoModelo, Cie10VersionModelo
 from app.infraestructura.persistencia.modelos_farmacia import ProductoFacturadoModelo
 from app.infraestructura.persistencia.modelos_integracion import CuentaMedicaModelo, IafasModelo
+from app.infraestructura.persistencia.repositorio_ingesta_cuentas_sql import (
+    otras_cuentas_avanzadas,
+)
 
 
 def _procedimientos(cuenta: CuentaMedicaModelo) -> tuple[ProcedimientoResumen, ...]:
@@ -97,6 +102,7 @@ class RepositorioCuentasConsultaSql(RepositorioCuentasConsulta):
         cuenta = resultado.scalar_one_or_none()
         if cuenta is None:
             return None
+        secundarios = tuple(filter(None, (cuenta.diagnosticos_secundarios_cie10 or "").split(",")))
         return DetalleCuenta(
             id=cuenta.id,
             identificacion_interna=cuenta.identificacion_interna,
@@ -118,12 +124,29 @@ class RepositorioCuentasConsultaSql(RepositorioCuentasConsulta):
             atencion_origen_id=cuenta.atencion_origen_id,
             nombre_medico=cuenta.nombre_medico,
             colegiatura_medico=cuenta.colegiatura_medico,
-            diagnosticos_secundarios_cie10=tuple(
-                filter(None, (cuenta.diagnosticos_secundarios_cie10 or "").split(","))
-            ),
+            diagnosticos_secundarios_cie10=secundarios,
             fecha_ingreso_hospitalario=cuenta.fecha_ingreso_hospitalario,
             fecha_alta_hospitalaria=cuenta.fecha_alta_hospitalaria,
+            descripciones_cie10=await self._descripciones_cie10(
+                (cuenta.diagnostico_principal_cie10, *secundarios)
+            ),
+            asegurado_corregible=cuenta.estado == ESTADO_CORREGIBLE
+            and not await otras_cuentas_avanzadas(self._sesion, cuenta),
         )
+
+    async def _descripciones_cie10(self, codigos: tuple[str | None, ...]) -> dict[str, str]:
+        """Descripcion de cada codigo en la version vigente del catalogo."""
+        buscados = [c for c in codigos if c]
+        if not buscados:
+            return {}
+        version_id = sa.select(sa.func.max(Cie10VersionModelo.id)).scalar_subquery()
+        filas = await self._sesion.execute(
+            sa.select(Cie10CodigoModelo.codigo, Cie10CodigoModelo.descripcion).where(
+                Cie10CodigoModelo.cie10_version_id == version_id,
+                Cie10CodigoModelo.codigo.in_(buscados),
+            )
+        )
+        return {codigo: descripcion for codigo, descripcion in filas.all()}
 
     async def _productos(self, cuenta_medica_id: int) -> tuple[ProductoResumen, ...]:
         # Sin relationship() hacia CuentaMedicaModelo a proposito (Fase

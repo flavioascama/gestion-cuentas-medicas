@@ -15,6 +15,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Protocol
 
+from app.compartido.nombres_estados import nombre_estado
 from app.dominio.orquestacion.puertos import RepositorioEstadoCuenta
 from app.dominio.puertos_comunes import Evento, RegistroEventos
 
@@ -55,16 +56,15 @@ class RegistrarConformidadAuditoria:
     async def ejecutar(self, cuenta_medica_id: int, actor: str) -> None:
         estado = await self._estado_cuenta.obtener_estado(cuenta_medica_id)
         if estado is None:
-            raise ErrorCuentaInexistenteAuditoria(f"No existe la cuenta {cuenta_medica_id}.")
+            raise ErrorCuentaInexistenteAuditoria("No existe la cuenta.")
         if estado not in ESTADOS_EN_AUDITORIA:
             raise ErrorCuentaSinAuditoriaEnCurso(
-                f"La cuenta {cuenta_medica_id} esta en estado {estado!r}: no tiene una "
-                "auditoria en curso."
+                f"La cuenta está en estado {nombre_estado(estado)}: no tiene una "
+                "auditoría en curso."
             )
         if await self._conformidades.conformidad_vigente(cuenta_medica_id) is not None:
             raise ErrorConformidadYaRegistrada(
-                f"La conformidad de la auditoria de la cuenta {cuenta_medica_id} ya esta "
-                "registrada."
+                "La conformidad de la auditoría de la cuenta ya está registrada."
             )
         await self._registro_eventos.registrar(
             Evento(

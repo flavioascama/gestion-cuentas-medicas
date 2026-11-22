@@ -36,6 +36,7 @@ from app.dominio.pse.documentos import (
 from app.dominio.pse.puertos import EmisorPse, ErrorFaltaParaFacturar
 from app.dominio.puertos_comunes import Reloj
 from app.infraestructura.persistencia.base import obtener_sesion
+from app.infraestructura.persistencia.montos_comprobante_sql import RepositorioCotejoComprobanteSql
 from app.infraestructura.persistencia.registro_eventos_sql import RegistroEventosSql
 from app.infraestructura.persistencia.repositorio_comprobante_pago_sql import (
     RepositorioComprobantePagoSql,
@@ -89,6 +90,8 @@ class DocumentosPagoRespuesta(BaseModel):
     vigente: ComprobanteVigenteRespuesta
     nota: NotaDocumentoRespuesta | None
     reemplazados: list[ComprobanteReemplazadoRespuesta]
+    # El comprobante vigente ya no refleja la cuenta (2026-11-21).
+    desfasado: bool = False
 
     @staticmethod
     def desde_valor(valor: DocumentosPagoCuenta) -> DocumentosPagoRespuesta:
@@ -96,6 +99,7 @@ class DocumentosPagoRespuesta(BaseModel):
             vigente=ComprobanteVigenteRespuesta(**campos(valor.vigente)),
             nota=NotaDocumentoRespuesta(**campos(valor.nota)) if valor.nota else None,
             reemplazados=[ComprobanteReemplazadoRespuesta(**campos(r)) for r in valor.reemplazados],
+            desfasado=valor.desfasado,
         )
 
 
@@ -130,9 +134,9 @@ async def consultar_documentos_pago(
     sesion: AsyncSession = Depends(obtener_sesion),
     _actor: CargaSesion = Depends(_LECTURA),
 ) -> DocumentosPagoRespuesta | None:
-    documentos = await ConsultarDocumentosPago(RepositorioDocumentosPagoSql(sesion)).ejecutar(
-        cuenta_id
-    )
+    documentos = await ConsultarDocumentosPago(
+        RepositorioDocumentosPagoSql(sesion), RepositorioCotejoComprobanteSql(sesion)
+    ).ejecutar(cuenta_id)
     return DocumentosPagoRespuesta.desde_valor(documentos) if documentos else None
 
 
@@ -143,7 +147,9 @@ def construir_reemplazar(
 ) -> ReemplazarComprobantePago:
     return ReemplazarComprobantePago(
         RepositorioDocumentosPagoSql(sesion),
-        EmisionPse(RepositorioComprobantePagoSql(sesion), emisor),
+        EmisionPse(
+            RepositorioComprobantePagoSql(sesion), emisor, RepositorioCotejoComprobanteSql(sesion)
+        ),
         RepositorioEstadoCuentaSql(sesion),
         RegistroEventosSql(sesion),
         reloj,

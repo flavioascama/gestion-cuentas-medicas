@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { listar_iafas } from "../../api/iafas";
 import type { ResumenLote } from "../../api/lotes";
 import { Boton } from "../../componentes_base/boton";
@@ -14,7 +14,7 @@ import { TablaDatos, type ColumnaTabla } from "../../componentes_base/tabla_dato
 import { TituloPagina } from "../../componentes_base/titulo_pagina";
 import { usar_sesion } from "../../sesion/contexto_sesion";
 import { usar_estado_de_sesion } from "../../utilidades/estado_de_sesion";
-import { formatear_fecha_hora, formatear_monto } from "../../utilidades/formato";
+import { formatear_fecha_hora, formatear_monto, formatear_periodo } from "../../utilidades/formato";
 import { AccionEnvioSusalud } from "./accion_envio_susalud";
 import { ControlSusalud } from "./control_susalud";
 import { DialogoGenerarLote } from "./dialogo_generar_lote";
@@ -35,6 +35,21 @@ function usar_mapa_iafas(): Map<string, string> {
   return new Map((consulta_iafas.data ?? []).map((i) => [i.codigo, i.razon_social]));
 }
 
+function EstadoLote({ fila }: { fila: ResumenLote }) {
+  return (
+    <span className={estilos.estados}>
+      <EtiquetaEstado estado={fila.estado} />
+      {fila.monitoreo_excedido ? <EtiquetaEstado estado="EXCEDIDO" /> : null}
+      {/* Igual que el detalle: el lote ya no refleja sus cuentas. */}
+      {fila.vigente ? null : (
+        <span title={fila.motivo_desactualizado ?? undefined}>
+          <EtiquetaEstado estado="DESACTUALIZADO" />
+        </span>
+      )}
+    </span>
+  );
+}
+
 function construir_columnas(mapa_iafas: Map<string, string>): ColumnaTabla<ResumenLote>[] {
   return [
     {
@@ -47,7 +62,11 @@ function construir_columnas(mapa_iafas: Map<string, string>): ColumnaTabla<Resum
         </span>
       ),
     },
-    { clave: "periodo", encabezado: "Periodo" },
+    {
+      clave: "periodo",
+      encabezado: "Periodo",
+      formatear: (fila) => formatear_periodo(fila.periodo),
+    },
     {
       clave: "iafas_codigo",
       encabezado: "IAFAS",
@@ -56,12 +75,7 @@ function construir_columnas(mapa_iafas: Map<string, string>): ColumnaTabla<Resum
     {
       clave: "estado",
       encabezado: "Estado",
-      formatear: (fila) => (
-        <span className={estilos.estados}>
-          <EtiquetaEstado estado={fila.estado} />
-          {fila.monitoreo_excedido ? <EtiquetaEstado estado="EXCEDIDO" /> : null}
-        </span>
-      ),
+      formatear: (fila) => <EstadoLote fila={fila} />,
     },
     {
       clave: "cantidad_documentos",
@@ -97,7 +111,10 @@ function AccionGenerarLote({ al_generar }: { al_generar: (lote_id: number) => vo
       </Boton>
       {mostrar_dialogo ? (
         <DialogoGenerarLote
-          al_cerrar={() => set_mostrar_dialogo(false)}
+          al_cerrar={() => {
+            set_mostrar_dialogo(false);
+            void cliente_consultas.invalidateQueries({ queryKey: ["lotes"] });
+          }}
           al_generar_conforme={(lote_id) => {
             set_mostrar_dialogo(false);
             void cliente_consultas.invalidateQueries({ queryKey: ["lotes"] });
@@ -117,10 +134,22 @@ function coincide_busqueda_lote(fila: ResumenLote, busqueda: string): boolean {
 }
 
 // Pestana "Lotes": filtros, envio del periodo elegido y la tabla de lotes.
+// Filtros y busqueda de la bandeja. Se conservan al abrir un lote y volver;
+// el periodo que llega en la direccion (un aviso de SUSALUD) manda sobre
+// lo guardado.
+function usar_filtros_de_lotes() {
+  const periodo_pedido = useSearchParams()[0].get("periodo");
+  const filtros = usar_estado_de_sesion<Filtros>(
+    "lotes.filtros",
+    FILTROS_VACIOS,
+    periodo_pedido ? { ...FILTROS_VACIOS, periodo: periodo_pedido } : null,
+  );
+  const busqueda = usar_estado_de_sesion("lotes.busqueda", "", periodo_pedido ? "" : null);
+  return [filtros, busqueda] as const;
+}
+
 function PanelLotes({ al_abrir_lote }: { al_abrir_lote: (lote_id: number) => void }) {
-  // Se conservan al abrir un lote y volver a la bandeja.
-  const [filtros, set_filtros] = usar_estado_de_sesion<Filtros>("lotes.filtros", FILTROS_VACIOS);
-  const [busqueda, set_busqueda] = usar_estado_de_sesion("lotes.busqueda", "");
+  const [[filtros, set_filtros], [busqueda, set_busqueda]] = usar_filtros_de_lotes();
   const consulta = usar_bandeja_lotes({
     periodo: filtros.periodo || undefined,
     estado: filtros.estado || undefined,
@@ -174,6 +203,7 @@ function PanelLotes({ al_abrir_lote }: { al_abrir_lote: (lote_id: number) => voi
 export function BandejaLotes() {
   const navegar = useNavigate();
   const abrir_lote = (lote_id: number) => void navegar(`/lotes/${lote_id}`);
+  const periodo_pedido = useSearchParams()[0].get("periodo");
   // El reporte mensual tiene su propia pestana: antes quedaba debajo de
   // la tabla de lotes y se perdia al final de la pagina.
   const pestanas: DefinicionPestana[] = [
@@ -181,7 +211,7 @@ export function BandejaLotes() {
       id: "lotes",
       etiqueta: "Lotes",
       icono: IconoLotes,
-      contenido: <PanelLotes al_abrir_lote={abrir_lote} />,
+      contenido: <PanelLotes key={periodo_pedido ?? ""} al_abrir_lote={abrir_lote} />,
     },
     {
       id: "reporte_susalud",

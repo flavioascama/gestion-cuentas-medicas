@@ -28,6 +28,7 @@ from app.infraestructura.persistencia import (
     modelos_integracion,  # noqa: F401
     modelos_liquidacion,  # noqa: F401
     modelos_observaciones,  # noqa: F401
+    modelos_parametros_sistema,  # noqa: F401
     modelos_plataformas,  # noqa: F401
     modelos_prevalidacion,  # noqa: F401
     modelos_robot,  # noqa: F401

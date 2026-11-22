@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from datetime import date, time
 from decimal import Decimal
 
@@ -105,21 +106,43 @@ class DetalleCuentaRespuesta(BaseModel):
     diagnosticos_secundarios_cie10: list[str] = []
     fecha_ingreso_hospitalario: date | None = None
     fecha_alta_hospitalaria: date | None = None
+    # Descripcion del catalogo CIE-10 por codigo; vacia para tesoreria.
+    descripciones_cie10: dict[str, str] = {}
+    asegurado_corregible: bool = False
 
     @staticmethod
     def desde_valor(valor: DetalleCuenta) -> DetalleCuentaRespuesta:
-        excluidos = ("procedimientos", "productos", "diagnosticos_secundarios_cie10")
+        excluidos = (
+            "procedimientos",
+            "productos",
+            "diagnosticos_secundarios_cie10",
+            "descripciones_cie10",
+        )
         datos = {k: v for k, v in campos(valor).items() if k not in excluidos}
         return DetalleCuentaRespuesta(
             **datos,
             procedimientos=[ProcedimientoRespuesta(**campos(p)) for p in valor.procedimientos],
             productos=[ProductoRespuesta(**campos(p)) for p in valor.productos],
             diagnosticos_secundarios_cie10=list(valor.diagnosticos_secundarios_cie10),
+            descripciones_cie10=dict(valor.descripciones_cie10),
         )
 
 
 class RespuestaTrabajoEncolado(BaseModel):
     trabajo_id: int
+
+
+_DNI = "1"
+
+
+def error_numero_documento(tipo: str, numero: str) -> str | None:
+    """Tabla 2, campo 10 de la trama: el DNI lleva 8 digitos; los demas
+    documentos, no en blanco (el largo maximo lo pone el esquema)."""
+    if tipo == _DNI and not re.fullmatch(r"[0-9]{8}", numero):
+        return "El DNI debe tener exactamente 8 dígitos."
+    if not numero.strip():
+        return "Ingrese el número de documento."
+    return None
 
 
 class SolicitudNuevaCuenta(BaseModel):
@@ -141,6 +164,12 @@ class SolicitudBuscarAsegurado(BaseModel):
     # debe quedar en los registros de acceso.
     tipo_documento: str = Field(min_length=1, max_length=1)
     numero_documento: str = Field(min_length=1, max_length=15)
+
+
+class SolicitudCorregirAsegurado(BaseModel):
+    # Solo nombres y apellidos: el documento no se corrige.
+    nombres_asegurado: str = Field(min_length=1, max_length=150)
+    apellidos_asegurado: str = Field(min_length=1, max_length=150)
 
 
 class AseguradoRegistradoRespuesta(BaseModel):
@@ -190,7 +219,7 @@ class LoteDeCuentaRespuesta(BaseModel):
 
 
 class SolicitudDiagnostico(BaseModel):
-    codigo_cie10: str = Field(min_length=3, max_length=5)
+    codigo_cie10: str = Field(min_length=3, max_length=6)
 
 
 class RespuestaDiagnostico(BaseModel):

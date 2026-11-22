@@ -17,6 +17,7 @@ from app.api.esquemas_orquestacion import (
     RespuestaCorreccionReenvio,
     SolicitudCorreccionReenvio,
 )
+from app.api.mensajes_transicion import mensaje_operacion_no_disponible
 from app.compartido.errores import ErrorAplicacion
 from app.dominio.acceso.entidades import NombreRol
 from app.dominio.acceso.puertos import CargaSesion
@@ -42,7 +43,7 @@ async def obtener_rechazo_cuenta(
     if rechazo is None:
         raise ErrorAplicacion(
             "SIN_RECHAZO",
-            f"Ningun lote de la cuenta {cuenta_id} fue rechazado por la IAFAS.",
+            "Ningún lote de la cuenta fue rechazado por la IAFAS.",
             estado_http=status.HTTP_404_NOT_FOUND,
         )
     return RechazoCuentaRespuesta.desde_valor(rechazo)
@@ -61,7 +62,9 @@ async def corregir_cuenta_rechazada(
         )
     except ErrorTransicionNoDefinida as error:
         raise ErrorAplicacion(
-            "TRANSICION_NO_VALIDA", str(error), estado_http=status.HTTP_409_CONFLICT
+            "TRANSICION_NO_VALIDA",
+            mensaje_operacion_no_disponible(error),
+            estado_http=status.HTTP_409_CONFLICT,
         ) from error
     except ErrorComprobanteDesfasado as error:
         raise ErrorAplicacion(

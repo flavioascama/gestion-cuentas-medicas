@@ -43,7 +43,7 @@ class SolicitarSesionPlataforma:
 
     async def ejecutar(self, plataforma: str, solicitada_por: str) -> int:
         if plataforma not in PLATAFORMAS_VALIDAS:
-            raise ErrorPlataformaInvalida(f"Plataforma invalida: {plataforma!r}")
+            raise ErrorPlataformaInvalida(f"Plataforma inválida: {plataforma!r}")
 
         activa = await self._repositorio.obtener_activa(plataforma)
         if activa is not None:
@@ -80,12 +80,9 @@ class ResponderCaptcha:
     async def ejecutar(self, sesion_id: int, respuesta: str) -> None:
         sesion = await self._repositorio.obtener(sesion_id)
         if sesion is None:
-            raise ErrorSesionNoEncontrada(f"No existe la sesion {sesion_id}.")
+            raise ErrorSesionNoEncontrada("No existe esa sesión.")
         if sesion.estado != "ESPERANDO_CAPTCHA":
-            raise ErrorSesionPlataforma(
-                f"La sesion {sesion_id} no esta esperando un CAPTCHA "
-                f"(estado actual: {sesion.estado})."
-            )
+            raise ErrorSesionPlataforma("La sesión ya no está esperando el código de verificación.")
         await self._repositorio.registrar_respuesta(sesion_id, respuesta)
 
 

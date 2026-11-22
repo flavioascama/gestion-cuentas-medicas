@@ -39,6 +39,14 @@ class DefinicionAviso:
 
 TIPO_AVISO_TRABAJO_AGOTADO = "TRABAJO_AGOTADO"
 TIPO_AVISO_CORREO_POR_REVISAR = "CORREO_IAFAS_POR_REVISAR"
+# El resultado de una solicitud de anulacion, para quien la pidio.
+TIPOS_AVISO_ANULACION = frozenset({"ANULACION", "ANULACION_RECHAZADA"})
+# Los avisos que nada resuelve solo: quien los recibe los marca como
+# atendidos, y queda un evento con quien lo hizo.
+TIPOS_AVISO_MARCABLES = frozenset({"ACCESO_DENEGADO", "RUPTURA_CADENA_DETECTADA"}) | (
+    TIPOS_AVISO_ANULACION
+)
+TIPO_EVENTO_AVISO_ATENDIDO = "AVISO_MARCADO_ATENDIDO"
 
 _ANALISTA = NombreRol.ANALISTA
 _AUDITOR = NombreRol.AUDITOR
@@ -111,6 +119,12 @@ CATALOGO_AVISOS: dict[str, DefinicionAviso] = {
     "RUPTURA_CADENA_DETECTADA": DefinicionAviso(
         "Ruptura en la cadena de eventos", Severidad.CRITICO, frozenset({_JEFE, _ADMINISTRADOR})
     ),
+    # CU-13: solo quien pidio la anulacion recibe el resultado
+    # (destinatarios.py).
+    "ANULACION": DefinicionAviso("Anulación aprobada", Severidad.AVISO, frozenset({_ANALISTA})),
+    "ANULACION_RECHAZADA": DefinicionAviso(
+        "Anulación rechazada", Severidad.AVISO, frozenset({_ANALISTA})
+    ),
     # C-18: cada registro en modo de contingencia queda a revision del jefe.
     "CONTINGENCIA_COBERTURA_REGISTRADA": DefinicionAviso(
         "Cobertura registrada en contingencia, por revisar", Severidad.AVISO, frozenset({_JEFE})
@@ -124,7 +138,7 @@ CATALOGO_AVISOS: dict[str, DefinicionAviso] = {
     # que agoto sus reintentos (RNF-07); el analista lo recibe tambien,
     # porque es quien registra el resultado en contingencia (Tabla 46).
     TIPO_AVISO_TRABAJO_AGOTADO: DefinicionAviso(
-        "Falla del proceso de automatización",
+        "Operación sin completar",
         Severidad.CRITICO,
         frozenset({_ANALISTA, _JEFE, _ADMINISTRADOR}),
     ),
@@ -187,11 +201,16 @@ class EventoAviso:
     # responsable, que deciden quien lo ve (destinatarios.py).
     responsable_usuario_id: int | None = None
     responsable_rol: str | None = None
+    # El usuario que origino el evento (quien intento el acceso).
+    actor: str | None = None
 
 
 def clave_agrupacion(evento: EventoAviso) -> tuple[object, ...]:
     if evento.tipo_evento in _TIPOS_SIN_AGRUPAR:
         return (evento.evento_id,)
+    # Un acceso no permitido por cada usuario que lo intento.
+    if evento.tipo_evento == "ACCESO_DENEGADO":
+        return (evento.tipo_evento, evento.actor)
     # El envio a SUSALUD es por periodo (RI-16): un aviso por periodo, no
     # uno por cada lote del periodo.
     if familia_de(evento.tipo_evento) == "susalud":
@@ -220,3 +239,6 @@ class Aviso:
     numero_lote: str | None
     atendido: bool
     repeticiones: int
+    actor: str | None = None
+    # Si quien lo ve puede marcarlo como atendido.
+    marcable: bool = False

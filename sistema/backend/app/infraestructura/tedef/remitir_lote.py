@@ -14,6 +14,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 
 from app.compartido.huella import huella_sha256
+from app.compartido.nombres_estados import nombre_estado
 from app.compartido.rutas import ruta_local_s01
 from app.dominio.integracion.casos_uso import encolar_monitoreo_respuesta
 from app.dominio.integracion.puertos import (
@@ -137,11 +138,11 @@ class RemitirLote:
     async def _obtener_lote_verificado(self, lote_id: int) -> tuple[LoteParaRemitir, bytes]:
         lote = await self._repositorio.obtener_lote_para_remision(lote_id)
         if lote is None:
-            raise ErrorLoteNoRemisible(f"No existe el lote {lote_id}.")
+            raise ErrorLoteNoRemisible("No existe el lote.")
         if lote.estado != _ESTADO_VALIDADO:
             raise ErrorLoteNoRemisible(
-                f"El lote {lote_id} esta en estado {lote.estado!r}; "
-                f"solo se puede remitir un lote en estado {_ESTADO_VALIDADO!r}."
+                f"El lote {lote.numero} está en estado {nombre_estado(lote.estado)}; "
+                f"solo se puede remitir un lote en estado {nombre_estado(_ESTADO_VALIDADO)}."
             )
         # Antes de transferir: no se envia un lote que ya no refleja sus cuentas.
         exigir_lote_vigente(await self._repositorio.vigencia_lote(lote_id))
@@ -158,8 +159,8 @@ class RemitirLote:
             # (Regla 11 del plan v3): no se envia nada que no se pueda dar
             # por integro.
             raise ErrorLoteNoRemisible(
-                f"La huella SHA-256 del archivo en disco ({huella_en_disco}) no "
-                f"coincide con la registrada en el lote ({lote.sha256_s01})."
+                f"El archivo de transmisión del lote {lote.numero} no coincide con el que "
+                "entregó el validador."
             )
         return lote, contenido
 

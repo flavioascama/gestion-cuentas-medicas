@@ -33,7 +33,9 @@ export function FormularioNuevaCuenta({
           <Boton
             variante="primario"
             onClick={al_registrar}
-            disabled={registrando || formulario.falta_completar}
+            disabled={
+              registrando || formulario.falta_completar || formulario.diagnostico_sin_elegir
+            }
           >
             Registrar
           </Boton>

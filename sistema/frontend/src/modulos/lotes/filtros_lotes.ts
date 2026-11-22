@@ -25,8 +25,7 @@ export const OPCIONES_ESTADO_LOTE = [
 ];
 
 // AAAAMM (formato que ya entiende el backend) <-> AAAA-MM (formato que
-// exige <input type="month">): la misma conversion sirve para mostrar
-// el periodo de forma legible en el boton de SUSALUD.
+// exige <input type="month">).
 export function formatear_periodo_legible(periodo: string): string {
   if (periodo.length !== 6) return "";
   return `${periodo.slice(0, 4)}-${periodo.slice(4, 6)}`;

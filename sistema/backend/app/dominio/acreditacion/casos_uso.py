@@ -48,12 +48,12 @@ class SolicitarVerificacionCobertura:
     async def ejecutar(self, cuenta_medica_id: int, solicitado_por: str) -> int:
         contexto = await self._repositorio.obtener_contexto_cuenta(cuenta_medica_id)
         if contexto is None:
-            raise ErrorCuentaNoEncontrada(f"No existe la cuenta medica {cuenta_medica_id}.")
+            raise ErrorCuentaNoEncontrada("No existe la cuenta.")
         ya_acreditada = await self._repositorio.existe_acreditacion(cuenta_medica_id)
         if not admite_consulta(contexto, ya_acreditada):
             raise ErrorCuentaYaAcreditada(
-                f"La cobertura de la cuenta medica {cuenta_medica_id} ya no se puede volver "
-                "a consultar: la cuenta tiene comprobante o ya no esta registrada."
+                "La cobertura de la cuenta ya no se puede volver a consultar: la cuenta "
+                "tiene comprobante o ya no está registrada."
             )
         return await self._repositorio_trabajos.encolar(
             tipo=TIPO_TRABAJO_CONSULTAR_COBERTURA,
@@ -118,7 +118,7 @@ class VerificarCobertura:
         inicio = self._reloj.ahora()
         contexto = await self._repositorio.obtener_contexto_cuenta(cuenta_medica_id)
         if contexto is None:
-            raise ErrorCuentaNoEncontrada(f"No existe la cuenta medica {cuenta_medica_id}.")
+            raise ErrorCuentaNoEncontrada("No existe la cuenta.")
         ya_acreditada = await self._repositorio.existe_acreditacion(cuenta_medica_id)
         if not admite_consulta(contexto, ya_acreditada):
             return None

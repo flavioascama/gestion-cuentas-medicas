@@ -4,6 +4,7 @@ a FACTURADA (FacturarCuentaCompleta, 2026-11-19)."""
 
 from __future__ import annotations
 
+from app.compartido.nombres_estados import nombre_estado
 from app.dominio.integracion.facturacion_cuenta import FacturarCuentaCompleta
 from app.dominio.orquestacion.puertos import RepositorioEstadoCuenta
 from app.dominio.orquestacion.valores import ESTADOS_TERMINALES
@@ -63,7 +64,7 @@ class EmitirComprobantePago:
             estado = await self._estado_cuenta.obtener_estado(cuenta_id)
             if estado in ESTADOS_TERMINALES:
                 raise ErrorCuentaCerradaComprobante(
-                    f"La cuenta {cuenta_id} esta en estado {estado!r}: no admite comprobante."
+                    f"La cuenta está en estado {nombre_estado(estado)}: no admite comprobante."
                 )
         # El comprobante va al final (2026-11-18): antes se podia emitir sin
         # nada que facturar.

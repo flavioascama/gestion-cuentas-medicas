@@ -13,6 +13,7 @@ export interface SerieApilada {
 export interface ColumnaApilada {
   clave: string;
   etiqueta: string;
+  etiqueta_eje?: string;
   valores: Record<string, number>;
 }
 

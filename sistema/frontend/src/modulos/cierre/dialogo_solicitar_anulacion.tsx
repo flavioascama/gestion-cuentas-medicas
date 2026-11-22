@@ -47,6 +47,7 @@ export function DialogoSolicitarAnulacion({ cuenta_id, al_cerrar, al_solicitar }
       <MensajeErrorMutacion error={mutacion.error} texto_por_defecto="No se pudo solicitar." />
       <CampoTexto
         etiqueta="Motivo"
+        obligatorio
         value={motivo}
         onChange={(evento) => set_motivo(evento.target.value)}
       />

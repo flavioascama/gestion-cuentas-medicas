@@ -13,6 +13,7 @@ function CamposCambioClave({ cambio }: { cambio: CambioClave }) {
       {cambio.error ? <Mensaje tipo="error" texto={cambio.error} /> : null}
       <CampoTexto
         etiqueta="Contraseña actual"
+        obligatorio
         type="password"
         autoComplete="current-password"
         value={cambio.clave_actual}
@@ -21,6 +22,7 @@ function CamposCambioClave({ cambio }: { cambio: CambioClave }) {
       />
       <CampoTexto
         etiqueta="Contraseña nueva"
+        obligatorio
         type="password"
         autoComplete="new-password"
         value={cambio.clave_nueva}
@@ -28,6 +30,7 @@ function CamposCambioClave({ cambio }: { cambio: CambioClave }) {
       />
       <CampoTexto
         etiqueta="Repetir la contraseña nueva"
+        obligatorio
         type="password"
         autoComplete="new-password"
         value={cambio.repetida}

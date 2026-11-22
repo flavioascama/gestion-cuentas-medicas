@@ -12,7 +12,7 @@ from fastapi import APIRouter, Depends, status
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.dependencias import requiere_rol
+from app.api.dependencias import obtener_reloj, requiere_rol
 from app.compartido.errores import ErrorAplicacion
 from app.dominio.acceso.entidades import NombreRol
 from app.dominio.acceso.puertos import CargaSesion
@@ -29,6 +29,7 @@ from app.dominio.farmacia.dispensacion import (
     QuitarProductoDispensado,
     RegistrarProductoDispensado,
 )
+from app.dominio.puertos_comunes import Reloj
 from app.infraestructura.persistencia.base import obtener_sesion
 from app.infraestructura.persistencia.registro_eventos_sql import RegistroEventosSql
 from app.infraestructura.persistencia.repositorio_dispensacion_sql import (
@@ -87,11 +88,13 @@ def _repositorio(sesion: AsyncSession = Depends(obtener_sesion)) -> RepositorioD
 
 def construir_registrar(
     sesion: AsyncSession = Depends(obtener_sesion),
+    reloj: Reloj = Depends(obtener_reloj),
 ) -> RegistrarProductoDispensado:
     return RegistrarProductoDispensado(
         RepositorioDispensacionSql(sesion),
         RepositorioEstadoCuentaSql(sesion),
         RegistroEventosSql(sesion),
+        reloj,
     )
 
 

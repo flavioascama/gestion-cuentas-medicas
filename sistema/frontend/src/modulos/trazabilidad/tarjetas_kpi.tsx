@@ -1,6 +1,6 @@
 import type { IndicadoresCiclo } from "../../api/trazabilidad";
-import { formatear_monto } from "../../utilidades/formato";
-import { etiqueta_periodo, formatear_entero, formatear_porcentaje } from "./formato_indicadores";
+import { formatear_monto, formatear_periodo } from "../../utilidades/formato";
+import { formatear_entero, formatear_porcentaje } from "./formato_indicadores";
 import tonos from "./tonos_grafico.module.css";
 import estilos from "./tarjetas_kpi.module.css";
 
@@ -22,7 +22,7 @@ function de_cuantos(fraccion: number, total: number, unidad: string): string {
 }
 
 function construir_kpis(indicadores: IndicadoresCiclo, periodo: string): Kpi[] {
-  const alcance = periodo ? etiqueta_periodo(periodo) : "Todos los periodos";
+  const alcance = periodo ? formatear_periodo(periodo) : "Todos los periodos";
   const lotes = indicadores.lotes_evaluados;
   const cuentas = indicadores.cuentas_evaluadas;
   return [

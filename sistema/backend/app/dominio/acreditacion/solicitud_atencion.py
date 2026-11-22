@@ -53,9 +53,7 @@ class VerSolicitudAtencion:
         acreditacion = await self._repositorio.obtener_acreditacion(cuenta_medica_id)
         ruta = acreditacion.resultado.ruta_evidencia if acreditacion else None
         if acreditacion is None or not ruta:
-            raise ErrorSolicitudAtencionNoDisponible(
-                f"La cuenta medica {cuenta_medica_id} no tiene la solicitud de atencion."
-            )
+            raise ErrorSolicitudAtencionNoDisponible("La cuenta no tiene la solicitud de atención.")
         contenido = self._almacen.leer(ruta)
         await self._registro_eventos.registrar(
             Evento(

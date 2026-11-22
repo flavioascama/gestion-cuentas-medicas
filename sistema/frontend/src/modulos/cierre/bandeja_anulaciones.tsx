@@ -93,7 +93,11 @@ function construir_columnas(
     { clave: "asegurado", encabezado: "Asegurado", formatear: (fila) => fila.asegurado ?? "—" },
     ..._COLUMNAS_DOCUMENTOS,
     { clave: "motivo", encabezado: "Motivo" },
-    { clave: "solicitado_por", encabezado: "Solicitado por" },
+    {
+      clave: "solicitado_por",
+      encabezado: "Solicitado por",
+      formatear: (fila) => fila.solicitado_por_nombre ?? fila.solicitado_por,
+    },
     {
       clave: "solicitado_en",
       encabezado: "Solicitado",

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Boton } from "../../componentes_base/boton";
 import { CampoTexto } from "../../componentes_base/campo_texto";
 import { Dialogo } from "../../componentes_base/dialogo";
+import { Mensaje } from "../../componentes_base/mensaje";
 import { MensajeErrorMutacion } from "../../componentes_base/mensaje_error_mutacion";
 import { usar_imagen_captcha } from "./usar_imagen_captcha";
 import { usar_responder_captcha } from "./usar_responder_captcha";
@@ -13,9 +14,20 @@ interface Propiedades {
   al_cerrar: () => void;
   // Si se indica, se llama al aceptarse la respuesta en lugar de al_cerrar.
   al_responder?: () => void;
+  // La plataforma no acepto el codigo anterior y pide otro.
+  codigo_rechazado?: boolean;
 }
 
-export function DialogoCaptcha({ sesion_id, plataforma, al_cerrar, al_responder }: Propiedades) {
+const _CODIGO_RECHAZADO = <Mensaje tipo="error" texto="El código anterior no fue correcto." />;
+const _NO_ACEPTADA = "La respuesta no fue aceptada. Intente de nuevo.";
+
+export function DialogoCaptcha({
+  sesion_id,
+  plataforma,
+  al_cerrar,
+  al_responder,
+  codigo_rechazado,
+}: Propiedades) {
   const [respuesta, set_respuesta] = useState("");
   const url_imagen = usar_imagen_captcha(sesion_id);
   const mutacion = usar_responder_captcha(sesion_id, plataforma, al_responder ?? al_cerrar, () =>
@@ -41,10 +53,8 @@ export function DialogoCaptcha({ sesion_id, plataforma, al_cerrar, al_responder 
         </>
       }
     >
-      <MensajeErrorMutacion
-        error={mutacion.error}
-        texto_por_defecto="La respuesta no fue aceptada. Intente de nuevo."
-      />
+      {codigo_rechazado ? _CODIGO_RECHAZADO : null}
+      <MensajeErrorMutacion error={mutacion.error} texto_por_defecto={_NO_ACEPTADA} />
       {url_imagen ? (
         <img className={estilos.imagen_captcha} src={url_imagen} alt="Imagen de verificación" />
       ) : (
@@ -52,6 +62,7 @@ export function DialogoCaptcha({ sesion_id, plataforma, al_cerrar, al_responder 
       )}
       <CampoTexto
         etiqueta="Texto de la imagen"
+        obligatorio
         value={respuesta}
         onChange={(evento) => set_respuesta(evento.target.value)}
         autoFocus

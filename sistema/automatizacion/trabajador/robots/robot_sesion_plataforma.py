@@ -179,7 +179,9 @@ class AdaptadorSesionPlataforma(AsistenteSesionPlataforma):
 
             respuesta = await self._esperar_respuesta_humana(sesion_id)
             if respuesta is None:
-                mensaje = "Se agoto el tiempo limite esperando la respuesta del CAPTCHA."
+                mensaje = (
+                    "Se agotó el tiempo para escribir el código de verificación: vuelva a ingresar."
+                )
                 async with self._repositorio() as repositorio:
                     await repositorio.marcar_fallida(sesion_id, mensaje)
                 raise ErrorSesionFallida(mensaje)
@@ -187,7 +189,10 @@ class AdaptadorSesionPlataforma(AsistenteSesionPlataforma):
             if await self._enviar_y_verificar(pagina, ruta, respuesta, config):
                 return
 
-        mensaje = f"Se agotaron los {self._configuracion.max_intentos_captcha} intentos de CAPTCHA."
+        mensaje = (
+            f"Se agotaron los {self._configuracion.max_intentos_captcha} intentos del "
+            "código de verificación: vuelva a ingresar."
+        )
         async with self._repositorio() as repositorio:
             await repositorio.marcar_fallida(sesion_id, mensaje)
         raise ErrorSesionFallida(mensaje)
@@ -237,7 +242,7 @@ class AdaptadorSesionPlataforma(AsistenteSesionPlataforma):
             pagina, ruta, "error_clave"
         ):
             raise ErrorSesionFallida(
-                "Usuario o contrasena de la plataforma invalidos (revisar variables de entorno)."
+                "La plataforma rechazó el usuario o la contraseña de la clínica."
             )
         if await self._hay_error(pagina, ruta, "error_captcha"):
             await pagina.click(obtener_selector("ingreso", "boton_refrescar_captcha", ruta))

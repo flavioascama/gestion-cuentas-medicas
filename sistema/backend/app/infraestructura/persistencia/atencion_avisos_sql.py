@@ -4,7 +4,8 @@ avisos, 2026-11-12: la bandeja mostraba igual un aviso de una cuenta que ya
 se habia corregido que uno pendiente).
 
 Reglas, en orden:
-- Ruptura de la cadena: nunca se da por atendida sola (requiere revisar).
+- Ruptura de la cadena, acceso no permitido y resultado de una anulacion:
+  nunca se dan por atendidos solos; quien los recibe los marca.
 - Registro en contingencia: atendido cuando el jefe lo reviso (C-18).
 - Falla del proceso de automatizacion: atendida cuando un trabajo posterior
   del mismo tipo y destino se completo, o cuando la operacion ya no hace
@@ -27,7 +28,12 @@ from typing import Any
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.dominio.avisos.valores import TIPO_AVISO_TRABAJO_AGOTADO, EventoAviso
+from app.dominio.avisos.valores import (
+    TIPO_AVISO_TRABAJO_AGOTADO,
+    TIPO_EVENTO_AVISO_ATENDIDO,
+    TIPOS_AVISO_MARCABLES,
+    EventoAviso,
+)
 from app.dominio.observaciones.conformidad import TIPO_EVENTO_CONFORMIDAD
 from app.infraestructura.persistencia.modelos_declaracion_susalud import (
     DeclaracionSusaludSinFacturacionModelo,
@@ -70,6 +76,7 @@ class _Contexto:
     enviados_susalud: set[int]
     conformidades: dict[int, datetime]
     declarados: set[str]
+    marcados: set[str]
 
 
 class EvaluadorAtencionAvisos:
@@ -93,6 +100,7 @@ class EvaluadorAtencionAvisos:
             enviados_susalud=await self._enviados_susalud(lotes),
             conformidades=await self._conformidades(cuentas),
             declarados=await self._declarados(),
+            marcados=await self._marcados(),
         )
         return [replace(aviso, atendido=_atendido(aviso, contexto)) for aviso in avisos]
 
@@ -123,6 +131,14 @@ class EvaluadorAtencionAvisos:
             )
         ).all()
         return {(tipo, agregado): _utc(instante) for tipo, agregado, instante in filas}
+
+    async def _marcados(self) -> set[str]:
+        filas = await self._sesion.execute(
+            sa.select(EventoModelo.datos).where(
+                EventoModelo.tipo_evento == TIPO_EVENTO_AVISO_ATENDIDO
+            )
+        )
+        return {str((datos or {}).get("aviso_evento_id")) for (datos,) in filas.all()}
 
     async def _contingencias_revisadas(self) -> set[str]:
         filas = await self._sesion.execute(
@@ -194,8 +210,8 @@ class EvaluadorAtencionAvisos:
 
 
 def _atendido(aviso: EventoAviso, contexto: _Contexto) -> bool:
-    if aviso.tipo_evento == "RUPTURA_CADENA_DETECTADA":
-        return False
+    if aviso.tipo_evento in TIPOS_AVISO_MARCABLES:
+        return aviso.evento_id in contexto.marcados
     # Solo se listan los correos que siguen por revisar: al vincularlos o
     # descartarlos dejan de ser un aviso.
     if aviso.tipo_evento == "CORREO_IAFAS_POR_REVISAR":

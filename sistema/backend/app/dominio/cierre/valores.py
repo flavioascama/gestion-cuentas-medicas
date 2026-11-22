@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
+from decimal import Decimal
 from enum import StrEnum
 
 
@@ -45,3 +46,33 @@ class SolicitudAnulacion:
     estado_cuenta: str | None = None
     comprobante: str | None = None
     nota_credito: str | None = None
+    # Lo que escribio el jefe al resolver: obligatorio al rechazar.
+    motivo_resolucion: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class CondicionesCierre:
+    """Lo que CU-13 exige antes de cerrar (Tabla 52): el pago conciliado,
+    sin diferencia con lo liquidado y sin observaciones sin responder."""
+
+    pago_conciliado: bool
+    diferencia: Decimal | None  # solo si es distinta de cero
+    observaciones_sin_responder: int
+
+    @property
+    def procede(self) -> bool:
+        return (
+            self.pago_conciliado
+            and self.diferencia is None
+            and self.observaciones_sin_responder == 0
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class EstadoCierreCuenta:
+    """Lo que la seccion de cierre y anulacion muestra de una cuenta: las
+    condiciones del cierre y la solicitud de anulacion pendiente o, si no
+    hay, la ultima resuelta."""
+
+    condiciones: CondicionesCierre
+    ultima_solicitud: SolicitudAnulacion | None

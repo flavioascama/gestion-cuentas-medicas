@@ -13,20 +13,28 @@ from app.api.dependencias import (
     construir_actualizar_usuario,
     construir_listar_usuarios,
     construir_registrar_usuario,
+    construir_restablecer_clave_usuario,
     requiere_rol,
 )
 from app.api.esquemas_acceso import (
     RespuestaUsuario,
     SolicitudActualizarUsuario,
     SolicitudCrearUsuario,
+    SolicitudRestablecerClave,
 )
 from app.compartido.errores import ErrorAplicacion
-from app.dominio.acceso.casos_uso import ActualizarUsuario, ListarUsuarios, RegistrarUsuario
+from app.dominio.acceso.casos_uso import (
+    ActualizarUsuario,
+    ListarUsuarios,
+    RegistrarUsuario,
+    RestablecerClaveUsuario,
+)
 from app.dominio.acceso.entidades import NombreRol
 from app.dominio.acceso.errores import (
     ClaveDebilError,
     NombreUsuarioDuplicadoError,
     NoPuedeCambiarSusRolesError,
+    NoPuedeRestablecerSuClaveError,
     RolDesconocidoError,
     RolesRequeridosError,
     UsuarioNoEncontradoError,
@@ -120,6 +128,37 @@ async def actualizar_usuario(
     _registrador.info(
         "usuario_actualizado",
         caso_uso="actualizar_usuario",
+        actor=actor.nombre_usuario,
+        usuario_id=usuario_id,
+    )
+    return RespuestaUsuario.desde_entidad(usuario)
+
+
+@router.post("/{usuario_id}/restablecer-clave", response_model=RespuestaUsuario)
+async def restablecer_clave_usuario(
+    usuario_id: int,
+    solicitud: SolicitudRestablecerClave,
+    caso_uso: RestablecerClaveUsuario = Depends(construir_restablecer_clave_usuario),
+    actor: CargaSesion = Depends(_solo_administrador),
+) -> RespuestaUsuario:
+    try:
+        usuario = await caso_uso.ejecutar(usuario_id, solicitud.clave, actor.nombre_usuario)
+    except UsuarioNoEncontradoError as error:
+        raise ErrorAplicacion(
+            "USUARIO_NO_ENCONTRADO", str(error), estado_http=status.HTTP_404_NOT_FOUND
+        ) from error
+    except NoPuedeRestablecerSuClaveError as error:
+        raise ErrorAplicacion(
+            "NO_PUEDE_RESTABLECER_SU_CLAVE", str(error), estado_http=status.HTTP_403_FORBIDDEN
+        ) from error
+    except ClaveDebilError as error:
+        raise ErrorAplicacion(
+            "CLAVE_DEBIL", str(error), estado_http=status.HTTP_400_BAD_REQUEST
+        ) from error
+
+    _registrador.info(
+        "clave_restablecida",
+        caso_uso="restablecer_clave_usuario",
         actor=actor.nombre_usuario,
         usuario_id=usuario_id,
     )

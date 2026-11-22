@@ -51,21 +51,21 @@ def _invalida(codigo: str, mensaje: str) -> ErrorAtencionInvalida:
 
 def _validar_cabecera(atencion: AtencionHospitalaria) -> None:
     if atencion.tipo_atencion not in TIPOS_ATENCION:
-        raise _invalida("TIPO_ATENCION_INVALIDO", f"Tipo de atencion {atencion.tipo_atencion!r}.")
+        raise _invalida("TIPO_ATENCION_INVALIDO", f"Tipo de atención {atencion.tipo_atencion!r}.")
     historia = atencion.numero_historia_clinica.strip()
     if not historia or len(historia) > _LONGITUD_HISTORIA_CLINICA:
         raise _invalida(
             "HISTORIA_CLINICA_INVALIDA",
-            f"La historia clinica debe tener de 1 a {_LONGITUD_HISTORIA_CLINICA} caracteres.",
+            f"La historia clínica debe tener de 1 a {_LONGITUD_HISTORIA_CLINICA} caracteres.",
         )
     colegiatura = atencion.profesional.numero_colegiatura.strip()
     if not colegiatura.isdigit() or len(colegiatura) > _LONGITUD_COLEGIATURA:
         raise _invalida(
             "PROFESIONAL_INVALIDO",
-            f"La colegiatura del medico debe tener de 1 a {_LONGITUD_COLEGIATURA} digitos.",
+            f"La colegiatura del médico debe tener de 1 a {_LONGITUD_COLEGIATURA} dígitos.",
         )
     if not atencion.diagnostico_principal_cie10.strip():
-        raise _invalida("CIE10_DESCONOCIDO", "La atencion no trae el diagnostico principal.")
+        raise _invalida("CIE10_DESCONOCIDO", "La atención no trae el diagnóstico principal.")
 
 
 def _validar_hospitalizacion(atencion: AtencionHospitalaria) -> None:
@@ -74,7 +74,7 @@ def _validar_hospitalizacion(atencion: AtencionHospitalaria) -> None:
         if hospitalizacion is not None:
             raise _invalida(
                 "HOSPITALIZACION_INVALIDA",
-                "Solo una atencion de hospitalizacion trae fechas de hospitalizacion.",
+                "Solo una atención de hospitalización trae fechas de hospitalización.",
             )
         return
     if hospitalizacion is None or None in (
@@ -82,7 +82,7 @@ def _validar_hospitalizacion(atencion: AtencionHospitalaria) -> None:
         hospitalizacion.fecha_alta,
     ):
         raise _invalida(
-            "HOSPITALIZACION_INVALIDA", "La hospitalizacion no trae la fecha de ingreso y de alta."
+            "HOSPITALIZACION_INVALIDA", "La hospitalización no trae la fecha de ingreso y de alta."
         )
     ingreso, alta = hospitalizacion.fecha_ingreso, hospitalizacion.fecha_alta
     assert ingreso is not None and alta is not None
@@ -90,11 +90,11 @@ def _validar_hospitalizacion(atencion: AtencionHospitalaria) -> None:
     if ingreso < atencion.fecha_prestacion or alta < ingreso:
         raise _invalida(
             "HOSPITALIZACION_INVALIDA",
-            "Las fechas de hospitalizacion no son coherentes: el ingreso no puede ser anterior "
-            "a la prestacion ni el alta anterior al ingreso.",
+            "Las fechas de hospitalización no son coherentes: el ingreso no puede ser anterior "
+            "a la prestación ni el alta anterior al ingreso.",
         )
     if (alta - ingreso).days > _MAXIMO_DIAS_ESTANCIA:
-        raise _invalida("HOSPITALIZACION_INVALIDA", "La estancia supera los 999 dias.")
+        raise _invalida("HOSPITALIZACION_INVALIDA", "La estancia supera los 999 días.")
 
 
 def _validar_procedimiento(
@@ -102,9 +102,9 @@ def _validar_procedimiento(
 ) -> None:
     descripcion = procedimiento.descripcion.strip()
     if not descripcion or len(descripcion) > _LONGITUD_DESCRIPCION:
-        raise _invalida("PROCEDIMIENTO_INVALIDO", "Un procedimiento no trae descripcion valida.")
+        raise _invalida("PROCEDIMIENTO_INVALIDO", "Un procedimiento no trae descripción válida.")
     if procedimiento.area not in AREAS_PROCEDIMIENTO:
-        raise _invalida("PROCEDIMIENTO_INVALIDO", f"Area {procedimiento.area!r} desconocida.")
+        raise _invalida("PROCEDIMIENTO_INVALIDO", f"Área {procedimiento.area!r} desconocida.")
     if procedimiento.cantidad <= 0 or procedimiento.monto_unitario <= 0:
         raise _invalida(
             "PROCEDIMIENTO_INVALIDO",
@@ -114,7 +114,7 @@ def _validar_procedimiento(
     if procedimiento.fecha < atencion.fecha_prestacion:
         raise _invalida(
             "PROCEDIMIENTO_INVALIDO",
-            f"El procedimiento {descripcion!r} tiene fecha anterior a la prestacion.",
+            f"El procedimiento {descripcion!r} tiene fecha anterior a la prestación.",
         )
 
 
@@ -123,7 +123,7 @@ def validar_atencion(atencion: AtencionHospitalaria) -> None:
     _validar_cabecera(atencion)
     _validar_hospitalizacion(atencion)
     if not atencion.procedimientos:
-        raise _invalida("ATENCION_SIN_PROCEDIMIENTOS", "La atencion no trae procedimientos.")
+        raise _invalida("ATENCION_SIN_PROCEDIMIENTOS", "La atención no trae procedimientos.")
     for procedimiento in atencion.procedimientos:
         _validar_procedimiento(procedimiento, atencion)
     copago = atencion.copago_cobrado
@@ -146,7 +146,7 @@ class ImportarAtencion:
         iafas_id = await self._repositorio.iafas_por_codigo(atencion.iafas_codigo)
         if iafas_id is None:
             raise _invalida(
-                "IAFAS_DESCONOCIDA", f"La aseguradora {atencion.iafas_codigo!r} no esta registrada."
+                "IAFAS_DESCONOCIDA", f"La IAFAS {atencion.iafas_codigo!r} no está registrada."
             )
         await self._exigir_cie10(atencion)
         productos = tuple([await self._producto(p, atencion) for p in atencion.farmacia])
@@ -164,7 +164,7 @@ class ImportarAtencion:
         if desconocidos:
             raise _invalida(
                 "CIE10_DESCONOCIDO",
-                "Diagnosticos que no estan en el catalogo CIE-10: " + ", ".join(desconocidos) + ".",
+                "Diagnósticos que no están en el catálogo CIE-10: " + ", ".join(desconocidos) + ".",
             )
 
     async def _producto(
@@ -189,7 +189,7 @@ class ImportarAtencion:
         if catalogo is None:
             raise _invalida(
                 "PRODUCTO_FUERA_DE_CATALOGO",
-                f"El producto {producto.codigo_producto} no esta en el catalogo GTIN vigente.",
+                f"El producto {producto.codigo_producto} no está en el catálogo GTIN vigente.",
             )
         return ProductoImportado(catalogo, datos, monto_presentado)
 

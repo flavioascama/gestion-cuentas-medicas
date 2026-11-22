@@ -44,10 +44,13 @@ def monto_presentado(procedimiento: ProcedimientoLote) -> Decimal:
 
 
 def monto_no_cubierto(procedimiento: ProcedimientoLote) -> Decimal:
-    """T3 campo 20: lo que no cubre la IAFAS es lo que asume el paciente
-    via copagos (docs/DECISIONES.md, correccion del 2026-09-16)."""
+    """T3 campo 20: lo que la IAFAS excluye del procedimiento; el prototipo
+    no registra exclusiones de procedimientos. Desde el 2026-11-21 el
+    copago no forma parte de lo no cubierto: va solo en sus campos (T3 17
+    y 18, T2 44 y 46) y la regla de T1 lo descuenta una sola vez."""
 
-    return procedimiento.copago_variable + procedimiento.copago_fijo
+    del procedimiento
+    return CERO
 
 
 def monto_cubierto(procedimiento: ProcedimientoLote) -> Decimal:

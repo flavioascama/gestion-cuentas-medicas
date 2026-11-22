@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
 from dataclasses import replace
+from datetime import UTC
 
 import structlog
 from fastapi import Depends, Request, status
@@ -24,6 +25,7 @@ from app.dominio.acceso.casos_uso import (
     ListarUsuarios,
     PoliticaBloqueoSesion,
     RegistrarUsuario,
+    RestablecerClaveUsuario,
 )
 from app.dominio.acceso.entidades import NombreRol, Usuario
 from app.dominio.acceso.errores import (
@@ -42,6 +44,7 @@ from app.dominio.puertos_comunes import Evento, RegistroEventos, Reloj
 from app.infraestructura.persistencia.base import obtener_sesion
 from app.infraestructura.persistencia.registro_eventos_sql import RegistroEventosSql
 from app.infraestructura.persistencia.registro_revocaciones_sql import RegistroRevocacionesSql
+from app.infraestructura.persistencia.repositorio_parametros_sistema_sql import valor_vigente
 from app.infraestructura.persistencia.repositorio_usuarios import RepositorioUsuariosSql
 from app.infraestructura.reloj import RelojSistema
 from app.infraestructura.seguridad.gestor_sesion_jwt import GestorSesionJwt
@@ -63,14 +66,28 @@ def obtener_verificador_clave() -> VerificadorClave:
     return _verificador_clave
 
 
-def obtener_gestor_sesion(
+async def obtener_gestor_sesion(
     configuracion: Configuracion = Depends(obtener_configuracion),
     reloj: Reloj = Depends(obtener_reloj),
+    sesion: AsyncSession = Depends(obtener_sesion),
 ) -> GestorSesion:
     return GestorSesionJwt(
         clave_firma=configuracion.clave_firma_sesion,
-        duracion_minutos=configuracion.duracion_sesion_minutos,
+        duracion_minutos=int(await valor_vigente(sesion, "DURACION_SESION_MINUTOS")),
         reloj=reloj,
+    )
+
+
+async def obtener_politica_bloqueo(
+    sesion: AsyncSession = Depends(obtener_sesion),
+) -> PoliticaBloqueoSesion:
+    return PoliticaBloqueoSesion(
+        maximo_intentos_fallidos=int(
+            await valor_vigente(sesion, "MAXIMO_INTENTOS_FALLIDOS_SESION")
+        ),
+        duracion_bloqueo_minutos=int(
+            await valor_vigente(sesion, "DURACION_BLOQUEO_SESION_MINUTOS")
+        ),
     )
 
 
@@ -104,12 +121,8 @@ def construir_iniciar_sesion(
     verificador: VerificadorClave = Depends(obtener_verificador_clave),
     colaboradores: ColaboradoresIniciarSesion = Depends(obtener_colaboradores_iniciar_sesion),
     reloj: Reloj = Depends(obtener_reloj),
-    configuracion: Configuracion = Depends(obtener_configuracion),
+    politica: PoliticaBloqueoSesion = Depends(obtener_politica_bloqueo),
 ) -> IniciarSesion:
-    politica = PoliticaBloqueoSesion(
-        maximo_intentos_fallidos=configuracion.maximo_intentos_fallidos_sesion,
-        duracion_bloqueo_minutos=configuracion.duracion_bloqueo_sesion_minutos,
-    )
     return IniciarSesion(repositorio, verificador, colaboradores, reloj, politica)
 
 
@@ -120,6 +133,14 @@ def construir_registrar_usuario(
 ) -> RegistrarUsuario:
     # La clave que pone el administrador es temporal: se cambia al ingresar.
     return RegistrarUsuario(repositorio, verificador, registro_eventos, clave_temporal=True)
+
+
+def construir_restablecer_clave_usuario(
+    repositorio: RepositorioUsuarios = Depends(obtener_repositorio_usuarios),
+    verificador: VerificadorClave = Depends(obtener_verificador_clave),
+    registro_eventos: RegistroEventos = Depends(obtener_registro_eventos),
+) -> RestablecerClaveUsuario:
+    return RestablecerClaveUsuario(repositorio, verificador, registro_eventos)
 
 
 def construir_listar_usuarios(
@@ -155,12 +176,8 @@ def construir_cambiar_clave(
     verificador: VerificadorClave = Depends(obtener_verificador_clave),
     colaboradores: ColaboradoresCambioClave = Depends(obtener_colaboradores_cambio_clave),
     reloj: Reloj = Depends(obtener_reloj),
-    configuracion: Configuracion = Depends(obtener_configuracion),
+    politica: PoliticaBloqueoSesion = Depends(obtener_politica_bloqueo),
 ) -> CambiarClavePropia:
-    politica = PoliticaBloqueoSesion(
-        maximo_intentos_fallidos=configuracion.maximo_intentos_fallidos_sesion,
-        duracion_bloqueo_minutos=configuracion.duracion_bloqueo_sesion_minutos,
-    )
     return CambiarClavePropia(repositorio, verificador, colaboradores, reloj, politica)
 
 
@@ -184,7 +201,7 @@ async def autenticar_sesion(
     if credencial is None:
         raise ErrorAplicacion(
             "SESION_REQUERIDA",
-            "Se requiere iniciar sesion.",
+            "Se requiere iniciar sesión.",
             estado_http=status.HTTP_401_UNAUTHORIZED,
         )
     try:
@@ -219,7 +236,7 @@ async def obtener_usuario_actual(
     if carga.debe_cambiar_clave:
         raise ErrorAplicacion(
             "CAMBIO_DE_CLAVE_REQUERIDO",
-            "Debe cambiar su clave antes de continuar.",
+            "Debe cambiar su contraseña antes de continuar.",
             estado_http=status.HTTP_403_FORBIDDEN,
         )
     return carga
@@ -231,11 +248,28 @@ async def _verificar_no_revocada(
     repositorio_usuarios: RepositorioUsuarios,
 ) -> Usuario:
     if await registro_revocaciones.esta_revocado(carga.jti):
-        raise SesionRevocadaError("La sesion fue cerrada; vuelva a iniciar sesion.")
+        raise SesionRevocadaError("La sesión fue cerrada; vuelva a iniciar sesión.")
     usuario = await repositorio_usuarios.obtener_por_id(carga.usuario_id)
     if usuario is None or not usuario.activo:
-        raise SesionRevocadaError("El usuario ya no tiene acceso; vuelva a iniciar sesion.")
+        raise SesionRevocadaError("El usuario ya no tiene acceso; vuelva a iniciar sesión.")
+    if _emitida_antes_del_restablecimiento(carga, usuario):
+        raise SesionRevocadaError("Su contraseña fue restablecida; vuelva a iniciar sesión.")
     return usuario
+
+
+def _emitida_antes_del_restablecimiento(carga: CargaSesion, usuario: Usuario) -> bool:
+    """Al restablecer la contraseña, las sesiones que la persona tenia
+    abiertas dejan de valer. `iat` va en segundos enteros: se compara sin
+    los microsegundos de la columna, para que valga la sesion que se abre
+    con la contraseña temporal en el mismo segundo."""
+    desde = usuario.sesiones_validas_desde
+    if desde is None:
+        return False
+    if carga.emitida_en is None:
+        return True
+    if desde.tzinfo is None:
+        desde = desde.replace(tzinfo=UTC)
+    return carga.emitida_en < desde.replace(microsecond=0)
 
 
 def requiere_rol(
@@ -269,7 +303,7 @@ def requiere_rol(
             )
             raise ErrorAplicacion(
                 "ROL_NO_AUTORIZADO",
-                "Su rol no tiene permiso para esta operacion.",
+                "Su rol no tiene permiso para esta operación.",
                 estado_http=status.HTTP_403_FORBIDDEN,
                 detalles={"roles_permitidos": sorted(r.value for r in permitidos)},
             )

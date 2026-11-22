@@ -1,3 +1,10 @@
+// Tipos de documento del asegurado (formulario de nueva cuenta y detalle).
+export const OPCIONES_TIPO_DOCUMENTO = [
+  { valor: "1", etiqueta: "DNI" },
+  { valor: "2", etiqueta: "Carné de extranjería" },
+  { valor: "3", etiqueta: "Pasaporte" },
+];
+
 const _TIPOS_ATENCION: Record<string, string> = {
   AMBULATORIA: "Ambulatoria",
   EMERGENCIA: "Emergencia",

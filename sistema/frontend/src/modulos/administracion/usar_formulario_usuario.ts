@@ -3,6 +3,7 @@ import type { NombreRol } from "../../api/auth";
 import type { Usuario } from "../../api/usuarios";
 import { perfiles_de_roles } from "../../componentes_base/mapa_roles";
 import { usar_sesion } from "../../sesion/contexto_sesion";
+import { _POLITICA, cumple_politica } from "../acceso/usar_cambio_clave";
 
 function falta_completar_creacion(
   nombre_usuario: string,
@@ -12,10 +13,15 @@ function falta_completar_creacion(
 ): boolean {
   return (
     nombre_usuario.trim().length < 3 ||
-    clave.length < 8 ||
+    !cumple_politica(clave) ||
     nombres.trim().length === 0 ||
     cantidad_roles === 0
   );
+}
+
+// La politica se dice bajo el campo en cuanto tiene texto.
+function error_clave(clave: string): string | undefined {
+  return clave && !cumple_politica(clave) ? _POLITICA : undefined;
 }
 
 // El usuario de la sesion no cambia sus propios roles.
@@ -56,6 +62,7 @@ export function usar_formulario_usuario(usuario: Usuario | null) {
     set_nombres,
     clave,
     set_clave,
+    error_clave: error_clave(clave),
     roles,
     alternar_rol,
     falta_completar,

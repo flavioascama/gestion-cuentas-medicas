@@ -7,6 +7,10 @@ import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dominio.acreditacion.valores import es_acreditable
+from app.dominio.integracion.correccion_asegurado import (
+    ESTADOS_SIN_SALIDA,
+    RepositorioCorreccionAsegurado,
+)
 from app.dominio.integracion.puertos_ingesta import (
     AseguradoRegistrado,
     DatosNuevaCuenta,
@@ -17,6 +21,7 @@ from app.dominio.integracion.puertos_ingesta import (
     RepositorioIngestaCuentas,
 )
 from app.infraestructura.persistencia.cifrado_columnas import indice_ciego
+from app.infraestructura.persistencia.modelos_cie10 import Cie10CodigoModelo
 from app.infraestructura.persistencia.modelos_integracion import (
     AcreditacionModelo,
     AseguradoModelo,
@@ -70,6 +75,15 @@ class RepositorioIngestaCuentasSql(RepositorioIngestaCuentas):
         await self._sesion.commit()
         return cuenta.id
 
+    async def existe_cie10(self, codigo: str) -> bool:
+        encontrado = await self._sesion.scalar(
+            sa.select(sa.literal(True))
+            .select_from(Cie10CodigoModelo)
+            .where(Cie10CodigoModelo.codigo == codigo)
+            .limit(1)
+        )
+        return bool(encontrado)
+
     async def _asegurado(self, tipo_documento: str, numero: str) -> AseguradoModelo | None:
         resultado = await self._sesion.execute(
             # C-05: el documento esta cifrado; se busca por su indice ciego.
@@ -110,6 +124,44 @@ class RepositorioIngestaCuentasSql(RepositorioIngestaCuentas):
         self._sesion.add(asegurado)
         await self._sesion.flush()
         return asegurado.id
+
+
+async def otras_cuentas_avanzadas(sesion: AsyncSession, cuenta: CuentaMedicaModelo) -> bool:
+    """Otra cuenta del mismo asegurado fuera de Registrada o Anulada."""
+    encontrada = await sesion.scalar(
+        sa.select(sa.literal(True))
+        .select_from(CuentaMedicaModelo)
+        .where(
+            CuentaMedicaModelo.asegurado_id == cuenta.asegurado_id,
+            CuentaMedicaModelo.id != cuenta.id,
+            CuentaMedicaModelo.estado.not_in(sorted(ESTADOS_SIN_SALIDA)),
+        )
+        .limit(1)
+    )
+    return bool(encontrada)
+
+
+class RepositorioCorreccionAseguradoSql(RepositorioCorreccionAsegurado):
+    def __init__(self, sesion: AsyncSession) -> None:
+        self._sesion = sesion
+
+    async def estado_cuenta(self, cuenta_id: int) -> str | None:
+        cuenta = await self._sesion.get(CuentaMedicaModelo, cuenta_id)
+        return cuenta.estado if cuenta is not None else None
+
+    async def asegurado_con_otras_cuentas_avanzadas(self, cuenta_id: int) -> bool:
+        cuenta = await self._sesion.get(CuentaMedicaModelo, cuenta_id)
+        assert cuenta is not None
+        return await otras_cuentas_avanzadas(self._sesion, cuenta)
+
+    async def corregir_nombres(self, cuenta_id: int, nombres: str, apellidos: str) -> None:
+        # Por el modelo y no con un UPDATE: los nombres se guardan cifrados (C-05).
+        cuenta = await self._sesion.get(CuentaMedicaModelo, cuenta_id)
+        assert cuenta is not None
+        asegurado = await self._sesion.get(AseguradoModelo, cuenta.asegurado_id)
+        assert asegurado is not None
+        asegurado.nombres, asegurado.apellidos = nombres, apellidos
+        await self._sesion.flush()
 
 
 class RepositorioCompletitudCuentaSql(RepositorioCompletitudCuenta):

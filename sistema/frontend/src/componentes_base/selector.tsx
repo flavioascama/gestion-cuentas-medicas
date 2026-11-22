@@ -11,6 +11,8 @@ interface Propiedades extends SelectHTMLAttributes<HTMLSelectElement> {
   opciones: OpcionSelector[];
   ayuda?: string;
   error?: string;
+  // Campo sin el cual no se puede guardar: un asterisco en la etiqueta.
+  obligatorio?: boolean;
 }
 
 export function Selector({
@@ -18,6 +20,7 @@ export function Selector({
   opciones,
   ayuda,
   error,
+  obligatorio,
   id,
   className,
   ...resto
@@ -29,6 +32,7 @@ export function Selector({
     <div className={estilos.contenedor}>
       <label className={estilos.etiqueta} htmlFor={id_campo}>
         {etiqueta}
+        {obligatorio ? " *" : null}
       </label>
       <div className={estilos.envoltorio_entrada}>
         <select

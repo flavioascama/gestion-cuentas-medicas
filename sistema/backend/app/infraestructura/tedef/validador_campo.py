@@ -104,7 +104,7 @@ def _validar_estructurales(contexto: _ContextoCampo) -> list[Hallazgo]:
             _evaluar_estructural(
                 contexto,
                 _ESTRUCTURAL_OBLIGATORIO,
-                "Obligatoriedad declarada en el esquema (Seccion 7.1).",
+                "Obligatoriedad declarada en el esquema (Sección 7.1).",
                 "obligatorio_no_vacio",
             )
         )
@@ -113,7 +113,7 @@ def _validar_estructurales(contexto: _ContextoCampo) -> list[Hallazgo]:
         _evaluar_estructural(
             contexto,
             _ESTRUCTURAL_LONGITUD,
-            "Longitud declarada en el esquema (Seccion 7.1).",
+            "Longitud declarada en el esquema (Sección 7.1).",
             "longitud_exacta",
         )
     )
@@ -123,7 +123,7 @@ def _validar_estructurales(contexto: _ContextoCampo) -> list[Hallazgo]:
             _evaluar_estructural(
                 contexto,
                 _ESTRUCTURAL_MONTO,
-                "Formato de monto con 2 decimales, sin negativos (Seccion 7.3).",
+                "Formato de monto con 2 decimales, sin negativos (Sección 7.3).",
                 "monto_dos_decimales",
             )
         )

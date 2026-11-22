@@ -8,10 +8,14 @@ import estilos from "./campo_cie10.module.css";
 const _LARGO_MINIMO_BUSQUEDA = 2;
 
 interface Propiedades {
+  // El codigo elegido de la lista; vacio mientras no se elija.
   value: string;
-  onChange: (valor: string) => void;
+  onChange: (codigo: string) => void;
+  // Lo escrito en la caja, para saber si quedo algo sin elegir.
+  al_escribir?: (texto: string) => void;
   // Al registrar la cuenta es opcional; despues, en la cuenta, ya no.
   etiqueta?: string;
+  obligatorio?: boolean;
 }
 
 function ListaResultadosCie10({
@@ -23,7 +27,7 @@ function ListaResultadosCie10({
   resultados: ResumenCie10[];
   texto_buscado: string;
   buscando: boolean;
-  al_elegir: (codigo: string) => void;
+  al_elegir: (resultado: ResumenCie10) => void;
 }) {
   if (buscando) return <span className={estilos.buscando}>Buscando…</span>;
   if (resultados.length === 0) {
@@ -33,7 +37,7 @@ function ListaResultadosCie10({
     <ul className={estilos.lista} role="listbox">
       {resultados.map((r) => (
         <li key={r.codigo}>
-          <button type="button" className={estilos.opcion} onClick={() => al_elegir(r.codigo)}>
+          <button type="button" className={estilos.opcion} onClick={() => al_elegir(r)}>
             <span className={estilos.codigo}>{r.codigo}</span>
             <span className={estilos.descripcion}>{r.descripcion}</span>
           </button>
@@ -45,16 +49,21 @@ function ListaResultadosCie10({
 
 // Autocompletado del diagnostico CIE-10: el usuario no conoce los cerca de
 // 13 mil codigos de memoria, asi que escribe la descripcion clinica
-// ("embarazo", "hipertension") y elige de la lista -- sin dejar de admitir
-// que alguien que ya conoce el codigo lo escriba directo, como antes.
+// ("embarazo", "hipertension") o el codigo y elige de la lista. Solo vale lo
+// elegido: volver a escribir limpia la eleccion (igual que el producto de
+// farmacia).
 export function CampoCie10({
   value,
   onChange,
+  al_escribir,
   etiqueta = "Diagnóstico principal (CIE-10, opcional)",
+  obligatorio,
 }: Propiedades) {
+  const [texto, set_texto] = useState(value);
   const [mostrar_lista, set_mostrar_lista] = useState(false);
-  const texto_diferido = usar_valor_diferido(value.trim());
-  const busqueda_habilitada = texto_diferido.length >= _LARGO_MINIMO_BUSQUEDA && mostrar_lista;
+  const texto_diferido = usar_valor_diferido(texto.trim());
+  const busqueda_habilitada =
+    !value && texto_diferido.length >= _LARGO_MINIMO_BUSQUEDA && mostrar_lista;
 
   const consulta = useQuery({
     queryKey: ["cie10", "buscar", texto_diferido],
@@ -62,19 +71,23 @@ export function CampoCie10({
     enabled: busqueda_habilitada,
   });
 
-  function elegir(codigo: string) {
-    onChange(codigo);
+  function elegir(resultado: ResumenCie10) {
+    set_texto(`${resultado.codigo} · ${resultado.descripcion}`);
     set_mostrar_lista(false);
+    onChange(resultado.codigo);
   }
 
   return (
     <div className={estilos.contenedor}>
       <CampoTexto
         etiqueta={etiqueta}
-        value={value}
+        obligatorio={obligatorio}
+        value={texto}
         onChange={(evento) => {
-          onChange(evento.target.value);
+          set_texto(evento.target.value);
           set_mostrar_lista(true);
+          onChange("");
+          al_escribir?.(evento.target.value);
         }}
         onFocus={() => set_mostrar_lista(true)}
         onBlur={() => setTimeout(() => set_mostrar_lista(false), 150)}

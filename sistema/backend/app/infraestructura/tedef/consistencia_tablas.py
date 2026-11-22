@@ -30,6 +30,11 @@ def _clave_documento_t2_t3(fila: Fila) -> tuple[str, str, str, str]:
     return (_v(fila, 1), _v(fila, 2), _v(fila, 3), _v(fila, 4))
 
 
+def _comprobante(numero: str) -> str:
+    """El numero del comprobante como lo ve la clinica: E001-00000125."""
+    return f"{numero[:4]}-{numero[4:]}"
+
+
 def _hallazgo(tabla: str, mensaje: str, valor: str, campo_numero: int = 0) -> Hallazgo:
     return Hallazgo(
         severidad="error",
@@ -37,7 +42,7 @@ def _hallazgo(tabla: str, mensaje: str, valor: str, campo_numero: int = 0) -> Ha
         campo_numero=campo_numero,
         campo_nombre="(consistencia entre tablas)",
         criterio_id="CONSISTENCIA",
-        criterio_texto="Seccion 7.5: llaves primarias y de conciliacion entre tablas.",
+        criterio_texto="Sección 7.5: llaves primarias y de conciliación entre tablas.",
         valor=valor,
         mensaje=mensaje,
     )
@@ -52,9 +57,9 @@ def _validar_llave_primaria_t1(filas_t1: list[Fila]) -> list[Hallazgo]:
     for fila in filas_t1:
         clave = tuple(_v(fila, c) for c in (3, 4, 5, 6, 7, 8))
         if clave in vistas:
-            hallazgos.append(
-                _hallazgo("T1", f"Llave primaria de T1 duplicada: {clave}", str(clave))
-            )
+            comprobante = _comprobante(clave[5])
+            mensaje = f"El comprobante {comprobante} está dos veces en el lote."
+            hallazgos.append(_hallazgo("T1", mensaje, comprobante))
         vistas.add(clave)
     return hallazgos
 
@@ -71,9 +76,10 @@ def _validar_documentos_t1_contra_prestaciones_t2(
     for fila_t1 in filas_t1:
         clave_doc = _clave_documento_t1(fila_t1)
         prestaciones = [f for f in filas_t2 if _clave_documento_t2_t3(f) == clave_doc]
+        comprobante = _comprobante(clave_doc[3])
         if not prestaciones:
-            mensaje = f"Documento sin ninguna prestacion en T2: {clave_doc}"
-            hallazgos.append(_hallazgo("T1", mensaje, str(clave_doc)))
+            mensaje = f"El comprobante {comprobante} no tiene ninguna atención en el lote."
+            hallazgos.append(_hallazgo("T1", mensaje, comprobante))
             continue
 
         cantidad_declarada = int(_v(fila_t1, 11))
@@ -81,8 +87,8 @@ def _validar_documentos_t1_contra_prestaciones_t2(
             hallazgos.append(
                 _hallazgo(
                     "T1",
-                    f"Cantidad de prestaciones declarada ({cantidad_declarada}) no coincide "
-                    f"con las prestaciones reales en T2 ({len(prestaciones)}) para {clave_doc}.",
+                    f"El comprobante {comprobante} declara {cantidad_declarada} atenciones, "
+                    f"pero el lote lleva {len(prestaciones)}.",
                     str(cantidad_declarada),
                     campo_numero=11,
                 )
@@ -93,8 +99,8 @@ def _validar_documentos_t1_contra_prestaciones_t2(
             hallazgos.append(
                 _hallazgo(
                     "T2",
-                    f"Correlativos de prestacion no consecutivos desde 1 para {clave_doc}: "
-                    f"{correlativos}.",
+                    f"Las atenciones del comprobante {comprobante} no están numeradas "
+                    "de forma consecutiva desde 1.",
                     str(correlativos),
                     campo_numero=5,
                 )
@@ -116,8 +122,9 @@ def _validar_procedimientos_t3_contra_prestaciones_t2(
             hallazgos.append(
                 _hallazgo(
                     "T3",
-                    f"Procedimiento sin prestacion T2 correspondiente: {clave_prestacion}.",
-                    str(clave_prestacion),
+                    f"Un procedimiento del comprobante {_comprobante(clave_prestacion[3])} "
+                    "no corresponde a ninguna atención.",
+                    _comprobante(clave_prestacion[3]),
                 )
             )
     return hallazgos
@@ -140,8 +147,8 @@ def _validar_correlativos_t3_por_prestacion(
             hallazgos.append(
                 _hallazgo(
                     "T3",
-                    f"Correlativos de servicio no consecutivos desde 1 para la prestacion "
-                    f"{clave_prestacion}: {correlativos}.",
+                    f"Los procedimientos del comprobante {_comprobante(clave_prestacion[3])} "
+                    "no están numerados de forma consecutiva desde 1.",
                     str(correlativos),
                     campo_numero=6,
                 )
@@ -164,8 +171,9 @@ def _validar_productos_t4_contra_prestaciones_t2(
             hallazgos.append(
                 _hallazgo(
                     "T4",
-                    f"Producto de farmacia sin prestacion T2 correspondiente: {clave_prestacion}.",
-                    str(clave_prestacion),
+                    "Un producto de farmacia del comprobante "
+                    f"{_comprobante(clave_prestacion[3])} no corresponde a ninguna atención.",
+                    _comprobante(clave_prestacion[3]),
                 )
             )
     return hallazgos
@@ -191,8 +199,9 @@ def _validar_correlativos_t4_por_prestacion(
             hallazgos.append(
                 _hallazgo(
                     "T4",
-                    f"Correlativos de producto no consecutivos desde 1 para la prestacion "
-                    f"{clave_prestacion}: {correlativos}.",
+                    "Los productos de farmacia del comprobante "
+                    f"{_comprobante(clave_prestacion[3])} no están numerados de forma "
+                    "consecutiva desde 1.",
                     str(correlativos),
                     campo_numero=6,
                 )

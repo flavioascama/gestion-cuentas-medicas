@@ -91,7 +91,7 @@ export function ResultadoAuditoria(propiedades: Propiedades) {
   if (!puede_registrar || consulta.isPending) return null;
   return (
     <div className={estilos.fila_accion}>
-      <RegistroManual>
+      <RegistroManual rotulo="Registrar observación o conformidad">
         <Boton variante="secundario" onClick={al_registrar_observacion}>
           Registrar observación de la IAFAS
         </Boton>

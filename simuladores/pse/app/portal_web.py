@@ -8,7 +8,7 @@ respuesta HTTP directa."""
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import UTC, date, datetime, timedelta, timezone
 from decimal import Decimal
 from typing import Literal
 
@@ -16,6 +16,15 @@ from fastapi import FastAPI
 from pydantic import BaseModel, Field, model_validator
 
 from app.almacenamiento import AlmacenamientoPse
+
+# El dia de Lima (UTC-5, sin horario de verano): el contenedor corre en UTC
+# y date.today() daria el dia siguiente pasadas las 19:00 de Lima.
+_ZONA_PERU = timezone(timedelta(hours=-5))
+
+
+def hoy_peru() -> date:
+    return datetime.now(UTC).astimezone(_ZONA_PERU).date()
+
 
 # Serie distinta de "F001" (la que usa la carga sintetica,
 # herramientas/cargar_cuentas_sinteticas.py): ese generador ya sembro
@@ -92,7 +101,7 @@ def construir_app(almacenamiento: AlmacenamientoPse) -> FastAPI:
             tipo_documento_pago=solicitud.tipo_comprobante or _TIPO_DOCUMENTO_PAGO,
             serie=_SERIE,
             numero=almacenamiento.siguiente_numero(),
-            fecha_emision=date.today(),
+            fecha_emision=hoy_peru(),
         )
 
     @app.post("/notas", response_model=NotaEmitida, status_code=201)
@@ -101,7 +110,7 @@ def construir_app(almacenamiento: AlmacenamientoPse) -> FastAPI:
         return NotaEmitida(
             serie=serie,
             numero=almacenamiento.siguiente_numero_nota(serie),
-            fecha_emision=date.today(),
+            fecha_emision=hoy_peru(),
         )
 
     return app

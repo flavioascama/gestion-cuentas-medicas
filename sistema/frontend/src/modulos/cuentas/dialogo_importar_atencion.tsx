@@ -34,8 +34,13 @@ function construir_columnas(
       formatear: (fila) => `${fila.paciente.nombres} ${fila.paciente.apellidos}`,
     },
     {
+      clave: "paciente",
+      encabezado: "Documento",
+      formatear: (fila) => fila.paciente.numero_documento,
+    },
+    {
       clave: "iafas_codigo",
-      encabezado: "Aseguradora",
+      encabezado: "IAFAS",
       formatear: (fila) => nombre_iafas(fila.iafas_codigo),
     },
     {
@@ -72,7 +77,7 @@ function BotonCargarArchivo({
         }}
       />
       <Boton disabled={deshabilitado} onClick={() => entrada.current?.click()}>
-        Cargar archivo
+        Cargar archivo de la atención
       </Boton>
     </>
   );

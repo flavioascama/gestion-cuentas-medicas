@@ -8,6 +8,7 @@ La trazabilidad de cada producto a su captura y fila de origen (Seccion
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from pathlib import Path
 
 import yaml
@@ -62,14 +63,17 @@ def leer_productos_catalogo_gtin(ruta: Path = RUTA_CATALOGO_GTIN) -> list[dict[s
 
 
 async def insertar_version_catalogo_gtin(
-    sesion: AsyncSession, productos: list[dict[str, object]]
+    sesion: AsyncSession,
+    productos: list[dict[str, object]],
+    trazabilidad: Mapping[str, tuple[str, int]] = TRAZABILIDAD_CATALOGO_GTIN,
+    ruta_origen: str = str(RUTA_CATALOGO_GTIN),
 ) -> VersionCatalogoGtin:
     """Agrega la version y sus productos a la sesion (sin confirmar)."""
-    version = CatalogoGtinVersionModelo(ruta_origen=str(RUTA_CATALOGO_GTIN))
+    version = CatalogoGtinVersionModelo(ruta_origen=ruta_origen)
     sesion.add(version)
     await sesion.flush()
     for producto in productos:
-        captura, fila = TRAZABILIDAD_CATALOGO_GTIN[str(producto["codigo"])]
+        captura, fila = trazabilidad[str(producto["codigo"])]
         sesion.add(
             CatalogoGtinProductoModelo(
                 version_id=version.id,
@@ -96,8 +100,19 @@ async def insertar_version_catalogo_gtin(
 
 
 class CargadorCatalogoGtinSql(CargadorCatalogoGtin):
-    def __init__(self, sesion: AsyncSession) -> None:
+    def __init__(
+        self,
+        sesion: AsyncSession,
+        productos: list[dict[str, object]],
+        trazabilidad: Mapping[str, tuple[str, int]],
+        nombre_archivo: str,
+    ) -> None:
         self._sesion = sesion
+        self._productos = productos
+        self._trazabilidad = trazabilidad
+        self._nombre_archivo = nombre_archivo
 
     async def cargar(self) -> VersionCatalogoGtin:
-        return await insertar_version_catalogo_gtin(self._sesion, leer_productos_catalogo_gtin())
+        return await insertar_version_catalogo_gtin(
+            self._sesion, self._productos, self._trazabilidad, self._nombre_archivo
+        )

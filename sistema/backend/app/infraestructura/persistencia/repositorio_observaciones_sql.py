@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from dataclasses import replace
 from datetime import datetime
+from decimal import Decimal
 
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -22,6 +23,9 @@ from app.infraestructura.persistencia.modelos_acceso import UsuarioModelo
 from app.infraestructura.persistencia.modelos_observaciones import (
     CatalogoMotivoObservacionModelo,
     ObservacionModelo,
+)
+from app.infraestructura.persistencia.repositorio_liquidaciones_sql import (
+    total_facturado_de_cuenta,
 )
 
 
@@ -153,6 +157,9 @@ class RepositorioObservacionesSql(RepositorioObservaciones):
                 respondido_en=respondido_en,
             )
         )
+
+    async def total_facturado(self, cuenta_medica_id: int) -> Decimal | None:
+        return await total_facturado_de_cuenta(self._sesion, cuenta_medica_id)
 
     async def fijar_resultado(
         self, cuenta_medica_id: int, resultado: ResultadoObservacion, instante: datetime

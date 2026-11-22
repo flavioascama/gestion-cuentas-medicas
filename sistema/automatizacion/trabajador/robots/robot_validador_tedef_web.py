@@ -32,6 +32,7 @@ from typing import Any
 
 import openpyxl
 import structlog
+from app.compartido.periodo import periodo_legible
 from app.dominio.integracion.puertos_validacion import (
     ArchivoLote,
     ContextoCargaValidador,
@@ -132,7 +133,9 @@ class AdaptadorValidadorTedefWeb(ValidadorTedefWeb):
     async def _pagina_autenticada(self) -> AsyncIterator[Page]:
         estado_sesion = self._almacen_sesiones.cargar(_PLATAFORMA)
         if estado_sesion is None:
-            raise ErrorSesionNoDisponible("No hay una sesion asistida guardada para TEDEF Web.")
+            raise ErrorSesionNoDisponible(
+                "No hay un ingreso activo a TEDEF Web: ingrese con el código de verificación."
+            )
 
         contexto = await self._gestor_navegador.nuevo_contexto(estado_sesion)
         pagina = await contexto.new_page()
@@ -140,7 +143,8 @@ class AdaptadorValidadorTedefWeb(ValidadorTedefWeb):
             await pagina.goto(f"{self._url_base}{_sel('lotes_por_validar', 'ruta')}")
             if pagina.url.endswith("/ingreso"):
                 raise ErrorSesionNoDisponible(
-                    "La sesion asistida guardada de TEDEF Web ya no es valida."
+                    "El ingreso a TEDEF Web venció: vuelva a ingresar con el código de "
+                    "verificación."
                 )
             await self._paso(pagina, "Lotes por validar, con la sesión iniciada")
             yield pagina
@@ -196,7 +200,8 @@ class AdaptadorValidadorTedefWeb(ValidadorTedefWeb):
                 return ResultadoEtapaValidador(conforme=True, estado_informado="VALIDADO")
             if accion == ACCION_NO_ENCONTRADO or fila is None:
                 raise ErrorRobotValidadorTedefWeb(
-                    f"No se encontro el lote {identidad.numero}/{identidad.periodo} en TEDEF Web."
+                    f"TEDEF Web no tiene el lote {identidad.numero} de "
+                    f"{periodo_legible(identidad.periodo)}."
                 )
             if accion == ACCION_VALIDAR:
                 await fila.locator(_sel("lotes_por_validar", "checkbox_lote")).check()
@@ -238,8 +243,8 @@ class AdaptadorValidadorTedefWeb(ValidadorTedefWeb):
             await asyncio.sleep(self._intervalo_poll_segundos)
 
         raise ErrorRobotValidadorTedefWeb(
-            f"Se agoto el tiempo limite esperando la validacion detallada del lote "
-            f"{identidad.numero}/{identidad.periodo}."
+            f"TEDEF Web no terminó de validar el lote {identidad.numero} de "
+            f"{periodo_legible(identidad.periodo)} en el tiempo de espera."
         )
 
     async def descargar_archivo_transmision(self, identidad: IdentidadLoteTedef) -> ArchivoLote:
@@ -281,7 +286,8 @@ class AdaptadorValidadorTedefWeb(ValidadorTedefWeb):
         fila = await self._fila_opcional(pagina, seccion, identidad)
         if fila is None:
             raise ErrorRobotValidadorTedefWeb(
-                f"No se encontro el lote {identidad.numero}/{identidad.periodo} en {seccion}."
+                f"TEDEF Web no tiene el lote {identidad.numero} de "
+                f"{periodo_legible(identidad.periodo)} en {seccion.replace('_', ' ')}."
             )
         return fila
 

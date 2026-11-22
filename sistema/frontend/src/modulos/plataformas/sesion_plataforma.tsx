@@ -10,6 +10,20 @@ interface Propiedades {
   necesita: boolean;
 }
 
+// El motivo que guarda el sistema, dicho para quien usa la pantalla.
+function texto_de_falla(motivo: string | null, nombre: string): string {
+  if (motivo?.includes("intentos de CAPTCHA")) {
+    return `No se pudo ingresar a ${nombre}: el código de verificación no fue correcto.`;
+  }
+  if (motivo?.includes("tiempo limite")) {
+    return `No se pudo ingresar a ${nombre}: no se respondió el código de verificación a tiempo.`;
+  }
+  if (motivo?.includes("Usuario o contrasena")) {
+    return `No se pudo ingresar a ${nombre}: la plataforma no aceptó el usuario o la contraseña registrados.`;
+  }
+  return `No se pudo conectar con ${nombre}.`;
+}
+
 // Lo unico que la persona ve de la sesion con una plataforma externa
 // (ACREDITA SALUD, TEDEF Web): el dialogo del codigo de verificacion y, si
 // la plataforma no acepta la conexion, el aviso. La sesion se pide sola
@@ -28,7 +42,7 @@ export function SesionPlataforma({ plataforma, nombre, necesita }: Propiedades) 
       ) : null}
       {sesion.sin_conexion ? (
         <div className={estilos.fila_accion}>
-          <Mensaje tipo="error" texto={`No se pudo conectar con ${nombre}.`} />
+          <Mensaje tipo="error" texto={texto_de_falla(sesion.motivo, nombre)} />
           <Boton variante="secundario" onClick={sesion.reintentar}>
             Reintentar
           </Boton>

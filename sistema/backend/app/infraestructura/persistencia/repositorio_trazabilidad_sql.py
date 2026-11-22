@@ -216,6 +216,7 @@ class RepositorioTrazabilidadSql(RepositorioTrazabilidad):
                     tipo="COMPROBANTE_PAGO",
                     referencia=referencia,
                     emitido_en=None,
+                    fecha_emision=comprobante.fecha_emision,
                 )
             )
         return documentos

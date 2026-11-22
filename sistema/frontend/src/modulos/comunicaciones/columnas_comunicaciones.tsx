@@ -38,9 +38,17 @@ function contenido(fila: ComunicacionIafas, motivos: Map<string, string>): strin
   return monto ? formatear_monto(monto) : "—";
 }
 
+// Las comunicaciones guardadas antes del 2026-11-20 traen el texto de la
+// excepcion: se muestran con una frase general.
+const _TEXTO_TECNICO = /[_']|Tabla|Error|transicion|valido|terminal/;
+
+export function detalle_no_aplicada(detalle: string): string {
+  return _TEXTO_TECNICO.test(detalle) ? "La comunicación no se pudo aplicar a la cuenta." : detalle;
+}
+
 function resultado(fila: ComunicacionIafas): string {
   if (fila.resultado === "APLICADA") return "Aplicada";
-  return fila.detalle ? `No aplicada: ${fila.detalle}` : "No aplicada";
+  return fila.detalle ? `No aplicada: ${detalle_no_aplicada(fila.detalle)}` : "No aplicada";
 }
 
 export function crear_columnas_comunicaciones(

@@ -28,7 +28,7 @@ async def obtener_trabajo(
     if trabajo is None:
         raise ErrorAplicacion(
             "TRABAJO_NO_ENCONTRADO",
-            f"No existe el trabajo {trabajo_id}.",
+            "No se encontró la operación.",
             estado_http=status.HTTP_404_NOT_FOUND,
         )
     return DetalleTrabajoRespuesta.desde_valor(trabajo)

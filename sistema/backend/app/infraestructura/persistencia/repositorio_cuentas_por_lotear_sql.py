@@ -15,7 +15,7 @@ from app.infraestructura.persistencia.modelos_integracion import (
     IafasModelo,
 )
 from app.infraestructura.persistencia.montos_comprobante_sql import cotejo_de_cuenta
-from app.infraestructura.persistencia.montos_cuenta_sql import montos_por_cuenta
+from app.infraestructura.persistencia.montos_cuenta_sql import facturado_por_documento
 from app.infraestructura.persistencia.vigencia_lote_sql import cuentas_en_lotes_vigentes
 
 
@@ -33,6 +33,7 @@ class RepositorioCuentasPorLotearSql(RepositorioCuentasPorLotear):
                     AseguradoModelo,
                     IafasModelo,
                     DocumentoFacturadorModelo.fecha_emision,
+                    DocumentoFacturadorModelo.id,
                 )
                 .join(
                     DocumentoFacturadorModelo,
@@ -45,7 +46,8 @@ class RepositorioCuentasPorLotearSql(RepositorioCuentasPorLotear):
             )
         ).all()
         filas = [fila for fila in filas if fila[0].id not in ocupadas]
-        montos = await montos_por_cuenta(self._sesion, [fila[0].id for fila in filas])
+        # Lo facturado a la IAFAS, como el monto del lote (auditoria final, hallazgo 4).
+        montos = await facturado_por_documento(self._sesion, [fila[4] for fila in filas])
         desfasadas = await self._con_comprobante_desfasado([fila[0].id for fila in filas])
         return [
             CuentaPorLotear(
@@ -57,14 +59,14 @@ class RepositorioCuentasPorLotearSql(RepositorioCuentasPorLotear):
                 iafas_codigo=iafas.codigo,
                 iafas_razon_social=iafas.razon_social,
                 fecha_emision=fecha_emision,
-                monto=montos[cuenta.id],
+                monto=montos[documento_id],
                 # Una cuenta facturada siempre tiene procedimientos: lo que puede
                 # faltarle, en las anteriores al 2026-11-18, es el diagnostico.
                 pendientes=pendientes_para_lotear(
                     bool(cuenta.diagnostico_principal_cie10), 1, cuenta.id in desfasadas
                 ),
             )
-            for cuenta, asegurado, iafas, fecha_emision in filas
+            for cuenta, asegurado, iafas, fecha_emision, documento_id in filas
         ]
 
     async def _con_comprobante_desfasado(self, cuenta_ids: list[int]) -> set[int]:

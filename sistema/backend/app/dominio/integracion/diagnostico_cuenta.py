@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from typing import Protocol
 
+from app.compartido.nombres_estados import nombre_estado
 from app.dominio.orquestacion.correccion_validador import admite_correccion
 from app.dominio.orquestacion.puertos import RepositorioEstadoCuenta
 from app.dominio.puertos_comunes import Evento, RegistroEventos
@@ -30,12 +31,15 @@ class ErrorDiagnostico(Exception):
 
 class ErrorCuentaInexistenteDiagnostico(ErrorDiagnostico):
     def __init__(self, cuenta_id: int) -> None:
-        super().__init__(f"No existe la cuenta medica {cuenta_id}.")
+        super().__init__("No existe la cuenta médica.")
 
 
 class ErrorDiagnosticoNoAdmitido(ErrorDiagnostico):
     def __init__(self, estado: str) -> None:
-        super().__init__(f"El diagnóstico ya no se puede cambiar en una cuenta en estado {estado}.")
+        super().__init__(
+            "El diagnóstico ya no se puede cambiar en una cuenta en estado "
+            f"{nombre_estado(estado)}."
+        )
 
 
 class ErrorCie10Inexistente(ErrorDiagnostico):
@@ -51,6 +55,11 @@ class RepositorioDiagnosticoCuenta(Protocol):
     async def existe_cie10(self, codigo: str) -> bool: ...
 
     async def fijar_diagnostico(self, cuenta_id: int, codigo: str) -> None: ...
+
+
+def normalizar_cie10(codigo: str) -> str:
+    """El catalogo guarda el codigo sin punto: "J18.9" se acepta como "J189"."""
+    return codigo.strip().upper().replace(".", "")
 
 
 def admite_diagnostico(estado: str, diagnostico_actual: str | None) -> bool:
@@ -71,7 +80,7 @@ class RegistrarDiagnosticoPrincipal:
         self._estado_cuenta = estado_cuenta
 
     async def ejecutar(self, cuenta_id: int, codigo: str, actor: str) -> str:
-        codigo = codigo.strip().upper()
+        codigo = normalizar_cie10(codigo)
         actual = await self._repositorio.estado_y_diagnostico(cuenta_id)
         if actual is None:
             raise ErrorCuentaInexistenteDiagnostico(cuenta_id)

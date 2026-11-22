@@ -6,7 +6,7 @@ import { TablaDatos, type ColumnaTabla } from "../../componentes_base/tabla_dato
 import { formatear_fecha_hora } from "../../utilidades/formato";
 
 // Los pasos de una tarea del robot, para el administrador: que hizo, en que
-// plataforma, en que direccion y a que hora. Sin la imagen de cada paso.
+// plataforma y a que hora. Sin la imagen de cada paso.
 const _PLATAFORMAS: Record<string, string> = {
   acredita_salud: "ACREDITA SALUD",
   tedef_web: "TEDEF Web",
@@ -20,7 +20,6 @@ const _COLUMNAS: ColumnaTabla<PasoRobot>[] = [
     encabezado: "Plataforma",
     formatear: (fila) => _PLATAFORMAS[fila.plataforma] ?? fila.plataforma,
   },
-  { clave: "url", encabezado: "Dirección" },
   {
     clave: "capturado_en",
     encabezado: "Fecha y hora",

@@ -9,6 +9,7 @@ export type RespuestaProcedimientoConfirmado =
   components["schemas"]["RespuestaProcedimientoConfirmado"];
 export type VersionCpms = components["schemas"]["VersionCpmsRespuesta"];
 export type RespuestaCatalogoCpmsCargado = components["schemas"]["RespuestaCatalogoCpmsCargado"];
+export type ProcedimientoCatalogoCpms = components["schemas"]["ProcedimientoCatalogoCpmsRespuesta"];
 
 export interface FiltrosSugerenciaCpms {
   cuenta_medica_id?: number;
@@ -52,6 +53,14 @@ export function listar_versiones_cpms(): Promise<VersionCpms[]> {
   return obtener<VersionCpms[]>("/catalogo-cpms/versiones");
 }
 
-export function cargar_catalogo_cpms(etiqueta?: string): Promise<RespuestaCatalogoCpmsCargado> {
-  return enviar<RespuestaCatalogoCpmsCargado>("POST", "/catalogo-cpms/versiones", { etiqueta });
+export function buscar_procedimientos_catalogo_cpms(
+  buscar: string,
+): Promise<ProcedimientoCatalogoCpms[]> {
+  return obtener<ProcedimientoCatalogoCpms[]>("/catalogo-cpms/procedimientos", { buscar });
+}
+
+export function cargar_catalogo_cpms(
+  archivo: components["schemas"]["SolicitudCargarCatalogoCpms"],
+): Promise<RespuestaCatalogoCpmsCargado> {
+  return enviar<RespuestaCatalogoCpmsCargado>("POST", "/catalogo-cpms/versiones", archivo);
 }

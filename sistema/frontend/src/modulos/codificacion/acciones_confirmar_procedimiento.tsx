@@ -1,6 +1,11 @@
 import { Boton } from "../../componentes_base/boton";
 import type { DatosConfirmacion } from "./tipos_confirmacion";
 
+// La regla del servidor: cantidad entera mayor que cero y monto mayor que cero.
+function datos_validos(datos: DatosConfirmacion): boolean {
+  return /^[1-9]\d*$/.test(datos.cantidad) && Number(datos.monto_unitario) > 0;
+}
+
 interface Propiedades {
   datos: DatosConfirmacion;
   confirmando: boolean;
@@ -22,7 +27,7 @@ export function AccionesConfirmarProcedimiento({
       <Boton
         variante="primario"
         onClick={al_confirmar}
-        disabled={confirmando || !datos.cantidad || !datos.monto_unitario || !datos.fecha}
+        disabled={confirmando || !datos_validos(datos) || !datos.fecha}
       >
         Confirmar
       </Boton>

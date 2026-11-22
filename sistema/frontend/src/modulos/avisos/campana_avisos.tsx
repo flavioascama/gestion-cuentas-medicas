@@ -36,6 +36,10 @@ function usar_cierre_exterior(abierto: boolean, al_cerrar: () => void) {
   return contenedor;
 }
 
+function texto_pendientes(cantidad: number): string {
+  return `${cantidad} ${cantidad === 1 ? "pendiente" : "pendientes"}`;
+}
+
 function PanelAvisos({ avisos, al_cerrar }: { avisos: Aviso[]; al_cerrar: () => void }) {
   const navegar = useNavigate();
   const ahora = usar_ahora();
@@ -53,7 +57,7 @@ function PanelAvisos({ avisos, al_cerrar }: { avisos: Aviso[]; al_cerrar: () => 
       <div className={estilos.cabecera_panel}>
         <h2 className={estilos.titulo_panel}>Avisos</h2>
         <span className={estilos.resumen}>
-          {lista.length === 0 ? "Sin pendientes" : `${lista.length} pendientes`}
+          {lista.length === 0 ? "Sin pendientes" : texto_pendientes(lista.length)}
         </span>
       </div>
       <div className={estilos.lista}>
@@ -92,7 +96,7 @@ export function CampanaAvisos() {
   const avisos = consulta.data ?? [];
   const cantidad = pendientes(avisos).length;
   const activa = abierto || ubicacion.pathname === "/avisos";
-  const etiqueta = cantidad > 0 ? `Avisos: ${cantidad} pendientes` : "Avisos";
+  const etiqueta = cantidad > 0 ? `Avisos: ${texto_pendientes(cantidad)}` : "Avisos";
 
   return (
     <div className={estilos.contenedor} ref={contenedor}>

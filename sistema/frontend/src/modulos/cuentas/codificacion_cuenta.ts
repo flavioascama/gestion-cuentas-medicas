@@ -5,7 +5,7 @@ import { usar_en_correccion_validador } from "./usar_cuentas";
 // antes de facturar, al corregir una cuenta rechazada y al refacturar por
 // una glosa tecnica; tambien si el validador observo su lote. El backend
 // aplica la misma regla.
-const _ESTADOS_CODIFICABLES = new Set(["REGISTRADA", "RECHAZADA", "GLOSADA", "GLOSADA_PARCIAL"]);
+const _ESTADOS_CODIFICABLES = new Set(["REGISTRADA", "RECHAZADA", "GLOSADA"]);
 
 // Codificar los procedimientos es tarea del auditor medico (tabla de actores
 // de la tesis): el analista ve los procedimientos, no los agrega.

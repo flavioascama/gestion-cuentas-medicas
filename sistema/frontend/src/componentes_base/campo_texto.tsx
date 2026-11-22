@@ -6,6 +6,8 @@ interface Propiedades extends InputHTMLAttributes<HTMLInputElement> {
   ayuda?: string;
   error?: string;
   icono?: ReactNode;
+  // Campo sin el cual no se puede guardar: un asterisco en la etiqueta.
+  obligatorio?: boolean;
 }
 
 export function CampoTexto({
@@ -13,6 +15,7 @@ export function CampoTexto({
   ayuda,
   error,
   icono,
+  obligatorio,
   id,
   className,
   ...resto
@@ -24,6 +27,7 @@ export function CampoTexto({
     <div className={estilos.contenedor}>
       <label className={estilos.etiqueta} htmlFor={id_campo}>
         {etiqueta}
+        {obligatorio ? " *" : null}
       </label>
       <div className={estilos.envoltorio_entrada}>
         {icono ? <span className={estilos.icono_entrada}>{icono}</span> : null}

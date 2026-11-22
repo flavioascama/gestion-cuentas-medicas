@@ -78,7 +78,7 @@ async def obtener_captcha(
     if sesion is None or sesion.imagen_captcha is None:
         raise ErrorAplicacion(
             "CAPTCHA_NO_DISPONIBLE",
-            f"La sesion {sesion_id} no tiene un CAPTCHA pendiente.",
+            "La sesión no tiene un código de verificación pendiente.",
             estado_http=status.HTTP_404_NOT_FOUND,
         )
     return Response(content=sesion.imagen_captcha, media_type="image/png")

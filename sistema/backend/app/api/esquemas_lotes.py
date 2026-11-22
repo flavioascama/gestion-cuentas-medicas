@@ -90,6 +90,8 @@ class ResumenLoteRespuesta(BaseModel):
     cantidad_documentos: int
     monto_total: Decimal
     monitoreo_excedido: bool
+    vigente: bool
+    motivo_desactualizado: str | None
 
     @staticmethod
     def desde_valor(valor: ResumenLote) -> ResumenLoteRespuesta:
@@ -112,6 +114,8 @@ class DetalleLoteRespuesta(BaseModel):
     version_mapeo: str | None
     monitoreo_excedido: bool
     validacion_reintentable: bool
+    vigente: bool
+    motivo_desactualizado: str | None
 
     @staticmethod
     def desde_valor(valor: DetalleLote) -> DetalleLoteRespuesta:

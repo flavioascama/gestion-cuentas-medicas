@@ -55,6 +55,12 @@ class RepositorioUsuarios(Protocol):
         cambiarla y su contador de intentos fallidos vuelve a cero."""
         ...
 
+    async def restablecer_clave(self, usuario_id: int, hash_clave: str) -> None:
+        """Guarda la clave temporal que puso el administrador: la persona
+        debe cambiarla al ingresar, se levanta su bloqueo por intentos y
+        las sesiones que tenia abiertas dejan de valer."""
+        ...
+
 
 class VerificadorClave(Protocol):
     """Puerto y adaptador: bcrypt en infraestructura (Seccion 5.2)."""
@@ -80,6 +86,8 @@ class CargaSesion:
     expira_en: datetime
     # La clave la puso el administrador: antes de operar debe cambiarla.
     debe_cambiar_clave: bool = False
+    # Momento de emision (`iat`, en segundos enteros).
+    emitida_en: datetime | None = None
 
 
 class GestorSesion(Protocol):

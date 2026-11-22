@@ -48,6 +48,14 @@ export function usar_acciones_lote(lote_id: number) {
   const monitoreo_en_curso =
     trabajo_monitoreo_id !== null && trabajo_monitoreo.data?.estado !== "AGOTADO";
 
+  // Igual con la carga en el validador.
+  const trabajo_carga = useQuery({
+    queryKey: ["trabajo", trabajo_id],
+    queryFn: () => obtener_trabajo(trabajo_id ?? 0),
+    enabled: trabajo_id !== null,
+  });
+  const carga_en_curso = trabajo_id !== null && trabajo_carga.data?.estado !== "AGOTADO";
+
   function al_completar_carga(): void {
     void cliente_consultas.invalidateQueries({ queryKey: ["lotes", lote_id] });
   }
@@ -59,6 +67,7 @@ export function usar_acciones_lote(lote_id: number) {
     trabajo_id,
     trabajo_monitoreo_id,
     monitoreo_en_curso,
+    carga_en_curso,
     al_completar_carga,
   };
 }
@@ -77,7 +86,12 @@ function puede_operar(roles: readonly string[] | undefined, estado: string): boo
   return Boolean(roles?.includes("analista"));
 }
 
-type LoteAccion = { estado: string; monitoreo_excedido: boolean; validacion_reintentable: boolean };
+type LoteAccion = {
+  estado: string;
+  monitoreo_excedido: boolean;
+  validacion_reintentable: boolean;
+  vigente: boolean;
+};
 
 // Un lote ya cargado se vuelve a validar solo si su trabajo anterior termino.
 function pide_validacion(lote: LoteAccion): boolean {
@@ -90,14 +104,14 @@ function pide_validacion(lote: LoteAccion): boolean {
 export function BotonAccionLote({ lote, acciones }: { lote: LoteAccion; acciones: AccionesLote }) {
   const { estado } = lote;
   const { sesion } = usar_sesion();
-  if (!puede_operar(sesion?.roles, estado)) return null;
+  if (!puede_operar(sesion?.roles, estado) || !lote.vigente) return null;
 
   if (pide_validacion(lote)) {
     return (
       <Boton
         variante="primario"
         onClick={() => acciones.cargar_validador.mutate()}
-        disabled={acciones.cargar_validador.isPending || acciones.trabajo_id !== null}
+        disabled={acciones.cargar_validador.isPending || acciones.carga_en_curso}
       >
         Cargar en el validador
       </Boton>
@@ -146,7 +160,7 @@ function ContenidoCargaValidador({ acciones }: { acciones: AccionesLote }) {
       ) : null}
       <MensajeErrorMutacion
         error={acciones.cargar_validador.error}
-        texto_por_defecto="No se pudo encolar la carga."
+        texto_por_defecto="No se pudo iniciar la carga."
       />
       {/* La sesion con TEDEF Web se maneja sola (2026-11-18): se pide cuando
           la carga la necesita y la persona solo responde el codigo. */}
@@ -161,13 +175,15 @@ function ContenidoCargaValidador({ acciones }: { acciones: AccionesLote }) {
 
 export function ContenidoAccionLote({
   estado,
+  vigente,
   acciones,
 }: {
   estado: string;
+  vigente: boolean;
   acciones: AccionesLote;
 }) {
   const { sesion } = usar_sesion();
-  if (!puede_operar(sesion?.roles, estado)) return null;
+  if (!puede_operar(sesion?.roles, estado) || !vigente) return null;
 
   if (_ESTADOS_VALIDACION.includes(estado)) return <ContenidoCargaValidador acciones={acciones} />;
   if (estado === "VALIDADO") {

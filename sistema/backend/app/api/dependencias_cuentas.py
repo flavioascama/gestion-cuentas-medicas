@@ -22,6 +22,7 @@ from app.dominio.integracion.casos_uso_ingesta import (
     ConsultarCompletitudCuenta,
     RegistrarCuentaMedica,
 )
+from app.dominio.integracion.correccion_asegurado import CorregirNombresAsegurado
 from app.dominio.integracion.facturacion_cuenta import FacturarCuentaCompleta
 from app.dominio.integracion.puertos_consulta import (
     RepositorioCie10Consulta,
@@ -55,6 +56,7 @@ from app.infraestructura.persistencia.repositorio_iafas_consulta_sql import (
 )
 from app.infraestructura.persistencia.repositorio_ingesta_cuentas_sql import (
     RepositorioCompletitudCuentaSql,
+    RepositorioCorreccionAseguradoSql,
     RepositorioIngestaCuentasSql,
 )
 from app.infraestructura.pse.emisor_pse_http import EmisorPseHttp
@@ -149,8 +151,16 @@ def construir_buscar_asegurado(
 def construir_registrar_cuenta(
     repositorio: RepositorioIngestaCuentas = Depends(obtener_repositorio_ingesta_cuentas),
     registro_eventos: RegistroEventos = Depends(obtener_registro_eventos),
+    reloj: Reloj = Depends(obtener_reloj),
 ) -> RegistrarCuentaMedica:
-    return RegistrarCuentaMedica(repositorio, registro_eventos)
+    return RegistrarCuentaMedica(repositorio, registro_eventos, reloj)
+
+
+def construir_corregir_asegurado(
+    sesion: AsyncSession = Depends(obtener_sesion),
+    registro_eventos: RegistroEventos = Depends(obtener_registro_eventos),
+) -> CorregirNombresAsegurado:
+    return CorregirNombresAsegurado(RepositorioCorreccionAseguradoSql(sesion), registro_eventos)
 
 
 def construir_consultar_completitud(

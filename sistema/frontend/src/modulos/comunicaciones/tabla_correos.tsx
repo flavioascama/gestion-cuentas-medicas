@@ -13,13 +13,16 @@ import { usar_pagina_cliente } from "../../componentes_base/paginar";
 import { TablaDatos, type ColumnaTabla } from "../../componentes_base/tabla_datos";
 import { formatear_fecha_hora } from "../../utilidades/formato";
 import { DialogoCorreo } from "./dialogo_correo";
+import { usar_nombre_aseguradora } from "./usar_nombre_aseguradora";
 import { MOTIVOS_REVISION } from "./etiquetas_correos";
 import estilos from "./comunicaciones.module.css";
 
 // Correos que llegaron al buzon de cuentas medicas: tambien los que el
 // robot no pudo aplicar solo, que quedan por revisar (2026-11-15).
 
-const _COLUMNAS_BASE: ColumnaTabla<CorreoIafas>[] = [
+const columnas_base = (
+  nombre_aseguradora: (codigo: string) => string,
+): ColumnaTabla<CorreoIafas>[] => [
   {
     clave: "recibido_en",
     encabezado: "Recibido",
@@ -32,7 +35,7 @@ const _COLUMNAS_BASE: ColumnaTabla<CorreoIafas>[] = [
       <>
         {fila.remitente}
         {fila.codigo_iafas ? (
-          <span className={estilos.dato_secundario}>Aseguradora {fila.codigo_iafas}</span>
+          <span className={estilos.dato_secundario}>{nombre_aseguradora(fila.codigo_iafas)}</span>
         ) : null}
       </>
     ),
@@ -71,6 +74,7 @@ const _COLUMNA_CUENTA: ColumnaTabla<CorreoIafas> = {
 function columnas(
   mostrar_cuenta: boolean,
   al_ver: (correo: CorreoIafas) => void,
+  nombre_aseguradora: (codigo: string) => string,
 ): ColumnaTabla<CorreoIafas>[] {
   const ver: ColumnaTabla<CorreoIafas> = {
     clave: "id",
@@ -81,7 +85,8 @@ function columnas(
       </Boton>
     ),
   };
-  return mostrar_cuenta ? [..._COLUMNAS_BASE, _COLUMNA_CUENTA, ver] : [..._COLUMNAS_BASE, ver];
+  const base = columnas_base(nombre_aseguradora);
+  return mostrar_cuenta ? [...base, _COLUMNA_CUENTA, ver] : [...base, ver];
 }
 
 interface Propiedades {
@@ -96,6 +101,7 @@ export function TablaCorreos({ filtro, mostrar_cuenta, mensaje_vacio }: Propieda
     queryFn: () => listar_correos_iafas(filtro),
   });
   const [abierto, set_abierto] = useState<number | null>(null);
+  const nombre_aseguradora = usar_nombre_aseguradora();
   const filas = consulta.data ?? [];
   const { pagina_actual, total_paginas, filas_pagina, set_pagina } = usar_pagina_cliente(filas);
 
@@ -109,7 +115,11 @@ export function TablaCorreos({ filtro, mostrar_cuenta, mensaje_vacio }: Propieda
         etiqueta_entidad="correos"
       >
         <TablaDatos
-          columnas={columnas(mostrar_cuenta, (correo) => set_abierto(correo.id))}
+          columnas={columnas(
+            mostrar_cuenta,
+            (correo) => set_abierto(correo.id),
+            nombre_aseguradora,
+          )}
           filas={filas_pagina}
           obtener_clave={(fila) => fila.id}
           cargando={consulta.isPending}

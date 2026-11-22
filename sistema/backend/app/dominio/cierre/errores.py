@@ -34,6 +34,11 @@ class ErrorSolicitudAnulacionYaPendiente(Exception):
     resuelve esa antes de registrar una nueva."""
 
 
+class ErrorMotivoRechazoRequerido(Exception):
+    """CU-13: el rechazo de una anulacion lleva el motivo del jefe, que ve
+    quien la pidio."""
+
+
 class ErrorSolicitudAnulacionYaResuelta(Exception):
     """CU-13: no se puede aprobar o rechazar dos veces la misma
     solicitud."""

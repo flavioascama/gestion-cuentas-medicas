@@ -76,7 +76,7 @@ def condicion_segun_aseguradora(
     if codigo_iafas_respuesta.strip() == codigo_iafas_cuenta.strip():
         return condicion
     nombre = nombre_respuesta.strip() or codigo_iafas_respuesta.strip()
-    texto = f"NO ACREDITABLE: el asegurado figura en otra aseguradora ({nombre})"
+    texto = f"NO ACREDITABLE: el asegurado figura en otra IAFAS ({nombre})"
     return texto[:_LONGITUD_CONDICION]
 
 

@@ -7,7 +7,9 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from app.dominio.plazos.susalud import ZONA_PERU, RepositorioControlSusalud, periodo_de
+from app.compartido.fecha_peru import ZONA_PERU
+from app.compartido.periodo import periodo_legible
+from app.dominio.plazos.susalud import RepositorioControlSusalud, periodo_de
 from app.dominio.puertos_comunes import Evento, RegistroEventos, Reloj
 
 TIPO_EVENTO_DECLARACION = "DECLARACION_SIN_FACTURACION_REGISTRADA"
@@ -46,16 +48,20 @@ class RegistrarDeclaracionSinFacturacion:
 
     async def ejecutar(self, periodo: str, actor: str, usuario_id: int) -> datetime:
         if not (periodo.isdigit() and len(periodo) == 6 and 1 <= int(periodo[4:]) <= 12):
-            raise ErrorPeriodoInvalido(f"El periodo {periodo!r} no es AAAAMM.")
+            raise ErrorPeriodoInvalido("El periodo indicado no es válido.")
         if periodo >= periodo_de(self._reloj.ahora().astimezone(ZONA_PERU).date()):
-            raise ErrorPeriodoNoCerrado(f"El periodo {periodo} aun no cierra.")
+            raise ErrorPeriodoNoCerrado(f"El periodo {periodo_legible(periodo)} aún no cierra.")
         if any(
             r.periodo == periodo and r.lotes > 0
             for r in await self._repositorio.lotes_por_periodo()
         ):
-            raise ErrorPeriodoConLotes(f"El periodo {periodo} tiene lotes que reportar.")
+            raise ErrorPeriodoConLotes(
+                f"El periodo {periodo_legible(periodo)} tiene lotes que reportar."
+            )
         if periodo in await self._repositorio.declaraciones():
-            raise ErrorPeriodoYaDeclarado(f"El periodo {periodo} ya tiene su declaracion.")
+            raise ErrorPeriodoYaDeclarado(
+                f"El periodo {periodo_legible(periodo)} ya tiene su declaración jurada."
+            )
         registrada_en = await self._repositorio.registrar_declaracion(periodo, actor)
         await self._registro_eventos.registrar(
             Evento(

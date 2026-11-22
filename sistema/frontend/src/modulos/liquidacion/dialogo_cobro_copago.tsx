@@ -15,6 +15,7 @@ function CamposCobro(props: { cobro: Cobro; cambiar: (cambios: Partial<Cobro>) =
     <>
       <CampoTexto
         etiqueta="Monto (S/)"
+        obligatorio
         type="number"
         min="0.01"
         step="0.01"
@@ -23,6 +24,7 @@ function CamposCobro(props: { cobro: Cobro; cambiar: (cambios: Partial<Cobro>) =
       />
       <CampoTexto
         etiqueta="Fecha del cobro"
+        obligatorio
         type="date"
         max={fecha_local_hoy()}
         value={cobro.fecha}
@@ -30,6 +32,7 @@ function CamposCobro(props: { cobro: Cobro; cambiar: (cambios: Partial<Cobro>) =
       />
       <CampoTexto
         etiqueta="Comprobante de caja"
+        obligatorio
         maxLength={60}
         value={cobro.referencia}
         onChange={(evento) => cambiar({ referencia: evento.target.value })}

@@ -5,7 +5,7 @@ import type {
   TiempoEtapa,
 } from "../../api/trazabilidad";
 import { resolver_estado } from "../../componentes_base/mapa_estados";
-import { formatear_monto } from "../../utilidades/formato";
+import { formatear_monto, formatear_periodo } from "../../utilidades/formato";
 import { etiqueta_periodo, formatear_entero, formatear_porcentaje } from "./formato_indicadores";
 import type { FilaGrafico } from "./grafico_barras";
 import type { ColumnaApilada, SerieApilada } from "./geometria_columnas";
@@ -43,7 +43,8 @@ export function construir_columnas_periodo(filas: LotesPeriodoEstado[]): Columna
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([periodo, valores]) => ({
       clave: periodo,
-      etiqueta: etiqueta_periodo(periodo),
+      etiqueta: formatear_periodo(periodo),
+      etiqueta_eje: etiqueta_periodo(periodo),
       valores,
     }));
 }

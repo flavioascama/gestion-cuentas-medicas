@@ -53,6 +53,7 @@ class SolicitudAnulacionModelo(Base):
     solicitado_en: Mapped[datetime] = mapped_column(sa.DateTime(timezone=True), nullable=False)
     resuelto_por: Mapped[str | None] = mapped_column(sa.String(100), nullable=True)
     resuelto_en: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True), nullable=True)
+    motivo_resolucion: Mapped[str | None] = mapped_column(sa.String(500), nullable=True)
 
     __table_args__ = (
         sa.CheckConstraint(

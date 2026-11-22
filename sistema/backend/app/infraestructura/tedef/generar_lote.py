@@ -16,6 +16,7 @@ from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
 
+from app.compartido.fecha_peru import fecha_peru
 from app.dominio.integracion.esquema import TablaEsquema
 from app.dominio.integracion.hallazgos import Hallazgo
 from app.dominio.integracion.lote import ContextoLote, DocumentoLote
@@ -51,6 +52,19 @@ from app.infraestructura.tedef.nombrado import (
     nombre_archivo_txt,
 )
 from app.infraestructura.tedef.validador_campo import validar_registro
+
+
+def identidad_del_lote(contexto: ContextoLote) -> IdentidadTrama:
+    """Los datos que nombran los archivos del lote; la fecha es el dia de Lima."""
+    return IdentidadTrama(
+        ruc=contexto.ruc_ipress,
+        codigo_ipress=contexto.codigo_ipress,
+        codigo_iafas=contexto.codigo_iafas,
+        numero_lote=contexto.numero_lote,
+        periodo=contexto.periodo,
+        fecha=fecha_peru(contexto.generado_en),
+    )
+
 
 # Tasa de IGV vigente en el Peru (Ley del IGV, 18%): supuesto documentado
 # (docs/DECISIONES.md), no una formula del Anexo 1. Ver mapeo T1 campo 23.
@@ -130,6 +144,7 @@ def _pendientes_por_cuenta(
             for registro in registros:
                 hallazgos.extend(validar_registro(esquema[tabla], registro))
         explicados = explicar_errores(hallazgos)
+        explicados += tuple(h.mensaje for h in validar_consistencia(*filas))
         if _comprobante_desfasado(documento):
             explicados += (COMPROBANTE_DESFASADO,)
         if explicados:
@@ -266,14 +281,7 @@ class GenerarLote:
         self, lote: _LoteGenerado, informe: InformeValidacionLote, actor: str
     ) -> ResultadoGenerarLote:
         contexto = lote.contexto
-        identidad = IdentidadTrama(
-            ruc=contexto.ruc_ipress,
-            codigo_ipress=contexto.codigo_ipress,
-            codigo_iafas=contexto.codigo_iafas,
-            numero_lote=contexto.numero_lote,
-            periodo=contexto.periodo,
-            fecha=contexto.generado_en.date(),
-        )
+        identidad = identidad_del_lote(contexto)
         rutas_archivos = self._escribir_archivos(cargar_esquema(), identidad, lote.filas)
 
         lote_id = await self._repositorio.guardar_lote_conforme(

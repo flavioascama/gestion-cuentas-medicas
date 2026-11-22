@@ -42,6 +42,15 @@ export function roles_de_perfiles<T extends string>(perfiles: readonly T[]): T[]
   return Array.from(roles) as T[];
 }
 
+// Roles que no entran en ninguno de los cuatro perfiles de la pantalla
+// (tesoreria o gerente sueltos): el dialogo de usuario los muestra fijos.
+export function roles_fuera_de_perfiles<T extends string>(
+  roles: Iterable<T>,
+  perfiles: readonly string[],
+): T[] {
+  return Array.from(roles).filter((rol) => !perfiles.includes(rol));
+}
+
 export function etiquetas_roles(roles: string[]): string {
   return perfiles_de_roles(roles).map(etiqueta_rol).join(", ");
 }

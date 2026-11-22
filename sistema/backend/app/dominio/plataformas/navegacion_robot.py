@@ -43,7 +43,7 @@ SEGUNDOS_VIGENCIA_LATIDO = 20
 
 class ErrorModoNavegacion(Exception):
     def __init__(self, modo: str) -> None:
-        super().__init__(f"Modo de navegacion desconocido: {modo}.")
+        super().__init__(f"Modo de navegación desconocido: {modo}.")
 
 
 @dataclass(frozen=True, slots=True)

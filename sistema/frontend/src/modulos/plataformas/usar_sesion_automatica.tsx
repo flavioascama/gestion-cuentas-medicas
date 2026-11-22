@@ -17,6 +17,8 @@ interface SesionAutomatica {
   abrir_codigo: () => void;
   // Se pidio la sesion varias veces y la plataforma no la acepto.
   sin_conexion: boolean;
+  // Por que no se pudo ingresar la ultima vez, si se sabe.
+  motivo: string | null;
   reintentar: () => void;
 }
 
@@ -75,12 +77,19 @@ function usar_dialogo_de_codigo(sesion_que_pide: number | null) {
   };
 }
 
+// Lo que salio mal en el ingreso: un codigo que la plataforma no acepto y
+// pide de nuevo, y el motivo con que termino la sesion.
+function falla_de(sesion: { intentos: number; motivo: string | null } | undefined) {
+  return { codigo_rechazado: (sesion?.intentos ?? 0) > 0, motivo: sesion?.motivo ?? null };
+}
+
 // La sesion con la plataforma se maneja sola (pedido del usuario, 2026-11-18).
 // Mientras una tarea la necesita (`necesita`), si no hay sesion vigente se
 // pide una; lo unico que la persona ve es el codigo de verificacion (CAPTCHA),
 // que la plataforma exige que responda una persona.
 export function usar_sesion_automatica(plataforma: string, necesita: boolean): SesionAutomatica {
   const { sesion_vigente, sin_conexion, reintentar } = usar_pedido_de_sesion(plataforma, necesita);
+  const falla = falla_de(sesion_vigente);
   const pide_codigo = necesita && sesion_vigente?.estado === _PIDE_CODIGO;
   const sesion_que_pide = pide_codigo && sesion_vigente ? sesion_vigente.id : null;
   const codigo = usar_dialogo_de_codigo(sesion_que_pide);
@@ -92,11 +101,13 @@ export function usar_sesion_automatica(plataforma: string, necesita: boolean): S
           plataforma={plataforma}
           al_cerrar={codigo.descartar}
           al_responder={codigo.responder}
+          codigo_rechazado={falla.codigo_rechazado}
         />
       ) : null,
     espera_codigo: codigo.espera_codigo,
     abrir_codigo: codigo.abrir_codigo,
     sin_conexion,
+    motivo: falla.motivo,
     reintentar,
   };
 }

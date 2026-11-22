@@ -5,6 +5,11 @@ export type RespuestaCierre = components["schemas"]["RespuestaCierre"];
 export type RespuestaSolicitudAnulacion = components["schemas"]["RespuestaSolicitudAnulacion"];
 export type SolicitudAnulacion = components["schemas"]["SolicitudAnulacionRespuesta"];
 export type RespuestaResolucionAnulacion = components["schemas"]["RespuestaResolucionAnulacion"];
+export type EstadoCierre = components["schemas"]["EstadoCierreRespuesta"];
+
+export function consultar_cierre(cuenta_id: number): Promise<EstadoCierre> {
+  return obtener<EstadoCierre>(`/cuentas/${cuenta_id}/cierre`);
+}
 
 export function cerrar_cuenta(cuenta_id: number): Promise<RespuestaCierre> {
   return enviar<RespuestaCierre>("POST", `/cuentas/${cuenta_id}/cierre`);
@@ -26,8 +31,10 @@ export function listar_anulaciones_pendientes(): Promise<SolicitudAnulacion[]> {
 export function resolver_anulacion(
   solicitud_id: number,
   aprobada: boolean,
+  motivo: string,
 ): Promise<RespuestaResolucionAnulacion> {
   return enviar<RespuestaResolucionAnulacion>("POST", `/anulaciones/${solicitud_id}/resolucion`, {
     aprobada,
+    motivo: motivo.trim() || null,
   });
 }

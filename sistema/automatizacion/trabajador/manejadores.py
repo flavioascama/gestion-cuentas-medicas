@@ -192,13 +192,13 @@ async def _procesar_monitorear_respuesta(
             registro.info("trabajo_procesado", trabajo_id=trabajo.id, lote_id=lote_id)
         elif resultado.resultado == "agotado":
             await repositorio_trabajos.marcar_agotado(
-                trabajo.id, "Ventana maxima de espera de la IAFAS superada sin respuesta."
+                trabajo.id, "Venció el plazo de espera y la IAFAS no respondió."
             )
             registro.warning("trabajo_agotado", trabajo_id=trabajo.id, lote_id=lote_id)
         else:  # "sin_respuesta"
             assert resultado.proximo_intento is not None
             await repositorio_trabajos.marcar_para_reintento(
-                trabajo.id, "Aun sin respuesta del receptor.", resultado.proximo_intento
+                trabajo.id, "Aún no hay respuesta de la IAFAS.", resultado.proximo_intento
             )
             registro.info(
                 "trabajo_reencolado",

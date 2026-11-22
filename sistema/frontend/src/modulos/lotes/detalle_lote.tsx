@@ -46,6 +46,15 @@ function EtiquetasLote({ lote }: { lote: { estado: string; monitoreo_excedido: b
   );
 }
 
+function AvisoDesactualizado({
+  lote,
+}: {
+  lote: { vigente: boolean; motivo_desactualizado: string | null };
+}) {
+  if (lote.vigente || !lote.motivo_desactualizado) return null;
+  return <Mensaje tipo="advertencia" texto={lote.motivo_desactualizado} />;
+}
+
 export function DetalleLote() {
   const parametros = useParams<{ lote_id: string }>();
   const lote_id = Number(parametros.lote_id);
@@ -87,8 +96,9 @@ export function DetalleLote() {
           </div>
         }
       />
+      <AvisoDesactualizado lote={lote} />
       <LineaEstadosLote pasos={pasos} />
-      <ContenidoAccionLote estado={lote.estado} acciones={acciones} />
+      <ContenidoAccionLote estado={lote.estado} vigente={lote.vigente} acciones={acciones} />
       <AccionValidacionContingencia lote_id={lote.id} />
       <SeccionDatosLote lote={lote} nombre_iafas={nombre_iafas} />
       <SeccionCuentasLote lote_id={lote_id} numero={lote.numero} />

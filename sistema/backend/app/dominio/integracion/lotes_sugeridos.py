@@ -14,6 +14,8 @@ from datetime import date
 from decimal import Decimal
 from typing import Protocol
 
+from app.compartido.periodo import periodo_legible
+
 
 class ErrorPeriodoLote(Exception):
     """Las cuentas elegidas no definen un unico periodo de facturacion."""
@@ -27,11 +29,12 @@ def periodo_unico(fechas_emision: Iterable[date]) -> str:
     """El periodo de un lote: el mes de emision de sus comprobantes."""
     periodos = sorted({periodo_de_comprobante(fecha) for fecha in fechas_emision})
     if not periodos:
-        raise ErrorPeriodoLote("Ninguna de las cuentas elegidas esta facturada.")
+        raise ErrorPeriodoLote("Ninguna de las cuentas elegidas está facturada.")
     if len(periodos) > 1:
         raise ErrorPeriodoLote(
-            "Las cuentas elegidas tienen comprobantes de mas de un mes "
-            f"({', '.join(periodos)}); cada lote lleva un solo periodo."
+            "Las cuentas elegidas tienen comprobantes de más de un mes "
+            f"({', '.join(periodo_legible(p) for p in periodos)}); "
+            "cada lote lleva un solo periodo."
         )
     return periodos[0]
 

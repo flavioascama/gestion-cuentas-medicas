@@ -157,7 +157,7 @@ function ColumnaSvg(propiedades: PropiedadesColumna) {
         y={ALTO_GRAFICO - 8}
         textAnchor="middle"
       >
-        {geometria.columna.etiqueta}
+        {geometria.columna.etiqueta_eje ?? geometria.columna.etiqueta}
       </text>
       <rect
         className={estilos.objetivo}

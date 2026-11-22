@@ -75,14 +75,15 @@ class RepositorioLoteFacturacionSql(RepositorioLoteFacturacion):
         filas = resultado.scalars().all()
         if len(filas) != 1:
             raise ErrorRepositorioLote(
-                f"Se esperaba exactamente 1 fila en ipress (la clinica propia); hay {len(filas)}."
+                f"Los datos de la clínica no están bien registrados: "
+                f"se esperaba uno y hay {len(filas)}."
             )
         return filas[0].ruc, filas[0].codigo_ipress
 
     async def obtener_codigo_iafas(self, iafas_id: int) -> str:
         iafas = await self._sesion.get(IafasModelo, iafas_id)
         if iafas is None:
-            raise ErrorRepositorioLote(f"No existe la IAFAS {iafas_id}.")
+            raise ErrorRepositorioLote("No existe la aseguradora indicada.")
         return iafas.codigo
 
     async def obtener_documentos_facturados(
@@ -121,8 +122,8 @@ class RepositorioLoteFacturacionSql(RepositorioLoteFacturacion):
         for cuenta in cuentas:
             if cuenta.documento is None or cuenta.acreditacion is None:
                 raise ErrorRepositorioLote(
-                    f"La cuenta {cuenta.id} no tiene documento_facturador o acreditacion; "
-                    "no puede incluirse en un lote."
+                    f"La cuenta {cuenta.identificacion_interna} no tiene comprobante o "
+                    "acreditación; no puede incluirse en un lote."
                 )
             documentos.append(
                 self._a_documento_lote(
@@ -297,8 +298,9 @@ class RepositorioLoteFacturacionSql(RepositorioLoteFacturacion):
         # Misma regla que un procedimiento (T3 campos 17 y 20): el copago
         # (T4 campo 14) es el coaseguro de la acreditacion sobre lo presentado
         # menos la exclusion registrada del producto, y lo no cubierto (T4
-        # campo 16) es esa exclusion mas el copago. El copago fijo ya va
-        # entero en el primer procedimiento.
+        # campo 16) es solo esa exclusion: el copago se descuenta una sola
+        # vez, en T1 (2026-11-21). El copago fijo ya va entero en el primer
+        # procedimiento.
         exclusion = producto.monto_no_cubierto
         copago = _coaseguro(producto.monto_presentado - exclusion, acreditacion)
         return ProductoLote(
@@ -311,7 +313,7 @@ class RepositorioLoteFacturacionSql(RepositorioLoteFacturacion):
             tipo_unidad_dispensacion=producto.tipo_unidad_dispensacion,
             monto_unitario=producto.monto_unitario_sin_impuesto,
             copago=copago,
-            monto_no_cubierto=exclusion + copago,
+            monto_no_cubierto=exclusion,
             diagnostico_asociado_cie10=producto.diagnostico_asociado_cie10,
             exento_igv=producto.exento_igv,
             guia_farmacia=producto.guia_farmacia,
@@ -340,8 +342,17 @@ class RepositorioLoteFacturacionSql(RepositorioLoteFacturacion):
         )
         self._sesion.add(lote)
         await self._sesion.flush()
+        # Importado aqui: montos_cuenta_sql depende de este modulo.
+        from app.infraestructura.persistencia.montos_cuenta_sql import facturado_por_documento
+
+        # Lo facturado al generar el lote (segunda auditoria final, hallazgo 1).
+        facturado = await facturado_por_documento(self._sesion, datos.documento_ids)
         self._sesion.add_all(
-            LoteDocumentoModelo(lote_id=lote.id, documento_id=documento_id)
+            LoteDocumentoModelo(
+                lote_id=lote.id,
+                documento_id=documento_id,
+                total_facturado=facturado.get(documento_id),
+            )
             for documento_id in datos.documento_ids
         )
         informe = InformePrevalidacionModelo(

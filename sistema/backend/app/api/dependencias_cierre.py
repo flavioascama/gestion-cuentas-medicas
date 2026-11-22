@@ -10,6 +10,7 @@ from app.api.dependencias import obtener_reloj
 from app.api.dependencias_observaciones import obtener_repositorio_observaciones
 from app.dominio.cierre.casos_uso import (
     CerrarCuenta,
+    ConsultarCierreCuenta,
     ListarSolicitudesAnulacionPendientes,
     ResolverSolicitudAnulacion,
     SolicitarAnulacion,
@@ -67,6 +68,16 @@ def construir_cerrar_cuenta(
     observabilidad: Observabilidad = Depends(obtener_observabilidad),
 ) -> CerrarCuenta:
     return CerrarCuenta(liquidaciones, observaciones, estado_cuenta, observabilidad)
+
+
+def construir_consultar_cierre_cuenta(
+    liquidaciones: RepositorioLiquidaciones = Depends(obtener_repositorio_liquidaciones),
+    observaciones: RepositorioObservaciones = Depends(obtener_repositorio_observaciones),
+    solicitudes: RepositorioSolicitudesAnulacion = Depends(
+        obtener_repositorio_solicitudes_anulacion
+    ),
+) -> ConsultarCierreCuenta:
+    return ConsultarCierreCuenta(liquidaciones, observaciones, solicitudes)
 
 
 def construir_solicitar_anulacion(

@@ -784,14 +784,13 @@
   campo: 20
   nombre: Monto No Cubierto de (los) procedimiento(s) o servicio(s) complementario(s)
   origen: calculado
-  expresion: copago_variable + copago_fijo
+  expresion: '0.00'
   transformacion: monto(12,2)
-  nota: 'El anexo no da una fórmula explícita (solo formato); se infiere de la definición del campo:
-    lo no cubierto por la IAFAS es exactamente lo que asume el paciente vía copagos. CORREGIDO
-    2026-09-16: la versión anterior de esta entrada decía "monto_presentado - copago_variable -
-    copago_fijo", que calcula lo CUBIERTO, no lo no cubierto (ese error se arrastraba también a la
-    nota de los campos 35 a 43 de T2, que restan justamente este campo). Marcar para confirmación
-    del asesor.'
+  nota: 'El anexo no da una fórmula explícita (solo formato). Es lo que la IAFAS excluye del procedimiento;
+    el prototipo no registra exclusiones de procedimientos, así que va en 0.00. CORREGIDO 2026-11-21:
+    antes era la suma de los copagos (T3 campos 17 y 18), con lo que los campos 35 a 39 de T2 ya restaban
+    el copago y la regla de T1 (criterios C4 y C6) lo volvía a restar. El copago se descuenta una sola
+    vez: va solo en sus campos de copago (T2 44 y 46). Marcar para confirmación del asesor.'
 - tabla: T3
   campo: 21
   nombre: Diagnóstico Asociado
@@ -959,11 +958,12 @@
   campo: 16
   nombre: Monto(s) No Cubierto(s) de (los) Producto(s) de Farmacia
   origen: calculado
-  expresion: producto.monto_no_cubierto + copago_producto
+  expresion: producto.monto_no_cubierto
   transformacion: monto(12,2)
-  nota: 'Misma regla que T3 campo 20: lo no cubierto incluye lo que asume el paciente. Es la exclusión
-    registrada del producto (columna monto_no_cubierto) más su copago (T4 campo 14), desde el
-    2026-11-18. Marcado para confirmación del asesor.'
+  nota: 'Misma regla que T3 campo 20: lo que la IAFAS excluye, sin el copago. Es la exclusión registrada
+    del producto (columna monto_no_cubierto). Del 2026-11-18 al 2026-11-21 sumaba también su copago (T4
+    campo 14), que así se descontaba dos veces; el copago va solo en T2 campos 46 y 47. Marcado para
+    confirmación del asesor.'
 - tabla: T4
   campo: 17
   nombre: Diagnóstico Asociado al Producto de Farmacia

@@ -6,6 +6,8 @@ export type NombreRol = "analista" | "auditor" | "jefe" | "administrador" | "tes
 export interface CargaSesion {
   usuario_id: number;
   nombre_usuario: string;
+  // Nombre de la persona, para mostrarlo en lugar del usuario.
+  nombres: string | null;
   roles: NombreRol[];
   // La contraseña la puso el administrador: hay que cambiarla antes de entrar.
   debe_cambiar_clave: boolean;
@@ -38,6 +40,7 @@ function decodificar_carga(token: string): CargaSesion | null {
   return {
     usuario_id: Number(carga.sub),
     nombre_usuario: carga.nombre_usuario,
+    nombres: typeof carga.nombres === "string" && carga.nombres.trim() ? carga.nombres : null,
     roles: carga.roles as NombreRol[],
     debe_cambiar_clave: carga.cambiar_clave === true,
   };

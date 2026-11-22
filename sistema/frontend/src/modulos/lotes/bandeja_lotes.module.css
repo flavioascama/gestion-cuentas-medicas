@@ -51,6 +51,10 @@
   margin-bottom: var(--espacio_4);
 }
 
+.envio_susalud:empty {
+  display: none;
+}
+
 .enlace_lote {
   display: inline-flex;
   align-items: center;

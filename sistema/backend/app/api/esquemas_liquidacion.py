@@ -51,7 +51,15 @@ class LiquidacionRespuesta(BaseModel):
     monto_pagado: Decimal | None
     diferencia: Decimal | None
     conciliado_en: datetime | None
+    # Registrada a mano y aun corregible (CorregirLiquidacion).
+    corregible: bool = False
+    # El pago registrado a mano y aun corregible (CorregirPago).
+    pago_corregible: bool = False
 
     @staticmethod
-    def desde_valor(valor: Liquidacion) -> LiquidacionRespuesta:
-        return LiquidacionRespuesta(**campos(valor))
+    def desde_valor(
+        valor: Liquidacion, corregible: bool = False, pago_corregible: bool = False
+    ) -> LiquidacionRespuesta:
+        return LiquidacionRespuesta(
+            **campos(valor), corregible=corregible, pago_corregible=pago_corregible
+        )

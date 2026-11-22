@@ -112,8 +112,15 @@ class VersionCpmsRespuesta(BaseModel):
         return VersionCpmsRespuesta(**campos(valor))
 
 
+class ProcedimientoCatalogoCpmsRespuesta(BaseModel):
+    codigo: str
+    nombre: str
+
+
 class SolicitudCargarCatalogoCpms(BaseModel):
     etiqueta: str | None = None
+    nombre_archivo: str
+    contenido_base64: str
 
 
 class RespuestaCatalogoCpmsCargado(BaseModel):

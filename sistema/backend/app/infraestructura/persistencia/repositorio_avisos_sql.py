@@ -4,6 +4,7 @@ avisos TRABAJO_AGOTADO (RNF-20) salen de la cola de trabajos."""
 
 from __future__ import annotations
 
+import uuid
 from dataclasses import replace
 from typing import Any
 
@@ -15,6 +16,7 @@ from app.dominio.avisos.puertos import RepositorioAvisos
 from app.dominio.avisos.valores import (
     TIPO_AVISO_CORREO_POR_REVISAR,
     TIPO_AVISO_TRABAJO_AGOTADO,
+    TIPOS_AVISO_MARCABLES,
     EventoAviso,
 )
 from app.dominio.contingencia.valores import es_no_encontrado_legado
@@ -79,6 +81,16 @@ class RepositorioAvisosSql(RepositorioAvisos):
                 rol = aviso.datos.get("responsable_rol", rol)
             resultado.append(replace(aviso, responsable_usuario_id=usuario, responsable_rol=rol))
         return resultado
+
+    async def obtener(self, evento_id: str) -> EventoAviso | None:
+        try:
+            identificador = uuid.UUID(evento_id)
+        except ValueError:
+            return None  # los avisos de la cola y del buzon no son eventos
+        eventos = await self._avisos_de_eventos(
+            list(TIPOS_AVISO_MARCABLES), 1, EventoModelo.evento_id == identificador
+        )
+        return eventos[0] if eventos else None
 
     async def evaluar_atencion(self, avisos: list[EventoAviso]) -> list[EventoAviso]:
         return await EvaluadorAtencionAvisos(self._sesion).evaluar(avisos)
@@ -186,7 +198,9 @@ class RepositorioAvisosSql(RepositorioAvisos):
         )
         return {fila[0]: fila[1] for fila in filas.all()}
 
-    async def _avisos_de_eventos(self, tipos_evento: list[str], limite: int) -> list[EventoAviso]:
+    async def _avisos_de_eventos(
+        self, tipos_evento: list[str], limite: int, *condiciones: Any
+    ) -> list[EventoAviso]:
         es_lote = EventoModelo.tipo_agregado == TIPO_AGREGADO_LOTE
         filas = (
             await self._sesion.execute(
@@ -199,6 +213,7 @@ class RepositorioAvisosSql(RepositorioAvisos):
                     CuentaMedicaModelo.identificacion_interna,
                     sa.case((es_lote, EventoModelo.agregado_id), else_=None),
                     LoteFacturacionModelo.numero,
+                    EventoModelo.actor,
                 )
                 .outerjoin(
                     CuentaMedicaModelo, CuentaMedicaModelo.id == EventoModelo.cuenta_medica_id
@@ -207,7 +222,7 @@ class RepositorioAvisosSql(RepositorioAvisos):
                     LoteFacturacionModelo,
                     sa.and_(es_lote, LoteFacturacionModelo.id == EventoModelo.agregado_id),
                 )
-                .where(EventoModelo.tipo_evento.in_(tipos_evento))
+                .where(EventoModelo.tipo_evento.in_(tipos_evento), *condiciones)
                 .order_by(EventoModelo.ocurrido_en.desc())
                 .limit(limite)
             )
@@ -222,6 +237,7 @@ class RepositorioAvisosSql(RepositorioAvisos):
                 identificacion_interna=fila[5],
                 lote_id=fila[6],
                 numero_lote=fila[7],
+                actor=fila[8],
             )
             for fila in filas
         ]

@@ -9,11 +9,20 @@ fechas se calculan respecto del dia de la consulta: siempre son recientes.
 
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import UTC, date, datetime, timedelta, timezone
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
 
 from app.padron import PADRON
+
+# El dia de Lima (UTC-5, sin horario de verano): el contenedor corre en UTC
+# y date.today() daria el dia siguiente pasadas las 19:00 de Lima.
+_ZONA_PERU = timezone(timedelta(hours=-5))
+
+
+def hoy_peru() -> date:
+    return datetime.now(UTC).astimezone(_ZONA_PERU).date()
+
 
 _PROC = "PROCEDIMIENTO"
 _LAB = "LABORATORIO"
@@ -410,5 +419,5 @@ def _construir(atencion: dict[str, Any], hoy: date) -> dict[str, Any]:
 
 
 def todas_las_atenciones(hoy: date | None = None) -> list[dict[str, Any]]:
-    dia = hoy or date.today()
+    dia = hoy or hoy_peru()
     return [_construir(a, dia) for a in _ATENCIONES]

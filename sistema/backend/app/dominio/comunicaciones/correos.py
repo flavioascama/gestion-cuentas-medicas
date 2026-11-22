@@ -358,7 +358,7 @@ class ConsultarCorreoIafas:
     async def ejecutar(self, correo_id: int, solicitante: Solicitante) -> CorreoRegistrado:
         correo = await self._correos.obtener(correo_id)
         if correo is None:
-            raise ErrorCorreoInexistente(f"No existe el correo {correo_id}.")
+            raise ErrorCorreoInexistente("No existe el correo.")
         await self._registro_eventos.registrar(
             _evento_de_sesion(solicitante, "CORREO_IAFAS_CONSULTADO", {"correo_id": correo_id})
         )
@@ -402,7 +402,7 @@ class VincularCorreoIafas:
         identificacion = identificacion_interna.strip()
         correo = await self._correos.obtener(correo_id)
         if correo is None:
-            raise ErrorCorreoInexistente(f"No existe el correo {correo_id}.")
+            raise ErrorCorreoInexistente("No existe el correo.")
         if correo.estado != EstadoCorreo.POR_REVISAR:
             raise ErrorCorreoYaResuelto("El correo ya fue revisado.")
         cuenta_id = await self._correos.cuenta_por_identificacion(identificacion)
@@ -449,7 +449,7 @@ class DescartarCorreoIafas:
             raise ErrorMotivoRequerido("Indique el motivo por el que el correo no corresponde.")
         correo = await self._correos.obtener(correo_id)
         if correo is None:
-            raise ErrorCorreoInexistente(f"No existe el correo {correo_id}.")
+            raise ErrorCorreoInexistente("No existe el correo.")
         if correo.estado != EstadoCorreo.POR_REVISAR:
             raise ErrorCorreoYaResuelto("El correo ya fue revisado.")
         await self._correos.resolver(

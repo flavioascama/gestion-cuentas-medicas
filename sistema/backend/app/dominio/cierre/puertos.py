@@ -22,13 +22,22 @@ class RepositorioSolicitudesAnulacion(Protocol):
         """None si la cuenta no tiene ninguna solicitud PENDIENTE."""
         ...
 
+    async def obtener_ultima_por_cuenta(self, cuenta_medica_id: int) -> SolicitudAnulacion | None:
+        """La solicitud mas reciente de la cuenta, en cualquier estado."""
+        ...
+
     async def listar_pendientes(self) -> list[SolicitudAnulacion]:
         """La bandeja del jefe de cuentas medicas: todas las
         solicitudes PENDIENTE, de cualquier cuenta."""
         ...
 
     async def resolver(
-        self, solicitud_id: int, aprobada: bool, resuelto_por: str, resuelto_en: datetime
+        self,
+        solicitud_id: int,
+        aprobada: bool,
+        resuelto_por: str,
+        resuelto_en: datetime,
+        motivo_resolucion: str | None = None,
     ) -> None:
-        """Deja la solicitud en APROBADA o RECHAZADA."""
+        """Deja la solicitud en APROBADA o RECHAZADA, con el motivo del jefe."""
         ...

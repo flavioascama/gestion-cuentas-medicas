@@ -18,8 +18,11 @@ from app.dominio.acceso.entidades import NombreRol
 from app.dominio.acceso.puertos import CargaSesion
 from app.dominio.acreditacion.carta_garantia import (
     CartaGarantia,
+    CorregirCartaGarantia,
     DatosCartaGarantia,
+    ErrorCartaGarantiaInexistente,
     ErrorCartaGarantiaInvalida,
+    ErrorCartaGarantiaNoCorregible,
     ErrorCartaGarantiaYaRegistrada,
     ErrorCuentaInexistenteCarta,
     ErrorCuentaSinRegistroCarta,
@@ -75,6 +78,16 @@ def construir_registrar_carta(
     )
 
 
+def construir_corregir_carta(
+    sesion: AsyncSession = Depends(obtener_sesion),
+) -> CorregirCartaGarantia:
+    return CorregirCartaGarantia(
+        RepositorioCartaGarantiaSql(sesion),
+        RepositorioEstadoCuentaSql(sesion),
+        RegistroEventosSql(sesion),
+    )
+
+
 def construir_obtener_carta(
     sesion: AsyncSession = Depends(obtener_sesion),
 ) -> ObtenerCartaGarantia:
@@ -117,6 +130,38 @@ async def registrar_carta_garantia(
     except ErrorCartaGarantiaYaRegistrada as error:
         raise ErrorAplicacion(
             "CARTA_GARANTIA_YA_REGISTRADA", str(error), estado_http=status.HTTP_409_CONFLICT
+        ) from error
+    except ErrorCartaGarantiaInvalida as error:
+        raise ErrorAplicacion(
+            "CARTA_GARANTIA_INVALIDA", str(error), estado_http=status.HTTP_400_BAD_REQUEST
+        ) from error
+    return CartaGarantiaRespuesta.desde_valor(carta)
+
+
+@router.put("", response_model=CartaGarantiaRespuesta)
+async def corregir_carta_garantia(
+    cuenta_id: int,
+    solicitud: SolicitudCartaGarantia,
+    caso_uso: CorregirCartaGarantia = Depends(construir_corregir_carta),
+    actor: CargaSesion = Depends(_SOLO_ANALISTA),
+) -> CartaGarantiaRespuesta:
+    """Corrige la carta mientras la cuenta siga registrada; la correccion
+    queda en el historial con los datos anteriores."""
+    datos = DatosCartaGarantia(
+        numero=solicitud.numero,
+        vigente_desde=solicitud.vigente_desde,
+        vigente_hasta=solicitud.vigente_hasta,
+        monto=solicitud.monto,
+    )
+    try:
+        carta = await caso_uso.ejecutar(cuenta_id, datos, actor.nombre_usuario)
+    except (ErrorCuentaInexistenteCarta, ErrorCartaGarantiaInexistente) as error:
+        raise ErrorAplicacion(
+            "CARTA_GARANTIA_NO_ENCONTRADA", str(error), estado_http=status.HTTP_404_NOT_FOUND
+        ) from error
+    except ErrorCartaGarantiaNoCorregible as error:
+        raise ErrorAplicacion(
+            "CARTA_GARANTIA_NO_CORREGIBLE", str(error), estado_http=status.HTTP_409_CONFLICT
         ) from error
     except ErrorCartaGarantiaInvalida as error:
         raise ErrorAplicacion(

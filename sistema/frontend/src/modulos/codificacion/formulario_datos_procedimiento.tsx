@@ -1,4 +1,5 @@
 import { CampoTexto } from "../../componentes_base/campo_texto";
+import { fecha_local_hoy } from "../../utilidades/formato";
 import type { DatosConfirmacion } from "./tipos_confirmacion";
 
 interface Propiedades {
@@ -11,6 +12,7 @@ export function FormularioDatosProcedimiento({ datos, al_cambiar }: Propiedades)
     <>
       <CampoTexto
         etiqueta="Cantidad"
+        obligatorio
         type="number"
         min={1}
         value={datos.cantidad}
@@ -18,6 +20,7 @@ export function FormularioDatosProcedimiento({ datos, al_cambiar }: Propiedades)
       />
       <CampoTexto
         etiqueta="Monto unitario (S/)"
+        obligatorio
         type="number"
         step="0.01"
         value={datos.monto_unitario}
@@ -25,7 +28,9 @@ export function FormularioDatosProcedimiento({ datos, al_cambiar }: Propiedades)
       />
       <CampoTexto
         etiqueta="Fecha"
+        obligatorio
         type="date"
+        max={fecha_local_hoy()}
         value={datos.fecha}
         onChange={(evento) => al_cambiar({ ...datos, fecha: evento.target.value })}
       />

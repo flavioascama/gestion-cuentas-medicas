@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { reemplazar_comprobante, registrar_nota, type SolicitudNota } from "../../api/comprobante";
+import { emitir_comprobante_pago } from "../../api/cuentas";
 import { Boton } from "../../componentes_base/boton";
 import { CampoTexto } from "../../componentes_base/campo_texto";
 import { Dialogo } from "../../componentes_base/dialogo";
@@ -26,6 +27,44 @@ function Acciones(props: { al_cerrar: () => void; al_confirmar: () => void; habi
         Registrar
       </Boton>
     </>
+  );
+}
+
+// Confirmacion antes de emitir el comprobante: no se deshace (mismo dialogo
+// que el cierre de la cuenta).
+export function DialogoEmitirComprobante({
+  cuenta_id,
+  al_cerrar,
+}: {
+  cuenta_id: number;
+  al_cerrar: () => void;
+}) {
+  const mutacion = useMutation({
+    mutationFn: () => emitir_comprobante_pago(cuenta_id),
+    onSuccess: usar_invalidar(cuenta_id, al_cerrar),
+  });
+  return (
+    <Dialogo
+      titulo="Emitir comprobante de pago"
+      al_cerrar={al_cerrar}
+      acciones={
+        <>
+          <Boton variante="secundario" onClick={al_cerrar}>
+            Cancelar
+          </Boton>
+          <Boton
+            variante="primario"
+            onClick={() => mutacion.mutate()}
+            disabled={mutacion.isPending}
+          >
+            Emitir
+          </Boton>
+        </>
+      }
+    >
+      <p>El comprobante de pago se emitirá y no se podrá deshacer.</p>
+      <MensajeErrorMutacion error={mutacion.error} texto_por_defecto="No se pudo emitir." />
+    </Dialogo>
   );
 }
 
@@ -55,6 +94,7 @@ export function DialogoReemplazo({
     >
       <CampoTexto
         etiqueta="Motivo"
+        obligatorio
         maxLength={300}
         value={motivo}
         onChange={(evento) => set_motivo(evento.target.value)}
@@ -83,12 +123,14 @@ function CamposNota(props: {
     <>
       <Selector
         etiqueta="Tipo"
+        obligatorio
         opciones={a_opciones(TIPOS_NOTA)}
         value={nota.tipo}
         onChange={(e) => cambiar({ tipo: e.target.value })}
       />
       <CampoTexto
         etiqueta="Monto sin IGV (S/)"
+        obligatorio
         type="number"
         min="0.01"
         step="0.01"
@@ -97,6 +139,7 @@ function CamposNota(props: {
       />
       <Selector
         etiqueta="Motivo"
+        obligatorio
         opciones={a_opciones(MOTIVOS_NOTA)}
         value={nota.motivo}
         onChange={(e) => cambiar({ motivo: e.target.value })}

@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
-import { Navigate } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import type { NombreRol } from "../api/auth";
+import { Mensaje } from "../componentes_base/mensaje";
+import { primera_ruta_permitida } from "../configuracion_rutas";
 import { CambioClaveObligatorio } from "../modulos/acceso/cambio_clave";
 import { usar_sesion } from "./contexto_sesion";
 
@@ -18,7 +20,12 @@ export function RutaProtegida({ children, roles_permitidos }: Propiedades) {
   if (sesion.debe_cambiar_clave) return <CambioClaveObligatorio />;
 
   if (roles_permitidos && !roles_permitidos.some((rol) => sesion.roles.includes(rol))) {
-    return <div role="alert">Su rol no tiene permiso para ver esta pantalla.</div>;
+    return (
+      <>
+        <Mensaje tipo="error" texto="Su rol no tiene permiso para ver esta pantalla." />
+        <Link to={primera_ruta_permitida(sesion.roles)}>Volver al inicio</Link>
+      </>
+    );
   }
 
   return <>{children}</>;

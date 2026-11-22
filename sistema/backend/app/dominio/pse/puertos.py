@@ -17,13 +17,13 @@ TIPO_FACTURA = "01"
 
 class ErrorCuentaNoEncontrada(Exception):
     def __init__(self, cuenta_id: int) -> None:
-        super().__init__(f"No existe la cuenta medica {cuenta_id}.")
+        super().__init__("No existe la cuenta.")
         self.cuenta_id = cuenta_id
 
 
 class ErrorComprobanteYaExiste(Exception):
     def __init__(self, cuenta_id: int) -> None:
-        super().__init__(f"La cuenta {cuenta_id} ya tiene un comprobante de pago.")
+        super().__init__("La cuenta ya tiene un comprobante de pago.")
         self.cuenta_id = cuenta_id
 
 
@@ -62,7 +62,7 @@ class RequisitosComprobante:
         elif self.cobertura_no_conforme:
             faltantes.append("una verificación de cobertura conforme")
         elif not self.acreditable:
-            faltantes.append("que la aseguradora acredite al asegurado")
+            faltantes.append("que la IAFAS acredite al asegurado")
         if not self.con_diagnostico:
             faltantes.append("el diagnóstico principal")
         if self.procedimientos == 0:

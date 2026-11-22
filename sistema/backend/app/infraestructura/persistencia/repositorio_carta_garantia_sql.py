@@ -46,3 +46,16 @@ class RepositorioCartaGarantiaSql(RepositorioCartaGarantia):
             )
         )
         await self._sesion.flush()
+
+    async def actualizar(self, carta: CartaGarantia) -> None:
+        await self._sesion.execute(
+            sa.update(CartaGarantiaModelo)
+            .where(CartaGarantiaModelo.cuenta_medica_id == carta.cuenta_medica_id)
+            .values(
+                numero=carta.numero,
+                vigente_desde=carta.vigente_desde,
+                vigente_hasta=carta.vigente_hasta,
+                monto=carta.monto,
+            )
+        )
+        await self._sesion.flush()

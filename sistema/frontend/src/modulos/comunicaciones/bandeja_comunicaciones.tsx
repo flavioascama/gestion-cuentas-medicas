@@ -31,7 +31,13 @@ const _COLUMNA_CUENTA: ColumnaTabla<ComunicacionIafas> = {
   clave: "cuenta_medica_id",
   encabezado: "Cuenta",
   formatear: (fila) =>
-    fila.cuenta_medica_id ? <Link to={`/cuentas/${fila.cuenta_medica_id}`}>Abrir</Link> : "—",
+    fila.cuenta_medica_id ? (
+      <Link to={`/cuentas/${fila.cuenta_medica_id}`}>
+        {fila.identificacion_interna ?? fila.cuenta_medica_id}
+      </Link>
+    ) : (
+      "—"
+    ),
 };
 
 function ComunicacionesRegistradas() {

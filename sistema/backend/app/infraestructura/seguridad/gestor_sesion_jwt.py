@@ -29,6 +29,8 @@ class GestorSesionJwt(GestorSesion):
         carga: dict[str, object] = {
             "sub": str(usuario.id),
             "nombre_usuario": usuario.nombre_usuario,
+            # Solo para que la pantalla muestre a la persona: el servidor no lo lee.
+            "nombres": usuario.nombres,
             "roles": [rol.value for rol in usuario.roles],
             # Control C-01 (Seccion 5.2.7): identificador de ESTA
             # credencial, no del usuario -- es lo que CerrarSesion revoca
@@ -48,9 +50,9 @@ class GestorSesionJwt(GestorSesion):
         try:
             carga = jwt.decode(token, self._clave_firma, algorithms=[_ALGORITMO])
         except jwt.ExpiredSignatureError as error:
-            raise SesionExpiradaError("La sesion vencio, vuelva a iniciar sesion.") from error
+            raise SesionExpiradaError("La sesión venció, vuelva a iniciar sesión.") from error
         except jwt.InvalidTokenError as error:
-            raise SesionInvalidaError("La credencial de sesion no es valida.") from error
+            raise SesionInvalidaError("La credencial de sesión no es válida.") from error
 
         try:
             roles = frozenset(NombreRol(rol) for rol in carga["roles"])
@@ -61,6 +63,7 @@ class GestorSesionJwt(GestorSesion):
                 jti=carga["jti"],
                 expira_en=datetime.fromtimestamp(carga["exp"], tz=UTC),
                 debe_cambiar_clave=carga.get("cambiar_clave") is True,
+                emitida_en=datetime.fromtimestamp(carga["iat"], tz=UTC) if "iat" in carga else None,
             )
         except (KeyError, ValueError) as error:
-            raise SesionInvalidaError("La credencial de sesion no es valida.") from error
+            raise SesionInvalidaError("La credencial de sesión no es válida.") from error

@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { listar_anulaciones_pendientes } from "../../api/cierre";
+import { consultar_cierre, listar_anulaciones_pendientes } from "../../api/cierre";
 import type { usar_sesion } from "../../sesion/contexto_sesion";
 
 const _ESTADOS_TERMINALES = new Set(["CERRADA", "ANULADA"]);
@@ -15,6 +15,15 @@ export function es_visible_cierre_anulacion(
 ): boolean {
   if (!sesion?.roles.includes("analista")) return false;
   return !_ESTADOS_TERMINALES.has(estado);
+}
+
+// Lo que falta para cerrar y la ultima solicitud de anulacion.
+export function usar_estado_cierre(cuenta_id: number, habilitado: boolean) {
+  return useQuery({
+    queryKey: ["cuentas", cuenta_id, "cierre"],
+    queryFn: () => consultar_cierre(cuenta_id),
+    enabled: habilitado,
+  });
 }
 
 export function usar_anulaciones_pendientes() {

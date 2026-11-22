@@ -73,15 +73,27 @@ class ErrorLoteDesactualizado(Exception):
     def __init__(self, cuentas: tuple[str, ...], mensaje: str | None = None) -> None:
         super().__init__(
             mensaje
-            or f"El lote esta desactualizado: cambiaron las cuentas {', '.join(cuentas)}. "
+            or f"El lote está desactualizado: cambiaron las cuentas {', '.join(cuentas)}. "
             "Genere un lote nuevo."
         )
         self.cuentas = cuentas
 
 
+MOTIVO_CUENTAS_CAMBIARON = "Desactualizado: sus cuentas cambiaron después de generarlo."
+MOTIVO_VALIDACION_NO_CONFORME = "Desactualizado: la validación en contingencia no fue conforme."
+
 MENSAJE_VALIDACION_NO_CONFORME = (
     "La validación registrada en contingencia no fue conforme. Genere un lote nuevo."
 )
+
+
+def motivo_desactualizado(vigencia: VigenciaLote | None) -> str | None:
+    """Lo que ve el usuario (detalle y bandeja); None si sigue vigente."""
+    if vigencia is None or vigencia.vigente:
+        return None
+    if vigencia.validacion_no_conforme:
+        return MOTIVO_VALIDACION_NO_CONFORME
+    return MOTIVO_CUENTAS_CAMBIARON
 
 
 def exigir_lote_vigente(vigencia: VigenciaLote | None) -> None:

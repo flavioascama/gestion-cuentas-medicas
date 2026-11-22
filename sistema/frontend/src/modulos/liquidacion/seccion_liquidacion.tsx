@@ -1,7 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { consultar_documentos_pago } from "../../api/comprobante";
-import { conciliar_pago, registrar_liquidacion, type Liquidacion } from "../../api/liquidacion";
+import {
+  conciliar_pago,
+  corregir_liquidacion,
+  registrar_liquidacion,
+  type Liquidacion,
+} from "../../api/liquidacion";
 import { Boton } from "../../componentes_base/boton";
 import { CampoTexto } from "../../componentes_base/campo_texto";
 import { MensajeErrorMutacion } from "../../componentes_base/mensaje_error_mutacion";
@@ -10,7 +15,7 @@ import { usar_sesion } from "../../sesion/contexto_sesion";
 import { formatear_fecha_hora, formatear_monto } from "../../utilidades/formato";
 import estilos from "../cuentas/detalle_cuenta.module.css";
 import { usar_filas_copago, type FilaMonto } from "./usar_filas_copago";
-import { usar_liquidacion_cuenta } from "./usar_liquidacion";
+import { corregir_pago, usar_liquidacion_cuenta } from "./usar_liquidacion";
 
 // Lo facturado a la IAFAS, como referencia de lo que liquida y paga
 // (2026-11-18): es el total del comprobante vigente.
@@ -19,8 +24,24 @@ function usar_total_facturado(cuenta_id: number): string | null {
     queryKey: ["cuentas", cuenta_id, "comprobante"],
     queryFn: () => consultar_documentos_pago(cuenta_id),
   });
-  const total = consulta.data?.vigente.total;
-  return total != null ? formatear_monto(total) : null;
+  return consulta.data?.vigente.total ?? null;
+}
+
+// Lo facturado que la IAFAS no liquido (tercera auditoria, medio 2): la
+// fila solo aparece si lo liquidado es menor que el total facturado.
+function filas_no_reconocido(facturado: string | null, liquidado: string | undefined): FilaMonto[] {
+  if (facturado == null || !liquidado) return [];
+  const centimos = Math.round(Number(facturado) * 100) - Math.round(Number(liquidado) * 100);
+  if (centimos <= 0) return [];
+  return [{ etiqueta: "No reconocido por la IAFAS", valor: formatear_monto(centimos / 100) }];
+}
+
+// Diferencia = pagado - liquidado: negativa, falta cobrar; positiva, se pago de mas.
+function texto_diferencia(diferencia: string | null | undefined): string {
+  if (!diferencia) return "—";
+  const valor = Number(diferencia);
+  if (valor === 0) return formatear_monto(valor);
+  return `${formatear_monto(Math.abs(valor))} ${valor < 0 ? "por cobrar" : "pagado de más"}`;
 }
 
 function DatosLiquidacion({
@@ -35,11 +56,12 @@ function DatosLiquidacion({
   const monto = (valor: string | null | undefined) => (valor ? formatear_monto(valor) : "—");
   const conciliado_en = liquidacion?.conciliado_en;
   const datos: FilaMonto[] = [
-    { etiqueta: "Total facturado", valor: facturado ?? "—" },
+    { etiqueta: "Total facturado", valor: monto(facturado) },
     ...copago,
     { etiqueta: "Liquidado por la IAFAS", valor: monto(liquidacion?.monto_liquidado) },
+    ...filas_no_reconocido(facturado, liquidacion?.monto_liquidado),
     { etiqueta: "Pagado por la IAFAS", valor: monto(liquidacion?.monto_pagado) },
-    { etiqueta: "Diferencia", valor: monto(liquidacion?.diferencia) },
+    { etiqueta: "Diferencia", valor: texto_diferencia(liquidacion?.diferencia) },
     { etiqueta: "Conciliado", valor: conciliado_en ? formatear_fecha_hora(conciliado_en) : "—" },
   ];
   return (
@@ -54,15 +76,30 @@ function DatosLiquidacion({
   );
 }
 
-function FormularioRegistrarLiquidacion({ cuenta_id }: { cuenta_id: number }) {
+function FormularioRegistrarLiquidacion({
+  cuenta_id,
+  liquidacion = null,
+  al_corregir,
+}: {
+  cuenta_id: number;
+  // Con la liquidacion ya registrada, el formulario la corrige.
+  liquidacion?: Liquidacion | null;
+  al_corregir?: () => void;
+}) {
   const cliente_consultas = useQueryClient();
-  const [monto_liquidado, set_monto_liquidado] = useState("");
+  const [monto_liquidado, set_monto_liquidado] = useState(
+    liquidacion ? String(liquidacion.monto_liquidado) : "",
+  );
 
   const mutacion = useMutation({
-    mutationFn: () => registrar_liquidacion(cuenta_id, monto_liquidado),
+    mutationFn: async () => {
+      if (liquidacion) await corregir_liquidacion(cuenta_id, monto_liquidado);
+      else await registrar_liquidacion(cuenta_id, monto_liquidado);
+    },
     onSuccess: () => {
       void cliente_consultas.invalidateQueries({ queryKey: ["cuentas", cuenta_id] });
-      set_monto_liquidado("");
+      if (liquidacion) al_corregir?.();
+      else set_monto_liquidado("");
     },
   });
 
@@ -70,6 +107,7 @@ function FormularioRegistrarLiquidacion({ cuenta_id }: { cuenta_id: number }) {
     <div className={estilos.fila_accion}>
       <CampoTexto
         etiqueta="Monto que liquidó la IAFAS"
+        obligatorio
         type="number"
         step="0.01"
         min="0"
@@ -81,9 +119,12 @@ function FormularioRegistrarLiquidacion({ cuenta_id }: { cuenta_id: number }) {
         onClick={() => mutacion.mutate()}
         disabled={mutacion.isPending || !monto_liquidado}
       >
-        Registrar liquidación recibida
+        {liquidacion ? "Guardar corrección" : "Registrar liquidación recibida"}
       </Boton>
-      <MensajeErrorMutacion error={mutacion.error} texto_por_defecto="No se pudo registrar." />
+      <MensajeErrorMutacion
+        error={mutacion.error}
+        texto_por_defecto={liquidacion ? "No se pudo corregir." : "No se pudo registrar."}
+      />
     </div>
   );
 }
@@ -91,18 +132,27 @@ function FormularioRegistrarLiquidacion({ cuenta_id }: { cuenta_id: number }) {
 function FormularioConciliarPago({
   cuenta_id,
   adicional,
+  liquidacion = null,
+  al_corregir,
 }: {
   cuenta_id: number;
   adicional: boolean;
+  // Con la liquidacion ya pagada, el formulario corrige el pago.
+  liquidacion?: Liquidacion | null;
+  al_corregir?: () => void;
 }) {
   const cliente_consultas = useQueryClient();
-  const [monto_pagado, set_monto_pagado] = useState("");
+  const [monto_pagado, set_monto_pagado] = useState(String(liquidacion?.monto_pagado ?? ""));
 
   const mutacion = useMutation({
-    mutationFn: () => conciliar_pago(cuenta_id, monto_pagado),
+    mutationFn: async () => {
+      if (liquidacion) await corregir_pago(cuenta_id, monto_pagado);
+      else await conciliar_pago(cuenta_id, monto_pagado);
+    },
     onSuccess: () => {
       void cliente_consultas.invalidateQueries({ queryKey: ["cuentas", cuenta_id] });
-      set_monto_pagado("");
+      if (liquidacion) al_corregir?.();
+      else set_monto_pagado("");
     },
   });
 
@@ -110,6 +160,7 @@ function FormularioConciliarPago({
     <div className={estilos.fila_accion}>
       <CampoTexto
         etiqueta={adicional ? "Monto del pago adicional" : "Monto que pagó la IAFAS"}
+        obligatorio
         type="number"
         step="0.01"
         min="0"
@@ -121,9 +172,12 @@ function FormularioConciliarPago({
         onClick={() => mutacion.mutate()}
         disabled={mutacion.isPending || !monto_pagado}
       >
-        Registrar pago y conciliar
+        {liquidacion ? "Guardar corrección" : "Registrar pago y conciliar"}
       </Boton>
-      <MensajeErrorMutacion error={mutacion.error} texto_por_defecto="No se pudo conciliar." />
+      <MensajeErrorMutacion
+        error={mutacion.error}
+        texto_por_defecto={liquidacion ? "No se pudo corregir." : "No se pudo conciliar."}
+      />
     </div>
   );
 }
@@ -142,6 +196,49 @@ function falta_por_pagar(estado: string, liquidacion: Liquidacion): boolean {
   return _PAGADAS.has(estado) && Number(liquidacion.diferencia ?? 0) < 0;
 }
 
+function CorregirLiquidacion({
+  cuenta_id,
+  liquidacion,
+}: {
+  cuenta_id: number;
+  liquidacion: Liquidacion;
+}) {
+  const [abierto, set_abierto] = useState(false);
+  if (!abierto) {
+    return (
+      <Boton variante="terciario" onClick={() => set_abierto(true)}>
+        Corregir liquidación
+      </Boton>
+    );
+  }
+  return (
+    <FormularioRegistrarLiquidacion
+      cuenta_id={cuenta_id}
+      liquidacion={liquidacion}
+      al_corregir={() => set_abierto(false)}
+    />
+  );
+}
+
+function CorregirPago({ cuenta_id, liquidacion }: { cuenta_id: number; liquidacion: Liquidacion }) {
+  const [abierto, set_abierto] = useState(false);
+  if (!abierto) {
+    return (
+      <Boton variante="terciario" onClick={() => set_abierto(true)}>
+        Corregir pago
+      </Boton>
+    );
+  }
+  return (
+    <FormularioConciliarPago
+      cuenta_id={cuenta_id}
+      adicional={false}
+      liquidacion={liquidacion}
+      al_corregir={() => set_abierto(false)}
+    />
+  );
+}
+
 function FormulariosTesoreria({
   cuenta_id,
   estado,
@@ -158,17 +255,28 @@ function FormulariosTesoreria({
   if (liquidacion === null) {
     if (!_LIQUIDABLES.has(estado)) return null;
     return (
-      <RegistroManual>
+      <RegistroManual rotulo="Registrar liquidación">
         <FormularioRegistrarLiquidacion cuenta_id={cuenta_id} />
       </RegistroManual>
     );
   }
   const adicional = Boolean(liquidacion.conciliado_en);
-  if (adicional ? !falta_por_pagar(estado, liquidacion) : !_PAGABLES.has(estado)) return null;
+  const pagable = adicional ? falta_por_pagar(estado, liquidacion) : _PAGABLES.has(estado);
   return (
-    <RegistroManual>
-      <FormularioConciliarPago cuenta_id={cuenta_id} adicional={adicional} />
-    </RegistroManual>
+    <>
+      {/* Solo la registrada a mano, mientras el servidor la admita. */}
+      {liquidacion.corregible ? (
+        <CorregirLiquidacion cuenta_id={cuenta_id} liquidacion={liquidacion} />
+      ) : null}
+      {liquidacion.pago_corregible ? (
+        <CorregirPago cuenta_id={cuenta_id} liquidacion={liquidacion} />
+      ) : null}
+      {pagable ? (
+        <RegistroManual rotulo={adicional ? "Registrar pago adicional" : "Registrar pago"}>
+          <FormularioConciliarPago cuenta_id={cuenta_id} adicional={adicional} />
+        </RegistroManual>
+      ) : null}
+    </>
   );
 }
 

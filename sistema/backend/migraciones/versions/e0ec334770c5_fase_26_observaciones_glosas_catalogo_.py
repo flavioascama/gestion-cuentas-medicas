@@ -29,8 +29,8 @@ _MOTIVOS_SEMILLA = [
     ("OBS-01", "Datos incompletos", "ADMINISTRATIVA"),
     ("OBS-02", "Ausencia de firma", "ADMINISTRATIVA"),
     ("OBS-03", "Paciente no activo en la cobertura", "ADMINISTRATIVA"),
-    ("OBS-04", "Prestacion no reconocida", "TECNICA"),
-    ("OBS-05", "Incompatibilidad entre el diagnostico y el procedimiento facturado", "TECNICA"),
+    ("OBS-04", "Prestación no reconocida", "TECNICA"),
+    ("OBS-05", "Incompatibilidad entre el diagnóstico y el procedimiento facturado", "TECNICA"),
     ("OBS-06", "Duplicidad de registros", "FINANCIERA"),
     ("OBS-07", "Prestaciones fuera de la cobertura del plan", "FINANCIERA"),
 ]

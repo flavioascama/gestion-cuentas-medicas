@@ -40,7 +40,7 @@ class ConsultarHistorialCuenta:
 
     async def ejecutar(self, cuenta_medica_id: int, actor: str) -> HistorialCuenta:
         if not await self._repositorio.existe_cuenta(cuenta_medica_id):
-            raise ErrorCuentaInexistente(f"No existe la cuenta medica {cuenta_medica_id}.")
+            raise ErrorCuentaInexistente("No existe la cuenta médica.")
 
         historial = await self._repositorio.historial_de_cuenta(cuenta_medica_id)
         await self._observabilidad.eventos.registrar(
@@ -82,7 +82,7 @@ class ConsultarHistorialLote:
 
     async def ejecutar(self, lote_id: int, actor: str) -> HistorialLote:
         if not await self._repositorio.existe_lote(lote_id):
-            raise ErrorLoteInexistente(f"No existe el lote {lote_id}.")
+            raise ErrorLoteInexistente("No existe el lote.")
         historial = await self._repositorio.historial_de_lote(lote_id)
         await self._observabilidad.eventos.registrar(
             Evento(
@@ -139,7 +139,7 @@ class ExportarExpediente:
 
     async def ejecutar(self, cuenta_medica_id: int, motivo: str, actor: str) -> Expediente:
         if not await self._repositorio.existe_cuenta(cuenta_medica_id):
-            raise ErrorCuentaInexistente(f"No existe la cuenta medica {cuenta_medica_id}.")
+            raise ErrorCuentaInexistente("No existe la cuenta médica.")
 
         historial = await self._repositorio.historial_de_cuenta(cuenta_medica_id)
         documentos = await self._repositorio.documentos_de_cuenta(cuenta_medica_id)

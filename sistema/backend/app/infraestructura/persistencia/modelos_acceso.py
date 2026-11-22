@@ -49,6 +49,10 @@ class UsuarioModelo(Base):
     debe_cambiar_clave: Mapped[bool] = mapped_column(
         sa.Boolean, nullable=False, default=False, server_default=sa.false()
     )
+    # Al restablecer la contraseña: las sesiones emitidas antes ya no valen.
+    sesiones_validas_desde: Mapped[datetime | None] = mapped_column(
+        sa.DateTime(timezone=True), nullable=True
+    )
     roles: Mapped[list[RolModelo]] = relationship(secondary=tabla_usuario_rol, lazy="selectin")
 
 

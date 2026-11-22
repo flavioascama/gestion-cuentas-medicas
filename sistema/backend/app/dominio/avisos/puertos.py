@@ -13,6 +13,10 @@ class RepositorioAvisos(Protocol):
         """Los mas recientes primero."""
         ...
 
+    async def obtener(self, evento_id: str) -> EventoAviso | None:
+        """El evento que es aviso, por su identificador."""
+        ...
+
     async def evaluar_atencion(self, avisos: list[EventoAviso]) -> list[EventoAviso]:
         """Los mismos avisos, en el mismo orden, con `atendido` resuelto
         contra lo que paso despues en el almacen y en la cola."""

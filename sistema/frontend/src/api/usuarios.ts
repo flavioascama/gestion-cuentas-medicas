@@ -25,6 +25,10 @@ export function crear_usuario(solicitud: SolicitudCrearUsuario): Promise<Usuario
   return enviar<Usuario>("POST", "/usuarios", solicitud);
 }
 
+export function restablecer_clave_usuario(usuario_id: number, clave: string): Promise<Usuario> {
+  return enviar<Usuario>("POST", `/usuarios/${usuario_id}/restablecer-clave`, { clave });
+}
+
 export function actualizar_usuario(
   usuario_id: number,
   solicitud: SolicitudActualizarUsuario,

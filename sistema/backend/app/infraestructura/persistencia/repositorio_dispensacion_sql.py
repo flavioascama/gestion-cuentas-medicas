@@ -96,13 +96,30 @@ class RepositorioDispensacionSql(RepositorioDispensacion):
         )
         return bool(encontrado)
 
-    async def guardar(self, producto: ProductoARegistrar) -> tuple[int, int]:
-        ultimo = await self._sesion.scalar(
-            sa.select(sa.func.max(ProductoFacturadoModelo.correlativo)).where(
-                ProductoFacturadoModelo.cuenta_medica_id == producto.cuenta_medica_id
+    async def _renumerar(self, cuenta_medica_id: int) -> int:
+        """Deja los productos de la cuenta numerados 1..n (T4 campo 6) y
+        devuelve n. En orden ascendente cada fila baja a un numero libre,
+        asi que la llave unica (cuenta, correlativo) no choca."""
+        filas = (
+            await self._sesion.execute(
+                sa.select(ProductoFacturadoModelo.id, ProductoFacturadoModelo.correlativo)
+                .where(ProductoFacturadoModelo.cuenta_medica_id == cuenta_medica_id)
+                .order_by(ProductoFacturadoModelo.correlativo)
             )
-        )
-        correlativo = (ultimo or 0) + 1
+        ).all()
+        for nuevo, (producto_id, actual) in enumerate(filas, start=1):
+            if actual != nuevo:
+                await self._sesion.execute(
+                    sa.update(ProductoFacturadoModelo)
+                    .where(ProductoFacturadoModelo.id == producto_id)
+                    .values(correlativo=nuevo)
+                    .execution_options(synchronize_session="fetch")
+                )
+        return len(filas)
+
+    async def guardar(self, producto: ProductoARegistrar) -> tuple[int, int]:
+        # Tambien corrige los huecos que dejo la version anterior al quitar.
+        correlativo = await self._renumerar(producto.cuenta_medica_id) + 1
         datos = producto.datos
         fila = ProductoFacturadoModelo(
             cuenta_medica_id=producto.cuenta_medica_id,
@@ -132,4 +149,5 @@ class RepositorioDispensacionSql(RepositorioDispensacion):
         codigo = fila.codigo_producto
         await self._sesion.delete(fila)
         await self._sesion.flush()
+        await self._renumerar(cuenta_medica_id)
         return codigo

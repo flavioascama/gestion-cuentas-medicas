@@ -26,6 +26,8 @@ class ComunicacionIafasRespuesta(BaseModel):
     observacion_id: int | None
     recibida_en: datetime
     respuesta_remitida_en: datetime | None
+    # Para la columna Cuenta de la bandeja (tercera auditoria, menor 9).
+    identificacion_interna: str | None = None
 
     @staticmethod
     def desde_valor(valor: ComunicacionRegistrada) -> ComunicacionIafasRespuesta:

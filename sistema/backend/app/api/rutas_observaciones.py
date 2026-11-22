@@ -31,6 +31,7 @@ from app.api.esquemas_observaciones import (
     SolicitudRegistroObservacion,
     SolicitudRespuestaObservacion,
 )
+from app.api.mensajes_transicion import mensaje_operacion_no_disponible
 from app.compartido.errores import ErrorAplicacion
 from app.dominio.acceso.entidades import NombreRol
 from app.dominio.acceso.puertos import CargaSesion
@@ -50,11 +51,14 @@ from app.dominio.observaciones.casos_uso import (
     ResponderObservacion,
 )
 from app.dominio.observaciones.errores import (
+    ErrorMontoObservadoExcedeFacturado,
+    ErrorMontoObservadoNoValido,
     ErrorMotivoInexistente,
     ErrorObservacionDeOtroResponsable,
     ErrorObservacionInexistente,
     ErrorObservacionYaRespondida,
     ErrorResponsableNoValido,
+    ErrorRespuestaConComprobanteDesfasado,
 )
 from app.dominio.observaciones.valores import (
     ROL_RESPONSABLE_POR_NATURALEZA,
@@ -95,9 +99,19 @@ async def registrar_observacion(
         raise ErrorAplicacion(
             "MOTIVO_INEXISTENTE", str(error), estado_http=status.HTTP_400_BAD_REQUEST
         ) from error
+    except ErrorMontoObservadoExcedeFacturado as error:
+        raise ErrorAplicacion(
+            "MONTO_EXCEDIDO", str(error), estado_http=status.HTTP_409_CONFLICT
+        ) from error
+    except ErrorMontoObservadoNoValido as error:
+        raise ErrorAplicacion(
+            "MONTO_NO_VALIDO", str(error), estado_http=status.HTTP_409_CONFLICT
+        ) from error
     except ErrorTransicionNoDefinida as error:
         raise ErrorAplicacion(
-            "TRANSICION_NO_VALIDA", str(error), estado_http=status.HTTP_409_CONFLICT
+            "TRANSICION_NO_VALIDA",
+            mensaje_operacion_no_disponible(error),
+            estado_http=status.HTTP_409_CONFLICT,
         ) from error
     return RespuestaObservacionRegistrada.desde_valor(resultado)
 
@@ -172,7 +186,7 @@ async def responder_observacion(
             solicitud.respuesta_texto,
             solicitud.respuesta_sustento,
             actor.nombre_usuario,
-            respondedor=Respondedor(actor.usuario_id, actor.nombre_usuario),
+            respondedor=Respondedor(actor.usuario_id, actor.nombre_usuario, actor.roles),
         )
     except ErrorObservacionInexistente as error:
         raise ErrorAplicacion(
@@ -186,9 +200,15 @@ async def responder_observacion(
         raise ErrorAplicacion(
             "OBSERVACION_YA_RESPONDIDA", str(error), estado_http=status.HTTP_409_CONFLICT
         ) from error
+    except ErrorRespuestaConComprobanteDesfasado as error:
+        raise ErrorAplicacion(
+            "COMPROBANTE_DESFASADO", str(error), estado_http=status.HTTP_409_CONFLICT
+        ) from error
     except ErrorTransicionNoDefinida as error:
         raise ErrorAplicacion(
-            "TRANSICION_NO_VALIDA", str(error), estado_http=status.HTTP_409_CONFLICT
+            "TRANSICION_NO_VALIDA",
+            mensaje_operacion_no_disponible(error),
+            estado_http=status.HTTP_409_CONFLICT,
         ) from error
     await remision.ejecutar(
         observacion_id,

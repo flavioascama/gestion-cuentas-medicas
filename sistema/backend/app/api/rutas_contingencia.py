@@ -8,6 +8,7 @@ import base64
 import binascii
 
 from fastapi import APIRouter, Depends, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencias import requiere_rol
 from app.api.dependencias_contingencia import (
@@ -28,6 +29,7 @@ from app.api.esquemas_contingencia import (
     SolicitudValidacionContingencia,
     UltimaConsultaCoberturaRespuesta,
 )
+from app.api.nombres_actores import con_nombres_en_filas
 from app.compartido.errores import ErrorAplicacion
 from app.dominio.acceso.entidades import NombreRol
 from app.dominio.acceso.puertos import CargaSesion
@@ -50,6 +52,7 @@ from app.dominio.contingencia.errores import (
     ErrorSustentoInsuficiente,
 )
 from app.dominio.integracion.puertos_validacion import ArchivoLote
+from app.infraestructura.persistencia.base import obtener_sesion
 from app.infraestructura.tedef.registrar_validacion_contingencia import (
     RegistrarValidacionContingencia,
 )
@@ -160,7 +163,7 @@ def _archivo_desde_solicitud(solicitud: SolicitudValidacionContingencia) -> Arch
     try:
         contenido = base64.b64decode(solicitud.contenido_s01_base64, validate=True)
     except (binascii.Error, ValueError) as error:
-        raise ErrorArchivoS01Invalido("El contenido del .S01 no es base64 valido.") from error
+        raise ErrorArchivoS01Invalido("No se pudo leer el archivo .S01.") from error
     return ArchivoLote(nombre=solicitud.nombre_s01, contenido=contenido)
 
 
@@ -194,8 +197,13 @@ async def registrar_validacion_contingencia(
 async def listar_registros_contingencia(
     caso_uso: ListarRegistrosContingencia = Depends(construir_listar_registros_contingencia),
     _actor: CargaSesion = Depends(_SOLO_JEFE),
+    sesion: AsyncSession = Depends(obtener_sesion),
 ) -> list[RegistroContingenciaRespuesta]:
-    return [RegistroContingenciaRespuesta.desde_valor(r) for r in await caso_uso.ejecutar()]
+    registros = [RegistroContingenciaRespuesta.desde_valor(r) for r in await caso_uso.ejecutar()]
+    await con_nombres_en_filas(
+        sesion, registros, {"registrado_por": "registrado_por", "revisado_por": "revisado_por"}
+    )
+    return registros
 
 
 @router.post("/{evento_id}/revision", status_code=status.HTTP_204_NO_CONTENT)

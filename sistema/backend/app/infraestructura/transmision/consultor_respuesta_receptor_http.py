@@ -40,10 +40,10 @@ class ConsultorRespuestaReceptorHttp(ConsultorRespuestaReceptor):
             raise ErrorConsultaReceptor(
                 f"No se encontro 'detalle-estado' en la respuesta para {nombre_s01!r}."
             )
-        # La plantilla agrega '(forzado por administracion)' al texto
-        # cuando el estado se forzo por la ruta de administracion
-        # (Seccion 9.2); el estado real es solo la primera palabra.
         estado = elemento_estado.get_text().strip().split(" ")[0]
+        # La IAFAS recibio el lote y todavia no lo acepto ni lo rechazo.
+        if estado == "RECIBIDO":
+            return None
 
         elemento_motivo = sopa.find(attrs={"data-testid": "detalle-motivo"})
         motivo = elemento_motivo.get_text().strip() if elemento_motivo else None

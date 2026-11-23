@@ -35,3 +35,8 @@ export function actualizar_usuario(
 ): Promise<Usuario> {
   return enviar<Usuario>("PATCH", `/usuarios/${usuario_id}`, solicitud);
 }
+
+// Solo se elimina el usuario que nunca tuvo actividad en el sistema.
+export function eliminar_usuario(usuario_id: number): Promise<void> {
+  return enviar<void>("DELETE", `/usuarios/${usuario_id}`);
+}

@@ -63,3 +63,15 @@ export function consultar_conformidad_auditoria(cuenta_id: number): Promise<Conf
 export function registrar_conformidad_auditoria(cuenta_id: number): Promise<void> {
   return enviar<void>("POST", `/cuentas/${cuenta_id}/auditoria/conformidad`);
 }
+
+// El PDF que acompana la respuesta: se sube antes de responder.
+export function adjuntar_documento_respuesta(
+  observacion_id: number,
+  datos: components["schemas"]["SolicitudAdjuntoRespuesta"],
+): Promise<void> {
+  return enviar<void>("PUT", `/observaciones/${observacion_id}/adjunto`, datos);
+}
+
+export function descargar_adjunto_respuesta(observacion_id: number): Promise<Blob> {
+  return obtener<Blob>(`/observaciones/${observacion_id}/adjunto`);
+}

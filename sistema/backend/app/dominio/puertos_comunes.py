@@ -297,3 +297,8 @@ class RepositorioTrabajos(Protocol):
         PENDIENTE, EN_PROCESO o REQUIERE_SESION (evita encolar dos
         iguales)."""
         ...
+
+    async def adelantar(self, tipo: str, lote_id: int) -> int | None:
+        """Deja para ahora el trabajo PENDIENTE de ese tipo y lote y
+        devuelve su id; None si no hay ninguno en espera."""
+        ...

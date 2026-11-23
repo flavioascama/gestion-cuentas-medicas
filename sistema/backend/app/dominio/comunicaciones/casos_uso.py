@@ -28,10 +28,7 @@ from app.dominio.comunicaciones.motivo_no_aplicada import (
     RECHAZOS_POR_MONTO,
     motivo_no_aplicada,
 )
-from app.dominio.comunicaciones.sustento_respuesta import (
-    linea_comprobante,
-    sustento_con_comprobante,
-)
+from app.dominio.comunicaciones.sustento_respuesta import datos_de_respuesta
 from app.dominio.liquidacion.casos_uso import ConciliarPago, RegistrarLiquidacion
 from app.dominio.liquidacion.errores import ErrorLiquidacionInexistente, ErrorPagoYaConciliado
 from app.dominio.observaciones.casos_uso import RegistrarObservacion
@@ -296,13 +293,12 @@ class EncolarRespuestaIafas:
         self._reloj = reloj
         self._documentos = documentos
 
-    async def _sustento_a_entregar(
+    async def _refacturacion(
         self, cuenta_medica_id: int | None, sustento: str | None
-    ) -> str | None:
+    ) -> dict[str, str | None]:
         if self._documentos is None or cuenta_medica_id is None:
-            return sustento
-        linea = linea_comprobante(await self._documentos.documentos(cuenta_medica_id))
-        return sustento if linea is None else sustento_con_comprobante(sustento, linea)
+            return {"sustento": sustento}
+        return datos_de_respuesta(await self._documentos.documentos(cuenta_medica_id), sustento)
 
     async def ejecutar(
         self, observacion_id: int, respuesta: str, sustento: str | None, actor: str
@@ -318,7 +314,7 @@ class EncolarRespuestaIafas:
                 "cuenta_medica_id": origen.cuenta_medica_id,
                 "observacion_id": observacion_id,
                 "respuesta": respuesta,
-                "sustento": await self._sustento_a_entregar(origen.cuenta_medica_id, sustento),
+                **await self._refacturacion(origen.cuenta_medica_id, sustento),
                 "usuario_origen": actor,
             },
             proximo_intento=self._reloj.ahora(),

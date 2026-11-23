@@ -46,6 +46,8 @@ class DocumentoAuditado:
     estado: str
     canal: str
     decision_respuesta: str
+    # El comprobante que reemplazo al del lote, si la IPRESS refacturo.
+    documento_vigente: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -60,6 +62,8 @@ class Comunicacion:
     emitida_en: str
     respuesta_texto: str | None
     respondida_en: str | None
+    # Nombre del documento que la IPRESS adjunto a su respuesta.
+    respuesta_adjunto: str | None = None
 
 
 class AuditoriaInvalidaError(Exception):
@@ -106,6 +110,17 @@ class AuditoriaIafas:
                 );
                 """
             )
+            en_comunicacion = conexion.execute("PRAGMA table_info(comunicacion)").fetchall()
+            if "respuesta_adjunto" not in [columna["name"] for columna in en_comunicacion]:
+                conexion.execute(
+                    "ALTER TABLE comunicacion ADD COLUMN respuesta_adjunto_nombre TEXT"
+                )
+                conexion.execute("ALTER TABLE comunicacion ADD COLUMN respuesta_adjunto BLOB")
+            columnas = conexion.execute("PRAGMA table_info(documento_auditoria)").fetchall()
+            if "documento_vigente" not in [columna["name"] for columna in columnas]:
+                conexion.execute(
+                    "ALTER TABLE documento_auditoria ADD COLUMN documento_vigente TEXT"
+                )
 
     @contextmanager
     def _conexion(self) -> Iterator[sqlite3.Connection]:
@@ -138,6 +153,7 @@ class AuditoriaIafas:
                     ON CONFLICT(documento) DO UPDATE SET
                         nombre_archivo = excluded.nombre_archivo,
                         monto_facturado = excluded.monto_facturado,
+                        documento_vigente = NULL,
                         estado = 'PENDIENTE',
                         observaciones_mantenidas = 0
                     """,
@@ -231,8 +247,15 @@ class AuditoriaIafas:
     # --- Respuesta de la IPRESS (portal) ------------------------------------
 
     def responder(
-        self, codigo: str, codigo_ipress: str, texto: str, sustento: str | None
+        self,
+        codigo: str,
+        codigo_ipress: str,
+        texto: str,
+        sustento: str | None,
+        refacturado: tuple[str, Decimal] | None = None,
     ) -> list[Comunicacion]:
+        """`refacturado`: el comprobante vigente y su monto, si la IPRESS
+        refacturo al responder; la IAFAS liquida sobre ese monto."""
         if not texto.strip():
             raise AuditoriaInvalidaError("La respuesta no puede estar vacia.")
         with self._conexion() as conexion:
@@ -252,7 +275,31 @@ class AuditoriaIafas:
                        respondida_en = ? WHERE codigo = ?""",
                 (texto, sustento, datetime.now().isoformat(timespec="seconds"), codigo),
             )
+            if refacturado is not None:
+                conexion.execute(
+                    """UPDATE documento_auditoria SET documento_vigente = ?, monto_facturado = ?
+                       WHERE documento = ?""",
+                    (refacturado[0], str(refacturado[1]), comunicacion["documento"]),
+                )
             return self._evaluar_respuesta(conexion, comunicacion)
+
+    def adjuntar(self, codigo: str, nombre: str, contenido: bytes) -> None:
+        """El documento que la IPRESS adjunto a su respuesta."""
+        with self._conexion() as conexion:
+            conexion.execute(
+                """UPDATE comunicacion SET respuesta_adjunto_nombre = ?, respuesta_adjunto = ?
+                   WHERE codigo = ?""",
+                (nombre, contenido, codigo),
+            )
+
+    def adjunto(self, codigo: str) -> tuple[str, bytes] | None:
+        with self._conexion() as conexion:
+            fila = conexion.execute(
+                """SELECT respuesta_adjunto_nombre, respuesta_adjunto FROM comunicacion
+                   WHERE codigo = ? AND respuesta_adjunto IS NOT NULL""",
+                (codigo,),
+            ).fetchone()
+        return None if fila is None else (fila[0], bytes(fila[1]))
 
     def _evaluar_respuesta(
         self, conexion: sqlite3.Connection, comunicacion: sqlite3.Row
@@ -384,6 +431,7 @@ def _a_documento(fila: sqlite3.Row) -> DocumentoAuditado:
         estado=fila["estado"],
         canal=fila["canal"],
         decision_respuesta=fila["decision_respuesta"],
+        documento_vigente=fila["documento_vigente"],
     )
 
 
@@ -399,4 +447,5 @@ def _a_comunicacion(fila: sqlite3.Row) -> Comunicacion:
         emitida_en=fila["emitida_en"],
         respuesta_texto=fila["respuesta_texto"],
         respondida_en=fila["respondida_en"],
+        respuesta_adjunto=fila["respuesta_adjunto_nombre"],
     )

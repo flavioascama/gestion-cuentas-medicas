@@ -51,6 +51,9 @@ from app.infraestructura.persistencia.repositorio_sesion_plataforma_sql import (
 from app.infraestructura.persistencia.repositorio_validacion_oficial_sql import (
     RepositorioValidacionOficialSql,
 )
+from app.infraestructura.persistencia.respuesta_correo_sql import (
+    TIPO_TRABAJO_ENVIAR_RESPUESTA_CORREO,
+)
 from app.infraestructura.reloj import RelojSistema
 from app.infraestructura.tedef.cargar_lote_en_validador import (
     CargarLoteEnValidador,
@@ -59,6 +62,7 @@ from app.infraestructura.tedef.cargar_lote_en_validador import (
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from trabajador.configuracion import configuracion
+from trabajador.manejador_respuesta_correo import procesar_enviar_respuesta_correo
 from trabajador.manejadores_comunicaciones import (
     FuentesComunicaciones,
     procesar_enviar_respuesta_iafas,
@@ -357,4 +361,5 @@ MANEJADORES = {
     TIPO_TRABAJO_ENVIAR_LOTE_SUSALUD: _procesar_enviar_lote_susalud,
     TIPO_TRABAJO_MONITOREAR_COMUNICACIONES: procesar_monitorear_comunicaciones,
     TIPO_TRABAJO_ENVIAR_RESPUESTA_IAFAS: procesar_enviar_respuesta_iafas,
+    TIPO_TRABAJO_ENVIAR_RESPUESTA_CORREO: procesar_enviar_respuesta_correo,
 }

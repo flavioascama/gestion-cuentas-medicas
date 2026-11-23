@@ -12,6 +12,17 @@
     <p><label><input type="checkbox" name="adjuntar_documento" value="1" data-testid="adjuntar-documento"> Adjuntar el texto como documento PDF</label></p>
     <p><button type="submit" data-testid="enviar-correo">Enviar correo</button></p>
   </form>
+  {% if recibidos %}
+  <h2>Respuestas de la IPRESS</h2>
+  <table data-testid="correos-recibidos">
+    <thead><tr><th>Fecha</th><th>Asunto</th><th>Texto</th></tr></thead>
+    <tbody>
+      {% for r in recibidos %}
+      <tr><td>{{ r.fecha }}</td><td>{{ r.asunto }}</td><td>{{ r.texto }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
   {% else %}
   <p>El servidor de correo no está configurado.</p>
   {% endif %}

@@ -38,3 +38,14 @@ export function descartar_correo_iafas(
 ): Promise<CorreoIafasDetalle> {
   return enviar<CorreoIafasDetalle>("POST", `/correos-iafas/${correo_id}/descarte`, { motivo });
 }
+
+export type RespuestaCorreo = components["schemas"]["RespuestaCorreoRespuesta"];
+
+// Lo que la clinica le contesto a la IAFAS por ese correo.
+export function listar_respuestas_correo(correo_id: number): Promise<RespuestaCorreo[]> {
+  return obtener<RespuestaCorreo[]>(`/correos-iafas/${correo_id}/respuestas`);
+}
+
+export function responder_correo_iafas(correo_id: number, texto: string): Promise<void> {
+  return enviar<void>("POST", `/correos-iafas/${correo_id}/respuestas`, { texto });
+}

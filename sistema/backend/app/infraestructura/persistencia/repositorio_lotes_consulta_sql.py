@@ -3,13 +3,17 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime
 from decimal import Decimal
 
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import contains_eager
 
-from app.dominio.integracion.casos_uso import TIPO_EVENTO_MONITOREO_EXCEDIDO
+from app.dominio.integracion.casos_uso import (
+    TIPO_EVENTO_MONITOREO_EXCEDIDO,
+    TIPO_TRABAJO_MONITOREAR_RESPUESTA_IAFAS,
+)
 from app.dominio.integracion.casos_uso_validacion import TIPO_TRABAJO_CARGAR_LOTE_VALIDADOR
 from app.dominio.integracion.hallazgos import Hallazgo
 from app.dominio.integracion.puertos_consulta import (
@@ -38,6 +42,7 @@ from app.infraestructura.persistencia.modelos_integracion import (
     IafasModelo,
     LoteDocumentoModelo,
     LoteFacturacionModelo,
+    TrabajoModelo,
 )
 from app.infraestructura.persistencia.modelos_plataformas import (
     ObservacionValidadorModelo,
@@ -201,6 +206,7 @@ class RepositorioLotesConsultaSql(RepositorioLotesConsulta):
             version_esquema_tedef=lote.version_esquema_tedef,
             version_mapeo=lote.version_mapeo,
             monitoreo_excedido=lote.id in await self._lotes_excedidos([lote.id]),
+            proxima_consulta=await self._proxima_consulta(lote),
             validacion_reintentable=lote.estado == "CARGADO_VALIDADOR"
             and not await self._validacion_en_curso(lote.id),
             vigente=motivo is None,
@@ -213,6 +219,18 @@ class RepositorioLotesConsultaSql(RepositorioLotesConsulta):
         if lote.estado not in ESTADOS_LOTE_EN_CURSO:
             return None
         return motivo_desactualizado(await vigencia_de_lote(self._sesion, lote.id))
+
+    async def _proxima_consulta(self, lote: LoteFacturacionModelo) -> datetime | None:
+        if lote.estado != "REMITIDO_IAFAS":
+            return None
+        proxima: datetime | None = await self._sesion.scalar(
+            sa.select(sa.func.min(TrabajoModelo.proximo_intento)).where(
+                TrabajoModelo.tipo == TIPO_TRABAJO_MONITOREAR_RESPUESTA_IAFAS,
+                TrabajoModelo.estado.in_(("PENDIENTE", "EN_PROCESO")),
+                TrabajoModelo.carga_util["lote_id"].as_integer() == lote.id,
+            )
+        )
+        return proxima
 
     async def _validacion_en_curso(self, lote_id: int) -> bool:
         return await RepositorioTrabajosSql(self._sesion).hay_sin_terminar(

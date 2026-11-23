@@ -7,10 +7,13 @@ import {
 } from "../../api/lotes";
 import { obtener_trabajo } from "../../api/trabajos";
 import { Boton } from "../../componentes_base/boton";
+import { BotonConConfirmacion } from "../../componentes_base/dialogo_confirmar";
 import { MensajeErrorMutacion } from "../../componentes_base/mensaje_error_mutacion";
 import { ProgresoTrabajo } from "../../componentes_base/progreso_trabajo";
 import { usar_sesion } from "../../sesion/contexto_sesion";
+import { formatear_fecha_hora } from "../../utilidades/formato";
 import { SesionPlataforma } from "../plataformas/sesion_plataforma";
+import { consulta_en_curso } from "./usar_lotes";
 
 // Las mutaciones viven en un solo hook (no uno por boton) porque el
 // boton -- ahora en la cabecera, junto al titulo -- y su contenido
@@ -21,7 +24,6 @@ import { SesionPlataforma } from "../plataformas/sesion_plataforma";
 export function usar_acciones_lote(lote_id: number) {
   const cliente_consultas = useQueryClient();
   const [trabajo_id, set_trabajo_id] = useState<number | null>(null);
-  const [trabajo_monitoreo_id, set_trabajo_monitoreo_id] = useState<number | null>(null);
 
   const cargar_validador = useMutation({
     mutationFn: () => solicitar_carga_en_validador(lote_id),
@@ -33,20 +35,11 @@ export function usar_acciones_lote(lote_id: number) {
     onSuccess: () => void cliente_consultas.invalidateQueries({ queryKey: ["lotes", lote_id] }),
   });
 
+  // El avance se lee del propio lote (proxima_consulta), que se refresca solo.
   const consultar_respuesta = useMutation({
     mutationFn: () => solicitar_monitoreo_respuesta(lote_id),
-    onSuccess: (respuesta) => set_trabajo_monitoreo_id(respuesta.trabajo_id),
+    onSuccess: () => void cliente_consultas.invalidateQueries({ queryKey: ["lotes", lote_id] }),
   });
-
-  // Mismo trabajo que muestra ProgresoTrabajo (misma clave de consulta): al
-  // agotarse otra vez, el boton vuelve a habilitarse.
-  const trabajo_monitoreo = useQuery({
-    queryKey: ["trabajo", trabajo_monitoreo_id],
-    queryFn: () => obtener_trabajo(trabajo_monitoreo_id ?? 0),
-    enabled: trabajo_monitoreo_id !== null,
-  });
-  const monitoreo_en_curso =
-    trabajo_monitoreo_id !== null && trabajo_monitoreo.data?.estado !== "AGOTADO";
 
   // Igual con la carga en el validador.
   const trabajo_carga = useQuery({
@@ -65,8 +58,6 @@ export function usar_acciones_lote(lote_id: number) {
     remitir_iafas,
     consultar_respuesta,
     trabajo_id,
-    trabajo_monitoreo_id,
-    monitoreo_en_curso,
     carga_en_curso,
     al_completar_carga,
   };
@@ -88,7 +79,7 @@ function puede_operar(roles: readonly string[] | undefined, estado: string): boo
 
 type LoteAccion = {
   estado: string;
-  monitoreo_excedido: boolean;
+  proxima_consulta?: string | null;
   validacion_reintentable: boolean;
   vigente: boolean;
 };
@@ -119,21 +110,26 @@ export function BotonAccionLote({ lote, acciones }: { lote: LoteAccion; acciones
   }
   if (estado === "VALIDADO") {
     return (
-      <Boton
+      <BotonConConfirmacion
         variante="primario"
-        onClick={() => acciones.remitir_iafas.mutate()}
         disabled={acciones.remitir_iafas.isPending}
+        titulo="Remitir a la IAFAS"
+        texto="Se remitirá el lote a la IAFAS. Esta acción no se puede deshacer."
+        texto_confirmar="Remitir"
+        al_confirmar={() => acciones.remitir_iafas.mutate()}
       >
         Remitir a la IAFAS
-      </Boton>
+      </BotonConConfirmacion>
     );
   }
-  if (estado === "REMITIDO_IAFAS" && lote.monitoreo_excedido) {
+  if (estado === "REMITIDO_IAFAS") {
     return (
       <Boton
         variante="primario"
         onClick={() => acciones.consultar_respuesta.mutate()}
-        disabled={acciones.consultar_respuesta.isPending || acciones.monitoreo_en_curso}
+        disabled={
+          acciones.consultar_respuesta.isPending || consulta_en_curso(lote.proxima_consulta)
+        }
       >
         Consultar respuesta de la IAFAS
       </Boton>
@@ -173,15 +169,21 @@ function ContenidoCargaValidador({ acciones }: { acciones: AccionesLote }) {
   );
 }
 
+// Lo que pasa con la respuesta de la IAFAS a un lote remitido.
+function texto_espera(proxima_consulta: string | null | undefined): string | null {
+  if (proxima_consulta == null) return null;
+  if (consulta_en_curso(proxima_consulta)) return "Consultando la respuesta de la IAFAS…";
+  return `Esperando la respuesta de la IAFAS. Próxima consulta: ${formatear_fecha_hora(proxima_consulta)}.`;
+}
+
 export function ContenidoAccionLote({
-  estado,
-  vigente,
+  lote,
   acciones,
 }: {
-  estado: string;
-  vigente: boolean;
+  lote: LoteAccion;
   acciones: AccionesLote;
 }) {
+  const { estado, vigente, proxima_consulta } = lote;
   const { sesion } = usar_sesion();
   if (!puede_operar(sesion?.roles, estado) || !vigente) return null;
 
@@ -197,13 +199,7 @@ export function ContenidoAccionLote({
   if (estado === "REMITIDO_IAFAS") {
     return (
       <div>
-        {acciones.trabajo_monitoreo_id !== null ? (
-          <ProgresoTrabajo
-            trabajo_id={acciones.trabajo_monitoreo_id}
-            texto_en_curso="Consultando la respuesta de la IAFAS"
-            al_completar={acciones.al_completar_carga}
-          />
-        ) : null}
+        <span>{texto_espera(proxima_consulta)}</span>
         <MensajeErrorMutacion
           error={acciones.consultar_respuesta.error}
           texto_por_defecto="No se pudo consultar la respuesta de la IAFAS."

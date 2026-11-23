@@ -7,6 +7,7 @@ import { TablaDatos, type ColumnaTabla } from "../../componentes_base/tabla_dato
 import { usar_sesion } from "../../sesion/contexto_sesion";
 import { formatear_fecha_hora } from "../../utilidades/formato";
 import estilos from "../cuentas/detalle_cuenta.module.css";
+import { BotonDescargarAdjunto } from "./boton_descargar_adjunto";
 import { BotonPedirEntrega } from "./boton_pedir_entrega";
 import { COLUMNAS_RESULTADO, puede_pedir_entrega } from "./columnas_resultado_observacion";
 import { DialogoAsignarObservacion } from "./dialogo_asignar_observacion";
@@ -46,10 +47,11 @@ function AccionesObservacion({
   al_abrir_responder: (id: number) => void;
 }) {
   if (observacion.estado !== "ABIERTA") {
-    if (!pide_entrega) return null;
+    if (!pide_entrega && !observacion.adjunto_nombre) return null;
     return (
       <div className={estilos.fila_accion}>
-        <BotonPedirEntrega observacion={observacion} />
+        <BotonDescargarAdjunto observacion={observacion} />
+        {pide_entrega ? <BotonPedirEntrega observacion={observacion} /> : null}
       </div>
     );
   }

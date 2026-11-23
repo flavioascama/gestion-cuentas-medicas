@@ -37,6 +37,8 @@ class Configuracion:
     # comunicaciones solo se publican en el portal.
     smtp_host: str = os.environ.get("SMTP_HOST", "")
     smtp_puerto: int = _entero("SMTP_PUERTO", 3025)
+    # Buzon donde cada aseguradora lee lo que la IPRESS le contesta.
+    imap_puerto: int = _entero("IMAP_PUERTO", 3143)
     correo_remitente: str = os.environ.get("CORREO_REMITENTE", "auditoria@iafas.test")
     correo_destino_ipress: str = os.environ.get(
         "CORREO_DESTINO_IPRESS", "cuentasmedicas@clinica.test"

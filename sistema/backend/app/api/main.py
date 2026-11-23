@@ -25,6 +25,9 @@ from app.api.mensajes_validacion import mensaje_validacion  # noqa: E402
 from app.api.middleware_correlacion import middleware_correlacion  # noqa: E402
 from app.api.rutas_acreditacion import router as router_acreditacion  # noqa: E402
 from app.api.rutas_administracion import router as router_administracion  # noqa: E402
+from app.api.rutas_atenciones_cargadas import (  # noqa: E402
+    router as router_atenciones_cargadas,
+)
 from app.api.rutas_atenciones_hospitalarias import (  # noqa: E402
     router as router_atenciones_hospitalarias,
 )
@@ -52,6 +55,9 @@ from app.api.rutas_orquestacion import router as router_orquestacion  # noqa: E4
 from app.api.rutas_parametros import router as router_parametros  # noqa: E402
 from app.api.rutas_plataformas import router as router_plataformas  # noqa: E402
 from app.api.rutas_plazos import router as router_plazos  # noqa: E402
+from app.api.rutas_respuestas_correo import (  # noqa: E402
+    router as router_respuestas_correo,
+)
 from app.api.rutas_robot import router as router_robot  # noqa: E402
 from app.api.rutas_salud import router as router_salud  # noqa: E402
 from app.api.rutas_trabajos import router as router_trabajos  # noqa: E402
@@ -92,6 +98,7 @@ app.include_router(router_observaciones)
 app.include_router(router_observaciones_item)
 app.include_router(router_comunicaciones)
 app.include_router(router_correos)
+app.include_router(router_respuestas_correo)
 app.include_router(router_auditoria)
 app.include_router(router_carta_garantia)
 app.include_router(router_farmacia)
@@ -111,6 +118,7 @@ app.include_router(router_trazabilidad)
 app.include_router(router_indicadores)
 app.include_router(router_historial_lote)
 app.include_router(router_administracion)
+app.include_router(router_atenciones_cargadas)
 app.include_router(router_robot)
 
 

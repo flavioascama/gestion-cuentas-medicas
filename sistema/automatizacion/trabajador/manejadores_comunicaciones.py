@@ -27,6 +27,7 @@ from app.dominio.comunicaciones.correos import (
 from app.infraestructura.cola.repositorio_trabajos_sql import RepositorioTrabajosSql
 from app.infraestructura.comunicaciones.fabrica import construir_procesar_comunicacion
 from app.infraestructura.comunicaciones.fuentes import FuenteCorreoImap, FuentePortalIafas
+from app.infraestructura.persistencia.adjunto_respuesta_sql import obtener_adjunto
 from app.infraestructura.persistencia.registro_eventos_sql import RegistroEventosSql
 from app.infraestructura.persistencia.repositorio_comunicaciones_sql import (
     RepositorioComunicacionesSql,
@@ -86,6 +87,35 @@ async def _codigos_nuevos_del_portal(
     return nuevos
 
 
+async def _leer_antes_respuesta_de_lotes(
+    fabrica_sesiones: async_sessionmaker[AsyncSession],
+    adaptadores: Adaptadores,
+    documentos: set[str],
+) -> None:
+    """Si la IAFAS ya comunica sobre un comprobante cuyo lote sigue
+    remitido, primero se lee la respuesta de ese lote: sin eso la cuenta
+    aun no esta en auditoria y la comunicacion no se podria aplicar."""
+    from trabajador.manejadores import (  # noqa: PLC0415 - evita el ciclo de importacion
+        TIPO_TRABAJO_MONITOREAR_RESPUESTA_IAFAS,
+        _procesar_monitorear_respuesta,
+    )
+
+    if not documentos:
+        return
+    async with fabrica_sesiones() as sesion:
+        adelantados = await RepositorioComunicacionesSql(sesion).adelantar_respuesta_de_lotes(
+            documentos
+        )
+    for _ in range(adelantados):
+        async with fabrica_sesiones() as sesion:
+            trabajo = await RepositorioTrabajosSql(sesion).tomar_siguiente(
+                (TIPO_TRABAJO_MONITOREAR_RESPUESTA_IAFAS,)
+            )
+        if trabajo is None:
+            return
+        await _procesar_monitorear_respuesta(fabrica_sesiones, adaptadores, trabajo)
+
+
 async def procesar_monitorear_comunicaciones(
     fabrica_sesiones: async_sessionmaker[AsyncSession],
     adaptadores: Adaptadores,
@@ -113,6 +143,9 @@ async def procesar_monitorear_comunicaciones(
         fabrica_sesiones, fuentes.portal, set(pendientes)
     ):
         pendientes[codigo] = await fuentes.portal.obtener(codigo)
+    await _leer_antes_respuesta_de_lotes(
+        fabrica_sesiones, adaptadores, {c.documento for c in pendientes.values()}
+    )
 
     resultados: Counter[str] = Counter()
     for codigo in sorted(pendientes):
@@ -139,8 +172,13 @@ async def procesar_enviar_respuesta_iafas(
             RepositorioComunicacionesSql(sesion), RegistroEventosSql(sesion), RelojSistema()
         )
         if not await caso_uso.ya_remitida(carga["codigo"]):
+            adjunto = await obtener_adjunto(sesion, carga["observacion_id"])
             await adaptadores.comunicaciones.portal.responder(
-                carga["codigo"], carga["codigo_ipress"], carga["respuesta"], carga.get("sustento")
+                carga["codigo"],
+                carga["codigo_ipress"],
+                carga["respuesta"],
+                carga,
+                None if adjunto is None else (adjunto.nombre, adjunto.contenido),
             )
             await caso_uso.ejecutar(
                 RemisionRespuesta(

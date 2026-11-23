@@ -6,9 +6,11 @@ import { Boton } from "../../componentes_base/boton";
 export function BotonCargarCatalogo({
   al_elegir,
   disabled,
+  etiqueta = "Cargar nueva versión",
 }: {
   al_elegir: (archivo: File) => void;
   disabled: boolean;
+  etiqueta?: string;
 }) {
   const entrada = useRef<HTMLInputElement>(null);
   return (
@@ -25,7 +27,7 @@ export function BotonCargarCatalogo({
         }}
       />
       <Boton variante="secundario" onClick={() => entrada.current?.click()} disabled={disabled}>
-        Cargar nueva versión
+        {etiqueta}
       </Boton>
     </>
   );

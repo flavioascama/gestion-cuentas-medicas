@@ -61,7 +61,7 @@ class Configuracion:
     # Seccion 8.3, punto 3: intervalo con el que el robot de monitoreo se
     # reencola mientras el receptor todavia no publico respuesta.
     intervalo_reconsulta_monitoreo_minutos: int = _entero(
-        "INTERVALO_RECONSULTA_MONITOREO_MINUTOS", 15
+        "INTERVALO_RECONSULTA_MONITOREO_MINUTOS", 10
     )
 
     # Comunicaciones de la IAFAS (2026-11-13): bandeja de correo de la
@@ -71,6 +71,12 @@ class Configuracion:
     correo_imap_usuario: str = os.environ.get("CORREO_IMAP_USUARIO", "")
     correo_imap_clave: str = os.environ.get("CORREO_IMAP_CLAVE", "")
     correo_imap_tls: bool = os.environ.get("CORREO_IMAP_TLS", "true").lower() == "true"
+    # Respuestas a los correos de la IAFAS (2026-11-22): salen del mismo
+    # buzon por SMTP. Sin host propio se usa el del buzon.
+    correo_smtp_host: str = os.environ.get("CORREO_SMTP_HOST", "") or os.environ.get(
+        "CORREO_IMAP_HOST", ""
+    )
+    correo_smtp_puerto: int = _entero("CORREO_SMTP_PUERTO", 587)
 
     # Seccion 8.1: 'el navegador se reinicia cada N trabajos... o ante
     # error irrecuperable'.

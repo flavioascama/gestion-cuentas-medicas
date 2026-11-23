@@ -6,7 +6,10 @@ Tabla 60 -- por eso la ruta de respuesta admite ambos roles y no uno solo."""
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, status
+from urllib.parse import quote
+
+from fastapi import APIRouter, Depends, Response, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencias import requiere_rol
 from app.api.dependencias_comunicaciones import (
@@ -27,6 +30,7 @@ from app.api.esquemas_observaciones import (
     ResponsablePosibleRespuesta,
     RespuestaNuevaEntrega,
     RespuestaObservacionRegistrada,
+    SolicitudAdjuntoRespuesta,
     SolicitudAsignacionObservacion,
     SolicitudRegistroObservacion,
     SolicitudRespuestaObservacion,
@@ -42,6 +46,7 @@ from app.dominio.comunicaciones.entrega_respuesta import (
     Solicitante,
     SolicitarNuevaEntregaRespuesta,
 )
+from app.dominio.observaciones.adjunto_respuesta import ErrorAdjuntoNoValido, leer_adjunto
 from app.dominio.observaciones.casos_uso import (
     AsignarResponsableObservacion,
     ListarCatalogoMotivos,
@@ -66,6 +71,12 @@ from app.dominio.observaciones.valores import (
     Respondedor,
 )
 from app.dominio.orquestacion.errores import ErrorTransicionNoDefinida
+from app.infraestructura.persistencia.adjunto_respuesta_sql import (
+    guardar_adjunto,
+    nombres_de_adjuntos,
+    obtener_adjunto,
+)
+from app.infraestructura.persistencia.base import obtener_sesion
 
 router = APIRouter(prefix="/cuentas/{cuenta_id}/observaciones", tags=["observaciones"])
 router_item = APIRouter(prefix="/observaciones", tags=["observaciones"])
@@ -120,10 +131,17 @@ async def registrar_observacion(
 async def listar_observaciones_de_cuenta(
     cuenta_id: int,
     caso_uso: ListarObservacionesPorCuenta = Depends(construir_listar_observaciones_por_cuenta),
+    sesion: AsyncSession = Depends(obtener_sesion),
     _actor: CargaSesion = Depends(_LECTURA),
 ) -> list[ObservacionRespuesta]:
     observaciones = await caso_uso.ejecutar(cuenta_id)
-    return [ObservacionRespuesta.desde_valor(o) for o in observaciones]
+    adjuntos = await nombres_de_adjuntos(sesion, [o.id for o in observaciones])
+    return [
+        ObservacionRespuesta.desde_valor(o).model_copy(
+            update={"adjunto_nombre": adjuntos.get(o.id)}
+        )
+        for o in observaciones
+    ]
 
 
 @router_item.get("/motivos", response_model=list[MotivoObservacionRespuesta])
@@ -179,7 +197,8 @@ async def responder_observacion(
     actor: CargaSesion = Depends(_RESPONDE),
 ) -> None:
     """Si la observacion llego de la IAFAS (portal o correo), la respuesta
-    se le remite por su portal: queda encolada para el robot."""
+    se le remite por su portal, con su documento adjunto si lo hay: queda
+    encolada para el robot."""
     try:
         await caso_uso.ejecutar(
             observacion_id,
@@ -215,6 +234,48 @@ async def responder_observacion(
         solicitud.respuesta_texto,
         solicitud.respuesta_sustento,
         actor.nombre_usuario,
+    )
+
+
+@router_item.put("/{observacion_id}/adjunto", status_code=status.HTTP_204_NO_CONTENT)
+async def adjuntar_documento_respuesta(
+    observacion_id: int,
+    solicitud: SolicitudAdjuntoRespuesta,
+    sesion: AsyncSession = Depends(obtener_sesion),
+    actor: CargaSesion = Depends(_RESPONDE),
+) -> None:
+    """El PDF que acompana la respuesta: se sube antes de responder."""
+    try:
+        adjunto = leer_adjunto(solicitud.nombre, solicitud.contenido_base64)
+        await guardar_adjunto(sesion, observacion_id, adjunto, actor.nombre_usuario)
+    except ErrorAdjuntoNoValido as error:
+        raise ErrorAplicacion(
+            "ADJUNTO_NO_VALIDO", str(error), estado_http=status.HTTP_400_BAD_REQUEST
+        ) from error
+
+
+@router_item.get("/{observacion_id}/adjunto")
+async def descargar_adjunto_respuesta(
+    observacion_id: int,
+    sesion: AsyncSession = Depends(obtener_sesion),
+    _actor: CargaSesion = Depends(_LECTURA),
+) -> Response:
+    adjunto = await obtener_adjunto(sesion, observacion_id)
+    if adjunto is None:
+        raise ErrorAplicacion(
+            "ADJUNTO_NO_ENCONTRADO",
+            "La respuesta no tiene un documento adjunto.",
+            estado_http=status.HTTP_404_NOT_FOUND,
+        )
+    # Siempre como descarga, igual que los adjuntos de los correos.
+    return Response(
+        content=adjunto.contenido,
+        media_type="application/octet-stream",
+        headers={
+            "Content-Disposition": f"attachment; filename*=UTF-8''{quote(adjunto.nombre)}",
+            "X-Content-Type-Options": "nosniff",
+            "Cache-Control": "no-store",
+        },
     )
 
 

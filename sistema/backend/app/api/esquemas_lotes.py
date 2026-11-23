@@ -113,6 +113,7 @@ class DetalleLoteRespuesta(BaseModel):
     version_esquema_tedef: str | None
     version_mapeo: str | None
     monitoreo_excedido: bool
+    proxima_consulta: datetime | None
     validacion_reintentable: bool
     vigente: bool
     motivo_desactualizado: str | None

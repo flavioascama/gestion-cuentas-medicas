@@ -1,8 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import {
   listar_comunicaciones_iafas,
   solicitar_revision_comunicaciones,
+  type ComunicacionIafas,
 } from "../../api/comunicaciones_iafas";
 import { Boton } from "../../componentes_base/boton";
 import { MensajeErrorMutacion } from "../../componentes_base/mensaje_error_mutacion";
@@ -10,8 +11,9 @@ import { ProgresoTrabajo } from "../../componentes_base/progreso_trabajo";
 import { TablaDatos } from "../../componentes_base/tabla_datos";
 import { usar_sesion } from "../../sesion/contexto_sesion";
 import estilos from "../cuentas/detalle_cuenta.module.css";
+import { columna_ver, crear_columnas_comunicaciones } from "./columnas_comunicaciones";
+import { DialogoComunicacion } from "./dialogo_comunicacion";
 import { TablaCorreos } from "./tabla_correos";
-import { usar_columnas_comunicaciones } from "./usar_columnas_comunicaciones";
 
 const _REVISA = ["analista", "jefe", "tesoreria"];
 
@@ -39,7 +41,8 @@ export function AccionRevisar() {
 }
 
 export function SeccionComunicacionesIafas({ cuenta_id }: { cuenta_id: number }) {
-  const columnas = usar_columnas_comunicaciones();
+  const [abierta, set_abierta] = useState<ComunicacionIafas | null>(null);
+  const columnas = [...crear_columnas_comunicaciones(), columna_ver(set_abierta)];
   const consulta = useQuery({
     queryKey: ["cuentas", cuenta_id, "comunicaciones_iafas"],
     queryFn: () => listar_comunicaciones_iafas(cuenta_id),
@@ -58,6 +61,9 @@ export function SeccionComunicacionesIafas({ cuenta_id }: { cuenta_id: number })
           error={consulta.error}
           mensaje_vacio="Sin comunicaciones de la IAFAS para esta cuenta."
         />
+        {abierta !== null ? (
+          <DialogoComunicacion comunicacion={abierta} al_cerrar={() => set_abierta(null)} />
+        ) : null}
       </div>
       <div className={estilos.seccion}>
         <div className={estilos.titulo_seccion}>Correos recibidos</div>

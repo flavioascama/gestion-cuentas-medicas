@@ -9,6 +9,8 @@ from decimal import Decimal
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.dominio.pse.neto import ajuste_de_nota
+from app.infraestructura.persistencia.modelos_documentos_pago import NotaDocumentoModelo
 from app.infraestructura.persistencia.modelos_integracion import DocumentoFacturadorModelo
 from app.infraestructura.persistencia.montos_comprobante_sql import montos_facturados_de_cuenta
 
@@ -17,7 +19,8 @@ async def facturado_por_documento(
     sesion: AsyncSession, documento_ids: list[int]
 ) -> dict[int, Decimal]:
     """Lo facturado a la IAFAS por cada comprobante: el total con IGV que
-    guardo al emitirse (auditoria final, hallazgo 4). Un comprobante
+    guardo al emitirse (auditoria final, hallazgo 4), con su nota de credito
+    o debito (2026-11-22). Un comprobante
     anterior al 2026-11-18 no guardo montos: se calcula con la misma regla
     del lote y del comprobante, y da 0.00 si la cuenta no tiene acreditacion."""
     if not documento_ids:
@@ -27,14 +30,28 @@ async def facturado_por_documento(
             DocumentoFacturadorModelo.id,
             DocumentoFacturadorModelo.cuenta_id,
             DocumentoFacturadorModelo.tipo_documento_pago,
+            DocumentoFacturadorModelo.valor_venta,
+            DocumentoFacturadorModelo.igv,
             DocumentoFacturadorModelo.total,
         ).where(DocumentoFacturadorModelo.id.in_(documento_ids))
     )
+    notas = await sesion.execute(
+        sa.select(
+            NotaDocumentoModelo.documento_facturador_id,
+            NotaDocumentoModelo.tipo,
+            NotaDocumentoModelo.monto,
+        ).where(NotaDocumentoModelo.documento_facturador_id.in_(documento_ids))
+    )
+    # La nota de credito resta de lo que se cobra; la de debito suma.
+    nota_de = {d: (tipo, monto) for d, tipo, monto in notas.all()}
     facturado: dict[int, Decimal] = {}
-    for documento_id, cuenta_id, tipo_documento_pago, total in filas.all():
+    for documento_id, cuenta_id, tipo_documento_pago, valor_venta, igv, total in filas.all():
         if total is None:
             montos = await montos_facturados_de_cuenta(sesion, cuenta_id, tipo_documento_pago)
             total = montos.total_facturado if montos is not None else Decimal("0.00")
+            valor_venta, igv = (montos.valor_venta, montos.igv) if montos else (None, None)
+        if documento_id in nota_de:
+            total += ajuste_de_nota(*nota_de[documento_id], valor_venta, igv)
         facturado[documento_id] = total
     return facturado
 

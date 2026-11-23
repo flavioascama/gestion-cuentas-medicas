@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { Usuario } from "../../api/usuarios";
 import { Boton } from "../../componentes_base/boton";
+import { DialogoConfirmar } from "../../componentes_base/dialogo_confirmar";
 import { CampoTexto } from "../../componentes_base/campo_texto";
 import { MensajeErrorMutacion } from "../../componentes_base/mensaje_error_mutacion";
 import { etiquetas_roles } from "../../componentes_base/mapa_roles";
@@ -9,6 +10,7 @@ import { usar_pagina_cliente } from "../../componentes_base/paginar";
 import { TablaDatos, type ColumnaTabla } from "../../componentes_base/tabla_datos";
 import { TituloPagina } from "../../componentes_base/titulo_pagina";
 import { usar_sesion } from "../../sesion/contexto_sesion";
+import { BotonEliminarUsuario } from "./boton_eliminar_usuario";
 import { DialogoRestablecerClave } from "./dialogo_restablecer_clave";
 import { DialogoUsuario } from "./dialogo_usuario";
 import { usar_actualizar_usuario, usar_lista_usuarios } from "./usar_usuarios";
@@ -19,8 +21,11 @@ import estilos from "./administracion.module.css";
 function AccionesUsuario({ usuario }: { usuario: Usuario }) {
   const [editando, set_editando] = useState(false);
   const [restableciendo, set_restableciendo] = useState(false);
+  const [desactivando, set_desactivando] = useState(false);
   const mutacion_activo = usar_actualizar_usuario();
   const es_propio = usar_sesion().sesion?.usuario_id === usuario.id;
+  const cambiar_activo = () =>
+    mutacion_activo.mutate({ usuario_id: usuario.id, solicitud: { activo: !usuario.activo } });
 
   return (
     <div>
@@ -33,16 +38,21 @@ function AccionesUsuario({ usuario }: { usuario: Usuario }) {
         </Boton>
         <Boton
           variante="terciario"
-          onClick={() =>
-            mutacion_activo.mutate({
-              usuario_id: usuario.id,
-              solicitud: { activo: !usuario.activo },
-            })
-          }
+          onClick={() => (usuario.activo ? set_desactivando(true) : cambiar_activo())}
           disabled={mutacion_activo.isPending || es_propio}
         >
           {usuario.activo ? "Desactivar" : "Activar"}
         </Boton>
+        <BotonEliminarUsuario usuario={usuario} disabled={es_propio} />
+        {desactivando ? (
+          <DialogoConfirmar
+            titulo="Desactivar usuario"
+            texto={`${usuario.nombre_usuario} ya no podrá ingresar al sistema.`}
+            texto_confirmar="Desactivar"
+            al_confirmar={cambiar_activo}
+            al_cerrar={() => set_desactivando(false)}
+          />
+        ) : null}
         {editando ? (
           <DialogoUsuario usuario={usuario} al_cerrar={() => set_editando(false)} />
         ) : null}

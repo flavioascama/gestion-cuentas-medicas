@@ -7,21 +7,64 @@
     <dt>Número de lote</dt><dd data-testid="detalle-numero-lote">{{ lote.numero_lote or "-" }}</dd>
     <dt>Código IAFAS</dt><dd>{{ lote.codigo_iafas or "-" }}</dd>
     <dt>Código IPRESS</dt><dd>{{ lote.codigo_ipress or "-" }}</dd>
-    <dt>Fecha de recepción</dt><dd>{{ (lote.recibido_en|string)[:19]|replace("T", " ") }}</dd>
-    <dt>Estado</dt><dd class="{{ lote.estado }}" data-testid="detalle-estado">{{ lote.estado }}{% if lote.forzado %} (forzado por administración){% endif %}</dd>
+    <dt>Fecha de recepción</dt><dd>{{ lote.recibido_en|hora_lima }}</dd>
+    <dt>Estado</dt><dd class="{{ lote.estado }}" data-testid="detalle-estado">{{ lote.estado }}</dd>
     <dt>Motivo</dt><dd data-testid="detalle-motivo">{{ lote.motivo or "-" }}</dd>
   </dl>
 
-  <h2>Forzar estado (ruta de administración, pruebas deterministas)</h2>
-  <form method="post" action="/admin/lotes/{{ lote.nombre_archivo }}/forzar" data-testid="formulario-forzar">
+  {% if lote.estado == "RECIBIDO" %}
+  <h2>Respuesta al lote</h2>
+  <form method="post" action="/admin/lotes/{{ lote.nombre_archivo }}/respuesta" data-testid="formulario-respuesta">
     {% if prefijo %}<input type="hidden" name="volver" value="{{ prefijo }}/lotes/{{ lote.nombre_archivo }}">{% endif %}
-    <label>Estado:
-      <select name="estado" data-testid="campo-estado-forzado">
-        <option value="ACEPTADO">ACEPTADO</option>
-        <option value="RECHAZADO">RECHAZADO</option>
+    <label>Respuesta:
+      <select name="estado" data-testid="campo-respuesta" onchange="this.form.motivo.required = this.value === 'RECHAZADO'">
+        <option value="ACEPTADO">Aceptar</option>
+        <option value="RECHAZADO">Rechazar</option>
       </select>
     </label>
-    <label>Motivo: <input type="text" name="motivo" data-testid="campo-motivo-forzado"></label>
-    <button type="submit" data-testid="boton-forzar">Forzar</button>
+    <label>Motivo: <input type="text" name="motivo" data-testid="campo-motivo"></label>
+    <button type="submit" data-testid="boton-responder">Registrar respuesta</button>
   </form>
+  {% elif lote.estado == "ACEPTADO" %}
+  <h2>Comprobantes del lote</h2>
+  <table data-testid="tabla-auditoria">
+    <thead>
+      <tr><th>Comprobante</th><th>Monto facturado</th><th>Estado</th><th>Decisión del auditor</th></tr>
+    </thead>
+    <tbody>
+      {% for d in documentos %}
+      <tr data-testid="fila-documento" data-documento="{{ d.documento }}">
+        <td>{{ d.documento }}{% if d.documento_vigente %}<br>Reemplazado por {{ d.documento_vigente }}{% endif %}</td>
+        <td>{{ d.monto_facturado }}</td>
+        <td data-testid="estado-documento">{{ d.estado }}</td>
+        <td>
+          {% if d.estado == "PENDIENTE" %}
+          <form method="post" action="/admin/documentos/{{ d.documento }}/auditoria">
+            {% if prefijo %}<input type="hidden" name="volver" value="{{ prefijo }}/lotes/{{ lote.nombre_archivo }}">{% endif %}
+            <select name="resultado">
+              <option value="CONFORME">Conforme</option>
+              <option value="GLOSA">Glosa total</option>
+              <option value="GLOSA_PARCIAL">Glosa parcial</option>
+            </select>
+            <select name="motivo_codigo" data-testid="motivo-codigo">
+              <option value="">Motivo de la glosa</option>
+              {% for codigo, descripcion in motivos_observacion %}
+              <option value="{{ codigo }}">{{ codigo }} — {{ descripcion }}</option>
+              {% endfor %}
+            </select>
+            <input name="monto_glosado" placeholder="Monto glosado">
+            <input name="detalle" placeholder="Detalle">
+            <select name="canal"><option value="PORTAL">Portal</option><option value="CORREO">Correo</option></select>
+            <select name="decision_respuesta"><option value="ACEPTAR">Aceptar la respuesta</option><option value="MANTENER">Mantener una vez</option></select>
+            <button type="submit">Registrar</button>
+          </form>
+          {% else %}-{% endif %}
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="4">El lote no trae comprobantes.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
 {% endblock %}

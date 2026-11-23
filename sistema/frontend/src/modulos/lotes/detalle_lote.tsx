@@ -98,7 +98,7 @@ export function DetalleLote() {
       />
       <AvisoDesactualizado lote={lote} />
       <LineaEstadosLote pasos={pasos} />
-      <ContenidoAccionLote estado={lote.estado} vigente={lote.vigente} acciones={acciones} />
+      <ContenidoAccionLote lote={lote} acciones={acciones} />
       <AccionValidacionContingencia lote_id={lote.id} />
       <SeccionDatosLote lote={lote} nombre_iafas={nombre_iafas} />
       <SeccionCuentasLote lote_id={lote_id} numero={lote.numero} />

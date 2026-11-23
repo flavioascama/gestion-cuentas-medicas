@@ -33,6 +33,10 @@ export function SesionPlataforma({ plataforma, nombre, necesita }: Propiedades) 
   return (
     <>
       {sesion.dialogo}
+      {sesion.etapa === "abriendo" ? (
+        <p>Abriendo {nombre}. El código de verificación se pedirá en unos segundos.</p>
+      ) : null}
+      {sesion.etapa === "comprobando" ? <p>Comprobando el código de verificación…</p> : null}
       {sesion.espera_codigo ? (
         <div className={estilos.fila_accion}>
           <Boton variante="secundario" onClick={sesion.abrir_codigo}>

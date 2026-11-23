@@ -6,6 +6,7 @@ casos_uso.py por el limite de lineas por archivo."""
 from __future__ import annotations
 
 from app.dominio.pse.documentos import DocumentosPagoCuenta
+from app.dominio.pse.neto import neto_a_cobrar
 
 # El mismo tope que el esquema de la respuesta y la columna del sustento.
 LONGITUD_MAXIMA_SUSTENTO = 500
@@ -31,3 +32,20 @@ def sustento_con_comprobante(sustento: str | None, linea: str) -> str:
     if not escrito or disponible <= 0:
         return linea[:LONGITUD_MAXIMA_SUSTENTO]
     return f"{escrito[:disponible].rstrip()}\n{linea}"
+
+
+def datos_de_respuesta(
+    documentos: DocumentosPagoCuenta | None, sustento: str | None
+) -> dict[str, str | None]:
+    """El sustento a entregar y, si la cuenta se refacturo, el comprobante
+    vigente y lo que hoy se cobra por el: la IAFAS liquida sobre ese monto y
+    no sobre el del comprobante que recibio en el lote."""
+    linea = linea_comprobante(documentos)
+    if documentos is None or linea is None:
+        return {"sustento": sustento}
+    vigente, neto = documentos.vigente, neto_a_cobrar(documentos)
+    return {
+        "sustento": sustento_con_comprobante(sustento, linea),
+        "comprobante_vigente": vigente.serie + vigente.numero,
+        "monto_vigente": None if neto is None else str(neto),
+    }

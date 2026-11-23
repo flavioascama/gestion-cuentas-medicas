@@ -8,12 +8,14 @@ Seccion 6.1 exige la tabla `usuario`. Ver docs/DECISIONES.md.
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencias import (
     construir_actualizar_usuario,
     construir_listar_usuarios,
     construir_registrar_usuario,
     construir_restablecer_clave_usuario,
+    obtener_repositorio_usuarios,
     requiere_rol,
 )
 from app.api.esquemas_acceso import (
@@ -29,6 +31,7 @@ from app.dominio.acceso.casos_uso import (
     RegistrarUsuario,
     RestablecerClaveUsuario,
 )
+from app.dominio.acceso.eliminacion_usuario import EliminarUsuario, UsuarioNoEliminableError
 from app.dominio.acceso.entidades import NombreRol
 from app.dominio.acceso.errores import (
     ClaveDebilError,
@@ -39,8 +42,11 @@ from app.dominio.acceso.errores import (
     RolesRequeridosError,
     UsuarioNoEncontradoError,
 )
-from app.dominio.acceso.puertos import CargaSesion
+from app.dominio.acceso.puertos import CargaSesion, RepositorioUsuarios
 from app.infraestructura.observabilidad.registro import obtener_registrador
+from app.infraestructura.persistencia.base import obtener_sesion
+from app.infraestructura.persistencia.eliminacion_usuario_sql import EliminacionUsuariosSql
+from app.infraestructura.persistencia.registro_eventos_sql import RegistroEventosSql
 
 router = APIRouter(prefix="/usuarios", tags=["usuarios"])
 _registrador = obtener_registrador("api.usuarios")
@@ -132,6 +138,35 @@ async def actualizar_usuario(
         usuario_id=usuario_id,
     )
     return RespuestaUsuario.desde_entidad(usuario)
+
+
+@router.delete("/{usuario_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def eliminar_usuario(
+    usuario_id: int,
+    sesion: AsyncSession = Depends(obtener_sesion),
+    repositorio: RepositorioUsuarios = Depends(obtener_repositorio_usuarios),
+    actor: CargaSesion = Depends(_solo_administrador),
+) -> None:
+    """Solo el usuario que nunca tuvo actividad; el resto se desactiva."""
+    caso_uso = EliminarUsuario(
+        repositorio, EliminacionUsuariosSql(sesion), RegistroEventosSql(sesion)
+    )
+    try:
+        await caso_uso.ejecutar(usuario_id, actor.usuario_id, actor.nombre_usuario)
+    except UsuarioNoEncontradoError as error:
+        raise ErrorAplicacion(
+            "USUARIO_NO_ENCONTRADO", str(error), estado_http=status.HTTP_404_NOT_FOUND
+        ) from error
+    except UsuarioNoEliminableError as error:
+        raise ErrorAplicacion(
+            "USUARIO_NO_ELIMINABLE", str(error), estado_http=status.HTTP_409_CONFLICT
+        ) from error
+    _registrador.info(
+        "usuario_eliminado",
+        caso_uso="eliminar_usuario",
+        actor=actor.nombre_usuario,
+        usuario_id=usuario_id,
+    )
 
 
 @router.post("/{usuario_id}/restablecer-clave", response_model=RespuestaUsuario)

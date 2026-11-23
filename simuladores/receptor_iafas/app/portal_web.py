@@ -1,5 +1,6 @@
 """Portal web de respuestas (Seccion 9.2, punto 2): lista los lotes
-recibidos y expone una ruta de administracion para forzar el estado.
+recibidos; la IAFAS acepta o rechaza cada uno una sola vez y audita los
+comprobantes del lote aceptado dentro del propio lote.
 
 Cada aseguradora tiene su propio portal bajo `/aseguradora/<codigo>`, con
 su razon social y solo sus lotes, auditorias y comunicaciones (2026-11-17:
@@ -15,21 +16,50 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any
+from urllib.parse import quote
 
-from fastapi import FastAPI, Form, HTTPException, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi import FastAPI, Form, HTTPException, Request, UploadFile
+from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 
-from app.almacenamiento import AlmacenamientoReceptor
+from app.almacenamiento import AlmacenamientoReceptor, LoteRecibido
 from app.auditoria import AuditoriaIafas, AuditoriaInvalidaError, Comunicacion
 from app.configuracion import configuracion
-from app.correo import EnviadorCorreoSmtp
+from app.correo import EnviadorCorreoSmtp, leer_recibidos, remitente_de
 
 _RAIZ = Path(__file__).resolve().parent.parent
 plantillas = Jinja2Templates(directory=str(_RAIZ / "plantillas"))
+
+_ZONA_PERU = timezone(timedelta(hours=-5))
+
+
+def _hora_lima(valor: object) -> str:
+    """Las fechas se guardan con la hora del servidor; el portal las
+    muestra con la hora de Lima."""
+    try:
+        instante = datetime.fromisoformat(str(valor))
+    except ValueError:
+        return str(valor)
+    return instante.astimezone(_ZONA_PERU).strftime("%Y-%m-%d %H:%M:%S")
+
+
+plantillas.env.filters["hora_lima"] = _hora_lima
+
+# Catalogo de motivos de observacion que la IPRESS reconoce.
+MOTIVOS_OBSERVACION = (
+    ("OBS-01", "Datos incompletos"),
+    ("OBS-02", "Ausencia de firma"),
+    ("OBS-03", "Paciente no activo en la cobertura"),
+    ("OBS-04", "Prestación no reconocida"),
+    ("OBS-05", "Incompatibilidad entre el diagnóstico y el procedimiento"),
+    ("OBS-06", "Duplicidad de registros"),
+    ("OBS-07", "Prestaciones fuera de la cobertura del plan"),
+)
+plantillas.env.globals["motivos_observacion"] = MOTIVOS_OBSERVACION
 
 _PREFIJO_PORTAL = "/aseguradora/"
 
@@ -67,6 +97,13 @@ class _Portal:
             "prefijo": f"{_PREFIJO_PORTAL}{codigo}",
         }
 
+    def datos_lote(self, lote: LoteRecibido) -> dict[str, Any]:
+        """El lote con sus comprobantes: se auditan dentro de el."""
+        propios = [
+            d for d in self.auditoria.documentos() if d.nombre_archivo == lote.nombre_archivo
+        ]
+        return {"lote": lote, "documentos": propios}
+
 
 def construir_app(
     almacenamiento: AlmacenamientoReceptor,
@@ -77,7 +114,7 @@ def construir_app(
     app = FastAPI(title="Simulador receptor IAFAS")
     auditoria = auditoria or AuditoriaIafas(configuracion.base_datos)
     portal = _Portal(almacenamiento, auditoria, enviador, aseguradoras or {})
-    _rutas_auditoria(app, auditoria)
+    _rutas_auditoria(app, portal)
     _rutas_correo(app, enviador)
     _rutas_portal_lotes(app, portal)
     _rutas_portal_auditoria(app, portal)
@@ -100,20 +137,24 @@ def construir_app(
         lote = almacenamiento.obtener(nombre_archivo)
         if lote is None:
             return HTMLResponse("Lote no encontrado.", status_code=404)
-        return plantillas.TemplateResponse(request, "detalle_lote.html", {"lote": lote})
+        return plantillas.TemplateResponse(request, "detalle_lote.html", portal.datos_lote(lote))
 
-    @app.post("/admin/lotes/{nombre_archivo}/forzar", response_model=None)
-    async def forzar_estado(
+    @app.post("/admin/lotes/{nombre_archivo}/respuesta", response_model=None)
+    async def responder_lote(
         nombre_archivo: str,
         estado: str = Form(...),
         motivo: str = Form(""),
         volver: str = Form(""),
     ) -> HTMLResponse | RedirectResponse:
+        motivo = motivo.strip()
         if estado not in ("ACEPTADO", "RECHAZADO"):
-            return HTMLResponse("Estado invalido.", status_code=400)
-        encontrado = almacenamiento.forzar_estado(nombre_archivo, estado, motivo or None)
-        if not encontrado:
+            return HTMLResponse("Respuesta no válida.", status_code=400)
+        if estado == "RECHAZADO" and not motivo:
+            return HTMLResponse("El rechazo necesita un motivo.", status_code=400)
+        if almacenamiento.obtener(nombre_archivo) is None:
             return HTMLResponse("Lote no encontrado.", status_code=404)
+        if not almacenamiento.responder(nombre_archivo, estado, motivo or None):
+            return HTMLResponse("El lote ya fue respondido.", status_code=409)
         return RedirectResponse(_volver(volver, f"/lotes/{nombre_archivo}"), status_code=303)
 
     return app
@@ -136,7 +177,9 @@ def _rutas_portal_lotes(app: FastAPI, portal: _Portal) -> None:
         lote = portal.almacenamiento.obtener(nombre_archivo)
         if lote is None or lote.codigo_iafas != codigo:
             return HTMLResponse("Lote no encontrado.", status_code=404)
-        return plantillas.TemplateResponse(request, "detalle_lote.html", contexto | {"lote": lote})
+        return plantillas.TemplateResponse(
+            request, "detalle_lote.html", contexto | portal.datos_lote(lote)
+        )
 
     @app.get(_PREFIJO_PORTAL + "{codigo}/correo", response_class=HTMLResponse)
     async def correo_de_aseguradora(
@@ -144,20 +187,12 @@ def _rutas_portal_lotes(app: FastAPI, portal: _Portal) -> None:
     ) -> HTMLResponse:
         contexto = portal.contexto(codigo)
         return plantillas.TemplateResponse(
-            request, "correo.html", contexto | _datos_correo(portal.enviador, enviado)
+            request, "correo.html", contexto | _datos_correo(portal.enviador, enviado, codigo)
         )
 
 
 def _rutas_portal_auditoria(app: FastAPI, portal: _Portal) -> None:
-    """Portal de una aseguradora: su auditoria y sus comunicaciones."""
-
-    @app.get(_PREFIJO_PORTAL + "{codigo}/auditoria", response_class=HTMLResponse)
-    async def auditoria_de_aseguradora(request: Request, codigo: str) -> HTMLResponse:
-        contexto = portal.contexto(codigo)
-        documentos = [d for d in portal.auditoria.documentos() if d.codigo_iafas == codigo]
-        return plantillas.TemplateResponse(
-            request, "auditoria.html", contexto | {"documentos": documentos}
-        )
+    """Portal de una aseguradora: sus comunicaciones."""
 
     @app.get(_PREFIJO_PORTAL + "{codigo}/comunicaciones", response_class=HTMLResponse)
     async def comunicaciones_de_aseguradora(request: Request, codigo: str) -> HTMLResponse:
@@ -187,24 +222,29 @@ def _datos_comunicacion(comunicacion: Comunicacion) -> dict[str, Any]:
     return {"c": comunicacion, "datos_json": datos_json}
 
 
-def _datos_correo(enviador: EnviadorCorreoSmtp | None, enviado: str | None) -> dict[str, Any]:
+def _datos_correo(
+    enviador: EnviadorCorreoSmtp | None, enviado: str | None, codigo_iafas: str | None = None
+) -> dict[str, Any]:
+    remitente = remitente_de(configuracion.correo_remitente, codigo_iafas)
+    recibidos = (
+        leer_recibidos(configuracion.smtp_host, configuracion.imap_puerto, remitente)
+        if enviador is not None and codigo_iafas
+        else []
+    )
     return {
         "disponible": enviador is not None,
         "enviado": enviado == "1",
-        "remitente": configuracion.correo_remitente,
+        "remitente": remitente,
         "destinatario": configuracion.correo_destino_ipress,
+        "recibidos": recibidos,
     }
 
 
-def _rutas_auditoria(app: FastAPI, auditoria: AuditoriaIafas) -> None:
-    """Auditoria de la IAFAS (decision del auditor) y comunicaciones a la
-    IPRESS, con el formulario de respuesta a una observacion."""
-
-    @app.get("/auditoria", response_class=HTMLResponse)
-    async def ver_auditoria(request: Request) -> HTMLResponse:
-        return plantillas.TemplateResponse(
-            request, "auditoria.html", {"documentos": auditoria.documentos()}
-        )
+def _rutas_auditoria(app: FastAPI, portal: _Portal) -> None:
+    """Auditoria de la IAFAS (decision del auditor sobre un comprobante de
+    un lote aceptado) y comunicaciones a la IPRESS, con el formulario de
+    respuesta a una observacion."""
+    auditoria = portal.auditoria
 
     @app.post("/admin/documentos/{documento}/auditoria", response_model=None)
     async def auditar(  # noqa: PLR0913 - campos del formulario del auditor
@@ -217,6 +257,11 @@ def _rutas_auditoria(app: FastAPI, auditoria: AuditoriaIafas) -> None:
         decision_respuesta: str = Form("ACEPTAR"),
         volver: str = Form(""),
     ) -> HTMLResponse | RedirectResponse:
+        propio = next((d for d in auditoria.documentos() if d.documento == documento), None)
+        archivo = propio.nombre_archivo if propio is not None else ""
+        lote = portal.almacenamiento.obtener(archivo)
+        if propio is not None and (lote is None or lote.estado != "ACEPTADO"):
+            return HTMLResponse("El lote del comprobante no está aceptado.", status_code=400)
         try:
             auditoria.auditar(
                 documento,
@@ -229,7 +274,7 @@ def _rutas_auditoria(app: FastAPI, auditoria: AuditoriaIafas) -> None:
             )
         except (AuditoriaInvalidaError, InvalidOperation) as error:
             return HTMLResponse(str(error), status_code=400)
-        return RedirectResponse(_volver(volver, "/auditoria"), status_code=303)
+        return RedirectResponse(_volver(volver, f"/lotes/{archivo}"), status_code=303)
 
     @app.get("/comunicaciones", response_class=HTMLResponse)
     async def listar_comunicaciones(request: Request, ipress: str | None = None) -> HTMLResponse:
@@ -247,18 +292,40 @@ def _rutas_auditoria(app: FastAPI, auditoria: AuditoriaIafas) -> None:
         )
 
     @app.post("/comunicaciones/{codigo}/respuesta", response_model=None)
-    async def responder(
+    async def responder(  # noqa: PLR0913 - formulario de la respuesta
         codigo: str,
         codigo_ipress: str = Form(...),
         respuesta: str = Form(...),
         sustento: str = Form(""),
+        comprobante_vigente: str = Form(""),
+        monto_vigente: str = Form(""),
         volver: str = Form(""),
+        adjunto: UploadFile | None = None,
     ) -> HTMLResponse | RedirectResponse:
         try:
-            auditoria.responder(codigo, codigo_ipress, respuesta, sustento or None)
-        except AuditoriaInvalidaError as error:
+            refacturado = (
+                (comprobante_vigente, Decimal(monto_vigente))
+                if comprobante_vigente and monto_vigente
+                else None
+            )
+            auditoria.responder(codigo, codigo_ipress, respuesta, sustento or None, refacturado)
+        except (AuditoriaInvalidaError, InvalidOperation) as error:
             return HTMLResponse(str(error), status_code=400)
+        if adjunto is not None and adjunto.filename:
+            auditoria.adjuntar(codigo, adjunto.filename, await adjunto.read())
         return RedirectResponse(_volver(volver, f"/comunicaciones/{codigo}"), status_code=303)
+
+    @app.get("/comunicaciones/{codigo}/adjunto", response_model=None)
+    async def descargar_adjunto(codigo: str) -> Response:
+        adjunto = auditoria.adjunto(codigo)
+        if adjunto is None:
+            return HTMLResponse("La respuesta no tiene un documento adjunto.", status_code=404)
+        nombre, contenido = adjunto
+        return Response(
+            content=contenido,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename*=UTF-8''{quote(nombre)}"},
+        )
 
 
 def _rutas_correo(app: FastAPI, enviador: EnviadorCorreoSmtp | None) -> None:
@@ -278,8 +345,16 @@ def _rutas_correo(app: FastAPI, enviador: EnviadorCorreoSmtp | None) -> None:
     ) -> HTMLResponse | RedirectResponse:
         if enviador is None:
             return HTMLResponse("El servidor de correo no está configurado.", status_code=503)
+        # El portal de cada aseguradora manda su direccion de regreso.
+        codigo_iafas = (
+            volver.removeprefix(_PREFIJO_PORTAL).split("/")[0]
+            if volver.startswith(_PREFIJO_PORTAL)
+            else None
+        )
         try:
-            enviador.enviar_libre(asunto.strip(), texto.strip(), bool(adjuntar_documento))
+            enviador.enviar_libre(
+                asunto.strip(), texto.strip(), bool(adjuntar_documento), codigo_iafas
+            )
         except OSError as error:
             return HTMLResponse(f"No se pudo enviar el correo: {error}", status_code=502)
         return RedirectResponse(f"{_volver(volver, '/correo')}?enviado=1", status_code=303)

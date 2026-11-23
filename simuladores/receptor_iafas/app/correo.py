@@ -6,10 +6,14 @@ clinica."""
 
 from __future__ import annotations
 
+import email
+import imaplib
 import json
 import logging
 import smtplib
+from dataclasses import dataclass
 from email.message import EmailMessage
+from email.policy import default as politica_por_defecto
 
 from app.auditoria import Comunicacion
 
@@ -21,6 +25,49 @@ _TITULOS = {
     "LIQUIDACION": "Liquidacion",
     "PAGO": "Aviso de pago",
 }
+
+
+def remitente_de(base: str, codigo_iafas: str | None) -> str:
+    """Cada aseguradora escribe desde su propio buzon (auditoria.<codigo>@...),
+    para que la IPRESS sepa de cual es el correo."""
+    if not codigo_iafas or "@" not in base:
+        return base
+    usuario, dominio = base.split("@", 1)
+    return f"{usuario}.{codigo_iafas}@{dominio}"
+
+
+@dataclass(frozen=True, slots=True)
+class CorreoRecibido:
+    fecha: str
+    asunto: str
+    texto: str
+
+
+def leer_recibidos(host: str, puerto: int, buzon: str) -> list[CorreoRecibido]:
+    """Lo que la IPRESS le contesto a esa aseguradora, del mas reciente al mas
+    antiguo. El servidor de correo de pruebas crea el buzon al llegarle el
+    primer mensaje, con la direccion como clave; sin buzon no hay correos."""
+    try:
+        with imaplib.IMAP4(host, puerto, timeout=10) as cliente:
+            cliente.login(buzon, buzon)
+            cliente.select("INBOX", readonly=True)
+            _, datos = cliente.search(None, "ALL")
+            recibidos = []
+            for numero in reversed(datos[0].split()):
+                _, partes = cliente.fetch(numero, "(RFC822)")
+                crudo = partes[0][1] if partes and isinstance(partes[0], tuple) else b""
+                mensaje = email.message_from_bytes(crudo, policy=politica_por_defecto)
+                cuerpo = mensaje.get_body(preferencelist=("plain",))
+                recibidos.append(
+                    CorreoRecibido(
+                        fecha=str(mensaje["Date"] or ""),
+                        asunto=str(mensaje["Subject"] or ""),
+                        texto=cuerpo.get_content().strip() if cuerpo is not None else "",
+                    )
+                )
+            return recibidos
+    except (OSError, imaplib.IMAP4.error):
+        return []
 
 
 def construir_correo(comunicacion: Comunicacion, remitente: str, destinatario: str) -> EmailMessage:
@@ -62,7 +109,8 @@ class EnviadorCorreoSmtp:
         self._destinatario = destinatario
 
     def __call__(self, comunicacion: Comunicacion) -> None:
-        mensaje = construir_correo(comunicacion, self._remitente, self._destinatario)
+        remitente = remitente_de(self._remitente, comunicacion.codigo_iafas)
+        mensaje = construir_correo(comunicacion, remitente, self._destinatario)
         try:
             with smtplib.SMTP(self._host, self._puerto, timeout=15) as cliente:
                 cliente.send_message(mensaje)
@@ -71,13 +119,16 @@ class EnviadorCorreoSmtp:
             # un segundo canal y su falla no deshace la decision.
             registro.exception("correo_no_enviado codigo=%s", comunicacion.codigo)
 
-    def enviar_libre(self, asunto: str, texto: str, adjuntar_documento: bool) -> None:
+    def enviar_libre(
+        self, asunto: str, texto: str, adjuntar_documento: bool, codigo_iafas: str | None = None
+    ) -> None:
         """Correo que el personal de la IAFAS escribe fuera del formato de
         comunicaciones (2026-11-15): un pedido de documentacion, una consulta
         o una carta, con o sin un documento PDF. La clinica lo recibe en su
         buzon y su sistema lo deja por revisar."""
+        remitente = remitente_de(self._remitente, codigo_iafas)
         mensaje = construir_correo_libre(
-            self._remitente, self._destinatario, asunto, texto, adjuntar_documento
+            remitente, self._destinatario, asunto, texto, adjuntar_documento
         )
         with smtplib.SMTP(self._host, self._puerto, timeout=15) as cliente:
             cliente.send_message(mensaje)

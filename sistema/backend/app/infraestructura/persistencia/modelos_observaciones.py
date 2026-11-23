@@ -14,6 +14,7 @@ import sqlalchemy as sa
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.infraestructura.persistencia.base import Base
+from app.infraestructura.persistencia.cifrado_columnas import BinarioCifrado, TextoCifrado
 
 NATURALEZAS = ("ADMINISTRATIVA", "TECNICA", "FINANCIERA")
 ROLES_RESPONSABLES = ("analista", "auditor")
@@ -87,3 +88,20 @@ class ObservacionModelo(Base):
             name="ck_observacion_resultado",
         ),
     )
+
+
+class AdjuntoRespuestaObservacionModelo(Base):
+    """El PDF adjunto a la respuesta de una observacion (2026-11-22): uno
+    por observacion, con el nombre y el contenido cifrados (C-05)."""
+
+    __tablename__ = "adjunto_respuesta_observacion"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    observacion_id: Mapped[int] = mapped_column(
+        sa.ForeignKey("observacion.id"), nullable=False, unique=True
+    )
+    nombre: Mapped[str] = mapped_column(TextoCifrado(), nullable=False)
+    tamano: Mapped[int] = mapped_column(sa.Integer, nullable=False)
+    contenido: Mapped[bytes] = mapped_column(BinarioCifrado(), nullable=False)
+    subido_por: Mapped[str] = mapped_column(sa.String(60), nullable=False)
+    subido_en: Mapped[datetime] = mapped_column(sa.DateTime(timezone=True), nullable=False)

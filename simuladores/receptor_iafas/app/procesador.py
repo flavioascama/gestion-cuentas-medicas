@@ -48,6 +48,26 @@ class ResultadoProcesamiento:
 # (posicion 188, 12 caracteres con dos decimales).
 _T1_DOCUMENTO = slice(47, 59)
 _T1_MONTO_TOTAL = slice(187, 199)
+# Campos 25 y 27: tipo de nota (C credito, D debito, N ninguna) y su monto.
+_T1_TIPO_NOTA = slice(199, 200)
+_T1_MONTO_NOTA = slice(212, 224)
+_T1_BASE_IMPONIBLE = slice(163, 175)
+_T1_IGV = slice(175, 187)
+
+
+def _monto_a_auditar(linea: str) -> Decimal:
+    """Lo que la IAFAS reconoce del comprobante: su total menos la nota de
+    credito, o mas la de debito. La nota viene sin IGV: se le suma el IGV
+    con la tasa del propio comprobante (campos 22 y 23)."""
+    monto = Decimal(linea[_T1_MONTO_TOTAL].strip())
+    tipo_nota = linea[_T1_TIPO_NOTA]
+    if tipo_nota not in ("C", "D"):
+        return monto
+    base = Decimal(linea[_T1_BASE_IMPONIBLE].strip() or "0")
+    igv = Decimal(linea[_T1_IGV].strip() or "0")
+    tasa = igv / base if base else Decimal(0)
+    nota = (Decimal(linea[_T1_MONTO_NOTA].strip()) * (1 + tasa)).quantize(Decimal("0.01"))
+    return monto - nota if tipo_nota == "C" else monto + nota
 
 
 def _aceptado(
@@ -70,7 +90,7 @@ def _documentos_de(
     documentos = []
     for linea in _lineas_de(contenido) or []:
         try:
-            monto = Decimal(linea[_T1_MONTO_TOTAL].strip())
+            monto = _monto_a_auditar(linea)
         except InvalidOperation:
             continue  # linea sin monto legible: no se audita
         documentos.append((linea[_T1_DOCUMENTO].strip(), monto))

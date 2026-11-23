@@ -21,8 +21,14 @@ from app.infraestructura.persistencia.modelos_integracion import (
     CuentaMedicaModelo,
     DocumentoFacturadorModelo,
     IpressModelo,
+    LoteDocumentoModelo,
+    LoteFacturacionModelo,
     TrabajoModelo,
 )
+
+# El mismo texto que dominio/integracion/casos_uso.py; no se importa de ahi
+# para no cruzar los dos contextos por una constante.
+_TIPO_TRABAJO_RESPUESTA_LOTE = "MONITOREAR_RESPUESTA_IAFAS"
 
 
 def _a_registrada(fila: ComunicacionIafasModelo) -> ComunicacionRegistrada:
@@ -101,6 +107,35 @@ class RepositorioComunicacionesSql(RepositorioComunicaciones):
             .limit(1)
         )
         return int(pendiente) if pendiente is not None else None
+
+    async def adelantar_respuesta_de_lotes(self, documentos: set[str]) -> int:
+        """Deja para ahora la consulta de la respuesta de los lotes aun
+        remitidos que llevan estos comprobantes: que la IAFAS ya comunique
+        sobre uno prueba que respondio el lote. Devuelve cuantas adelanto."""
+        numero = DocumentoFacturadorModelo.serie + DocumentoFacturadorModelo.numero
+        lotes = (
+            sa.select(LoteDocumentoModelo.lote_id)
+            .join(
+                DocumentoFacturadorModelo,
+                DocumentoFacturadorModelo.id == LoteDocumentoModelo.documento_id,
+            )
+            .join(LoteFacturacionModelo, LoteFacturacionModelo.id == LoteDocumentoModelo.lote_id)
+            .where(numero.in_(documentos), LoteFacturacionModelo.estado == "REMITIDO_IAFAS")
+        )
+        adelantados = await self._sesion.scalars(
+            sa.update(TrabajoModelo)
+            .where(
+                TrabajoModelo.tipo == _TIPO_TRABAJO_RESPUESTA_LOTE,
+                TrabajoModelo.estado == "PENDIENTE",
+                TrabajoModelo.carga_util["lote_id"].as_integer().in_(lotes),
+            )
+            .values(proximo_intento=sa.func.now())
+            .returning(TrabajoModelo.id)
+            .execution_options(synchronize_session=False)
+        )
+        cantidad = len(adelantados.all())
+        await self._sesion.commit()
+        return cantidad
 
     async def estado_de_cuenta(self, cuenta_id: int) -> str | None:
         estado = await self._sesion.scalar(

@@ -38,11 +38,11 @@ from app.dominio.puertos_comunes import (
 # 6.1) solo tiene `periodicidad_remision_dias` (cada cuanto se remiten
 # lotes) y `ventana_monitoreo_horas` (limite maximo antes de AGOTADO,
 # Seccion 8.3 punto 5); ninguno de los dos es literalmente 'cada cuanto
-# revisar'. Se fija aqui un primer chequeo a los 15 minutos, como supuesto
+# revisar'. Se fija aqui un primer chequeo a los 10 minutos, como supuesto
 # de esta fase -- la Fase 12, que es quien de verdad consume y reencola
 # este trabajo, es la que define el intervalo de reconsulta completo (y,
 # si hace falta un valor por IAFAS, el campo nuevo que lo sostenga).
-INTERVALO_INICIAL_MONITOREO = timedelta(minutes=15)
+INTERVALO_INICIAL_MONITOREO = timedelta(minutes=10)
 
 # Unico estado desde el que un lote puede remitirse (Seccion 7.8, punto 1,
 # reescrito en la Fase 13, Seccion 3 de docs/MIGRACION_V2_A_V3.md): antes

@@ -62,3 +62,20 @@ class AdjuntoCorreoIafasModelo(Base):
     # limite) y `contenido` queda vacio.
     motivo_omision: Mapped[str | None] = mapped_column(sa.String(20), nullable=True)
     contenido: Mapped[bytes | None] = mapped_column(BinarioCifrado(), nullable=True)
+
+
+class RespuestaCorreoIafasModelo(Base):
+    """Lo que la clinica le contesta a la IAFAS por correo (2026-11-22). El
+    texto puede traer datos del asegurado: se guarda cifrado (C-05)."""
+
+    __tablename__ = "respuesta_correo_iafas"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    correo_id: Mapped[int] = mapped_column(
+        sa.ForeignKey("correo_iafas.id"), nullable=False, index=True
+    )
+    texto: Mapped[str] = mapped_column(TextoLargoCifrado(), nullable=False)
+    respondido_por: Mapped[str] = mapped_column(sa.String(60), nullable=False)
+    respondido_en: Mapped[datetime] = mapped_column(sa.DateTime(timezone=True), nullable=False)
+    # Nulo mientras el correo aun no sale del buzon de la clinica.
+    enviada_en: Mapped[datetime | None] = mapped_column(sa.DateTime(timezone=True), nullable=True)

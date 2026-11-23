@@ -101,6 +101,8 @@ services:
       CORREO_IMAP_USUARIO: ${CORREO_USUARIO:-cuentasmedicas@clinica.test}
       CORREO_IMAP_CLAVE: ${CORREO_CLAVE:?Falta CORREO_CLAVE en .env}
       CORREO_IMAP_TLS: "false"
+      CORREO_SMTP_HOST: correo
+      CORREO_SMTP_PUERTO: "3025"
     depends_on:
       postgres:
         condition: service_healthy

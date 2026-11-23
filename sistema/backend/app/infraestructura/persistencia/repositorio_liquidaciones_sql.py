@@ -12,6 +12,7 @@ from app.dominio.liquidacion.casos_uso import TIPO_EVENTO_PAGO_ADICIONAL
 from app.dominio.liquidacion.puertos import RepositorioLiquidaciones
 from app.dominio.liquidacion.valores import DatosNuevaLiquidacion, Liquidacion
 from app.dominio.orquestacion.valores import TipoTransicion
+from app.dominio.pse.neto import neto_a_cobrar
 from app.infraestructura.persistencia.modelos_integracion import EventoModelo
 from app.infraestructura.persistencia.modelos_liquidacion import LiquidacionModelo
 from app.infraestructura.persistencia.repositorio_documentos_pago_sql import (
@@ -27,10 +28,10 @@ _TIPOS_PAGO = (
 
 
 async def total_facturado_de_cuenta(sesion: AsyncSession, cuenta_medica_id: int) -> Decimal | None:
-    """El total del comprobante vigente, tal como lo muestra la seccion de
-    liquidacion de la cuenta."""
+    """El total del comprobante vigente con su nota de credito o debito,
+    tal como lo muestra la seccion de liquidacion de la cuenta."""
     documentos = await RepositorioDocumentosPagoSql(sesion).documentos(cuenta_medica_id)
-    return documentos.vigente.total if documentos is not None else None
+    return neto_a_cobrar(documentos) if documentos is not None else None
 
 
 def _a_valor(fila: LiquidacionModelo) -> Liquidacion:

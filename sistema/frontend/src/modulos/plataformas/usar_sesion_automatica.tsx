@@ -19,6 +19,9 @@ interface SesionAutomatica {
   sin_conexion: boolean;
   // Por que no se pudo ingresar la ultima vez, si se sabe.
   motivo: string | null;
+  // Lo que pasa mientras no hay dialogo: se esta abriendo la plataforma
+  // (el codigo se pedira enseguida) o se esta comprobando el codigo.
+  etapa: "abriendo" | "comprobando" | null;
   reintentar: () => void;
 }
 
@@ -83,6 +86,13 @@ function falla_de(sesion: { intentos: number; motivo: string | null } | undefine
   return { codigo_rechazado: (sesion?.intentos ?? 0) > 0, motivo: sesion?.motivo ?? null };
 }
 
+function etapa_de(estado: string | undefined, en_espera: boolean): SesionAutomatica["etapa"] {
+  if (!en_espera) return null;
+  if (estado === "CAPTCHA_RESPONDIDO") return "comprobando";
+  if (!estado || estado === "SOLICITADA" || _REINICIABLES.has(estado)) return "abriendo";
+  return null;
+}
+
 // La sesion con la plataforma se maneja sola (pedido del usuario, 2026-11-18).
 // Mientras una tarea la necesita (`necesita`), si no hay sesion vigente se
 // pide una; lo unico que la persona ve es el codigo de verificacion (CAPTCHA),
@@ -108,6 +118,7 @@ export function usar_sesion_automatica(plataforma: string, necesita: boolean): S
     abrir_codigo: codigo.abrir_codigo,
     sin_conexion,
     motivo: falla.motivo,
+    etapa: etapa_de(sesion_vigente?.estado, necesita && !sin_conexion),
     reintentar,
   };
 }

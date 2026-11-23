@@ -57,6 +57,9 @@ from app.infraestructura.persistencia.repositorio_por_codificar_sql import (
     RepositorioCopagoCobradoSql,
 )
 from app.infraestructura.sistema_hospitalario.esquema_atencion import AtencionJson
+from app.infraestructura.sistema_hospitalario.fuente_atenciones_cargadas import (
+    FuenteAtencionesConCargadas,
+)
 from app.infraestructura.sistema_hospitalario.fuente_atenciones_http import (
     FuenteAtencionesHttp,
 )
@@ -66,11 +69,16 @@ _SOLO_ANALISTA = requiere_rol(NombreRol.ANALISTA)
 _LECTURA = requiere_rol(NombreRol.ANALISTA, NombreRol.AUDITOR, NombreRol.JEFE, NombreRol.TESORERIA)
 
 
-def obtener_fuente_atenciones() -> FuenteAtenciones:
+def obtener_fuente_atenciones(
+    sesion: AsyncSession = Depends(obtener_sesion),
+) -> FuenteAtenciones:
+    """El sistema hospitalario y, ademas, las atenciones que el
+    administrador cargo con un Excel."""
     configuracion = obtener_configuracion()
-    return FuenteAtencionesHttp(
+    sistema = FuenteAtencionesHttp(
         configuracion.sistema_hospitalario_url_base, configuracion.sistema_hospitalario_clave
     )
+    return FuenteAtencionesConCargadas(sesion, sistema)
 
 
 def construir_importar_atencion(sesion: AsyncSession = Depends(obtener_sesion)) -> ImportarAtencion:

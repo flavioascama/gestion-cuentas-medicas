@@ -181,6 +181,8 @@ class DetalleLote:
     version_esquema_tedef: str | None = None
     version_mapeo: str | None = None
     monitoreo_excedido: bool = False
+    # Cuando se consultara la respuesta de la IAFAS a un lote remitido.
+    proxima_consulta: datetime | None = None
     # CARGADO_VALIDADOR sin trabajo de validacion en curso.
     validacion_reintentable: bool = False
     # Un lote en curso que dejo de reflejar sus cuentas (vigencia_lote.py);

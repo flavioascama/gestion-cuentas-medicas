@@ -32,7 +32,9 @@ def _construir_manejador(
             resultado = procesar_lote(ruta, claves_iafas)
             almacenamiento.registrar(
                 nombre_archivo=ruta.name,
-                estado=resultado.estado,
+                # El archivo correcto queda recibido: lo acepta o lo rechaza
+                # una persona de la IAFAS en el portal.
+                estado="RECIBIDO" if resultado.estado == "ACEPTADO" else resultado.estado,
                 motivo=resultado.motivo,
                 numero_lote=resultado.numero_lote,
                 codigo_iafas=resultado.codigo_iafas,

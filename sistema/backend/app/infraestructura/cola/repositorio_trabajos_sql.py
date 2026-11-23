@@ -149,6 +149,21 @@ class RepositorioTrabajosSql(RepositorioTrabajos):
         )
         return existe.first() is not None
 
+    async def adelantar(self, tipo: str, lote_id: int) -> int | None:
+        adelantado = await self._sesion.scalar(
+            sa.update(TrabajoModelo)
+            .where(
+                TrabajoModelo.tipo == tipo,
+                TrabajoModelo.estado == "PENDIENTE",
+                TrabajoModelo.carga_util["lote_id"].as_integer() == lote_id,
+            )
+            .values(proximo_intento=sa.func.now())
+            .returning(TrabajoModelo.id)
+            .execution_options(synchronize_session=False)
+        )
+        await self._sesion.commit()
+        return None if adelantado is None else int(adelantado)
+
     async def reactivar_requieren_sesion(self, tipos: tuple[str, ...]) -> int:
         resultado = await self._sesion.execute(
             sa.update(TrabajoModelo)

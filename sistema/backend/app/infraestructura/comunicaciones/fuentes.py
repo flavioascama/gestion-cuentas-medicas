@@ -11,6 +11,7 @@ from datetime import UTC, datetime
 from email.message import EmailMessage
 from email.policy import default as politica_por_defecto
 from email.utils import parseaddr, parsedate_to_datetime
+from typing import Any
 
 import httpx
 from bs4 import BeautifulSoup, Tag
@@ -62,15 +63,29 @@ class FuentePortalIafas:
         )
 
     async def responder(
-        self, codigo: str, codigo_ipress: str, respuesta: str, sustento: str | None
+        self,
+        codigo: str,
+        codigo_ipress: str,
+        respuesta: str,
+        carga: dict[str, Any],
+        adjunto: tuple[str, bytes] | None = None,
     ) -> None:
+        """`carga` trae el sustento y, si la cuenta se refacturo, el
+        comprobante vigente y su monto; `adjunto`, el nombre y el contenido
+        del PDF que acompana la respuesta."""
+        archivos = (
+            None if adjunto is None else {"adjunto": (adjunto[0], adjunto[1], "application/pdf")}
+        )
         async with httpx.AsyncClient(timeout=self._tiempo_espera) as cliente:
             resultado = await cliente.post(
                 f"{self._url_base}/comunicaciones/{codigo}/respuesta",
+                files=archivos,
                 data={
                     "codigo_ipress": codigo_ipress,
                     "respuesta": respuesta,
-                    "sustento": sustento or "",
+                    "sustento": carga.get("sustento") or "",
+                    "comprobante_vigente": carga.get("comprobante_vigente") or "",
+                    "monto_vigente": carga.get("monto_vigente") or "",
                 },
             )
         if resultado.status_code >= 400:

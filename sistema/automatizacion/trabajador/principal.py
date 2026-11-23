@@ -27,6 +27,9 @@ from app.dominio.plataformas.casos_uso import TIPO_TRABAJO_INICIAR_SESION_PLATAF
 from app.infraestructura.cola.repositorio_trabajos_sql import RepositorioTrabajosSql
 from app.infraestructura.comunicaciones.fuentes import FuenteCorreoImap, FuentePortalIafas
 from app.infraestructura.persistencia import todos_los_modelos  # noqa: F401
+from app.infraestructura.persistencia.respuesta_correo_sql import (
+    TIPO_TRABAJO_ENVIAR_RESPUESTA_CORREO,
+)
 from app.infraestructura.reloj import RelojSistema
 from app.infraestructura.transmision.consultor_respuesta_receptor_http import (
     ConsultorRespuestaReceptorHttp,
@@ -64,6 +67,7 @@ _TIPOS_ATENDIDOS = (
     TIPO_TRABAJO_ENVIAR_LOTE_SUSALUD,
     TIPO_TRABAJO_MONITOREAR_COMUNICACIONES,
     TIPO_TRABAJO_ENVIAR_RESPUESTA_IAFAS,
+    TIPO_TRABAJO_ENVIAR_RESPUESTA_CORREO,
 )
 
 

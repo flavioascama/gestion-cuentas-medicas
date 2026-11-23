@@ -16,9 +16,11 @@ import { EtiquetaEstado } from "../../componentes_base/etiqueta_estado";
 import { Mensaje } from "../../componentes_base/mensaje";
 import { MensajeErrorMutacion } from "../../componentes_base/mensaje_error_mutacion";
 import { usar_sesion } from "../../sesion/contexto_sesion";
+import { guardar_archivo } from "../../utilidades/archivo";
 import { formatear_fecha_hora } from "../../utilidades/formato";
 import { BuscadorCuenta } from "../cuentas/buscador_cuenta";
 import { MOTIVOS_OMISION, MOTIVOS_REVISION } from "./etiquetas_correos";
+import { RespuestasCorreo } from "./respuestas_correo";
 import { usar_nombre_aseguradora } from "./usar_nombre_aseguradora";
 import estilos from "./comunicaciones.module.css";
 
@@ -32,15 +34,6 @@ function formatear_tamano(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-function guardar_archivo(blob: Blob, nombre_archivo: string): void {
-  const url = URL.createObjectURL(blob);
-  const enlace = document.createElement("a");
-  enlace.href = url;
-  enlace.download = nombre_archivo;
-  enlace.click();
-  URL.revokeObjectURL(url);
 }
 
 function FilaAdjunto({ correo_id, adjunto }: { correo_id: number; adjunto: AdjuntoCorreo }) {
@@ -114,6 +107,7 @@ function ContenidoCorreo({ correo }: { correo: CorreoIafasDetalle }) {
           ))}
         </ul>
       ) : null}
+      <RespuestasCorreo correo_id={correo.id} />
       <div className={estilos.huella}>Huella de integridad: {correo.huella}</div>
     </>
   );

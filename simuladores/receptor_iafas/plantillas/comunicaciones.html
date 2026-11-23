@@ -15,8 +15,8 @@
         <td>{{ c.codigo_iafas }}</td>
         <td>{{ c.codigo_ipress }}</td>
         <td>{{ c.canal }}</td>
-        <td>{{ (c.emitida_en|string)[:19]|replace("T", " ") }}</td>
-        <td>{{ ((c.respondida_en or "-")|string)[:19]|replace("T", " ") }}</td>
+        <td>{{ c.emitida_en|hora_lima }}</td>
+        <td>{{ c.respondida_en|hora_lima if c.respondida_en else "-" }}</td>
       </tr>
       {% else %}
       <tr><td colspan="8">No hay comunicaciones.</td></tr>

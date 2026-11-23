@@ -54,14 +54,23 @@ class RepositorioDatos:
         contenido = json.loads(ruta_asegurados.read_text(encoding="utf-8"))
         self._asegurados = tuple(_a_asegurado(fila) for fila in contenido["asegurados"])
         self._metadatos = contenido["metadatos"]
-        self._nombres_iafas = self._asignar_nombres_iafas()
+        self._nombres_iafas = self._asignar_nombres_iafas(ruta_asegurados.with_name("iafas.json"))
 
-    def _asignar_nombres_iafas(self) -> dict[str, str]:
+    def _asignar_nombres_iafas(self, ruta_iafas: Path) -> dict[str, str]:
+        """La razon social del maestro de aseguradoras (el mismo que usan la
+        clinica y el portal de la IAFAS); un nombre generico para el codigo
+        que no este ahi."""
         codigos = sorted({a.iafas_codigo for a in self._asegurados})
-        return {
+        nombres = {
             codigo: _NOMBRES_IAFAS_SINTETICOS[indice % len(_NOMBRES_IAFAS_SINTETICOS)]
             for indice, codigo in enumerate(codigos)
         }
+        if ruta_iafas.exists():
+            maestro = json.loads(ruta_iafas.read_text(encoding="utf-8"))["iafas"]
+            nombres.update(
+                {i["codigo"]: i["razon_social"] for i in maestro if i["codigo"] in nombres}
+            )
+        return nombres
 
     @property
     def semilla(self) -> int:

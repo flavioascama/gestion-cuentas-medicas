@@ -54,6 +54,8 @@ class ObservacionRespuesta(BaseModel):
     entrega_estado: str | None = None
     entrega_en: datetime | None = None
     entrega_solicitada_por: str | None = None
+    # El PDF adjunto a la respuesta, si lo hay.
+    adjunto_nombre: str | None = None
 
     @staticmethod
     def desde_valor(valor: Observacion) -> ObservacionRespuesta:
@@ -102,3 +104,11 @@ class RespuestaNuevaEntrega(BaseModel):
 class SolicitudRespuestaObservacion(BaseModel):
     respuesta_texto: str = Field(min_length=1, max_length=1000)
     respuesta_sustento: str | None = Field(default=None, max_length=500)
+
+
+class SolicitudAdjuntoRespuesta(BaseModel):
+    """Documento PDF que acompana la respuesta a una observacion, en base64
+    (JSON, sin multipart, como las demas cargas de archivo)."""
+
+    nombre: str = Field(min_length=1, max_length=200)
+    contenido_base64: str = Field(min_length=1)

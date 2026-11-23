@@ -7,7 +7,7 @@ import {
   type ControlPeriodoSusalud,
 } from "../../api/plazos";
 import { obtener_trabajo } from "../../api/trabajos";
-import { Boton } from "../../componentes_base/boton";
+import { BotonConConfirmacion } from "../../componentes_base/dialogo_confirmar";
 import { Mensaje } from "../../componentes_base/mensaje";
 import { MensajeErrorMutacion } from "../../componentes_base/mensaje_error_mutacion";
 import { ProgresoTrabajo } from "../../componentes_base/progreso_trabajo";
@@ -63,18 +63,41 @@ export function DeclaracionSinFacturacion({ fila }: { fila: ControlPeriodoSusalu
   if (fila.declarada_en) return <DeclaracionRegistrada fila={fila} />;
   return (
     <>
-      <Boton
+      <BotonConConfirmacion
         variante="secundario"
-        onClick={() => declaracion.mutate()}
         disabled={declaracion.isPending}
+        titulo="Registrar declaración jurada"
+        texto={`Se registrará que en ${formatear_periodo(fila.periodo)} no hubo lotes que reportar a SUSALUD. Esta acción no se puede deshacer.`}
+        texto_confirmar="Registrar"
+        al_confirmar={() => declaracion.mutate()}
       >
         Registrar declaración jurada
-      </Boton>
+      </BotonConConfirmacion>
       <MensajeErrorMutacion
         error={declaracion.error}
         texto_por_defecto="No se pudo registrar la declaración jurada."
       />
     </>
+  );
+}
+
+function BotonEnviarPeriodo(propiedades: {
+  periodo: string;
+  disabled: boolean;
+  al_confirmar: () => void;
+}) {
+  const periodo = formatear_periodo(propiedades.periodo);
+  return (
+    <BotonConConfirmacion
+      variante="secundario"
+      disabled={propiedades.disabled}
+      titulo="Enviar a SUSALUD"
+      texto={`Se enviarán a SUSALUD los lotes de ${periodo}. Esta acción no se puede deshacer.`}
+      texto_confirmar="Enviar"
+      al_confirmar={propiedades.al_confirmar}
+    >
+      Enviar periodo {periodo} a SUSALUD
+    </BotonConConfirmacion>
   );
 }
 
@@ -102,13 +125,11 @@ export function EnvioPeriodoSusalud({ periodo, listos }: { periodo: string; list
   return (
     <>
       {listos > 0 ? (
-        <Boton
-          variante="secundario"
-          onClick={() => mutacion.mutate()}
+        <BotonEnviarPeriodo
+          periodo={periodo}
           disabled={mutacion.isPending || en_curso}
-        >
-          Enviar periodo {formatear_periodo(periodo)} a SUSALUD
-        </Boton>
+          al_confirmar={() => mutacion.mutate()}
+        />
       ) : null}
       {trabajo_id !== null ? (
         <ProgresoTrabajo trabajo_id={trabajo_id} al_completar={al_completar} />

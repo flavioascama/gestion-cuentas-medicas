@@ -155,6 +155,9 @@ services:
       CORREO_IMAP_USUARIO: ${CORREO_USUARIO:-cuentasmedicas@clinica.test}
       CORREO_IMAP_CLAVE: ${CORREO_CLAVE:?Falta CORREO_CLAVE en .env}
       CORREO_IMAP_TLS: ${CORREO_IMAP_TLS:-false}
+      # Respuestas a los correos de la IAFAS: SMTP del mismo buzon.
+      CORREO_SMTP_HOST: ${CORREO_SMTP_HOST:-correo}
+      CORREO_SMTP_PUERTO: ${CORREO_SMTP_PUERTO:-3025}
     networks:
       - default
       - red_oe1_simuladores

@@ -106,8 +106,9 @@ async def _cargar_maestros(
             razon_social=fila["razon_social"],
             periodicidad_remision_dias=int(fila["periodicidad_remision_dias"]),
             ventana_monitoreo_horas=int(fila["ventana_monitoreo_horas"]),
-            # El simulador del receptor de la IAFAS envia desde este buzon.
-            correo_remitente=REMITENTE_SIMULADOR_IAFAS,
+            # El simulador del receptor envia desde un buzon por aseguradora
+            # (auditoria.<codigo>@...).
+            correo_remitente=REMITENTE_SIMULADOR_IAFAS.replace("@", f".{fila['codigo']}@"),
         )
         sesion.add(modelo_iafas)
         await sesion.flush()

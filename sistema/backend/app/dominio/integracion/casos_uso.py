@@ -71,9 +71,10 @@ class _MedicionMonitoreo:
 
 
 class SolicitarMonitoreoRespuestaIafas:
-    """Reconsulta pedida por el analista: el trabajo de la remision se
-    agota si la IAFAS no responde en la ventana, y sin esto el lote
-    quedaba REMITIDO_IAFAS para siempre."""
+    """Consulta pedida por el analista. Si el lote aun espera su
+    consulta periodica, se adelanta a ahora; si esa espera se agoto porque
+    la IAFAS no respondio en la ventana, se encola otra (sin esto el lote
+    quedaba REMITIDO_IAFAS para siempre)."""
 
     def __init__(
         self,
@@ -98,6 +99,11 @@ class SolicitarMonitoreoRespuestaIafas:
                 "consultar la respuesta de un lote en estado "
                 f"{nombre_estado(_ESTADO_REMITIDO_IAFAS)}."
             )
+        adelantado = await self._repositorio_trabajos.adelantar(
+            TIPO_TRABAJO_MONITOREAR_RESPUESTA_IAFAS, lote_id
+        )
+        if adelantado is not None:
+            return adelantado
         if await self._repositorio_trabajos.hay_sin_terminar(
             TIPO_TRABAJO_MONITOREAR_RESPUESTA_IAFAS, lote_id
         ):

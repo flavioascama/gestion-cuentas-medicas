@@ -22,7 +22,19 @@ export function usar_detalle_lote(lote_id: number) {
   return useQuery({
     queryKey: ["lotes", lote_id],
     queryFn: () => obtener_lote(lote_id),
+    // Un lote remitido espera la respuesta de la IAFAS: se vuelve a leer
+    // solo, mas seguido mientras se la esta consultando.
+    refetchInterval: (consulta) => {
+      const lote = consulta.state.data;
+      if (lote?.estado !== "REMITIDO_IAFAS") return false;
+      return consulta_en_curso(lote.proxima_consulta) ? 3000 : 30000;
+    },
   });
+}
+
+// La consulta de la respuesta ya toca (o se pidio ahora) y aun no termina.
+export function consulta_en_curso(proxima_consulta: string | null | undefined): boolean {
+  return proxima_consulta != null && new Date(proxima_consulta).getTime() <= Date.now();
 }
 
 export function usar_prevalidacion_lote(lote_id: number) {

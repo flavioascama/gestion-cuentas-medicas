@@ -10,9 +10,10 @@ import { ConPaginacion } from "../../componentes_base/paginacion";
 import { usar_pagina_cliente } from "../../componentes_base/paginar";
 import { TablaDatos, type ColumnaTabla } from "../../componentes_base/tabla_datos";
 import { TituloPagina } from "../../componentes_base/titulo_pagina";
+import { columna_ver, crear_columnas_comunicaciones } from "./columnas_comunicaciones";
+import { DialogoComunicacion } from "./dialogo_comunicacion";
 import { AccionRevisar } from "./seccion_comunicaciones_iafas";
 import { TablaCorreos } from "./tabla_correos";
-import { usar_columnas_comunicaciones } from "./usar_columnas_comunicaciones";
 import estilos from "./comunicaciones.module.css";
 
 // Todo lo que las aseguradoras comunican a la clinica, en una sola
@@ -45,7 +46,8 @@ function ComunicacionesRegistradas() {
     queryKey: ["comunicaciones_iafas", "todas"],
     queryFn: listar_todas_las_comunicaciones_iafas,
   });
-  const columnas = [...usar_columnas_comunicaciones(), _COLUMNA_CUENTA];
+  const [abierta, set_abierta] = useState<ComunicacionIafas | null>(null);
+  const columnas = [...crear_columnas_comunicaciones(), _COLUMNA_CUENTA, columna_ver(set_abierta)];
   const filas = consulta.data ?? [];
   const { pagina_actual, total_paginas, filas_pagina, set_pagina } = usar_pagina_cliente(filas);
 
@@ -67,6 +69,9 @@ function ComunicacionesRegistradas() {
           mensaje_vacio="Sin comunicaciones registradas."
         />
       </ConPaginacion>
+      {abierta !== null ? (
+        <DialogoComunicacion comunicacion={abierta} al_cerrar={() => set_abierta(null)} />
+      ) : null}
     </>
   );
 }

@@ -28,7 +28,6 @@ class LoteRecibido:
     recibido_en: str
     estado: str
     motivo: str | None
-    forzado: bool
 
 
 class AlmacenamientoReceptor:
@@ -97,14 +96,14 @@ class AlmacenamientoReceptor:
                 ),
             )
 
-    def forzar_estado(self, nombre_archivo: str, estado: str, motivo: str | None) -> bool:
-        """Ruta de administracion (Seccion 9.2) para pruebas deterministas:
-        sobreescribe el estado de un lote ya procesado."""
+    def responder(self, nombre_archivo: str, estado: str, motivo: str | None) -> bool:
+        """La respuesta de la IAFAS a un lote recibido. Se registra una
+        sola vez: False si el lote no existe o ya fue respondido."""
 
         with self._conexion() as conexion:
             cursor = conexion.execute(
-                "UPDATE lote_recibido SET estado = ?, motivo = ?, forzado = 1 "
-                "WHERE nombre_archivo = ?",
+                "UPDATE lote_recibido SET estado = ?, motivo = ? "
+                "WHERE nombre_archivo = ? AND estado = 'RECIBIDO'",
                 (estado, motivo, nombre_archivo),
             )
             return cursor.rowcount > 0
@@ -125,7 +124,6 @@ class AlmacenamientoReceptor:
                     recibido_en=f["recibido_en"],
                     estado=f["estado"],
                     motivo=f["motivo"],
-                    forzado=bool(f["forzado"]),
                 )
                 for f in filas
             ]
@@ -147,5 +145,4 @@ class AlmacenamientoReceptor:
                 recibido_en=f["recibido_en"],
                 estado=f["estado"],
                 motivo=f["motivo"],
-                forzado=bool(f["forzado"]),
             )

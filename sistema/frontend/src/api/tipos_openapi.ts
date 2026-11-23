@@ -124,7 +124,11 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        delete?: never;
+        /**
+         * Eliminar Usuario
+         * @description Solo el usuario que nunca tuvo actividad; el resto se desactiva.
+         */
+        delete: operations["eliminar_usuario_usuarios__usuario_id__delete"];
         options?: never;
         head?: never;
         /** Actualizar Usuario */
@@ -889,9 +893,31 @@ export interface paths {
         /**
          * Responder Observacion
          * @description Si la observacion llego de la IAFAS (portal o correo), la respuesta
-         *     se le remite por su portal: queda encolada para el robot.
+         *     se le remite por su portal, con su documento adjunto si lo hay: queda
+         *     encolada para el robot.
          */
         post: operations["responder_observacion_observaciones__observacion_id__respuesta_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/observaciones/{observacion_id}/adjunto": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Descargar Adjunto Respuesta */
+        get: operations["descargar_adjunto_respuesta_observaciones__observacion_id__adjunto_get"];
+        /**
+         * Adjuntar Documento Respuesta
+         * @description El PDF que acompana la respuesta: se sube antes de responder.
+         */
+        put: operations["adjuntar_documento_respuesta_observaciones__observacion_id__adjunto_put"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1032,6 +1058,24 @@ export interface paths {
         put?: never;
         /** Descartar Correo */
         post: operations["descartar_correo_correos_iafas__correo_id__descarte_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/correos-iafas/{correo_id}/respuestas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar Respuestas De Correo */
+        get: operations["listar_respuestas_de_correo_correos_iafas__correo_id__respuestas_get"];
+        put?: never;
+        /** Responder Correo */
+        post: operations["responder_correo_correos_iafas__correo_id__respuestas_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1706,6 +1750,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/administracion/atenciones-hospitalarias": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cargar Atenciones */
+        post: operations["cargar_atenciones_administracion_atenciones_hospitalarias_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/administracion/atenciones-hospitalarias/plantilla": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Descargar Plantilla */
+        get: operations["descargar_plantilla_administracion_atenciones_hospitalarias_plantilla_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/robot/navegacion-visible": {
         parameters: {
             query?: never;
@@ -1922,6 +2000,11 @@ export interface components {
             /** Farmacia */
             farmacia?: components["schemas"]["ProductoJson"][];
             copago_cobrado?: components["schemas"]["CopagoJson"] | null;
+        };
+        /** AtencionesCargadasRespuesta */
+        AtencionesCargadasRespuesta: {
+            /** Cargadas */
+            cargadas: number;
         };
         /** AvisoRespuesta */
         AvisoRespuesta: {
@@ -2413,6 +2496,8 @@ export interface components {
             version_mapeo: string | null;
             /** Monitoreo Excedido */
             monitoreo_excedido: boolean;
+            /** Proxima Consulta */
+            proxima_consulta: string | null;
             /** Validacion Reintentable */
             validacion_reintentable: boolean;
             /** Vigente */
@@ -2845,6 +2930,8 @@ export interface components {
             entrega_en?: string | null;
             /** Entrega Solicitada Por */
             entrega_solicitada_por?: string | null;
+            /** Adjunto Nombre */
+            adjunto_nombre?: string | null;
         };
         /** OpcionNavegacion */
         OpcionNavegacion: {
@@ -3192,6 +3279,22 @@ export interface components {
             /** Estado Cuenta */
             estado_cuenta: string;
         };
+        /** RespuestaCorreoRespuesta */
+        RespuestaCorreoRespuesta: {
+            /** Id */
+            id: number;
+            /** Texto */
+            texto: string;
+            /** Respondido Por */
+            respondido_por: string;
+            /**
+             * Respondido En
+             * Format: date-time
+             */
+            respondido_en: string;
+            /** Enviada En */
+            enviada_en: string | null;
+        };
         /** RespuestaCuentaCreada */
         RespuestaCuentaCreada: {
             /** Cuenta Id */
@@ -3494,6 +3597,17 @@ export interface components {
             /** Activo */
             activo?: boolean | null;
         };
+        /**
+         * SolicitudAdjuntoRespuesta
+         * @description Documento PDF que acompana la respuesta a una observacion, en base64
+         *     (JSON, sin multipart, como las demas cargas de archivo).
+         */
+        SolicitudAdjuntoRespuesta: {
+            /** Nombre */
+            nombre: string;
+            /** Contenido Base64 */
+            contenido_base64: string;
+        };
         /** SolicitudAnulacionRespuesta */
         SolicitudAnulacionRespuesta: {
             /** Id */
@@ -3554,6 +3668,13 @@ export interface components {
             clave_actual: string;
             /** Clave Nueva */
             clave_nueva: string;
+        };
+        /** SolicitudCargarAtenciones */
+        SolicitudCargarAtenciones: {
+            /** Nombre Archivo */
+            nombre_archivo: string;
+            /** Contenido Base64 */
+            contenido_base64: string;
         };
         /** SolicitudCargarCatalogoCpms */
         SolicitudCargarCatalogoCpms: {
@@ -3868,6 +3989,11 @@ export interface components {
         SolicitudRespuestaCaptcha: {
             /** Respuesta */
             respuesta: string;
+        };
+        /** SolicitudRespuestaCorreo */
+        SolicitudRespuestaCorreo: {
+            /** Texto */
+            texto: string;
         };
         /** SolicitudRespuestaObservacion */
         SolicitudRespuestaObservacion: {
@@ -4245,6 +4371,35 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["RespuestaUsuario"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    eliminar_usuario_usuarios__usuario_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                usuario_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -5773,6 +5928,70 @@ export interface operations {
             };
         };
     };
+    descargar_adjunto_respuesta_observaciones__observacion_id__adjunto_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                observacion_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    adjuntar_documento_respuesta_observaciones__observacion_id__adjunto_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                observacion_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SolicitudAdjuntoRespuesta"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     pedir_nueva_entrega_observaciones__observacion_id__entrega_post: {
         parameters: {
             query?: never;
@@ -6008,6 +6227,70 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["CorreoIafasDetalleRespuesta"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listar_respuestas_de_correo_correos_iafas__correo_id__respuestas_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                correo_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaCorreoRespuesta"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    responder_correo_correos_iafas__correo_id__respuestas_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                correo_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SolicitudRespuestaCorreo"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -7596,6 +7879,59 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cargar_atenciones_administracion_atenciones_hospitalarias_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SolicitudCargarAtenciones"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AtencionesCargadasRespuesta"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    descargar_plantilla_administracion_atenciones_hospitalarias_plantilla_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
         };

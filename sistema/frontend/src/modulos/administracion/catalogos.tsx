@@ -16,6 +16,7 @@ import { formatear_fecha_hora, formatear_version_catalogo } from "../../utilidad
 import { usar_valor_diferido } from "../../utilidades/usar_valor_diferido";
 import { BotonCargarCatalogo } from "./boton_cargar_catalogo";
 import { formatear_cantidad } from "./formato_administracion";
+import { SeccionAtencionesHospitalarias } from "./seccion_atenciones_hospitalarias";
 import { SeccionCatalogoGtin } from "./seccion_catalogo_gtin";
 import { usar_versiones_cpms } from "./usar_administracion";
 import estilos from "./administracion.module.css";
@@ -134,6 +135,7 @@ export function AdministracionCatalogos() {
       <TituloPagina titulo="Catálogos" />
       <SeccionCatalogoCpms />
       <SeccionCatalogoGtin />
+      <SeccionAtencionesHospitalarias />
     </div>
   );
 }

@@ -18,13 +18,30 @@ import { usar_filas_copago, type FilaMonto } from "./usar_filas_copago";
 import { corregir_pago, usar_liquidacion_cuenta } from "./usar_liquidacion";
 
 // Lo facturado a la IAFAS, como referencia de lo que liquida y paga
-// (2026-11-18): es el total del comprobante vigente.
+// (2026-11-18): es el total del comprobante vigente, menos su nota de
+// crédito o más su nota de débito.
+// La nota se registra sin IGV: se lleva a la base del comprobante.
+function neto_con_nota(
+  total: string,
+  valor_venta: string | null | undefined,
+  igv: string | null | undefined,
+  nota: { tipo: string; monto: string },
+): string {
+  const venta = Number(valor_venta ?? 0);
+  const tasa = venta > 0 ? Number(igv ?? 0) / venta : 0;
+  const signo = nota.tipo === "C" ? -1 : 1;
+  return (Number(total) + signo * Number(nota.monto) * (1 + tasa)).toFixed(2);
+}
+
 function usar_total_facturado(cuenta_id: number): string | null {
   const consulta = useQuery({
     queryKey: ["cuentas", cuenta_id, "comprobante"],
     queryFn: () => consultar_documentos_pago(cuenta_id),
   });
-  return consulta.data?.vigente.total ?? null;
+  const vigente = consulta.data?.vigente;
+  const nota = consulta.data?.nota;
+  if (!vigente?.total || !nota) return vigente?.total ?? null;
+  return neto_con_nota(vigente.total, vigente.valor_venta, vigente.igv, nota);
 }
 
 // Lo facturado que la IAFAS no liquido (tercera auditoria, medio 2): la

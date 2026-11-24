@@ -142,3 +142,30 @@
   background-color: var(--color_fondo);
   color: var(--color_primario);
 }
+
+/* Celular: el nombre del sistema va en una sola linea y, del perfil,
+   queda solo el circulo con las iniciales. */
+@media (max-width: 768px) {
+  .cabecera {
+    gap: var(--espacio_2);
+    padding-right: var(--espacio_2);
+  }
+
+  .nombre_sistema {
+    min-width: 0;
+    padding-left: var(--espacio_3);
+    overflow: hidden;
+    font-size: var(--tamano_base);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .acciones {
+    flex-shrink: 0;
+    gap: var(--espacio_1);
+  }
+
+  .datos_perfil {
+    display: none;
+  }
+}

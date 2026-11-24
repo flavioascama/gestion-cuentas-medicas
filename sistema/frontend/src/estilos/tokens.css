@@ -131,6 +131,16 @@
   --sombra_dialogo: 0 4px 16px rgba(0, 0, 0, 0.5);
 }
 
+/* Celular: los rellenos y margenes grandes se acortan para no perder
+   ancho util. Todas las tarjetas, secciones y dialogos los toman de
+   estas variables, asi que no hace falta tocar cada componente. */
+@media (max-width: 768px) {
+  :root {
+    --espacio_6: 16px;
+    --espacio_8: 24px;
+  }
+}
+
 /* Quien pide menos movimiento en su sistema operativo no ve transiciones. */
 @media (prefers-reduced-motion: reduce) {
   :root {

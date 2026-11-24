@@ -107,3 +107,16 @@
 .ver_todos:hover {
   background-color: var(--color_primario_suave);
 }
+
+/* Celular: el panel se ancla a la pantalla, debajo de la cabecera; si
+   se anclara a la campana se saldria por la izquierda. */
+@media (max-width: 768px) {
+  .panel {
+    position: fixed;
+    top: calc(var(--alto_cabecera) + var(--espacio_1));
+    right: var(--espacio_2);
+    left: var(--espacio_2);
+    width: auto;
+    max-height: calc(100dvh - var(--alto_cabecera) - var(--espacio_4));
+  }
+}

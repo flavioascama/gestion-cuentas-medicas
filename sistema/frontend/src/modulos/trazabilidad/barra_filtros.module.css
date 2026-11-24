@@ -52,3 +52,15 @@
   font-size: var(--tamano_metadato);
   color: var(--color_texto_secundario);
 }
+
+@media (max-width: 768px) {
+  .campos {
+    width: 100%;
+    gap: var(--espacio_3);
+  }
+
+  .campo_iafas,
+  .campo {
+    width: 100%;
+  }
+}

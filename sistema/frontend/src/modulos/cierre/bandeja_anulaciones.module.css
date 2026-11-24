@@ -10,3 +10,9 @@
   align-items: center;
   gap: var(--espacio_2);
 }
+
+@media (max-width: 768px) {
+  .fila_accion {
+    flex-wrap: wrap;
+  }
+}

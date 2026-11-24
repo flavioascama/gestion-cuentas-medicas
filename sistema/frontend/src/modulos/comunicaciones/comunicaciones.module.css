@@ -98,3 +98,20 @@
 .fila_resolver > :first-child {
   flex: 1;
 }
+
+@media (max-width: 768px) {
+  .ficha {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+
+  .ficha dd {
+    margin-bottom: var(--espacio_2);
+  }
+
+  .adjunto,
+  .fila_resolver {
+    flex-wrap: wrap;
+    gap: var(--espacio_2);
+  }
+}

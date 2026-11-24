@@ -57,3 +57,19 @@
   gap: var(--espacio_2);
   flex-shrink: 0;
 }
+
+/* Celular: el dialogo usa casi todo el ancho de la pantalla. */
+@media (max-width: 768px) {
+  .caja,
+  .grande,
+  .mediano {
+    width: calc(100vw - var(--espacio_6));
+    min-width: 0;
+    max-height: 90dvh;
+    padding: var(--espacio_4);
+  }
+
+  .acciones {
+    flex-wrap: wrap;
+  }
+}

@@ -1,6 +1,9 @@
 .envoltorio {
   display: flex;
   height: 100vh;
+  /* En el celular la barra del navegador aparece y desaparece: dvh
+     sigue el alto visible real y no deja contenido tapado. */
+  height: 100dvh;
 }
 
 .rincon {
@@ -50,4 +53,27 @@
   flex: 1;
   overflow-y: auto;
   padding: var(--espacio_6);
+}
+
+/* Velo que oscurece el contenido cuando el menu esta abierto en el
+   celular; tocarlo lo cierra. En pantalla grande el menu va al lado
+   del contenido y no hay velo. */
+.fondo_menu {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .fondo_menu {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 15;
+    padding: 0;
+    border: none;
+    background-color: var(--color_superposicion);
+  }
+
+  .contenido {
+    padding: var(--espacio_3);
+  }
 }

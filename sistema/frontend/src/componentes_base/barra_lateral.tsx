@@ -51,11 +51,20 @@ function modulos_visibles(roles_usuario: string[]): DefinicionRuta[] {
   );
 }
 
-function EnlaceModulo({ modulo, abierta }: { modulo: DefinicionRuta; abierta: boolean }) {
+function EnlaceModulo({
+  modulo,
+  abierta,
+  al_navegar,
+}: {
+  modulo: DefinicionRuta;
+  abierta: boolean;
+  al_navegar: () => void;
+}) {
   const Icono = icono_de_ruta(modulo.ruta);
   return (
     <NavLink
       to={modulo.ruta}
+      onClick={al_navegar}
       tabIndex={abierta ? undefined : -1}
       className={({ isActive }) => `${estilos.enlace} ${isActive ? estilos.enlace_activo : ""}`}
     >
@@ -65,7 +74,13 @@ function EnlaceModulo({ modulo, abierta }: { modulo: DefinicionRuta; abierta: bo
   );
 }
 
-export function BarraLateral({ abierta }: { abierta: boolean }) {
+export function BarraLateral({
+  abierta,
+  al_navegar,
+}: {
+  abierta: boolean;
+  al_navegar: () => void;
+}) {
   const { sesion } = usar_sesion();
   const modulos = modulos_visibles(sesion?.roles ?? []);
 
@@ -79,7 +94,12 @@ export function BarraLateral({ abierta }: { abierta: boolean }) {
         <span className={estilos.etiqueta_seccion}>Módulos</span>
         <div className={estilos.enlaces}>
           {modulos.map((modulo) => (
-            <EnlaceModulo key={modulo.ruta} modulo={modulo} abierta={abierta} />
+            <EnlaceModulo
+              key={modulo.ruta}
+              modulo={modulo}
+              abierta={abierta}
+              al_navegar={al_navegar}
+            />
           ))}
         </div>
       </div>

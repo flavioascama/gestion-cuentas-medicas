@@ -60,3 +60,19 @@
 .actualizando {
   opacity: 0.55;
 }
+
+/* Celular: la tabla conserva un ancho legible y se desplaza de lado
+   dentro de su envoltorio, en vez de apretar las columnas. */
+@media (max-width: 768px) {
+  .tabla {
+    min-width: 640px;
+  }
+
+  .tabla th {
+    padding: var(--espacio_2) var(--espacio_3);
+  }
+
+  .tabla td {
+    padding: 0 var(--espacio_3);
+  }
+}

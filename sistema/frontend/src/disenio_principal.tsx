@@ -12,6 +12,9 @@ import { usar_sesion } from "./sesion/contexto_sesion";
 type Tema = "claro" | "oscuro";
 
 const _CLAVE_BARRA_ABIERTA = "barra_lateral_abierta";
+// Mismo corte que las reglas @media del armazon (disenio_principal,
+// barra_lateral y cabecera).
+const _CONSULTA_PANTALLA_ANGOSTA = "(max-width: 768px)";
 const _CLAVE_TEMA = "tema_interfaz";
 
 function leer_preferencia_barra(): boolean {
@@ -28,6 +31,33 @@ function guardar_preferencia_barra(abierta: boolean): void {
   } catch {
     // Almacenamiento no disponible (navegación privada, etc.): no es crítico.
   }
+}
+
+// En el celular el menu se abre encima del contenido, no a su lado:
+// arranca cerrado, se cierra al elegir un modulo y no cambia la
+// preferencia guardada para la pantalla grande.
+function es_pantalla_angosta(): boolean {
+  return window.matchMedia(_CONSULTA_PANTALLA_ANGOSTA).matches;
+}
+
+function usar_barra_lateral() {
+  const [barra_abierta, set_barra_abierta] = useState(
+    () => !es_pantalla_angosta() && leer_preferencia_barra(),
+  );
+
+  const alternar_barra = () => {
+    set_barra_abierta((anterior) => {
+      const nuevo_valor = !anterior;
+      if (!es_pantalla_angosta()) guardar_preferencia_barra(nuevo_valor);
+      return nuevo_valor;
+    });
+  };
+
+  const cerrar_barra_en_celular = () => {
+    if (es_pantalla_angosta()) set_barra_abierta(false);
+  };
+
+  return { barra_abierta, alternar_barra, cerrar_barra_en_celular };
 }
 
 function leer_preferencia_tema(): Tema {
@@ -90,7 +120,7 @@ function usar_tema() {
 export function DisenioPrincipal() {
   const { sesion, cerrar_sesion } = usar_sesion();
   const navegar = useNavigate();
-  const [barra_abierta, set_barra_abierta] = useState(leer_preferencia_barra);
+  const { barra_abierta, alternar_barra, cerrar_barra_en_celular } = usar_barra_lateral();
   const { tema, alternar_tema } = usar_tema();
   const [cambiando_clave, set_cambiando_clave] = useState(false);
 
@@ -98,20 +128,20 @@ export function DisenioPrincipal() {
     void cerrar_sesion().then(() => navegar("/ingreso", { replace: true }));
   };
 
-  const alternar_barra = () => {
-    set_barra_abierta((anterior) => {
-      const nuevo_valor = !anterior;
-      guardar_preferencia_barra(nuevo_valor);
-      return nuevo_valor;
-    });
-  };
-
   if (!sesion) return null;
 
   return (
     <div className={estilos.envoltorio}>
       <RinconMenu barra_abierta={barra_abierta} al_alternar_barra={alternar_barra} />
-      <BarraLateral abierta={barra_abierta} />
+      {barra_abierta ? (
+        <button
+          type="button"
+          className={estilos.fondo_menu}
+          aria-label="Cerrar menú"
+          onClick={cerrar_barra_en_celular}
+        />
+      ) : null}
+      <BarraLateral abierta={barra_abierta} al_navegar={cerrar_barra_en_celular} />
       <div className={estilos.columna}>
         <Cabecera
           tema={tema}

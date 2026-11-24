@@ -66,3 +66,19 @@
   font-weight: var(--peso_enfasis);
   color: var(--color_primario);
 }
+
+/* Celular: el menu se despliega encima del contenido (panel
+   deslizable), en vez de quitarle ancho a la pantalla. */
+@media (max-width: 768px) {
+  .barra {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 18;
+    box-shadow: var(--sombra_dialogo);
+  }
+
+  .barra_cerrada {
+    box-shadow: none;
+  }
+}

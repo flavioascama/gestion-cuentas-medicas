@@ -76,3 +76,17 @@
   font-size: var(--tamano_metadato);
   cursor: pointer;
 }
+
+/* Celular: los filtros bajan a varias filas y ocupan el ancho. */
+@media (max-width: 768px) {
+  .filtros {
+    flex-wrap: wrap;
+    gap: var(--espacio_3);
+  }
+
+  .filtro,
+  .busqueda {
+    flex: 1 1 140px;
+    width: auto;
+  }
+}

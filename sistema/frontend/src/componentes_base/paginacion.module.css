@@ -48,3 +48,15 @@
   color: var(--color_texto_secundario);
   cursor: not-allowed;
 }
+
+@media (max-width: 768px) {
+  .barra {
+    flex-wrap: wrap;
+    gap: var(--espacio_2);
+    padding: var(--espacio_3) var(--espacio_2);
+  }
+
+  .controles {
+    gap: var(--espacio_2);
+  }
+}

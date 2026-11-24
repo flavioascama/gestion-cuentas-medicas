@@ -107,3 +107,40 @@
 .motivo_pendiente {
   color: var(--color_advertencia);
 }
+
+/* Celular: las columnas de ancho fijo no caben. El texto ocupa la
+   primera linea de cada fila y los datos bajan a la segunda. */
+@media (max-width: 768px) {
+  .fila_sugerido {
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+  }
+
+  .fila_cuenta {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .fila_sugerido,
+  .fila_cuenta {
+    row-gap: var(--espacio_1);
+  }
+
+  .fila_sugerido > input,
+  .fila_cuenta > input {
+    grid-row: 1 / span 2;
+  }
+
+  .fila_sugerido > .texto_largo,
+  .fila_cuenta > .texto_largo {
+    grid-column: 2 / -1;
+    white-space: normal;
+  }
+
+  .fila_pendiente {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .fila_pendiente > .motivo_pendiente {
+    grid-row: 2;
+    grid-column: 1 / -1;
+  }
+}
